@@ -1,0 +1,36 @@
+{
+  "name": "tkob-qr-order-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QR-based restaurant ordering system - monorepo",
+  "workspaces": [
+    "source/apps/*",
+    "source/packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:web-customer": "pnpm --filter @apps/web-customer dev",
+    "dev:web-tenant": "pnpm --filter @apps/web-tenant dev",
+    "build": "pnpm run --recursive build",
+    "build:web-customer": "pnpm --filter @apps/web-customer build",
+    "build:web-tenant": "pnpm --filter @apps/web-tenant build",
+    "start:web-customer": "pnpm --filter @apps/web-customer start",
+    "start:web-tenant": "pnpm --filter @apps/web-tenant start",
+    "lint": "pnpm run --recursive lint",
+    "lint:web-customer": "pnpm --filter @apps/web-customer lint",
+    "lint:web-tenant": "pnpm --filter @apps/web-tenant lint",
+    "type-check": "pnpm run --recursive type-check",
+    "type-check:web-customer": "pnpm --filter @apps/web-customer type-check",
+    "type-check:web-tenant": "pnpm --filter @apps/web-tenant type-check",
+    "clean": "pnpm run --recursive clean && rm -rf node_modules",
+    "install:all": "pnpm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  }
+}
