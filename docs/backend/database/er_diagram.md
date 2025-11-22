@@ -1,36 +1,41 @@
 ```mermaid
 erDiagram
-    %% --- GROUP 1: CORE & IAM ---
-    TENANT {
-        string id PK
-        string name
-        string slug UK "URL (pho-hung)"
-        enum status "DRAFT, ACTIVE, SUSPENDED"
-        json settings "Config: colors, currency"
-        json opening_hours "Step 2 Wizard"
-        int onboarding_step "1..4"
-    }
-
+    %% --- IDENTITY & AUTH ---
     USER {
-        string id PK
-        string email UK
-        string password_hash
-        enum role "OWNER, STAFF, KITCHEN"
+        string id PK "UUID"
+        string email UK "Unique, Verified"
+        string password_hash "Bcrypt hash"
+        string full_name
+        enum role "OWNER"
         string tenant_id FK
     }
 
+    %% --- SESSION MANAGEMENT ---
     USER_SESSION {
-        string id PK
+        string id PK "UUID (Session ID)"
         string user_id FK
-        string refresh_token_hash "Hash for security"
-        string device_info
+        string refresh_token_hash "Hash của token dài hạn"
+        string device_info "Chrome on Mac, iPhone 14..."
+        timestamp last_used_at
         timestamp expires_at
     }
 
+    %% --- TENANT CONTEXT ---
+    TENANT {
+        string id PK
+        string name
+        string slug UK
+        enum status "DRAFT, ACTIVE"
+        json setting "Cấu hình: màu sắc, tiền tệ, v.v."
+        json opening_hours
+        int onboarding_step
+    }
+
+    %% --- SECURE PAYMENT ---
     TENANT_PAYMENT_CONFIG {
         string id PK
         string stripe_account_id
-        string tenant_id FK "1-1 Relation"
+        string tenant_id FK
     }
 
     %% RELATIONS
@@ -40,13 +45,13 @@ erDiagram
     TENANT ||--|{ MENU_ITEM : owns
     TENANT ||--|{ ORDER : processes
     TENANT ||--|| TENANT_PAYMENT_CONFIG : has
-    
+
     USER ||--o{ USER_SESSION : has_login
-    
+
     MENU_CATEGORY ||--|{ MENU_ITEM : contains
     MENU_ITEM }|--|{ MODIFIER_GROUP : uses_implicit_n_n
     MODIFIER_GROUP ||--|{ MODIFIER_OPTION : contains
-    
+
     TABLE ||--o{ ORDER : places
     ORDER ||--|{ ORDER_ITEM : includes
     ORDER ||--o{ ORDER_ACTIVITY_LOG : tracks
