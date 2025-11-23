@@ -6,7 +6,8 @@ erDiagram
         string email UK "Unique, Verified"
         string password_hash "Bcrypt hash"
         string full_name
-        enum role "OWNER"
+        enum role "OWNER, STAFF, KITCHEN"
+        enum status "ACTIVE, INACTIVE, PENDING, LOCKED"
         string tenant_id FK
     }
 

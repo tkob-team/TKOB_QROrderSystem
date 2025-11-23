@@ -21,14 +21,15 @@
 
 ### USER
 
-| Field         | Type   | Description             |
-| ------------- | ------ | ----------------------- |
-| id            | string | Primary Key             |
-| email         | string | Unique, Email đăng nhập |
-| password_hash | string | Mã hoá mật khẩu         |
-| full_name     | string | Tên nhân viên           |
-| role          | enum   | OWNER, STAFF, KITCHEN   |
-| tenant_id     | string | Foreign Key đến TENANT  |
+| Field         | Type   | Description                                   |
+| ------------- | ------ | --------------------------------------------- |
+| id            | string | Primary Key                                   |
+| email         | string | Unique, Email đăng nhập                       |
+| password_hash | string | Mã hoá mật khẩu                               |
+| full_name     | string | Tên nhân viên                                 |
+| role          | enum   | OWNER, STAFF, KITCHEN                         |
+| tenant_id     | string | Foreign Key đến TENANT                        |
+| status        | enum   | Trạng thái: ACTIVE, INACTIVE, PENDING, LOCKED |
 
 ---
 
