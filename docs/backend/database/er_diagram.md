@@ -41,13 +41,14 @@ erDiagram
 
     %% RELATIONS
     TENANT ||--|{ USER : owns
+    TENANT ||--|| TENANT_PAYMENT_CONFIG : has
+    USER ||--o{ USER_SESSION : has_login
+    
     TENANT ||--|{ TABLE : owns
     TENANT ||--|{ MENU_CATEGORY : owns
     TENANT ||--|{ MENU_ITEM : owns
     TENANT ||--|{ ORDER : processes
-    TENANT ||--|| TENANT_PAYMENT_CONFIG : has
 
-    USER ||--o{ USER_SESSION : has_login
 
     MENU_CATEGORY ||--|{ MENU_ITEM : contains
     MENU_ITEM }|--|{ MODIFIER_GROUP : uses_implicit_n_n
