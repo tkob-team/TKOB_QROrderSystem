@@ -69,78 +69,110 @@ Hệ thống sử dụng cơ chế **Stateful Session with JWT**.
 - **Access Token**: Stateless JWT (ngắn hạn), chứa thông tin authorize.
 - **Refresh Token**: Stateful (được lưu hash trong bảng `USER_SESSION`), dùng để quản lý phiên đăng nhập và revoke quyền truy cập.
 
-#### 2.1.1. Registration Process (3-Step Flow)
+#### 2.1.1. Registration Process (2-Step Flow)
 
-Quy trình đăng ký dành cho **Tenant Owner** mới.
+**Quy trình gồm 2 bước API chính**, sử dụng **Redis** làm bộ nhớ tạm để lưu thông tin đăng ký trong lúc chờ xác thực.
 
-**Step 1: Challenge (Gửi OTP)**
+**Step 1: Submit & Challenge (Gửi thông tin & Nhận OTP)**
 
-Khởi tạo quá trình, chưa ghi dữ liệu vào Postgres.
+User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng lặp (Duplicate Check) trước, nếu hợp lệ thì lưu tạm vào Redis và gửi OTP.
 
-```json
-POST /auth/register/challenge
-Content-Type: application/json
+- **Endpoint**: `POST /auth/register/submit`
+- **Content-Type**: `application/json`
 
-{
-  "email": "owner@new-restaurant.com"
-}
-
-Response: 200 OK
-{
-  "message": "OTP sent to email. Valid for 5 minutes.",
-  "ttl": 300
-}
-```
-
-Step 2: Prove (Xác thực OTP)
-
-Kiểm tra OTP trong Redis. Nếu đúng, cấp RegisterToken (Giấy phép để tạo tài khoản).
+**Request Body**:
 
 ```json
-POST /auth/register/prove
-Content-Type: application/json
-
 {
   "email": "owner@new-restaurant.com",
-  "otp": "123456"
-}
-
-Response: 200 OK
-{
-  "registerToken": "eyJhbGciOiJIUzI1NiIsIn...", // Token tạm, claim: email_verified=true
-  "expiresIn": 600 // 10 phút để điền form
+  "password": "StrongPassword!123",
+  "fullName": "Nguyen Van A",
+  "tenantName": "Pho Ngon 123",
+  "slug": "pho-ngon-123" // Optional, nếu không gửi backend sẽ tự generate từ name
 }
 ```
 
-Step 3: Create (Khởi tạo Tenant & User)
+**Backend Logic**:
 
-Ghi dữ liệu vào Postgres (TENANT, USER, USER_SESSION).
+1. **Validation**: Kiểm tra format email, password complexity.
+2. **Uniqueness Check (Postgres)**:
+    - Kiểm tra `email` có trong bảng `USER` chưa?
+    - Kiểm tra `slug` có trong bảng `TENANT` chưa?
+    - *Nếu trùng*: Trả về `409 Conflict` ngay lập tức (kèm message chi tiết lỗi ở field nào).
+3. **Temporary Storage (Redis)**:
+    - Hash password.
+    - Generate OTP (6 số).
+    - Generate `registrationToken` (Random string, dùng làm key truy xuất Redis).
+    - Lưu object `{ email, password_hash, fullName, tenantName, slug, otp }` vào Redis với Key=`reg:{registrationToken}` và TTL=10 phút.
+4. **Send OTP**: Gửi email chứa OTP cho user.
+
+**Response: 200 OK**
 
 ```json
-POST /auth/register/create
-Content-Type: application/json
-
 {
-  "registerToken": "eyJhbGciOiJIUzI1NiIsIn...",
-  "fullName": "Nguyen Van A",
-  "password": "StrongPassword!123",
-  "tenantName": "Pho Ngon 123",
-  "slug": "pho-ngon-123" // Optional
+  "message": "Validation successful. OTP sent to email.",
+  "registrationToken": "a1b2c3d4-e5f6-...", // Token dùng để submit OTP ở bước sau
+  "expiresIn": 600
 }
+```
 
-Response: 201 Created
+**Error Response (Ví dụ trùng Email): 409 Conflict**
+
+```json
+{
+  "error": {
+    "code": "CONFLICT",
+    "message": "Email already exists",
+    "details": { "field": "email" }
+  }
+}
+```
+
+---
+
+**Step 2: Confirm & Create (Xác thực OTP & Tạo tài khoản)**
+
+User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chuyển từ Redis sang Postgres.
+
+- **Endpoint**: `POST /auth/register/confirm`
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
+```json
+{
+  "registrationToken": "a1b2c3d4-e5f6-...", // Nhận được từ Step 1
+  "otp": "123456"
+}
+```
+
+**Backend Logic**:
+
+1. **Retrieve**: Dùng `registrationToken` lấy dữ liệu tạm từ Redis. Nếu không thấy -> Lỗi `400` (Token hết hạn hoặc không tồn tại).
+2. **Verify OTP**: So khớp `otp` user gửi lên với `otp` trong Redis.
+3. **Transactional Write (Postgres)**:
+    - Insert `TENANT` (dùng dữ liệu từ Redis).
+    - Insert `USER` (dùng email, password_hash từ Redis).
+    - Insert `USER_SESSION` (Login luôn cho user).
+4. **Cleanup**: Xóa key trong Redis.
+5. **Token Generation**: Tạo Access/Refresh Token.
+
+**Response: 201 Created**
+
+```json
 {
   "accessToken": "eyJhbGciOiJIUzI1Ni...",
-  "refreshToken": "d792f321-...", // Chuỗi random dài, hash sẽ được lưu vào DB
+  "refreshToken": "d792f321-...",
   "user": {
     "id": "uuid-user-1",
     "email": "owner@new-restaurant.com",
     "role": "OWNER",
-    "status": "ACTIVE"
+    "fullName": "Nguyen Van A"
   },
   "tenant": {
     "id": "uuid-tenant-1",
     "name": "Pho Ngon 123",
+    "slug": "pho-ngon-123",
     "status": "ACTIVE",
     "onboardingStep": 1
   }
@@ -215,13 +247,13 @@ Payload của Access Token phản ánh trực tiếp dữ liệu từ bảng `US
 #### 2.2.2. Role-Based Access Control (RBAC)
 
 Dựa trên Enum `role` trong Database:
-*Đối với Super Admin: Không cần registry (liên hệ bên cung cấp sản phẩm để đăng ký tài khoản, login như các role dưới)*
+_Đối với Super Admin: Không cần registry (liên hệ bên cung cấp sản phẩm để đăng ký tài khoản, login như các role dưới)_
 
-| **Role (DB Enum)** | **Description**          | **Permissions**                                                          |
-| ------------------ | ------------------------ | ------------------------------------------------------------------------ |
-| **OWNER**          | Chủ nhà hàng             | Full CRUD on Tenant, Users, Menu, Payment Config. (Tương đương Admin cũ) |
-| **STAFF**          | Nhân viên phục vụ        | Read Menu, Create/Update Orders, Payment Status.                         |
-| **KITCHEN**        | Đầu bếp/Bar              | Read Orders (Real-time), Update Order State (Preparing -> Ready).        |
+| **Role (DB Enum)** | **Description**   | **Permissions**                                                          |
+| ------------------ | ----------------- | ------------------------------------------------------------------------ |
+| **OWNER**          | Chủ nhà hàng      | Full CRUD on Tenant, Users, Menu, Payment Config. (Tương đương Admin cũ) |
+| **STAFF**          | Nhân viên phục vụ | Read Menu, Create/Update Orders, Payment Status.                         |
+| **KITCHEN**        | Đầu bếp/Bar       | Read Orders (Real-time), Update Order State (Preparing -> Ready).        |
 
 ### 2.3. Tenant Isolation Strategy
 
@@ -229,7 +261,9 @@ Dựa trên Enum `role` trong Database:
 
 1. **Extraction**: Middleware `AuthGuard` sẽ extract `tenantId` từ JWT (đối với Staff) hoặc từ QR Token (đối với Customer).
 2. **Context Injection**: `tenantId` được gán vào `Request Context` (ví dụ: `req.user.tenantId`).
-3. **Database Query**: Mọi query xuống Postgres **bắt buộc** phải có mệnh đề `WHERE tenant_id = ...`.
+3. **Database Query**: Mọi query xuống Postgres **bắt buộc** phải có mệnh đề `WHERE tenant_id = ...`. Sử dụng chiến lược Defense in Depth với 2 lớp bảo vệ:
+    - Application Logic: Middleware của ORM sẽ tự động chèn điều kiện `WHERE tenant_id = <current_tenant>` vào tất cả các câu lệnh `find`, `update`, `delete` trước khi gửi xuống DB.
+    - Database RLS (Row-Level Security): Ngay cả khi tầng Application có lỗi (bug ở middleware, quên filter), Database sẽ chặn truy cập nếu`tenant_id` của dòng dữ liệu không khớp với session context hiện tại.
 
 ## 3. Error Handling
 
@@ -326,7 +360,6 @@ X-RateLimit-Reset: 1704960060
 ## 5. Tenants API
 
 > Lưu ý: Việc tạo Tenant mới (Create) đã được thực hiện tự động trong API /auth/register/create. Các API dưới đây dành cho OWNER để thiết lập thông tin nhà hàng (Onboarding) sau khi đã đăng nhập.
-> 
 
 ### 5.1. Get Tenant Details (Context Loading)
 
@@ -409,7 +442,8 @@ Content-Type: application/json
 
 ```json
 {
-  "stripeAccountId": "acct_123456789" // ID tài khoản Stripe Connect của nhà hàng
+  "stripeAccountId": "acct_123456789", // ID tài khoản Stripe Connect của nhà hàng
+  "onboardingStep": 3
 }
 ```
 
@@ -441,9 +475,10 @@ Authorization: Bearer <access_token>
 {
   "id": "uuid-tenant-123",
   "status": "ACTIVE",
-  "onboardingStep": 99 // Hoặc số max để đánh dấu hoàn thành
+  "onboardingStep": 4 // Hoặc số max để đánh dấu hoàn thành
 }
 ```
+
 ---
 
 <!--
