@@ -9,6 +9,8 @@ erDiagram
         enum role "OWNER, STAFF, KITCHEN"
         enum status "ACTIVE, INACTIVE, PENDING, LOCKED"
         string tenant_id FK
+        datetime created_at
+        datetime updated_at
     }
 
     %% --- SESSION MANAGEMENT ---
@@ -30,6 +32,8 @@ erDiagram
         json setting "Cấu hình: màu sắc, tiền tệ, v.v."
         json opening_hours
         int onboarding_step
+        datetime created_at
+        datetime updated_at
     }
 
     %% --- SECURE PAYMENT ---
