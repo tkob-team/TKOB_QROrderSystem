@@ -5,7 +5,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
@@ -270,7 +270,7 @@ export class AuthService {
     userId: string,
     deviceInfo?: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const user = await this.prisma.user.findUniqueOrThrow({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
