@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode } from 'lucide-react';
-
+import "../../styles/globals.css";
 interface LoginProps {
   onNavigate?: (screen: string) => void;
 }
@@ -32,7 +32,7 @@ export function Login({ onNavigate }: LoginProps) {
         </select>
       </div>
 
-      <Card className="w-full max-w-md p-8 shadow-md">
+      <Card className="w-full max-w-md p-8">
         <div className="flex flex-col gap-8">
           {/* Logo & Title */}
           <div className="flex flex-col items-center gap-4">

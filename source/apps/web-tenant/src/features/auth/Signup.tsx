@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode } from 'lucide-react';
-
+import "../../styles/globals.css";
 interface SignupProps {
   onNavigate?: (screen: string) => void;
 }
