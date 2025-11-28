@@ -21,7 +21,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@/app/*": ["./app/*"],
       "@packages/ui": ["../../packages/ui/src"],
       "@packages/dto": ["../../packages/dto/src"],
       "@packages/config": ["../../packages/config/src"]

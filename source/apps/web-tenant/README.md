@@ -63,43 +63,111 @@ pnpm start
 
 ## Project Structure
 
+Following **Next.js 15 App Router** + **Clean Architecture** principles:
+
 ```
 web-tenant/
-├── app/                    # Next.js App Router
-│   ├── (auth)/             # Authentication routes
-│   │   └── login/
-│   ├── (admin)/            # Admin routes (protected)
-│   │   ├── dashboard/
-│   │   ├── menu/
-│   │   ├── tables/
-│   │   └── orders/
-│   ├── layout.tsx          # Root layout
-│   └── providers.tsx       # Client providers
-│
 ├── src/
-│   ├── features/           # Feature modules
+│   ├── app/                           # Next.js 15 App Router (Presentation Layer)
+│   │   ├── (auth)/                    # Route group: Authentication pages
+│   │   │   ├── login/page.tsx         # Thin wrapper → imports from features/auth
+│   │   │   ├── signup/page.tsx
+│   │   │   ├── email-verification/page.tsx
+│   │   │   └── onboarding/page.tsx
+│   │   │
+│   │   ├── (admin)/                   # Route group: Protected admin routes
+│   │   │   ├── layout.tsx             # Admin layout with navigation
+│   │   │   ├── dashboard/page.tsx     # Each page imports from features/
+│   │   │   ├── menu/page.tsx
+│   │   │   ├── orders/page.tsx
+│   │   │   └── tables/page.tsx
+│   │   │
+│   │   ├── api/                       # API routes (if needed for BFF pattern)
+│   │   ├── layout.tsx                 # Root layout
+│   │   ├── page.tsx                   # Home page with auth redirect
+│   │   └── providers.tsx              # Client-side providers wrapper
+│   │
+│   ├── features/                  # Feature Modules (Domain Layer)
+│   │   │                          # Each feature is self-contained
 │   │   ├── auth/
+│   │   │   ├── components/        # Feature-specific UI components
+│   │   │   │   ├── Login.tsx
+│   │   │   │   ├── Signup.tsx
+│   │   │   │   └── EmailVerification.tsx
+│   │   │   ├── hooks/             # Feature-specific hooks
+│   │   │   ├── types/             # Feature types/interfaces
+│   │   │   ├── api/               # Feature API calls
+│   │   │   └── index.ts           # Public exports
+│   │   │
 │   │   ├── dashboard/
+│   │   │   ├── components/
+│   │   │   │   └── Dashboard.tsx
+│   │   │   └── index.ts
+│   │   │
 │   │   ├── menu-management/
+│   │   ├── order-management/
 │   │   ├── tables/
-│   │   └── order-management/
+│   │   └── staff/
 │   │
-│   ├── shared/             # Shared resources
-│   │   ├── components/     # Reusable components
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── utils/          # Utility functions
-│   │   ├── types/          # TypeScript types
-│   │   └── context/        # React contexts
+│   ├── shared/                    # Shared/Common Layer
+│   │   ├── components/
+│   │   │   ├── ui/                # Reusable UI components (Button, Input, Card)
+│   │   │   ├── layouts/           # Layout components
+│   │   │   └── auth/              # Shared auth components (RoleGuard)
+│   │   ├── hooks/                 # Shared custom hooks
+│   │   ├── utils/                 # Helper/utility functions
+│   │   ├── types/                 # Shared TypeScript types
+│   │   └── context/               # Global React contexts (AuthContext)
 │   │
-│   ├── lib/                # Core libraries
-│   │   ├── api/            # API client
-│   │   └── providers/      # React providers
+│   ├── lib/                       # Infrastructure Layer
+│   │   ├── api/                   # API client configuration
+│   │   │   ├── axios.ts           # Axios instance
+│   │   │   └── endpoints.ts       # API endpoint definitions
+│   │   ├── providers/             # Provider configurations
+│   │   └── router/                # Router utilities
 │   │
-│   ├── store/              # Global state (Zustand)
-│   └── styles/             # Global styles
+│   ├── store/                     # Global State Management
+│   │   └── (Zustand stores)       # UI state, cached data
+│   │
+│   └── styles/                    # Global Styles
+│       └── globals.css            # Tailwind + custom CSS
 │
-├── public/                 # Static assets
+├── public/                        # Static Assets
+│   ├── icons/
+│   └── images/
+│
 └── package.json
+
+```
+
+### Architecture Principles
+
+**Clean Architecture Layers:**
+
+1. **Presentation Layer** (`app/`)
+   - Thin page wrappers that only handle routing
+   - Import feature components, no business logic
+   - Handle Next.js specific concerns (metadata, layouts)
+
+2. **Domain/Feature Layer** (`src/features/`)
+   - Self-contained feature modules
+   - Business logic and feature-specific UI
+   - Can import from `shared/` and `lib/`
+
+3. **Shared Layer** (`src/shared/`)
+   - Reusable components, hooks, utilities
+   - No feature-specific logic
+   - Can be used by any feature
+
+4. **Infrastructure Layer** (`src/lib/`)
+   - API clients, providers, external service configs
+   - Framework-agnostic when possible
+
+**Data Flow:**
+```
+app/page.tsx → features/Feature.tsx → shared/components → lib/api
+     ↓              ↓                       ↓                ↓
+  Routing      Business Logic        UI Primitives    External APIs
 ```
 
 ## Environment Variables

@@ -1,90 +1,221 @@
 # Customer Web App (Frontend)
 
-Frontend Next.js cho ứng dụng khách hàng quét QR, đặt món và thanh toán.
+Frontend Next.js 15 cho ứng dụng khách hàng quét QR, đặt món và thanh toán.
 
 ## 1. Giới thiệu
 Mục tiêu: hiển thị menu theo tenant (quán), cho phép khách thêm vào giỏ, checkout, theo dõi trạng thái đơn hàng.
 
+**Architecture**: Clean Architecture với Next.js 15 App Router
+- **Presentation Layer**: `app/` - Routing và page wrappers
+- **Domain Layer**: `src/features/` - Business logic và feature UI
+- **Shared Layer**: `src/shared/` - Reusable components/hooks/utils
+- **Infrastructure Layer**: `src/lib/` - API clients, providers
+
 ## 2. Quick Start
 ```bash
-pnpm --filter @app/web-customer dev
+pnpm --filter web-customer dev
 ```
-Truy cập: http://localhost:3000
+Truy cập: http://localhost:3001
 
 ## 3. Tech Stack
-- Next.js / React (App Router)
-- TailwindCSS (utility-first styling)
-- TanStack Query (fetch + cache dữ liệu server)
-- Zustand (hoặc Context API) (global client state: giỏ hàng, UI flags)
+- **Framework**: Next.js 15 (App Router)
+- **UI**: React 19, TailwindCSS v4
+- **State**: TanStack Query (server state), Zustand (client state: giỏ hàng)
+- **API**: Axios client with interceptors
+- **Icons**: lucide-react
 
-## 4. Cấu trúc Thư mục (đề xuất)
+## 4. Cấu trúc Thư mục (Clean Architecture)
 
 ```
-client/
-└─ src/
-    ├─ app/
-    │  ├─ layout.tsx
-    │  ├─ page.tsx
-    │  └─ menu/
-    │     └─ [tenantId]/
-    │        └─ page.tsx
-    ├─ components/
-    │  ├─ ui/
-    │  │  ├─ Button.tsx
-    │  │  ├─ Input.tsx
-    │  │  ├─ Modal.tsx
-    │  │  └─ Card.tsx
-    │  └─ features/
-    │     ├─ menu/
-    │     │  └─ MenuList.tsx
-    │     ├─ cart/
-    │     │  └─ CartSidebar.tsx
-    │     └─ checkout/
-    │        └─ CheckoutForm.tsx
-    ├─ hooks/
-    │  ├─ useCartStore.ts
-    │  ├─ useMenu.ts
-    │  └─ useOrderStatus.ts
-    ├─ lib/
-    │  ├─ api.ts
-    │  └─ utils.ts
-    └─ styles/
-        └─ globals.css
+web-customer/
+├─ src/
+│  ├─ app/                      # Presentation Layer (Next.js App Router)
+│  │  ├─ layout.tsx             # Root layout
+│  │  ├─ page.tsx               # Landing page
+│  │  ├─ providers.tsx          # Client providers wrapper
+│  ├─ (auth)/                   # Route group: Auth pages
+│  │  └─ login/page.tsx
+│  ├─ (menu)/                   # Route group: Menu browsing
+│  │  ├─ menu/page.tsx
+│  │  └─ [itemId]/page.tsx
+│  └─ (cart)/                   # Route group: Cart & checkout
+│     ├─ cart/page.tsx
+│     └─ checkout/page.tsx
+│
+├─ src/
+│  ├─ features/                 # Domain Layer (Business logic)
+│  │  ├─ landing/               # QR validation & welcome
+│  │  ├─ menu-view/             # Menu browsing
+│  │  │  ├─ components/
+│  │  │  │  ├─ MenuList.tsx
+│  │  │  │  └─ MenuItem.tsx
+│  │  │  ├─ hooks/
+│  │  │  │  └─ useMenu.ts
+│  │  │  └─ index.ts
+│  │  ├─ cart/                  # Cart management
+│  │  │  ├─ components/
+│  │  │  ├─ store/
+│  │  │  │  └─ cartStore.ts    # Zustand store
+│  │  │  └─ index.ts
+│  │  ├─ checkout/              # Checkout & payment
+│  │  └─ order-tracking/        # Order status tracking
+│  │
+│  ├─ shared/                   # Shared Layer (Reusable)
+│  │  ├─ components/
+│  │  │  ├─ ui/                 # UI primitives
+│  │  │  │  ├─ Button.tsx
+│  │  │  │  ├─ Input.tsx
+│  │  │  │  └─ Card.tsx
+│  │  │  └─ layouts/            # Layout components
+│  │  ├─ context/               # Global contexts
+│  │  │  ├─ SessionContext.tsx  # Customer session
+│  │  │  ├─ TenantContext.tsx   # Restaurant details
+│  │  │  └─ TableContext.tsx    # Table info
+│  │  ├─ hooks/                 # Shared hooks
+│  │  └─ utils/                 # Helpers
+│  │
+│  ├─ lib/                      # Infrastructure Layer
+│  │  ├─ api/
+│  │  │  ├─ client.ts           # Axios instance
+│  │  │  └─ endpoints.ts
+│  │  └─ qr/
+│  │     └─ validateQRToken.ts
+│  │
+│  ├─ store/                    # Global state (Zustand)
+│  └─ styles/
+│     └─ globals.css
+│
+└─ public/                      # Static assets
 ```
 
-### Giải thích nhanh
-- app/: Routing Next.js. Mỗi page là entry UI (SSR/SSG/CSR linh hoạt). Ví dụ: `app/menu/[tenantId]/page.tsx` lấy menu theo quán.
-- components/ui/: Dumb/presentational components. Không chứa logic nghiệp vụ, chỉ nhận props và render.
-- components/features/ (hoặc tách riêng thành `features/`): Smart components gắn logic của một domain (menu, cart, checkout). Có thể kết hợp hooks + query.
-- hooks/: Custom hooks tái sử dụng (truy vấn, state, side-effects).
-- lib/api.ts: Định nghĩa hàm gọi API + wrapper TanStack Query (ví dụ `getMenuByTenant`, `useMenuQuery`).
-- lib/utils.ts: Format tiền, chuẩn hóa thời gian, helper chung.
-- styles/: File CSS/Tailwind entry.
+### Giải thích Clean Architecture Layers
 
-## 5. Quy ước Component
-- Dumb (ui): Tên PascalCase, không side-effect, không gọi API.
-- Smart (features): Có thể dùng TanStack Query, Zustand, tách nhỏ UI con nếu cần.
-- Tránh logic bất biến lặp lại: đưa vào hooks (ví dụ: mapping response, derive state).
+**1. Presentation Layer (`app/`)**
+- **Purpose**: Handle routing only, thin page wrappers
+- **Rules**: Import from `features/`, no business logic
+- **Example**: `app/menu/page.tsx` renders `<MenuView />` from features
 
-## 6. TanStack Query
-- Khóa (query key) chuẩn: `['menu', tenantId]`, `['order', orderId]`.
-- Dùng mutation cho hành động: tạo order, update status.
-- Prefetch trong server component nếu cần SEO.
+**2. Domain Layer (`src/features/`)**
+- **Purpose**: Business logic and feature-specific UI
+- **Rules**: Self-contained, can import from `shared/` and `lib/`
+- **Example**: `features/cart/` owns cart logic, UI, and Zustand store
 
-## 7. Zustand (giỏ hàng)
-- Store tối giản: items[], addItem, removeItem, clearCart, total.
-- Không lưu dữ liệu nặng (chỉ id, qty, price).
+**3. Shared Layer (`src/shared/`)**
+- **Purpose**: Reusable components/hooks/utils
+- **Rules**: No feature-specific logic, used by any feature
+- **Example**: `shared/components/ui/Button.tsx` is a generic button
 
-## 8. Utils (ví dụ)
+**4. Infrastructure Layer (`src/lib/`)**
+- **Purpose**: API clients, external service configs
+- **Rules**: Framework-agnostic when possible
+- **Example**: `lib/api/client.ts` configures Axios with interceptors
+
+## 5. Architecture Principles
+
+### Data Flow (Clean Architecture)
+```
+app/page.tsx → features/Feature.tsx → shared/components → lib/api
+     ↓              ↓                       ↓                ↓
+  Routing      Business Logic        UI Primitives    External APIs
+```
+
+### Dependency Rule
+- **app/** can import from `features/`
+- **features/** can import from `shared/`, `lib/`, other features (via index.ts)
+- **shared/** can import from `lib/` only (no features)
+- **lib/** can import external libraries only (no app code)
+
+### Component Patterns
+- **Dumb (ui)**: Presentational, no side-effects, no API calls
+- **Smart (features)**: Can use TanStack Query, Zustand, business logic
+- **Page (app)**: Thin wrapper, imports from features, handles routing
+
+## 6. State Management
+
+### Server State (TanStack Query)
 ```ts
-// lib/utils.ts
-export const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+// features/menu-view/hooks/useMenu.ts
+export const useMenu = (tenantId: string) => {
+  return useQuery({
+    queryKey: ['menu', tenantId],
+    queryFn: () => menuService.getMenu(tenantId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
 ```
 
-## 9. Naming / Import
-- Tuyệt đối import tương đối từ `@/` alias (nếu config): `import MenuList from '@/components/features/menu/MenuList'`.
-- Không để logic API trong component; dùng hook hoặc hàm ở `lib/api.ts`.
+### Client State (Zustand)
+```ts
+// features/cart/store/cartStore.ts
+export const useCartStore = create<CartState>()(
+  persist(
+    (set) => ({
+      items: [],
+      addItem: (item) => set((state) => ({ items: [...state.items, item] })),
+      clearCart: () => set({ items: [] }),
+    }),
+    { name: 'cart-storage' }
+  )
+);
+```
+
+## 7. Context Providers
+
+### Session Management
+```tsx
+// shared/context/SessionContext.tsx
+export function SessionProvider({ children }) {
+  const [tenantId, setTenantId] = useState(null);
+  const [tableId, setTableId] = useState(null);
+  
+  return (
+    <SessionContext.Provider value={{ tenantId, tableId, setSession }}>
+      {children}
+    </SessionContext.Provider>
+  );
+}
+```
+
+### Provider Hierarchy
+```tsx
+// app/providers.tsx
+<QueryClientProvider>
+  <SessionProvider>
+    <TenantProvider>
+      <TableProvider>
+        {children}
+      </TableProvider>
+    </TenantProvider>
+  </SessionProvider>
+</QueryClientProvider>
+```
+
+## 8. Import Rules
+
+### ✅ Allowed
+```ts
+// External libraries
+import { useQuery } from '@tanstack/react-query';
+
+// Shared resources
+import { Button } from '@/shared/components/ui';
+import { formatCurrency } from '@/shared/utils';
+
+// Within same feature (relative)
+import { useMenu } from '../hooks/useMenu';
+
+// From other features (via index.ts only)
+import { useCart } from '@/features/cart';
+```
+
+### ❌ Prohibited
+```ts
+// Don't import internal files from other features
+import { CartItem } from '@/features/cart/components/CartItem';
+
+// Don't use deep relative imports across features
+import { useAuth } from '../../../auth/hooks/useAuth';
+```
 
 ## 10. Mở rộng
 Thêm feature mới:
