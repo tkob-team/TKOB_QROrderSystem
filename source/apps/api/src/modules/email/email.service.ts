@@ -31,10 +31,17 @@ export class EmailService {
         html: this.getOTPTemplate(otp),
       });
       
-      this.logger.log(`OTP sent to ${email}`);
+      this.logger.log(`OTP sent successfully to ${email}`);
     } catch (error) {
-      this.logger.error(`Failed to send OTP to ${email}`, error);
-      throw new Error('Failed to send OTP email');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : JSON.stringify(error);
+      
+      this.logger.error(
+        `Failed to send OTP to ${email}. Error: ${errorMessage}`,
+        errorStack,
+      );
+      
+      throw new Error(`Failed to send OTP email: ${errorMessage}`);
     }
   }
 

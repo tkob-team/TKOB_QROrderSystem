@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import Redis from 'ioredis';
 import { EnvConfig } from "src/config/env.validation";
 import { RedisService } from './redis.service';
 
@@ -9,20 +10,19 @@ import { RedisService } from './redis.service';
   providers: [
     {
       provide: 'REDIS_CLIENT',
-      useFactory: async (configService: ConfigService<EnvConfig, true>) => {
-        const { Redis } = await import('ioredis');
-
+      useFactory: (configService: ConfigService<EnvConfig, true>) => {
         const password = configService.get('REDIS_PASSWORD', { infer: true });
         
         const client = new Redis({
           host: configService.get('REDIS_HOST', { infer: true }),
           port: configService.get('REDIS_PORT', { infer: true }),
-          password: password || undefined, // Chỉ set khi có password
+          password: password || undefined,
           db: configService.get('REDIS_DB', { infer: true }),
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000);
             return delay;
-          }
+          },
+          lazyConnect: false, // Kết nối ngay lập tức
         });
 
         client.on('error', (err) => {
@@ -32,6 +32,10 @@ import { RedisService } from './redis.service';
         client.on('connect', () => {
           console.log('Redis Client Connected');
         });
+
+        client.on('ready', () => {
+          console.log('Redis Client Ready');
+        });
         
         return client;
       },
@@ -39,6 +43,6 @@ import { RedisService } from './redis.service';
     },
     RedisService,
   ],
-  exports: [RedisService],
+  exports: ['REDIS_CLIENT', RedisService],
 })
 export class RedisModule {}

@@ -274,6 +274,10 @@ export class AuthService {
       where: { id: userId },
     });
 
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    
     const accessToken = this.generateAccessToken(user.id, user.email, user.role, user.tenantId);
 
     const refreshToken = this.generateRefreshToken(user.id);
