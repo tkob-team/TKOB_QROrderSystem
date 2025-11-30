@@ -6,16 +6,17 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({ variant = 'primary', children, className = '', ...props }: ButtonProps) {
-  const baseClasses = 'px-6 py-3 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
-  
+  // Compact modern base style matching admin-screens buttons
+  const baseClasses = 'inline-flex h-12 px-6 items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none shadow-none hover:shadow-md active:shadow-inner';
+
   const variantClasses = {
-    primary: 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-sm active:scale-[0.98]',
-    secondary: 'bg-white text-emerald-500 border-2 border-emerald-500 hover:bg-emerald-50 active:scale-[0.98]',
-    tertiary: 'bg-transparent text-emerald-500 hover:bg-emerald-50 active:scale-[0.98]'
-  };
-  
+    primary: 'bg-emerald-500 text-white hover:bg-emerald-600 active:bg-emerald-700',
+    secondary: 'bg-white text-emerald-600 border-2 border-emerald-500 hover:bg-emerald-50 active:bg-emerald-100',
+    tertiary: 'bg-transparent text-emerald-600 hover:bg-emerald-50 active:bg-emerald-100'
+  } as const;
+
   return (
-    <button 
+    <button
       className={`${baseClasses} ${variantClasses[variant]} ${className}`}
       {...props}
     >
