@@ -163,6 +163,7 @@ User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chu
 {
   "accessToken": "eyJhbGciOiJIUzI1Ni...",
   "refreshToken": "d792f321-...",
+  "expiresIn": 3600
   "user": {
     "id": "uuid-user-1",
     "email": "owner@new-restaurant.com",
@@ -196,13 +197,21 @@ Content-Type: application/json
 Response: 200 OK
 {
   "accessToken": "eyJhbGciOiJIUzI1Ni...",
-  "refreshToken": "82a1b2c3-...", // Client cần lưu secure storage
-  "expiresIn": 3600, // Access Token TTL
+  "refreshToken": "d792f321-...",
+  "expiresIn": 3600,
   "user": {
-    "id": "uuid-user-2",
-    "fullName": "Tran Van B",
-    "role": "STAFF",
+    "id": "uuid-user-1",
+    "email": "owner@restaurant.com",
+    "fullName": "Nguyen Van A",
+    "role": "OWNER",
     "tenantId": "uuid-tenant-1"
+  },
+  "tenant": {
+    "id": "uuid-tenant-1",
+    "name": "Pho Ngon 123",
+    "slug": "pho-ngon-123",
+    "status": "ACTIVE",
+    "onboardingStep": 1
   }
 }
 ```
@@ -225,6 +234,55 @@ Response: 200 OK
   "expiresIn": 3600
 }
 ```
+
+#### 2.1.4. Logout
+
+Dùng `refreshToken` để đăng xuất khỏi chính xác thiết bị thực hiện `logout` (bằng cách so sánh `refreshToken`)
+
+```json
+POST /auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "82a1b2c3-..."
+}
+
+Response: 200 OK
+
+```
+#### 2.1.5. Get Current User Profile
+
+Lấy thông tin user hiện tại từ access token. Yêu cầu gửi access token hợp lệ qua header `Authorization: Bearer <accessToken>`. Backend sẽ giải mã JWT và trả về thông tin user.
+
+```http
+GET /auth/me
+Authorization: Bearer <accessToken>
+Accept: application/json
+```
+
+**Response: 200 OK**
+```json
+{
+  "user": {
+    "id": "81aa5006-9ed9-401e-9b63-acca4d9ee5e8",
+    "email": "nphuchoang.itus@gmail.com",
+    "role": "OWNER",
+    "tenantId": "4782895c-79b7-445a-826a-5534af3b8589"
+  }
+}
+```
+
+- Nếu access token không hợp lệ hoặc hết hạn sẽ trả về:
+```json
+{
+  "message": "Unauthorized",
+  "statusCode": 401
+}
+```
+
+**Chú thích:**  
+- Endpoint này dùng để lấy thông tin user đang đăng nhập, thường dùng cho trang profile hoặc kiểm tra trạng thái đăng nhập.  
+- Không cần truyền thêm tham số nào ngoài access token.
 
 ### 2.2. Token Claims & Authorization
 

@@ -11,13 +11,16 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   constructor(private readonly configService: ConfigService<EnvConfig, true>) {
+    const databaseUrl = configService.get('DATABASE_URL', { infer: true });
+    process.env.DATABASE_URL = databaseUrl;
+
     super({
       log: [
         { emit: 'event', level: 'query' }, // Quan trọng: đổi thành 'event'
         { emit: 'event', level: 'info' },
         { emit: 'event', level: 'warn' },
         { emit: 'event', level: 'error' },
-      ]
+      ],
     });
   }
 

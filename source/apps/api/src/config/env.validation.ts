@@ -3,23 +3,40 @@ import { z } from 'zod';
 
 // 1. Định nghĩa Schema
 export const envSchema = z.object({
-  // Node Environment: Force về 1 trong 3 giá trị, default là development
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-
+  
   // API Config
-  // Lưu ý: .env luôn là string, nên ta phải dùng z.coerce.number() để ép kiểu sang số
   API_PORT: z.coerce.number().min(1000).max(65535).default(3000),
   
-  // Database Config (Dựa trên SETUP.md)
+  // Database Config
   DATABASE_URL: z.string().url({ message: "Invalid Database URL format" }),
   
-  // Auth Config
+  // JWT Config
   JWT_SECRET: z.string().min(32, { message: "JWT Secret must be at least 32 chars" }),
-  JWT_EXPIRES_IN: z.string().default('1h'),
+  JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default('1h'),
+  JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
   
-  // Redis (Optional example)
+  // Redis Config
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_DB: z.coerce.number().default(0),
+  
+  // Email Config
+  EMAIL_HOST: z.string().default('smtp.gmail.com'),
+  EMAIL_PORT: z.coerce.number().default(587),
+  EMAIL_SECURE: z.coerce.boolean().default(false),
+  EMAIL_USER: z.string().email(),
+  EMAIL_PASSWORD: z.string().min(1),
+  EMAIL_FROM: z.string().default('QR Ordering <noreply@qr-ordering.com>'),
+  
+  // OTP Config
+  OTP_LENGTH: z.coerce.number().default(6),
+  OTP_EXPIRY_SECONDS: z.coerce.number().default(300),
+  REGISTRATION_DATA_EXPIRY_SECONDS: z.coerce.number().default(600),
+  
+  // CORS
+  CORS_ORIGINS: z.string().optional(),
 });
 
 // 2. Export Type tự động từ Schema (Magic của Zod)
