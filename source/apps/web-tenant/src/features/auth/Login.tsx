@@ -54,7 +54,7 @@ export function Login({ onNavigate }: LoginProps) {
               <QrCode className="w-10 h-10 text-white" />
             </div>
             <div className="flex flex-col items-center gap-2">
-              <h2 className="text-gray-900">QR Dine</h2>
+              <h2 className="text-gray-900">TKQR</h2>
               <p className="text-gray-600">Sign in to your restaurant dashboard</p>
             </div>
           </div>

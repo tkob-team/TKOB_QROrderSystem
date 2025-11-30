@@ -91,7 +91,7 @@ export function EmailVerification({ onNavigate }: EmailVerificationProps) {
           <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
             <QrCode className="w-6 h-6 text-white" />
           </div>
-          <span className="font-semibold text-gray-900" style={{ fontSize: '20px' }}>QR Dine</span>
+          <span className="font-semibold text-gray-900" style={{ fontSize: '20px' }}>TKQR</span>
         </div>
       </div>
 
