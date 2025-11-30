@@ -210,7 +210,7 @@ export class AuthService {
   }
 
   // =============== TOKEN MANAGEMENT ===============
-  async refreshToken(dto: RefreshTokenDto): Promise<{ accessToken: string }> {
+  async refreshToken(dto: RefreshTokenDto): Promise<{ accessToken: string; expiresIn: number }> {
     const { refreshToken } = dto;
 
     // 1. Verify refresh token
@@ -250,18 +250,32 @@ export class AuthService {
       data: { lastUsedAt: new Date() },
     });
 
-    return { accessToken };
+    return {
+      accessToken,
+      expiresIn: this.config.get('JWT_ACCESS_TOKEN_EXPIRES_IN', { infer: true }),
+    };
   }
 
   async logout(userId: string, refreshToken: string): Promise<void> {
-    const tokenHash = await bcrypt.hash(refreshToken, this.SALT_ROUNDS);
-
-    // Find and delete session
-    await this.prisma.userSession.deleteMany({
-      where: {userId}
+    // Find all sessions of this user
+    const sessions = await this.prisma.userSession.findMany({
+      where: { userId },
     });
 
-    this.logger.log(`User logged out: ${userId}`);
+    // Compare refresh token hash to find the correct session
+    for (const session of sessions) {
+      const isMatch = await bcrypt.compare(refreshToken, session.refreshTokenHash);
+      if (isMatch) {
+        // Delete only this session (logout from current device)
+        await this.prisma.userSession.delete({
+          where: { id: session.id },
+        });
+        this.logger.log(`User logged out from device: ${userId}`);
+        return;
+      }
+    }
+
+    throw new UnauthorizedException('Invalid refresh token');
   }
 
   // =============== HELPER FUNCTION ================
@@ -277,7 +291,7 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    
+
     const accessToken = this.generateAccessToken(user.id, user.email, user.role, user.tenantId);
 
     const refreshToken = this.generateRefreshToken(user.id);
