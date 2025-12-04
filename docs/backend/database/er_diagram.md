@@ -27,6 +27,10 @@ erDiagram
     TENANT {
         string id PK
         string name
+        string description
+        string phone
+        string address
+        string logo_url
         string slug UK
         enum status "DRAFT, ACTIVE"
         json setting "Cấu hình: màu sắc, tiền tệ, v.v."

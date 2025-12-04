@@ -32,6 +32,10 @@ enum UserStatus {
 model Tenant {
   id             String       @id @default(uuid()) // PK là UUID
   name           String
+  description    String?
+  phone          String?
+  address        String?
+  logo_url       String?
   slug           String       @unique              // Slug phải unique để làm subdomain/url
   status         TenantStatus @default(DRAFT)      // Mặc định là DRAFT khi mới đăng ký bước 1
   
@@ -47,7 +51,7 @@ model Tenant {
 
   // Relations (Quan hệ ngược)
   users          User[]
-  // paymentConfig TenantPaymentConfig? (Sẽ thêm ở Epic sau)
+  paymentConfig  TenantPaymentConfig?
   
   @@map("tenants") // Tên bảng trong DB là số nhiều 'tenants'
 }
@@ -94,4 +98,13 @@ model UserSession {
   createdAt        DateTime @default(now()) @map("created_at")
 
   @@map("user_sessions")
+}
+
+// 6. Model TENANT_PAYMENT_CONFIG
+model TenantPaymentConfig {
+  id                String   @id @default(uuid())
+  stripe_account_id String
+  tenant_id         String   @unique
+  tenant            Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  @@map("tenant_payment_configs")
 }

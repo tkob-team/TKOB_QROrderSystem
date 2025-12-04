@@ -419,80 +419,193 @@ X-RateLimit-Reset: 1704960060
 
 > Lưu ý: Việc tạo Tenant mới (Create) đã được thực hiện tự động trong API /auth/register/create. Các API dưới đây dành cho OWNER để thiết lập thông tin nhà hàng (Onboarding) sau khi đã đăng nhập.
 
-### 5.1. Get Tenant Details (Context Loading)
+### Base URL
 
-Dùng để Client lấy toàn bộ cấu hình nhà hàng khi App khởi động hoặc vào màn hình Settings.
-
-```json
-GET /tenants/{tenantId}
-Authorization: Bearer <access_token>
+```
+/api/v1/tenants
 ```
 
-Response: 200 OK
+### 1. Get Current Tenant Info
 
-Phản ánh đúng cấu trúc JSON trong database.
+```
+GET /api/v1/tenants/me
+Authorization: Bearer {accessToken}
+```
+
+**Response 200 OK:**
 
 ```json
 {
-  "id": "uuid-tenant-123",
-  "name": "The Golden Spoon",
-  "slug": "golden-spoon",
-  "status": "DRAFT", // Enum: DRAFT, ACTIVE
-  "onboardingStep": 1, // Để Client biết cần hiển thị bước nào tiếp theo
+  "id": "uuid",
+  "name": "Phở Ngon 123",
+  "slug": "pho-ngon-123",
+  "status": "ACTIVE",
+  "onboardingStep": 1,
   "settings": {
     "currency": "VND",
-    "timezone": "Asia/Ho_Chi_Minh",
-    "locale": "vi-VN",
-    "brandColor": "#FF5733"
+    "language": "vi",
+    "timezone": "Asia/Ho_Chi_Minh"
   },
   "openingHours": {
-    "monday": { "open": "10:00", "close": "22:00", "closed": false },
-    "tuesday": { "open": "10:00", "close": "22:00", "closed": false },
-    // ... các ngày khác
-    "sunday": { "open": "10:00", "close": "22:00", "closed": false }
+    "monday": { "open": "08:00", "close": "22:00", "closed": false },
+    "tuesday": { "open": "08:00", "close": "22:00", "closed": false },
+    "wednesday": { "open": "08:00", "close": "22:00", "closed": false },
+    "thursday": { "open": "08:00", "close": "22:00", "closed": false },
+    "friday": { "open": "08:00", "close": "22:00", "closed": false },
+    "saturday": { "open": "08:00", "close": "22:00", "closed": false },
+    "sunday": { "open": "08:00", "close": "22:00", "closed": true }
+  },
+  "createdAt": "2025-01-15T10:00:00Z",
+  "updatedAt": "2025-01-15T10:00:00Z"
+}
+
+```
+
+---
+
+### 5.2. Update Tenant Profile (Onboarding Step 1)
+
+```
+PATCH /api/v1/tenants/profile
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "Phở Ngon 123",
+  "description": "Authentic Vietnamese Pho Restaurant",
+  "phone": "+84901234567",
+  "address": "123 Nguyen Hue, District 1, HCMC",
+  "logoUrl": "https://cdn.example.com/logo.png"
+}
+
+```
+
+**Response 200 OK:**
+
+```json
+{
+  "id": "uuid",
+  "name": "Phở Ngon 123",
+  "slug": "pho-ngon-123",
+  "description": "Authentic Vietnamese Pho Restaurant",
+  "phone": "+84901234567",
+  "address": "123 Nguyen Hue, District 1, HCMC",
+  "logoUrl": "https://cdn.example.com/logo.png",
+  "onboardingStep": 2,
+  "updatedAt": "2025-01-15T10:30:00Z"
+}
+
+```
+
+---
+
+### 5.3. Update Opening Hours (Onboarding Step 2)
+
+```
+PATCH /api/v1/tenants/opening-hours
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "monday": { "open": "08:00", "close": "22:00", "closed": false },
+  "tuesday": { "open": "08:00", "close": "22:00", "closed": false },
+  "wednesday": { "open": "08:00", "close": "22:00", "closed": false },
+  "thursday": { "open": "08:00", "close": "22:00", "closed": false },
+  "friday": { "open": "08:00", "close": "23:00", "closed": false },
+  "saturday": { "open": "08:00", "close": "23:00", "closed": false },
+  "sunday": { "open": "09:00", "close": "21:00", "closed": false }
+}
+```
+
+**Response 200 OK:**
+
+```json
+{
+  "openingHours": {
+    "monday": { "open": "08:00", "close": "22:00", "closed": false },
+    "tuesday": { "open": "08:00", "close": "22:00", "closed": false },
+    "wednesday": { "open": "08:00", "close": "22:00", "closed": false },
+    "thursday": { "open": "08:00", "close": "22:00", "closed": false },
+    "friday": { "open": "08:00", "close": "23:00", "closed": false },
+    "saturday": { "open": "08:00", "close": "23:00", "closed": false },
+    "sunday": { "open": "09:00", "close": "21:00", "closed": false }
+  },
+  "onboardingStep": 3,
+  "updatedAt": "2025-01-15T11:00:00Z"
+}
+```
+
+---
+
+### 5.4. Update Settings (Onboarding Step 3)
+
+```
+PATCH /api/v1/tenants/settings
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "currency": "VND",
+  "language": "vi",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "tax": {
+    "enabled": true,
+    "rate": 10,
+    "label": "VAT"
+  },
+  "serviceCharge": {
+    "enabled": false,
+    "rate": 0
   }
 }
 ```
 
-### 5.2. Update Tenant Profile & Settings
-
-Dùng cho các bước trong Onboarding Wizard (Ví dụ: Cập nhật giờ mở cửa, đổi tên quán, cài đặt tiền tệ).
-
-```json
-PATCH /tenants/{tenantId}
-Authorization: Bearer <access_token>
-Content-Type: application/json
-```
-
-Request Body:
-
-Cho phép cập nhật từng phần (Partial Update).
+**Response 200 OK:**
 
 ```json
 {
-  "name": "The Golden Spoon Premium", // Optional
   "settings": {
-    "currency": "USD",
-    "brandColor": "#000000"
+    "currency": "VND",
+    "language": "vi",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "tax": {
+      "enabled": true,
+      "rate": 10,
+      "label": "VAT"
+    },
+    "serviceCharge": {
+      "enabled": false,
+      "rate": 0
+    }
   },
-  "openingHours": {
-    "monday": { "open": "09:00", "close": "21:00" } // Merge với JSON cũ
-  },
-  "onboardingStep": 2 // Client báo hiệu đã xong bước 1, chuyển sang bước 2
+  "onboardingStep": 4,
+  "updatedAt": "2025-01-15T11:30:00Z"
 }
+
 ```
 
-Response: 200 OK
+---
 
-Trả về object Tenant đã cập nhật.
-
-### 5.3. Configure Payment (Stripe Integration)
+### 5.5. Configure Payment (Stripe Integration)
 
 Dành cho bảng `TENANT_PAYMENT_CONFIG`. API này liên kết tài khoản Stripe của nhà hàng để nhận tiền.
 
 ```json
-PUT /tenants/{tenantId}/payment-config
-Authorization: Bearer <access_token>
+PUT /tenants/payment-config
+Authorization: Bearer {accessToken}
 Content-Type: application/json
 ```
 
@@ -501,8 +614,9 @@ Content-Type: application/json
 ```json
 {
   "stripeAccountId": "acct_123456789", // ID tài khoản Stripe Connect của nhà hàng
-  "onboardingStep": 3
+  "onboardingStep": 5
 }
+
 ```
 
 **Response: 200 OK**
@@ -516,24 +630,50 @@ Content-Type: application/json
 }
 ```
 
-### 5.4. Activate Tenant (Go Live)
+---
 
-Khi hoàn tất Onboarding, Owner chuyển trạng thái từ `DRAFT` sang `ACTIVE` để bắt đầu phục vụ khách.
+### 5.6. Complete Onboarding
 
-```json
-POST /tenants/{tenantId}/activate
-Authorization: Bearer <access_token>
+```
+POST /api/v1/tenants/complete-onboarding
+Authorization: Bearer {accessToken}
 ```
 
-**Request Body:** (Empty)
-
-**Response: 200 OK**
+**Response 200 OK:**
 
 ```json
 {
-  "id": "uuid-tenant-123",
-  "status": "ACTIVE",
-  "onboardingStep": 4 // Hoặc số max để đánh dấu hoàn thành
+  "message": "Onboarding completed successfully",
+  "onboardingStep": 5,
+  "completedAt": "2025-01-15T12:00:00Z"
+}
+```
+
+---
+
+### 5.7. Update Tenant Status (Admin only)
+
+```
+PATCH /api/v1/tenants/:id/status
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "status": "SUSPENDED"
+}
+```
+
+**Response 200 OK:**
+
+```json
+{
+  "id": "uuid",
+  "status": "SUSPENDED",
+  "updatedAt": "2025-01-15T12:30:00Z"
 }
 ```
 

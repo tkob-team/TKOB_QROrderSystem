@@ -11,6 +11,10 @@
 | --------------- | ------ | ----------------------------------------------- |
 | id              | string | Primary Key                                     |
 | name            | string | Tên nhà hàng/quán                               |
+| description     | string | Mô tả cửa hafng                                 |
+| phone           | string | Số điện thoại                                   |
+| address         | string | Địa chỉ                                         |
+| logo_url        | string | Đường dẫn Logo                                  |
 | slug            | string | Unique, URL-friendly identifier (e.g. pho-hung) |
 | status          | enum   | DeennRAFT, ACTIVE, SUSPENDED                    |
 | settings        | json   | Cấu hình: màu sắc, tiền tệ, v.v.                |
