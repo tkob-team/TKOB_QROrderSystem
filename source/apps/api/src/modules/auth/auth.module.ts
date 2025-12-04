@@ -2,18 +2,34 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { EnvConfig } from 'src/config/env.validation';
-import { RedisModule } from '../redis/redis.module';
-import { EmailModule } from '../email/email.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { EnvConfig } from '../../config/env.validation';
+
+// Controllers
+import { AuthController } from './controllers/auth.controller';
+
+// Services
+import { AuthService } from './services/auth.service';
+import { RegistrationService } from './services/registration.service';
+import { SessionService } from './services/session.service';
+import { TokenService } from './services/token.service';
+import { OtpService } from './services/otp.service';
+
+// Guards & Strategies
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
+import { JwtStrategy } from './strategies/jwt.strategy';
+
+// External modules (already global)
+// - PrismaModule
+// - RedisModule
+// - EmailModule
 
 @Module({
   imports: [
+    // Passport configuration
     PassportModule.register({ defaultStrategy: 'jwt' }),
+
+    // JWT configuration
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService<EnvConfig, true>) => ({
@@ -24,11 +40,32 @@ import { RolesGuard } from './guards/roles.guard';
       }),
       inject: [ConfigService],
     }),
-    RedisModule,
-    EmailModule,
   ],
+
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-  exports: [AuthService, JwtAuthGuard, RolesGuard],
+
+  providers: [
+    // Main orchestrator
+    AuthService,
+
+    // Specialized services
+    RegistrationService,
+    SessionService,
+    TokenService,
+    OtpService,
+
+    // Guards & Strategies
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+
+  exports: [
+    // Export for use in other modules
+    AuthService,
+    JwtAuthGuard,
+    RolesGuard,
+    TokenService, // May be needed for other modules
+  ],
 })
 export class AuthModule {}

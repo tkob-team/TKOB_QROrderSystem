@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { EnvConfig } from '../src/config/env.validation'; // Import Type bạn đã tạo
+import { EnvConfig } from '../config/env.validation'; // Import Type bạn đã tạo
 
 @Injectable()
 export class PrismaService

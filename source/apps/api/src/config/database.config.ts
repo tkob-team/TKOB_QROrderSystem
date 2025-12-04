@@ -1,4 +1,3 @@
-// apps/api/prisma/prisma.config.ts
 import { defineConfig } from '@prisma/config';
 import * as dotenv from 'dotenv';
 import * as path from 'path';

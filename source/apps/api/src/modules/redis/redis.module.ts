@@ -18,6 +18,7 @@ import { RedisService } from './redis.service';
           port: configService.get('REDIS_PORT', { infer: true }),
           password: password || undefined,
           db: configService.get('REDIS_DB', { infer: true }),
+          ...(password ? { password } : {}), // Chỉ truyền password nếu có giá trị thực sự
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000);
             return delay;
