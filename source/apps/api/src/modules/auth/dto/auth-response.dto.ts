@@ -1,7 +1,6 @@
-// src/modules/auth/dto/auth-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UserResponseDto {
+export class AuthUserResponseDto {
   @ApiProperty({ example: 'uuid-user-1' })
   id: string;
 
@@ -18,7 +17,7 @@ export class UserResponseDto {
   tenantId?: string;
 }
 
-export class TenantResponseDto {
+export class AuthTenantResponseDto {
   @ApiProperty({ example: 'uuid-tenant-1' })
   id: string;
 
@@ -45,11 +44,11 @@ export class AuthResponseDto {
   @ApiProperty({ example: 3600, description: 'Access token expiration time in seconds' })
   expiresIn: number;
 
-  @ApiProperty({ type: UserResponseDto })
-  user: UserResponseDto;
+  @ApiProperty({ type: AuthUserResponseDto })
+  user: AuthUserResponseDto;
 
-  @ApiProperty({ type: TenantResponseDto, required: false })
-  tenant?: TenantResponseDto;
+  @ApiProperty({ type: AuthTenantResponseDto, required: false })
+  tenant?: AuthTenantResponseDto;
 }
 
 export class RegisterSubmitResponseDto {

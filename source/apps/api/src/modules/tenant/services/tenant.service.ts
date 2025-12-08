@@ -1,16 +1,5 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma.service';
-import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { UpdateOpeningHoursDto } from '../dto/update-opening-hours.dto';
-import { UpdateSettingsDto } from '../dto/update-settings.dto';
-import { UpdatePaymentConfigDto } from '../dto/update-payment-config.dto';
 import { TenantStatus } from '@prisma/client';
 
 @Injectable()

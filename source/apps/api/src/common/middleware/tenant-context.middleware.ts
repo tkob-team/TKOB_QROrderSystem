@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from '../../database/prisma.service';
 import * as jwt from 'jsonwebtoken'; // Cần cài: pnpm add jsonwebtoken @types/jsonwebtoken
 
-// Extend Express Request type (Giữ nguyên như bạn làm là đúng)
+// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
@@ -44,8 +44,9 @@ export class TenantContextMiddleware implements NestMiddleware {
     }
 
     if (tenantId) {
-      // Gán vào req để Controller tiện dùng (như code cũ của bạn)
+      // Gán vào req để Controller tiện dùng
       req.tenant = { id: tenantId };
+      res.setHeader('x-tenant-id', tenantId);
       this.logger.debug(`Tenant context initialized: ${tenantId}`);
 
       // QUAN TRỌNG NHẤT: Bọc next() vào trong AsyncLocalStorage

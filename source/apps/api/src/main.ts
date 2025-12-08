@@ -1,10 +1,9 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
-import { EnvConfig } from './config/env.validation';
+import type { EnvConfig } from './config/env.validation';
 
 // Import filters
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -21,8 +20,7 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  // Use Pino logger globally
-  app.useLogger(app.get(Logger));
+  app.useLogger(['log', 'error', 'warn', 'debug', 'verbose']);
 
   // Get config service
   const configService = app.get<ConfigService<EnvConfig, true>>(ConfigService);
@@ -43,7 +41,7 @@ async function bootstrap() {
 
   // ==================== EXCEPTION FILTERS ====================
   // Order matters: Most specific first, most general last
-  const reflector = app.get(Reflector);
+  const _reflector = app.get(Reflector);
 
   app.useGlobalFilters(
     new AllExceptionsFilter(), // Catch-all (fallback)
@@ -79,7 +77,9 @@ async function bootstrap() {
       .addBearerAuth()
       .addTag('Authentication', 'User authentication & registration')
       .addTag('Tenants', 'Restaurant/tenant management')
-      .addTag('Menu', 'Menu categories & items')
+      .addTag('Menu - Categories', 'Menu categories management')
+      .addTag('Menu - Items', 'Menu items management')
+      .addTag('Menu - Modifiers', 'Menu item modifiers management')
       .addTag('Tables', 'Table management & QR codes')
       .addTag('Orders', 'Order placement & management')
       .addTag('Payments', 'Payment processing')
@@ -96,13 +96,14 @@ async function bootstrap() {
   // ==================== START SERVER ====================
   await app.listen(port);
 
-  const logger = app.get(Logger);
-  logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  logger.log(`📝 Environment: ${nodeEnv}`);
+  Logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+  Logger.log(`📝 Environment: ${nodeEnv}`, 'Bootstrap');
 
   if (nodeEnv === 'development') {
-    logger.log(`📚 API Documentation: http://localhost:${port}/api-docs`);
+    Logger.log(`📚 API Documentation: http://localhost:${port}/api-docs`, 'Bootstrap');
   }
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  Logger.error('NestJS bootstrap error:', err);
+});

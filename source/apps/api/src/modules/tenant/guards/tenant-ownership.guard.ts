@@ -13,7 +13,10 @@ import { Reflector } from '@nestjs/core';
  * Purpose: Verify that the authenticated user has permission to access the tenant resource
  * 
  * Logic:
- * 1. Extract tenantId from route params (e.g., /tenants/:id)
+ * 1. Extract tenantId from:
+ *    a. Route params (e.g., /tenants/:id)
+ *    b. Request header (x-tenant-id)
+ *    c. Tenant context from middleware (req.tenant.id)
  * 2. Compare with tenantId from JWT (req.user.tenantId)
  * 3. Block request if they don't match (user trying to access another tenant's data)
  * 
@@ -32,21 +35,38 @@ export class TenantOwnershipGuard implements CanActivate {
     const user = request.user;
     const params = request.params;
 
-    // Check if route has tenantId parameter
-    if (!params.id) {
-      this.logger.warn('TenantOwnershipGuard applied but no :id param found');
-      return true; // Skip validation if no tenant ID in route
-    }
-
     // Check if user context exists
     if (!user || !user.tenantId) {
       throw new ForbiddenException('User context not found');
     }
 
-    // Verify ownership
-    const requestedTenantId = params.id;
     const userTenantId = user.tenantId;
 
+    // Extract requested tenantId from multiple sources (priority order)
+    let requestedTenantId: string | undefined;
+
+    // 1. From route params (e.g., /tenants/:id)
+    if (params.id) {
+      requestedTenantId = params.id;
+    }
+    // 2. From explicit header
+    else if (request.headers['x-tenant-id']) {
+      requestedTenantId = request.headers['x-tenant-id'] as string;
+    }
+    // 3. From tenant context middleware
+    else if (request.tenant?.id) {
+      requestedTenantId = request.tenant.id;
+    }
+
+    // If no tenantId found in request, allow (might be a global route)
+    if (!requestedTenantId) {
+      this.logger.debug(
+        `No tenantId found in request for user ${user.userId}, allowing access`,
+      );
+      return true;
+    }
+
+    // Verify ownership
     if (requestedTenantId !== userTenantId) {
       this.logger.warn(
         `Tenant ownership violation: User ${user.userId} (tenant: ${userTenantId}) ` +

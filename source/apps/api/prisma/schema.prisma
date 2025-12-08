@@ -28,6 +28,17 @@ enum UserStatus {
   LOCKED
 }
 
+enum MenuItemStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ModifierType {
+  SINGLE_CHOICE  // Radio: chọn 1 (Size: S/M/L)
+  MULTI_CHOICE   // Checkbox: chọn nhiều (Toppings)
+}
+
 // 3. Model TENANT
 model Tenant {
   id             String       @id @default(uuid()) // PK là UUID
@@ -48,6 +59,9 @@ model Tenant {
   // Relations (Quan hệ ngược)
   users          User[]
   paymentConfig  TenantPaymentConfig?
+  menuItems      MenuItem[]
+  modifierGroups ModifierGroup[]
+  menuCategories MenuCategory[]
   
   @@map("tenants") // Tên bảng trong DB là số nhiều 'tenants'
 }
@@ -103,4 +117,115 @@ model TenantPaymentConfig {
   tenant_id         String   @unique
   tenant            Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   @@map("tenant_payment_configs")
+}
+
+// Menu Category (Danh mục món ăn)
+model MenuCategory {
+  id           String   @id @default(uuid())
+  name         String   // "Appetizers", "Main Courses", "Desserts"
+  tenantId     String   @map("tenant_id")
+  description  String?
+  displayOrder Int      @default(0) @map("display_order") // Thứ tự hiển thị
+  active       Boolean  @default(true)                     // Bật/tắt category
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+
+  @@unique([name, tenantId], name: "menu_category_tenant_name_unique")
+  @@map("menu_categories")
+  @@index([tenantId, active])
+  @@index([tenantId, displayOrder])
+}
+
+// Menu Item (Món ăn)
+model MenuItem {
+  id          String         @id @default(uuid())
+  tenantId    String         @map("tenant_id")
+  categoryId  String         @map("category_id")
+  name        String
+  description String?
+  price       Decimal        @db.Decimal(10, 2) // Giá cơ bản
+  imageUrl    String?        @map("image_url")
+  status      MenuItemStatus @default(DRAFT)    // DRAFT | PUBLISHED | ARCHIVED
+  available   Boolean        @default(true)     // Còn hàng hay không
+  displayOrder Int           @default(0) @map("display_order")
+  
+  // JSON fields for flexible data
+  tags        Json?          @default("[]")     // ["popular", "spicy", "vegetarian"]
+  allergens   Json?          @default("[]")     // ["nuts", "gluten", "dairy"]
+  
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  publishedAt DateTime?      @map("published_at")
+
+  // Relations
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category    MenuCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  modifierGroups MenuItemModifier[] // Many-to-Many với ModifierGroup
+
+  @@map("menu_items")
+  @@index([tenantId, status, available])
+  @@index([tenantId, categoryId])
+}
+
+// Modifier Group (Nhóm tuỳ chọn: Size, Extras, Toppings)
+model ModifierGroup {
+  id          String        @id @default(uuid())
+  tenantId    String        @map("tenant_id")
+  name        String        // "Size", "Extra Toppings", "Spice Level"
+  description String?
+  type        ModifierType  // SINGLE_CHOICE | MULTI_CHOICE
+  required    Boolean       @default(false) // Bắt buộc chọn không?
+  minChoices  Int           @default(0) @map("min_choices")  // Min số lựa chọn (với MULTI_CHOICE)
+  maxChoices  Int?          @map("max_choices")              // Max số lựa chọn (null = unlimited)
+  displayOrder Int          @default(0) @map("display_order")
+  active      Boolean       @default(true)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  options     ModifierOption[]
+  menuItems   MenuItemModifier[]  // Many-to-Many với MenuItem
+
+  @@map("modifier_groups")
+  @@index([tenantId, active])
+}
+
+// Modifier Option (Các lựa chọn cụ thể trong nhóm)
+model ModifierOption {
+  id          String   @id @default(uuid())
+  groupId     String   @map("group_id")
+  name        String   // "Small", "Medium", "Large", "Extra Cheese"
+  priceDelta  Decimal  @default(0) @db.Decimal(10, 2) @map("price_delta") // Giá thêm/bớt
+  displayOrder Int     @default(0) @map("display_order")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  group       ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("modifier_options")
+  @@index([groupId, active])
+}
+
+// Junction Table: MenuItem <-> ModifierGroup (Many-to-Many)
+model MenuItemModifier {
+  menuItemId      String   @map("menu_item_id")
+  modifierGroupId String   @map("modifier_group_id")
+  displayOrder    Int      @default(0) @map("display_order") // Thứ tự hiển thị modifier trong item
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, modifierGroupId])
+  @@map("menu_item_modifiers")
+  @@index([menuItemId])
+  @@index([modifierGroupId])
 }

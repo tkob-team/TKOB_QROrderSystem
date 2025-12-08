@@ -1,9 +1,10 @@
 // @ts-check
 
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettierPlugin from "eslint-plugin-prettier/recommended";
-import globals from "globals";
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettierPlugin from 'eslint-plugin-prettier/recommended';
+import importPlugin from 'eslint-plugin-import';
+import globals from 'globals';
 
 /**
  * ESLint Flat Config cho NestJS backend.
@@ -18,12 +19,7 @@ import globals from "globals";
 export default tseslint.config(
   // Block 1: Ignore các file/thư mục không cần lint
   {
-    ignores: [
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/*.js",
-      "eslint.config.mjs",
-    ],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/*.js', 'eslint.config.mjs'],
   },
 
   // Block 2: Recommended từ ESLint (JS)
@@ -42,7 +38,7 @@ export default tseslint.config(
         ...globals.node,
         ...globals.jest,
       },
-      sourceType: "module",
+      sourceType: 'module',
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
@@ -54,44 +50,43 @@ export default tseslint.config(
   {
     rules: {
       // ---------- TypeScript ----------
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-floating-promises": "error",
-      "@typescript-eslint/no-misused-promises": [
-        "error",
-        { checksVoidReturn: false },
-      ],
-      "@typescript-eslint/consistent-type-imports": [
-        "warn",
-        { prefer: "type-imports" },
-      ],
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unsafe-argument": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
-      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+      '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
 
       // ---------- Code Style ----------
-      "no-console": "warn",
-      "no-unused-vars": "off", // tắt để dùng rule TS
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      'no-console': 'warn',
+      'no-unused-vars': 'off', // tắt để dùng rule TS
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
 
       // ---------- Import Order ----------
-      "import/order": [
-        "error",
-        {
-          groups: [
-            "builtin",
-            "external",
-            "internal",
-            ["parent", "sibling"],
-            "index",
-          ],
-          "newlines-between": "always",
-          alphabetize: { order: "asc" },
-        },
-      ],
+      // "import/order": [
+      //   "error",
+      //   {
+      //     groups: [
+      //       "builtin",
+      //       "external",
+      //       "internal",
+      //       ["parent", "sibling"],
+      //       "index",
+      //     ],
+      //     "newlines-between": "always",
+      //     alphabetize: { order: "asc" },
+      //   },
+      // ],
     },
-  }
+  },
+  {
+    plugins: {
+      import: importPlugin,
+    },
+  },
 );
