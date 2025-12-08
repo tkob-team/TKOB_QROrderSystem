@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { ErrorCode } from '../constants/error-codes.constant';
+import { ErrorCode, ErrorMessages } from '../constants/error-codes.constant';
 
 /**
  * Error response interface following OPENAPI.md spec
@@ -41,7 +41,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Extract error details
     const exceptionResponse = exception.getResponse();
-    const errorCode = this.extractErrorCode(exceptionResponse);
+    const errorCode = this.extractErrorCode(exceptionResponse, status);
     const message = this.extractMessage(exceptionResponse);
     const details = this.extractDetails(exceptionResponse);
 
@@ -74,15 +74,48 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 
   /**
-   * Extract error code from exception response
+   * Extract error code from exception response or map from HTTP status
    */
-  private extractErrorCode(exceptionResponse: any): string {
+  private extractErrorCode(exceptionResponse: any, status: number): string {
+    // Priority 1: Check if errorCode exists in response (from custom exceptions)
     if (typeof exceptionResponse === 'object' && exceptionResponse.errorCode) {
       return exceptionResponse.errorCode;
     }
 
-    // Fallback to generic error code
-    return ErrorCode.INTERNAL_SERVER_ERROR;
+    // Priority 2: Check if there's a custom error code in the message (for NotFoundException with ErrorCode)
+    // This handles cases like: throw new NotFoundException(ErrorMessages[ErrorCode.MENU_CATEGORY_NOT_FOUND])
+    if (typeof exceptionResponse === 'object' && exceptionResponse.message) {
+      const message = exceptionResponse.message;
+      // Check if message matches any ErrorCode value
+      const matchingCode = Object.keys(ErrorMessages).find(
+        (key) => ErrorMessages[key as ErrorCode] === message,
+      );
+      if (matchingCode) {
+        return matchingCode as ErrorCode;
+      }
+    }
+
+    // Priority 3: Map HTTP status to appropriate error code
+    switch (status) {
+      case HttpStatus.BAD_REQUEST:
+        return ErrorCode.VALIDATION_FAILED;
+      case HttpStatus.UNAUTHORIZED:
+        return ErrorCode.AUTH_UNAUTHORIZED;
+      case HttpStatus.FORBIDDEN:
+        return ErrorCode.AUTH_FORBIDDEN;
+      case HttpStatus.NOT_FOUND:
+        return ErrorCode.INTERNAL_SERVER_ERROR; // Fallback for generic 404
+      case HttpStatus.CONFLICT:
+        return ErrorCode.VALIDATION_FAILED;
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return ErrorCode.VALIDATION_FAILED;
+      case HttpStatus.TOO_MANY_REQUESTS:
+        return ErrorCode.RATE_LIMIT_EXCEEDED;
+      case HttpStatus.SERVICE_UNAVAILABLE:
+        return ErrorCode.SERVICE_UNAVAILABLE;
+      default:
+        return ErrorCode.INTERNAL_SERVER_ERROR;
+    }
   }
 
   /**
@@ -94,7 +127,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (typeof exceptionResponse === 'object') {
-      // Handle class-validator errors
+      // Handle class-validator errors (array of validation messages)
       if (Array.isArray(exceptionResponse.message)) {
         return exceptionResponse.message.join(', ');
       }

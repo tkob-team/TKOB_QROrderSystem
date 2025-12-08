@@ -1,4 +1,4 @@
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MenuCategoryService } from '../services/menu-category.service';
 import {
   Body,
@@ -52,8 +52,9 @@ export class MenuCategoryController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all menu categories' })
   @ApiResponse({ status: 200, type: [MenuCategoryResponseDto] })
-  async findAll(@CurrentUser() user: any, @Query('activeOnly') activeOnly?: boolean) {
-    // return this.menuCategoryService.findAll(user.tenantId, activeOnly);
+  @ApiQuery({ name: 'activeOnly', required: false, type: Boolean })
+  async findAll(@CurrentUser() user: AuthenticatedUser, @Query('activeOnly') activeOnly?: boolean) {
+    return this.menuCategoryService.findAll(user.tenantId, activeOnly);
   }
 
   // R: api find one category
@@ -63,7 +64,7 @@ export class MenuCategoryController {
   @ApiOperation({ summary: 'Get category by ID' })
   @ApiResponse({ status: 200, type: MenuCategoryResponseDto })
   async findOne(@Param('id') id: string) {
-    // return this.menuCategoryService.findById(id);
+    return this.menuCategoryService.findById(id);
   }
 
   // U: api update one category
@@ -73,7 +74,7 @@ export class MenuCategoryController {
   @ApiOperation({ summary: 'Update menu category' })
   @ApiResponse({ status: 200, type: MenuCategoryResponseDto })
   async update(@Param('id') id: string, @Body() dto: UpdateMenuCategoryDto) {
-    // return this.menuCategoryService.update(id, dto);
+    return this.menuCategoryService.update(id, dto);
   }
 
   // D: api delete one category
@@ -84,7 +85,7 @@ export class MenuCategoryController {
   @ApiOperation({ summary: 'Delete menu category' })
   @ApiResponse({ status: 204 })
   async delete(@Param('id') id: string) {
-    // await this.menuCategoryService.delete(id);
+    await this.menuCategoryService.delete(id);
   }
 
   // todo: create api reorder category

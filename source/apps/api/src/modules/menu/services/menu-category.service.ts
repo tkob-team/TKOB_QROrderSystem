@@ -1,7 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { CreateMenuCategoryDto } from '../dto/menu-category.dto';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { CreateMenuCategoryDto, UpdateMenuCategoryDto } from '../dto/menu-category.dto';
 import { MenuCategoryRepository } from '../repositories/menu-category.repository';
 import { Prisma } from '@prisma/client';
+import { ErrorCode, ErrorMessages } from 'src/common/constants/error-codes.constant';
 
 @Injectable()
 export class MenuCategoryService {
@@ -32,5 +33,49 @@ export class MenuCategoryService {
       // Re-throw other errors to be handled by filters
       throw error;
     }
+  }
+
+  async findAll(tenantId: string, activeOnly?: boolean) {
+    if (activeOnly) {
+      return this.categoryRepo.findAllActive(tenantId);
+    }
+
+    return this.categoryRepo.findAll({
+      where: { tenantId },
+      orderBy: { displayOrder: 'asc' },
+    });
+  }
+
+  // return this.menuCategoryService.findById(id);
+  async findById(id: string) {
+    const category = await this.categoryRepo.findById(id);
+    if (!category) {
+      throw new NotFoundException(ErrorMessages[ErrorCode.MENU_CATEGORY_NOT_FOUND]);
+    }
+
+    return category;
+  }
+
+  async update(categoryId: string, dto: UpdateMenuCategoryDto) {
+    await this.findById(categoryId);
+
+    return this.categoryRepo.update(categoryId, dto);
+  }
+
+  async delete(categoryId: string): Promise<void> {
+    // Verify category exists
+    await this.findById(categoryId);
+
+    // Check if category has menu items
+    const hasItems = await this.categoryRepo.hasMenuItems(categoryId);
+
+    if (hasItems) {
+      throw new ConflictException(
+        'Cannot delete category that contains menu items. Please move or delete all items first.',
+      );
+    }
+
+    // Delete category
+    await this.categoryRepo.delete(categoryId);
   }
 }

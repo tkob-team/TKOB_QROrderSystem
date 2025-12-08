@@ -8,7 +8,30 @@ export class MenuCategoryRepository extends BaseRepository<
   MenuCategory,
   Prisma.MenuCategoryDelegate
 > {
-  constructor(prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService) {
     super(prisma.menuCategory);
+  }
+
+  async findAllActive(tenantId: string): Promise<MenuCategory[]> {
+    return this.findAll({
+      where: {
+        tenantId,
+        active: true,
+      },
+      orderBy: {
+        displayOrder: 'asc',
+      },
+    });
+  }
+
+  /**
+   * Check if category has any menu items
+   */
+  async hasMenuItems(categoryId: string): Promise<boolean> {
+    const count = await this.prisma.menuItem.count({
+      where: { categoryId },
+    });
+
+    return count > 0;
   }
 }
