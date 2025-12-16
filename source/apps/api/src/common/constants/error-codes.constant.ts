@@ -39,8 +39,13 @@ export enum ErrorCode {
 
   // ==================== TABLE ERRORS (5000-5999) ====================
   TABLE_NOT_FOUND = 'TABLE_NOT_FOUND',
+  TABLE_NUMBER_EXISTS = 'TABLE_NUMBER_EXISTS',
   TABLE_OCCUPIED = 'TABLE_OCCUPIED',
+  TABLE_INACTIVE = 'TABLE_INACTIVE',
   TABLE_QR_INVALID = 'TABLE_QR_INVALID',
+  TABLE_QR_EXPIRED = 'TABLE_QR_EXPIRED',
+  TABLE_QR_REGENERATED = 'TABLE_QR_REGENERATED',
+  TABLE_HAS_ACTIVE_ORDERS = 'TABLE_HAS_ACTIVE_ORDERS',
 
   // ==================== ORDER ERRORS (6000-6999) ====================
   ORDER_NOT_FOUND = 'ORDER_NOT_FOUND',
@@ -110,8 +115,13 @@ export const ErrorMessages: Record<ErrorCode, string> = {
 
   // Table
   [ErrorCode.TABLE_NOT_FOUND]: 'Table not found',
+  [ErrorCode.TABLE_NUMBER_EXISTS]: 'Table number already exists',
   [ErrorCode.TABLE_OCCUPIED]: 'Table is currently occupied',
-  [ErrorCode.TABLE_QR_INVALID]: 'Invalid QR code',
+  [ErrorCode.TABLE_INACTIVE]: 'Table is temporarily unavailable. Please ask staff for assistance.',
+  [ErrorCode.TABLE_QR_INVALID]: 'Invalid QR code. Please ask staff for assistance.',
+  [ErrorCode.TABLE_QR_EXPIRED]: 'QR code has expired. Please ask staff for assistance.',
+  [ErrorCode.TABLE_QR_REGENERATED]: 'This QR code is no longer valid. Please ask staff for assistance.',
+  [ErrorCode.TABLE_HAS_ACTIVE_ORDERS]: 'Cannot delete table with active orders',
 
   // Order
   [ErrorCode.ORDER_NOT_FOUND]: 'Order not found',

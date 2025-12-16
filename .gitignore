@@ -40,3 +40,7 @@ next-env.d.ts
 
 # macos
 .DS_Store
+
+# prisma
+prisma/migrations/dev.db
+prisma/migrations/*.sql

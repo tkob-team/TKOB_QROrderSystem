@@ -35,26 +35,33 @@ enum MenuItemStatus {
 }
 
 enum ModifierType {
-  SINGLE_CHOICE  // Radio: chọn 1 (Size: S/M/L)
-  MULTI_CHOICE   // Checkbox: chọn nhiều (Toppings)
+  SINGLE_CHOICE // Radio: chọn 1 (Size: S/M/L)
+  MULTI_CHOICE // Checkbox: chọn nhiều (Toppings)
+}
+
+enum TableStatus {
+  AVAILABLE // Bàn trống, sẵn sàng phục vụ
+  OCCUPIED // Đang có khách
+  RESERVED // Đã đặt trước
+  INACTIVE // Tạm ngưng sử dụng (bảo trì, etc.)
 }
 
 // 3. Model TENANT
 model Tenant {
-  id             String       @id @default(uuid()) // PK là UUID
-  name           String
-  slug           String       @unique              // Slug phải unique để làm subdomain/url
-  status         TenantStatus @default(DRAFT)      // Mặc định là DRAFT khi mới đăng ký bước 1
-  
+  id     String       @id @default(uuid()) // PK là UUID
+  name   String
+  slug   String       @unique // Slug phải unique để làm subdomain/url
+  status TenantStatus @default(DRAFT) // Mặc định là DRAFT khi mới đăng ký bước 1
+
   // Dữ liệu JSON không cấu trúc cứng, phù hợp cho settings linh động
-  settings       Json?        @default("{}") 
-  openingHours   Json?        @map("opening_hours") // Map sang column snake_case
-  
-  onboardingStep Int          @default(1) @map("onboarding_step")
+  settings     Json? @default("{}")
+  openingHours Json? @map("opening_hours") // Map sang column snake_case
+
+  onboardingStep Int @default(1) @map("onboarding_step")
 
   // Timestamps tiêu chuẩn
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations (Quan hệ ngược)
   users          User[]
@@ -62,156 +69,158 @@ model Tenant {
   menuItems      MenuItem[]
   modifierGroups ModifierGroup[]
   menuCategories MenuCategory[]
-  
+  tables         Table[] // Relation to Table model
+
   @@map("tenants") // Tên bảng trong DB là số nhiều 'tenants'
 }
 
 // 4. Model USER
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  passwordHash String     @map("password_hash")
-  fullName     String     @map("full_name")
-  
-  role         UserRole   @default(STAFF)
-  status       UserStatus @default(PENDING) // Pending cho đến khi verify email/admin duyệt
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String @map("password_hash")
+  fullName     String @map("full_name")
+
+  role   UserRole   @default(STAFF)
+  status UserStatus @default(PENDING) // Pending cho đến khi verify email/admin duyệt
 
   // Foreign Key: Tenant
-  tenantId     String     @map("tenant_id")
-  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  sessions     UserSession[]
+  sessions UserSession[]
 
-  @@map("users")
   // Index để tăng tốc query tìm user theo email trong tenant (Multitenancy)
-  @@index([tenantId, email]) 
+  @@index([tenantId, email])
+  @@map("users")
 }
 
 // 5. Model USER_SESSION (Quản lý phiên đăng nhập)
 model UserSession {
-  id               String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Foreign Key: User
-  userId           String   @map("user_id")
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  refreshTokenHash String   @map("refresh_token_hash") // Chỉ lưu hash, không lưu plain token
-  deviceInfo       String?  @map("device_info")        // Chrome on Mac, v.v.
-  
-  lastUsedAt       DateTime @default(now()) @map("last_used_at")
-  expiresAt        DateTime @map("expires_at")
-  
-  createdAt        DateTime @default(now()) @map("created_at")
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String  @map("refresh_token_hash") // Chỉ lưu hash, không lưu plain token
+  deviceInfo       String? @map("device_info") // Chrome on Mac, v.v.
+
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+  expiresAt  DateTime @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("user_sessions")
 }
 
 // 6. Model TENANT_PAYMENT_CONFIG
 model TenantPaymentConfig {
-  id                String   @id @default(uuid())
+  id                String @id @default(uuid())
   stripe_account_id String
-  tenant_id         String   @unique
-  tenant            Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenant_id         String @unique
+  tenant            Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
   @@map("tenant_payment_configs")
 }
 
 // Menu Category (Danh mục món ăn)
 model MenuCategory {
   id           String   @id @default(uuid())
-  name         String   // "Appetizers", "Main Courses", "Desserts"
+  name         String // "Appetizers", "Main Courses", "Desserts"
   tenantId     String   @map("tenant_id")
   description  String?
   displayOrder Int      @default(0) @map("display_order") // Thứ tự hiển thị
-  active       Boolean  @default(true)                     // Bật/tắt category
+  active       Boolean  @default(true) // Bật/tắt category
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  menuItems    MenuItem[]
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
 
   @@unique([name, tenantId], name: "menu_category_tenant_name_unique")
-  @@map("menu_categories")
   @@index([tenantId, active])
   @@index([tenantId, displayOrder])
+  @@map("menu_categories")
 }
 
 // Menu Item (Món ăn)
 model MenuItem {
-  id          String         @id @default(uuid())
-  tenantId    String         @map("tenant_id")
-  categoryId  String         @map("category_id")
-  name        String
-  description String?
-  price       Decimal        @db.Decimal(10, 2) // Giá cơ bản
-  imageUrl    String?        @map("image_url")
-  status      MenuItemStatus @default(DRAFT)    // DRAFT | PUBLISHED | ARCHIVED
-  available   Boolean        @default(true)     // Còn hàng hay không
-  displayOrder Int           @default(0) @map("display_order")
-  
+  id           String         @id @default(uuid())
+  tenantId     String         @map("tenant_id")
+  categoryId   String         @map("category_id")
+  name         String
+  description  String?
+  price        Decimal        @db.Decimal(10, 2) // Giá cơ bản
+  imageUrl     String?        @map("image_url")
+  status       MenuItemStatus @default(DRAFT) // DRAFT | PUBLISHED | ARCHIVED
+  available    Boolean        @default(true) // Còn hàng hay không
+  displayOrder Int            @default(0) @map("display_order")
+
   // JSON fields for flexible data
-  tags        Json?          @default("[]")     // ["popular", "spicy", "vegetarian"]
-  allergens   Json?          @default("[]")     // ["nuts", "gluten", "dairy"]
-  
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-  publishedAt DateTime?      @map("published_at")
+  tags      Json? @default("[]") // ["popular", "spicy", "vegetarian"]
+  allergens Json? @default("[]") // ["nuts", "gluten", "dairy"]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
 
   // Relations
-  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category    MenuCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category       MenuCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   modifierGroups MenuItemModifier[] // Many-to-Many với ModifierGroup
 
-  @@map("menu_items")
   @@unique([name, tenantId, categoryId], name: "menu_items_name_tenant_category_unique")
   @@index([tenantId, status, available])
   @@index([tenantId, categoryId])
+  @@map("menu_items")
 }
 
 // Modifier Group (Nhóm tuỳ chọn: Size, Extras, Toppings)
 model ModifierGroup {
-  id          String        @id @default(uuid())
-  tenantId    String        @map("tenant_id")
-  name        String        // "Size", "Extra Toppings", "Spice Level"
-  description String?
-  type        ModifierType  // SINGLE_CHOICE | MULTI_CHOICE
-  required    Boolean       @default(false) // Bắt buộc chọn không?
-  minChoices  Int           @default(0) @map("min_choices")  // Min số lựa chọn (với MULTI_CHOICE)
-  maxChoices  Int?          @map("max_choices")              // Max số lựa chọn (null = unlimited)
+  id           String       @id @default(uuid())
+  tenantId     String       @map("tenant_id")
+  name         String // "Size", "Extra Toppings", "Spice Level"
+  description  String?
+  type         ModifierType // SINGLE_CHOICE | MULTI_CHOICE
+  required     Boolean      @default(false) // Bắt buộc chọn không?
+  minChoices   Int          @default(0) @map("min_choices") // Min số lựa chọn (với MULTI_CHOICE)
+  maxChoices   Int?         @map("max_choices") // Max số lựa chọn (null = unlimited)
   displayOrder Int          @default(0) @map("display_order")
-  active      Boolean       @default(true)
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  options     ModifierOption[]
-  menuItems   MenuItemModifier[]  // Many-to-Many với MenuItem
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  options   ModifierOption[]
+  menuItems MenuItemModifier[] // Many-to-Many với MenuItem
 
-  @@map("modifier_groups")
   @@index([tenantId, active])
+  @@map("modifier_groups")
 }
 
 // Modifier Option (Các lựa chọn cụ thể trong nhóm)
 model ModifierOption {
-  id          String   @id @default(uuid())
-  groupId     String   @map("group_id")
-  name        String   // "Small", "Medium", "Large", "Extra Cheese"
-  priceDelta  Decimal  @default(0) @db.Decimal(10, 2) @map("price_delta") // Giá thêm/bớt
-  displayOrder Int     @default(0) @map("display_order")
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  groupId      String   @map("group_id")
+  name         String // "Small", "Medium", "Large", "Extra Cheese"
+  priceDelta   Decimal  @default(0) @map("price_delta") @db.Decimal(10, 2) // Giá thêm/bớt
+  displayOrder Int      @default(0) @map("display_order")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  group       ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  @@map("modifier_options")
   @@index([groupId, active])
+  @@map("modifier_options")
 }
 
 // Junction Table: MenuItem <-> ModifierGroup (Many-to-Many)
@@ -222,11 +231,45 @@ model MenuItemModifier {
   createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
-  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
-  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
 
   @@id([menuItemId, modifierGroupId])
-  @@map("menu_item_modifiers")
   @@index([menuItemId])
   @@index([modifierGroupId])
+  @@map("menu_item_modifiers")
+}
+
+// Table (Bàn ăn)
+model Table {
+  id          String      @id @default(uuid())
+  tenantId    String      @map("tenant_id")
+  tableNumber String      @map("table_number") // "Table 1", "A1", "VIP-01"
+  capacity    Int         @default(4) // Số người ngồi tối đa (1-20)
+  location    String? // "Main Hall", "Terrace", "Floor 2"
+  description String? // Optional description
+  status      TableStatus @default(AVAILABLE) // AVAILABLE | OCCUPIED | RESERVED | INACTIVE
+
+  // QR Code fields (enhanced security)
+  qrToken          String?   @unique @map("qr_token") // HMAC signed token (unique globally)
+  qrTokenHash      String?   @map("qr_token_hash") // SHA256 hash for validation
+  qrTokenCreatedAt DateTime? @map("qr_token_created_at") // Thời điểm tạo QR
+  qrInvalidatedAt  DateTime? @map("qr_invalidated_at") // Thời điểm invalidate (when regenerated)
+
+  // Metadata
+  displayOrder Int     @default(0) @map("display_order")
+  active       Boolean @default(true) // Soft delete flag
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // orders       Order[]  // Future: relation to Order model (Epic 4)
+
+  @@unique([tableNumber, tenantId], name: "table_number_tenant_unique")
+  @@index([tenantId, status])
+  @@index([tenantId, active])
+  @@index([qrToken]) // Fast QR lookup
+  @@map("tables")
 }
