@@ -30,7 +30,7 @@ export function TableFormFields({ formData, setFormData, autoFocus = true }: Tab
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Table 13, VIP Table, Window Seat 1"
           className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-          style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+          style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
           autoFocus={autoFocus}
         />
       </div>
@@ -47,7 +47,7 @@ export function TableFormFields({ formData, setFormData, autoFocus = true }: Tab
           min="1"
           max="100"
           className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-          style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+          style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
         />
       </div>
 
@@ -63,7 +63,7 @@ export function TableFormFields({ formData, setFormData, autoFocus = true }: Tab
           min="1"
           max="20"
           className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-          style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+          style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
         />
       </div>
 
@@ -76,7 +76,7 @@ export function TableFormFields({ formData, setFormData, autoFocus = true }: Tab
             value={formData.zone}
             onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
             className="w-full px-4 py-3 pr-10 border border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all appearance-none"
-            style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+            style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
           >
             <option value="indoor">Indoor</option>
             <option value="outdoor">Outdoor</option>
@@ -96,7 +96,7 @@ export function TableFormFields({ formData, setFormData, autoFocus = true }: Tab
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value as 'free' | 'occupied' | 'reserved' | 'inactive' })}
             className="w-full px-4 py-3 pr-10 border border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all appearance-none"
-            style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+            style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
           >
             <option value="free">Free</option>
             <option value="occupied">Occupied</option>
@@ -116,7 +116,7 @@ export function TableFormFields({ formData, setFormData, autoFocus = true }: Tab
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="e.g., Near the window, has a view of the garden"
           className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all resize-vertical"
-          style={{ fontSize: '15px', borderRadius: '12px', minHeight: '96px' }}
+          style={{ fontSize: '15px', borderRadius: '4px', minHeight: '96px' }}
           rows={3}
         />
       </div>

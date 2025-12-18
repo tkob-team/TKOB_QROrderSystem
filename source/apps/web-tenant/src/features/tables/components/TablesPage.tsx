@@ -359,7 +359,6 @@ export function TablesPage() {
                   style={{ 
                     fontSize: '15px', 
                     fontWeight: 600, 
-                    borderRadius: '12px', 
                     height: '48px',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                   }}
@@ -374,7 +373,6 @@ export function TablesPage() {
                 style={{ 
                   fontSize: '15px', 
                   fontWeight: 600, 
-                  borderRadius: '12px', 
                   height: '48px',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                 }}
@@ -418,7 +416,7 @@ export function TablesPage() {
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-                style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
               >
                 <option value="All">All Statuses</option>
                 <option value="free">Free</option>
@@ -434,7 +432,7 @@ export function TablesPage() {
                 value={selectedZone}
                 onChange={(e) => setSelectedZone(e.target.value)}
                 className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-                style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
               >
                 <option value="All Locations">All Locations</option>
                 <option value="indoor">Indoor</option>
@@ -450,7 +448,7 @@ export function TablesPage() {
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
                 className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-                style={{ fontSize: '15px', borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
               >
                 <option value="Sort by: Table Number (Ascending)">Sort by: Table Number (Ascending)</option>
                 <option value="Sort by: Capacity (Ascending)">Sort by: Capacity (Ascending)</option>
@@ -465,7 +463,7 @@ export function TablesPage() {
           {filterAndSortTables(tables).length === 0 ? (
             <Card className="p-12 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <div className="flex flex-col items-center justify-center">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center mb-4">
                   <QrCode className="w-10 h-10 text-gray-400" />
                 </div>
                 <h4 className="text-gray-900 mb-2" style={{ fontSize: '18px', fontWeight: 600 }}>
@@ -511,7 +509,7 @@ export function TablesPage() {
                         <h3 className="text-gray-900" style={{ fontSize: '24px', fontWeight: 700 }}>
                           {table.name}
                         </h3>
-                        <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-sm flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                           <QrCode className="w-5 h-5 text-emerald-600" />
                         </div>
                       </div>
@@ -560,7 +558,7 @@ export function TablesPage() {
                 handleOpenEditModal();
               }}
               className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 transition-colors"
-              style={{ fontSize: '14px', fontWeight: 600, borderRadius: '8px' }}
+              style={{ fontSize: '14px', fontWeight: 600, borderRadius: '4px' }}
             >
               <Edit className="w-4 h-4" />
               Edit Table
@@ -572,7 +570,7 @@ export function TablesPage() {
               }}
               disabled={selectedTable.status === 'inactive'}
               className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-              style={{ fontSize: '14px', fontWeight: 600, borderRadius: '8px' }}
+              style={{ fontSize: '14px', fontWeight: 600, borderRadius: '4px' }}
             >
               <RefreshCcw className="w-4 h-4" />
               Regenerate QR
@@ -610,7 +608,7 @@ export function TablesPage() {
           {/* QR Code Preview */}
           <div className="flex flex-col items-center gap-4">
             <div 
-              className={`w-64 h-64 bg-white border-4 rounded-xl flex items-center justify-center relative ${
+              className={`w-64 h-64 bg-white border-4 rounded-lg flex items-center justify-center relative ${
                 selectedTable.status === 'inactive' ? 'border-gray-300 opacity-60' : 'border-gray-200'
               }`}
               style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
@@ -645,7 +643,7 @@ export function TablesPage() {
             </div>
 
             {/* Table Info Card */}
-            <div className="w-full p-5 bg-gray-50 border border-gray-200 rounded-xl">
+            <div className="w-full p-5 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-gray-500 mb-1" style={{ fontSize: '13px', fontWeight: 500 }}>
@@ -700,7 +698,7 @@ export function TablesPage() {
               onClick={handleDownloadPNG}
               disabled={selectedTable.status === 'inactive'}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
             >
               <Download className="w-5 h-5" />
               Download PNG
@@ -709,7 +707,7 @@ export function TablesPage() {
               onClick={handleDownloadPDF}
               disabled={selectedTable.status === 'inactive'}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
             >
               <Download className="w-5 h-5" />
               Download PDF
@@ -718,7 +716,7 @@ export function TablesPage() {
               onClick={handlePrintQR}
               disabled={selectedTable.status === 'inactive'}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 text-gray-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px' }}
+              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px' }}
             >
               <Printer className="w-5 h-5" />
               Print
@@ -753,7 +751,7 @@ export function TablesPage() {
             <button
               onClick={handleCloseAddModal}
               className="flex-1 px-4 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', height: '48px' }}
+              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', height: '48px' }}
             >
               Cancel
             </button>
@@ -761,7 +759,7 @@ export function TablesPage() {
               onClick={handleAddTable}
               disabled={!formData.capacity || !formData.tableNumber}
               className="flex-1 px-4 bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', height: '48px' }}
+              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', height: '48px' }}
             >
               Add Table
             </button>
@@ -783,7 +781,7 @@ export function TablesPage() {
               <button
                 onClick={handleCloseEditModal}
                 className="flex-1 px-4 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', height: '48px' }}
               >
                 Cancel
               </button>
@@ -791,7 +789,7 @@ export function TablesPage() {
                 onClick={handleEditTable}
                 disabled={!formData.capacity || !formData.tableNumber}
                 className="flex-1 px-4 bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', height: '48px' }}
               >
                 Save Changes
               </button>
@@ -814,7 +812,7 @@ export function TablesPage() {
               <button
                 onClick={handleCancelStatusChange}
                 className="flex-1 px-4 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', height: '48px' }}
               >
                 Cancel
               </button>
@@ -825,7 +823,7 @@ export function TablesPage() {
                     ? 'bg-amber-500 hover:bg-amber-600' 
                     : 'bg-emerald-500 hover:bg-emerald-600'
                 }`}
-                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', height: '48px' }}
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', height: '48px' }}
               >
                 {pendingStatusChange === 'inactive' ? 'Deactivate Table' : 'Reactivate Table'}
               </button>

@@ -49,7 +49,7 @@ export function Modal({
       <div
         className={`bg-white w-full ${maxWidthClass} flex flex-col animate-scale-in relative`}
         style={{
-          borderRadius: '20px',
+          borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
           maxHeight: '90vh',
         }}
