@@ -109,7 +109,7 @@ export function TenantProfilePage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 px-6 pt-6 pb-5">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-gray-900">Tenant Profile</h1>
         <p className="text-gray-600 text-sm">Manage restaurant info, hours, and preferences</p>

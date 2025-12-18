@@ -239,7 +239,7 @@ export function StaffPage() {
   };
 
   return (
-    <div>
+    <div className="px-6 pt-6 pb-5">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex flex-col gap-1">

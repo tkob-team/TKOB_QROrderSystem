@@ -340,7 +340,7 @@ export function TablesPage() {
 
   return (
     <>
-      <div className="mx-auto flex flex-col gap-6" style={{ maxWidth: '1600px' }}>
+      <div className="mx-auto flex flex-col gap-6 px-6 pt-6 pb-5" style={{ maxWidth: '1600px' }}>
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-1">
