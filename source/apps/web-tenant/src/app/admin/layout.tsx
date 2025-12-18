@@ -19,6 +19,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (pathname.includes('/admin/menu')) return 'menu';
     if (pathname.includes('/admin/tables')) return 'tables';
     if (pathname.includes('/admin/orders')) return 'orders';
+    if (pathname.includes('/admin/kds')) return 'kds';
+    if (pathname.includes('/admin/service-board')) return 'service-board';
     if (pathname.includes('/admin/analytics')) return 'analytics';
     if (pathname.includes('/admin/staff')) return 'staff';
     if (pathname.includes('/admin/tenant-profile')) return 'tenant-profile';

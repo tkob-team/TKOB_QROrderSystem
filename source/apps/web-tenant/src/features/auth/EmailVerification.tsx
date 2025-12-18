@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode, Mail, CheckCircle, XCircle } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 import "../../styles/globals.css";
 
 interface EmailVerificationProps {
@@ -53,7 +54,7 @@ export function EmailVerification({ onNavigate }: EmailVerificationProps) {
                 Your email has been successfully verified. You can now access your dashboard.
               </p>
             </div>
-            <Button onClick={() => onNavigate?.('onboarding')} className="w-full">
+            <Button onClick={() => onNavigate?.(ROUTES.onboardingWizard)} className="w-full">
               Go to dashboard
             </Button>
           </>

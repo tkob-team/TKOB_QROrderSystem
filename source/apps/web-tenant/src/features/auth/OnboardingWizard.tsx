@@ -4,6 +4,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { Check, Upload, Copy } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
+import { ROUTES } from '@/lib/routes';
 import "../../styles/globals.css";
 
 interface OnboardingWizardProps {
@@ -89,7 +90,7 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
     } else {
       // After completing onboarding, log user in as admin
       devLogin('admin');
-      onNavigate?.('/admin/dashboard');
+      onNavigate?.(ROUTES.dashboard);
     }
   };
 
@@ -546,7 +547,7 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
               )}
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="tertiary" onClick={() => onNavigate?.('/admin/dashboard')}>
+              <Button variant="tertiary" onClick={() => onNavigate?.(ROUTES.dashboard)}>
                 Skip for now
               </Button>
               <Button onClick={handleNext}>

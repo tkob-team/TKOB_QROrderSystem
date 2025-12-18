@@ -24,6 +24,8 @@ export type AdminNavItem =
   | 'menu-modifiers'
   | 'tables'
   | 'orders'
+  | 'kds'
+  | 'service-board'
   | 'analytics'
   | 'staff'
   | 'tenant-profile';

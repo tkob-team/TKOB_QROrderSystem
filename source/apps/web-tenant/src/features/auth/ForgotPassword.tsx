@@ -3,6 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 import "../../styles/globals.css";
 
 interface ForgotPasswordProps {
@@ -76,7 +77,7 @@ export function ForgotPassword({ onNavigate }: ForgotPasswordProps) {
             {isLinkSent && (
               <div className="text-center">
                 <button 
-                  onClick={() => onNavigate?.('/forgot-password/reset')}
+                  onClick={() => onNavigate?.(ROUTES.resetPassword)}
                   className="text-blue-600 hover:text-blue-700 transition-colors" 
                   style={{ fontSize: '14px', fontWeight: 500 }}
                 >
@@ -87,7 +88,7 @@ export function ForgotPassword({ onNavigate }: ForgotPasswordProps) {
             
             <div className="text-center">
               <button 
-                onClick={() => onNavigate?.('/login')}
+                onClick={() => onNavigate?.(ROUTES.login)}
                 className="text-emerald-500 hover:text-emerald-600 transition-colors" 
                 style={{ fontSize: '14px', fontWeight: 500 }}
               >

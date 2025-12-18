@@ -4,6 +4,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode } from 'lucide-react';
 import { toast } from 'sonner';
+import { ROUTES } from '@/lib/routes';
 import "../../styles/globals.css";
 
 interface SignupProps {
@@ -82,7 +83,7 @@ export function Signup({ onNavigate }: SignupProps) {
       password,
     });
 
-    onNavigate?.('email-verification');
+    onNavigate?.(ROUTES.emailVerification);
   };
 
   return (
@@ -222,7 +223,7 @@ export function Signup({ onNavigate }: SignupProps) {
                 Already have an account?{' '}
               </span>
               <button 
-                onClick={() => onNavigate?.('login')}
+                onClick={() => onNavigate?.(ROUTES.login)}
                 className="text-emerald-500 hover:text-emerald-600 transition-colors" 
                 style={{ fontSize: '14px', fontWeight: 500 }}
               >

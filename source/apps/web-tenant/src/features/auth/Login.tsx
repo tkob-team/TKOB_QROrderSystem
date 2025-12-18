@@ -4,6 +4,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
+import { ROUTES } from '@/lib/routes';
 import "../../styles/globals.css";
 
 interface LoginProps {
@@ -20,11 +21,11 @@ export function Login({ onNavigate }: LoginProps) {
   const handleLogin = (role: 'admin' | 'kds' | 'waiter' = 'admin') => {
     // Route to appropriate starting screen based on role
     if (role === 'admin') {
-      onNavigate?.('/admin/dashboard');
+      onNavigate?.(ROUTES.dashboard);
     } else if (role === 'kds') {
-      onNavigate?.('/admin/kds');
+      onNavigate?.(ROUTES.adminKds);
     } else if (role === 'waiter') {
-      onNavigate?.('/admin/service-board');
+      onNavigate?.(ROUTES.adminServiceBoard);
     }
   };
 
@@ -90,7 +91,7 @@ export function Login({ onNavigate }: LoginProps) {
               </label>
               
               <button 
-                onClick={() => onNavigate?.('/forgot-password')}
+                onClick={() => onNavigate?.(ROUTES.forgotPassword)}
                 className="text-emerald-500 hover:text-emerald-600 transition-colors" 
                 style={{ fontSize: '14px', fontWeight: 500 }}
               >
@@ -134,7 +135,7 @@ export function Login({ onNavigate }: LoginProps) {
                 Don&apos;t have an account?{' '}
               </span>
               <button 
-                onClick={() => onNavigate?.('/signup')}
+                onClick={() => onNavigate?.(ROUTES.signup)}
                 className="text-emerald-500 hover:text-emerald-600 transition-colors" 
                 style={{ fontSize: '14px', fontWeight: 500 }}
               >
@@ -178,7 +179,7 @@ export function Login({ onNavigate }: LoginProps) {
               </button>
               
               <button
-                onClick={() => onNavigate?.('/staff-invitation')}
+                onClick={() => onNavigate?.(ROUTES.staffInvitationSignup)}
                 className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 hover:border-blue-500 transition-all"
                 style={{ fontSize: '13px', fontWeight: 500 }}
               >

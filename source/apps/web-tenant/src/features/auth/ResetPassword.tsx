@@ -3,6 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 import "../../styles/globals.css";
 
 interface ResetPasswordProps {
@@ -42,7 +43,7 @@ export function ResetPassword({ onNavigate }: ResetPasswordProps) {
   };
 
   const handleResetPassword = () => {
-    onNavigate?.('/login');
+    onNavigate?.(ROUTES.login);
   };
 
   // Invalid/Expired link state
@@ -78,12 +79,12 @@ export function ResetPassword({ onNavigate }: ResetPasswordProps) {
             </div>
 
             <div className="flex flex-col gap-3 w-full">
-              <Button onClick={() => onNavigate?.('/forgot-password')} className="w-full">
+              <Button onClick={() => onNavigate?.(ROUTES.forgotPassword)} className="w-full">
                 Request new link
               </Button>
               <div className="text-center">
                 <button 
-                  onClick={() => onNavigate?.('/login')}
+                  onClick={() => onNavigate?.(ROUTES.login)}
                   className="text-emerald-500 hover:text-emerald-600 transition-colors" 
                   style={{ fontSize: '14px', fontWeight: 500 }}
                 >
@@ -212,7 +213,7 @@ export function ResetPassword({ onNavigate }: ResetPasswordProps) {
             
             <div className="text-center">
               <button 
-                onClick={() => onNavigate?.('/login')}
+                onClick={() => onNavigate?.(ROUTES.login)}
                 className="text-emerald-500 hover:text-emerald-600 transition-colors" 
                 style={{ fontSize: '14px', fontWeight: 500 }}
               >

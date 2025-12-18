@@ -44,6 +44,16 @@ export function UserMenu({
         return { bg: 'bg-amber-100', text: 'text-amber-600' };
       case 'orange':
         return { bg: 'bg-orange-100', text: 'text-orange-600' };
+      case 'blue':
+        return { bg: 'bg-blue-100', text: 'text-blue-600' };
+      case 'purple':
+        return { bg: 'bg-purple-100', text: 'text-purple-600' };
+      case 'rose':
+        return { bg: 'bg-rose-100', text: 'text-rose-600' };
+      case 'teal':
+        return { bg: 'bg-teal-100', text: 'text-teal-600' };
+      case 'indigo':
+        return { bg: 'bg-indigo-100', text: 'text-indigo-600' };
       default:
         return { bg: 'bg-emerald-100', text: 'text-emerald-600' };
     }
@@ -69,6 +79,11 @@ export function UserMenu({
   const handleSwitchToWaiter = () => {
     setIsOpen(false);
     onNavigate?.('service-board');
+  };
+
+  const handleSwitchToAdmin = () => {
+    setIsOpen(false);
+    onNavigate?.('dashboard');
   };
 
   return (
@@ -122,6 +137,14 @@ export function UserMenu({
           >
             <span className="text-gray-700" style={{ fontSize: '13px' }}>
               → Waiter / Service Board
+            </span>
+          </button>
+          <button
+            onClick={handleSwitchToAdmin}
+            className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-gray-700" style={{ fontSize: '13px' }}>
+              → Admin Dashboard
             </span>
           </button>
 
