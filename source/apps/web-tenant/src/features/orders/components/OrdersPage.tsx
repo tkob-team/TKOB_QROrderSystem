@@ -658,7 +658,7 @@ export function OrdersPage() {
           <>
             {/* Overlay */}
             <div 
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-40 animate-fade-in"
               onClick={handleCloseDrawer}
               style={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.12)',
@@ -953,6 +953,23 @@ export function OrdersPage() {
           </p>
         </Modal>
       )}
+
+      <style>{`
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out;
+        }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
+        }
+      `}</style>
     </>
   );
 }
