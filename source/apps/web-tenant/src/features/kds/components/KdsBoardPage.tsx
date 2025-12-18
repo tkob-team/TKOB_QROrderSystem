@@ -54,15 +54,18 @@ export function KdsBoardPage({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Update current time every second
+  // Update current time every second (client-only to avoid hydration mismatch)
   useEffect(() => {
+    // Set initial time on mount
+    setCurrentTime(new Date());
+    
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -393,6 +396,7 @@ export function KdsBoardPage({
               <Clock className="w-5 h-5 text-gray-600" />
               <span
                 className="text-gray-900"
+                suppressHydrationWarning
                 style={{
                   fontSize: "18px",
                   fontWeight: 700,
@@ -400,7 +404,7 @@ export function KdsBoardPage({
                   letterSpacing: "0.02em",
                 }}
               >
-                {formatTime(currentTime)}
+                {currentTime ? formatTime(currentTime) : "--:--:--"}
               </span>
             </div>
           </div>
