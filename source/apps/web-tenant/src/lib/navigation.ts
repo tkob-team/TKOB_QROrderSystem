@@ -13,7 +13,7 @@ type RoleAllowedRoutes = {
 
 export const ROLE_HOME_ROUTES: RoleRoutes = {
   admin: '/admin/dashboard',
-  waiter: '/waiter/service-board',
+  waiter: '/waiter',
   kds: '/kds',
   null: '/auth/login',
 };
@@ -31,8 +31,17 @@ export const ROLE_ALLOWED_ROUTES: RoleAllowedRoutes = {
  * @returns Home route path for the role
  */
 export function getHomeRouteForRole(role: UserRole): string {
-  if (role === null) return ROLE_HOME_ROUTES.null;
-  return ROLE_HOME_ROUTES[role];
+  console.log('[navigation.ts] getHomeRouteForRole called with role:', role);
+  console.log('[navigation.ts] ROLE_HOME_ROUTES:', JSON.stringify(ROLE_HOME_ROUTES));
+  
+  if (role === null) {
+    console.log('[navigation.ts] Returning for null role:', ROLE_HOME_ROUTES.null);
+    return ROLE_HOME_ROUTES.null;
+  }
+  
+  const route = ROLE_HOME_ROUTES[role];
+  console.log('[navigation.ts] Returning route for role', role, ':', route);
+  return route;
 }
 
 /**

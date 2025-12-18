@@ -10,9 +10,13 @@ const authOnlyRoutes = ['/auth/login', '/auth/signup'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
+  console.log('[middleware] Request to:', pathname);
+  
   // Get auth token from cookie or header (adjust based on your auth implementation)
   const authToken = request.cookies.get('authToken')?.value;
   const isAuthenticated = !!authToken;
+  
+  console.log('[middleware] isAuthenticated:', isAuthenticated);
 
   // Allow public routes
   if (publicRoutes.some(route => pathname.startsWith(route))) {

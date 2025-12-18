@@ -21,7 +21,7 @@ export const ROUTES = {
   kds: '/kds',
   // Waiter routes
   waiter: '/waiter',
-  waiterServiceBoard: '/waiter/service-board',
+  waiterServiceBoard: '/waiter',
   // Auth routes
   forgotPassword: '/auth/forgot-password',
   resetPassword: '/auth/reset-password',
@@ -29,9 +29,6 @@ export const ROUTES = {
   staffInvitationSignup: '/auth/staff-invitation-signup',
   onboardingWizard: '/auth/onboarding-wizard',
   accessRestricted: '/auth/access-restricted',
-  // Legacy admin routes (redirect to KDS/Waiter)
-  adminKds: '/admin/kds',
-  adminServiceBoard: '/admin/service-board',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

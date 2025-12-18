@@ -20,19 +20,35 @@ export function Login({ onNavigate }: LoginProps) {
   const isDev = process.env.NODE_ENV === 'development';
 
   const handleLogin = (role: 'admin' | 'kds' | 'waiter' = 'admin') => {
-    // Route to appropriate starting screen based on role
+    // In development mode, use mock authentication
+    if (isDev) {
+      devLogin(role);
+      return;
+    }
+
+    // In production, this would call real authentication API
+    // For now, route to appropriate screen
     if (role === 'admin') {
       onNavigate?.(ROUTES.dashboard);
     } else if (role === 'kds') {
-      onNavigate?.(ROUTES.adminKds);
+      onNavigate?.(ROUTES.kds);
     } else if (role === 'waiter') {
-      onNavigate?.(ROUTES.adminServiceBoard);
+      onNavigate?.(ROUTES.waiter);
     }
   };
 
   const handleDevLogin = (role: 'admin' | 'kds' | 'waiter') => {
+    console.log('[Login] handleDevLogin called with role:', role);
+    
+    // Clear any stale data from localStorage
+    if (typeof window !== 'undefined') {
+      console.log('[Login] Clearing localStorage before devLogin');
+      localStorage.clear();
+    }
+    
+    // devLogin already handles navigation via router.push in AuthContext
     devLogin(role);
-    handleLogin(role);
+    console.log('[Login] handleDevLogin completed');
   };
 
   return (

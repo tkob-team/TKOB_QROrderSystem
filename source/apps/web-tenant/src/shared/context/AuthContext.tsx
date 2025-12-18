@@ -93,6 +93,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('devRole');
+    
+    // Remove auth cookie
+    document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    
     setUser(null);
     if (typeof window !== 'undefined') {
       window.location.href = ROUTES.login;
@@ -116,9 +121,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tenantId: 'tenant-001',
     };
 
+    // Set token in both localStorage and cookie
     localStorage.setItem('authToken', mockToken);
     localStorage.setItem('devRole', role); // Store role for persistence
+    
+    // Set cookie for middleware authentication check
+    document.cookie = `authToken=${mockToken}; path=/; max-age=86400; SameSite=Lax`;
+    
     setUser(mockUser);
+    
+    // Check for redirect parameter in URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      
+      if (redirect) {
+        console.log('[AuthContext] devLogin redirecting to:', redirect);
+        console.log('[AuthContext] Using window.location.href for hard redirect');
+        window.location.href = redirect;
+      } else {
+        const homeRoute = getHomeRouteForRole(role as NavigationUserRole);
+        console.log('[AuthContext] devLogin - role:', role, 'homeRoute:', homeRoute);
+        console.log('[AuthContext] About to set window.location.href to:', homeRoute);
+        console.log('[AuthContext] Current window.location.href:', window.location.href);
+        
+        // Use replace instead of assignment to prevent history entry
+        window.location.replace(homeRoute);
+        
+        console.log('[AuthContext] After replace, window.location.href:', window.location.href);
+      }
+    }
   };
 // Dev mode: Switch role on the fly
   const switchRole = useCallback(
@@ -144,6 +176,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setUser(mockUser);
       localStorage.setItem('devRole', role);
+      
+      // Set cookie for middleware authentication check
+      document.cookie = `authToken=mock-jwt-${role}; path=/; max-age=86400; SameSite=Lax`;
       
       const homeRoute = getHomeRouteForRole(role as NavigationUserRole);
       router.push(homeRoute);
@@ -176,8 +211,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         devLogin,
         switchRole,
         getDefaultRoute,
-        canAccess
-        devLogin,
+        canAccess,
       }}
     >
       {children}

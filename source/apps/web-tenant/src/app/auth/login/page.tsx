@@ -7,5 +7,10 @@ import Login from '@/features/auth/Login';
 export default function LoginPage() {
   const router = useRouter();
 
-  return <Login onNavigate={(path) => router.push(path)} />;
+  const handleNavigate = (path: string) => {
+    console.log('[LoginPage] onNavigate called with path:', path);
+    router.push(path);
+  };
+
+  return <Login onNavigate={handleNavigate} />;
 }
