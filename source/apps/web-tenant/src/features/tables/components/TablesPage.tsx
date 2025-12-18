@@ -342,81 +342,82 @@ export function TablesPage() {
     <>
       <div className="mx-auto flex flex-col gap-6 px-6 pt-6 pb-5" style={{ maxWidth: '1600px' }}>
           {/* Header */}
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <h2 className="text-gray-900" style={{ fontSize: '28px', fontWeight: 700, lineHeight: '1.2', letterSpacing: '-0.02em' }}>
+              <h2 className="text-gray-900" style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: 700, lineHeight: '1.2', letterSpacing: '-0.02em' }}>
                 Tables & QR Codes
               </h2>
-              <p className="text-gray-600" style={{ fontSize: '15px' }}>
+              <p className="text-gray-600" style={{ fontSize: 'clamp(13px, 4vw, 15px)' }}>
                 Manage your restaurant tables and generate QR codes
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col xs:flex-row xs:items-center gap-3 w-full md:w-auto">
               {tables.length > 0 && (
                 <button
                   onClick={handleDownloadAll}
-                  className="flex items-center gap-2 px-5 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-emerald-500 text-gray-700 hover:text-emerald-700 transition-all"
+                  className="flex items-center justify-center md:justify-start gap-2 px-4 sm:px-5 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-emerald-500 text-gray-700 hover:text-emerald-700 transition-all flex-1 sm:flex-none"
                   style={{ 
-                    fontSize: '15px', 
+                    fontSize: 'clamp(13px, 4vw, 15px)', 
                     fontWeight: 600, 
                     height: '48px',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                   }}
                 >
-                  <Download className="w-5 h-5" />
-                  Download All QR Codes
+                  <Download className="w-4 sm:w-5 h-4 sm:h-5" />
+                  <span className="hidden sm:inline">Download All QR Codes</span>
+                  <span className="sm:hidden">Download</span>
                 </button>
               )}
               <button
                 onClick={handleOpenAddModal}
-                className="flex items-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white transition-all"
+                className="flex items-center justify-center md:justify-start gap-2 px-4 sm:px-5 py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white transition-all flex-1 sm:flex-none"
                 style={{ 
-                  fontSize: '15px', 
+                  fontSize: 'clamp(13px, 4vw, 15px)', 
                   fontWeight: 600, 
                   height: '48px',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                 }}
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
                 Add Table
               </button>
             </div>
           </div>
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <p className="text-gray-500 mb-1" style={{ fontSize: '14px', fontWeight: 500 }}>Total Tables</p>
-              <p className="text-gray-900" style={{ fontSize: '28px', fontWeight: 700 }}>{tables.length}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="p-4 sm:p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <p className="text-gray-500 mb-1" style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500 }}>Total Tables</p>
+              <p className="text-gray-900" style={{ fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: 700 }}>{tables.length}</p>
             </Card>
-            <Card className="p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <p className="text-gray-500 mb-1" style={{ fontSize: '14px', fontWeight: 500 }}>Free</p>
-              <p className="text-emerald-600" style={{ fontSize: '28px', fontWeight: 700 }}>
+            <Card className="p-4 sm:p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <p className="text-gray-500 mb-1" style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500 }}>Free</p>
+              <p className="text-emerald-600" style={{ fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: 700 }}>
                 {tables.filter(t => t.status === 'free').length}
               </p>
             </Card>
-            <Card className="p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <p className="text-gray-500 mb-1" style={{ fontSize: '14px', fontWeight: 500 }}>Occupied</p>
-              <p className="text-amber-600" style={{ fontSize: '28px', fontWeight: 700 }}>
+            <Card className="p-4 sm:p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <p className="text-gray-500 mb-1" style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500 }}>Occupied</p>
+              <p className="text-amber-600" style={{ fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: 700 }}>
                 {tables.filter(t => t.status === 'occupied').length}
               </p>
             </Card>
-            <Card className="p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <p className="text-gray-500 mb-1" style={{ fontSize: '14px', fontWeight: 500 }}>Total Capacity</p>
-              <p className="text-gray-900" style={{ fontSize: '28px', fontWeight: 700 }}>
+            <Card className="p-4 sm:p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <p className="text-gray-500 mb-1" style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500 }}>Total Capacity</p>
+              <p className="text-gray-900" style={{ fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: 700 }}>
                 {tables.reduce((sum, t) => sum + t.capacity, 0)}
               </p>
             </Card>
           </div>
 
           {/* Filter and Sort */}
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative">
+          <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-center gap-3 xs:gap-4 mb-4">
+            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45">
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-                style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
+                className="w-full px-3 xs:px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
+                style={{ fontSize: 'clamp(13px, 4vw, 15px)', borderRadius: '4px', height: '48px' }}
               >
                 <option value="All">All Statuses</option>
                 <option value="free">Free</option>
@@ -424,15 +425,15 @@ export function TablesPage() {
                 <option value="reserved">Reserved</option>
                 <option value="inactive">Inactive</option>
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 xs:right-4 top-1/2 transform -translate-y-1/2 w-4 xs:w-5 h-4 xs:h-5 text-gray-400 pointer-events-none" />
             </div>
 
-            <div className="relative">
+            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45">
               <select
                 value={selectedZone}
                 onChange={(e) => setSelectedZone(e.target.value)}
-                className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-                style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
+                className="w-full px-3 xs:px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
+                style={{ fontSize: 'clamp(13px, 4vw, 15px)', borderRadius: '4px', height: '48px' }}
               >
                 <option value="All Locations">All Locations</option>
                 <option value="indoor">Indoor</option>
@@ -440,44 +441,44 @@ export function TablesPage() {
                 <option value="patio">Patio</option>
                 <option value="vip">VIP</option>
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 xs:right-4 top-1/2 transform -translate-y-1/2 w-4 xs:w-5 h-4 xs:h-5 text-gray-400 pointer-events-none" />
             </div>
 
-            <div className="relative">
+            <div className="relative flex-1 xs:flex-none xs:min-w-48 sm:min-w-56">
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
-                className="px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
-                style={{ fontSize: '15px', borderRadius: '4px', height: '48px' }}
+                className="w-full px-3 xs:px-4 py-3 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20 transition-all"
+                style={{ fontSize: 'clamp(13px, 4vw, 15px)', borderRadius: '4px', height: '48px' }}
               >
                 <option value="Sort by: Table Number (Ascending)">Sort by: Table Number (Ascending)</option>
                 <option value="Sort by: Capacity (Ascending)">Sort by: Capacity (Ascending)</option>
                 <option value="Sort by: Capacity (Descending)">Sort by: Capacity (Descending)</option>
                 <option value="Sort by: Creation Date (Newest)">Sort by: Creation Date (Newest)</option>
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 xs:right-4 top-1/2 transform -translate-y-1/2 w-4 xs:w-5 h-4 xs:h-5 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Tables Grid */}
           {filterAndSortTables(tables).length === 0 ? (
-            <Card className="p-12 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <Card className="p-8 sm:p-12 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <div className="flex flex-col items-center justify-center">
-                <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center mb-4">
-                  <QrCode className="w-10 h-10 text-gray-400" />
+                <div className="w-16 sm:w-20 h-16 sm:h-20 bg-gray-100 rounded-md flex items-center justify-center mb-4">
+                  <QrCode className="w-8 sm:w-10 h-8 sm:h-10 text-gray-400" />
                 </div>
-                <h4 className="text-gray-900 mb-2" style={{ fontSize: '18px', fontWeight: 600 }}>
+                <h4 className="text-gray-900 mb-2" style={{ fontSize: 'clamp(16px, 5vw, 18px)', fontWeight: 600 }}>
                   No tables yet
                 </h4>
-                <p className="text-gray-600 mb-6" style={{ fontSize: '15px' }}>
+                <p className="text-gray-600 mb-6" style={{ fontSize: 'clamp(13px, 4vw, 15px)' }}>
                   Add your first table to get started with QR code ordering
                 </p>
                 <button
                   onClick={handleOpenAddModal}
                   className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-                  style={{ fontSize: '15px', fontWeight: 600, borderRadius: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+                  style={{ fontSize: 'clamp(13px, 4vw, 15px)', fontWeight: 600, borderRadius: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
                 >
-                  <Plus className="w-5 h-5 inline-block mr-2" />
+                  <Plus className="w-4 sm:w-5 h-4 sm:h-5 inline-block mr-2" />
                   Add Table
                 </button>
               </div>
@@ -503,34 +504,34 @@ export function TablesPage() {
                     }}
                     aria-label={`View QR code for ${table.name}`}
                   >
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-3 sm:gap-4">
                       {/* Table Number - Large */}
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-gray-900" style={{ fontSize: '24px', fontWeight: 700 }}>
+                      <div className="flex items-start sm:items-center justify-between gap-3">
+                        <h3 className="text-gray-900" style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 700 }}>
                           {table.name}
                         </h3>
-                        <div className="w-10 h-10 bg-emerald-50 rounded-sm flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                          <QrCode className="w-5 h-5 text-emerald-600" />
+                        <div className="w-8 sm:w-10 h-8 sm:h-10 bg-emerald-50 rounded-sm flex items-center justify-center group-hover:bg-emerald-100 transition-colors shrink-0">
+                          <QrCode className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600" />
                         </div>
                       </div>
 
                       {/* Capacity */}
                       <div className="flex items-center gap-2 text-gray-600">
-                        <Users className="w-5 h-5" />
-                        <span style={{ fontSize: '15px', fontWeight: 500 }}>
+                        <Users className="w-4 sm:w-5 h-4 sm:h-5 shrink-0" />
+                        <span style={{ fontSize: 'clamp(13px, 4vw, 15px)', fontWeight: 500 }}>
                           {table.capacity} {table.capacity === 1 ? 'seat' : 'seats'}
                         </span>
                       </div>
 
                       {/* Status and Location */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={statusConfig.variant}>
                           {statusConfig.label}
                         </Badge>
-                        <span className="text-gray-400" style={{ fontSize: '14px', fontWeight: 400 }}>
+                        <span className="text-gray-400" style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 400 }}>
                           •
                         </span>
-                        <span className="text-gray-600" style={{ fontSize: '14px', fontWeight: 500 }}>
+                        <span className="text-gray-600" style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500 }}>
                           {getZoneLabel(table.zone)}
                         </span>
                       </div>
@@ -551,17 +552,18 @@ export function TablesPage() {
           closeButton={false}
         >
           {/* Custom Header Actions */}
-          <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+          <div className="absolute top-4 sm:top-6 right-4 sm:right-6 flex flex-col xs:flex-row xs:items-center gap-2 z-10">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleOpenEditModal();
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 transition-colors"
-              style={{ fontSize: '14px', fontWeight: 600, borderRadius: '4px' }}
+              className="flex items-center justify-center xs:justify-start gap-2 px-3 xs:px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 transition-colors whitespace-nowrap"
+              style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, borderRadius: '4px' }}
             >
-              <Edit className="w-4 h-4" />
-              Edit Table
+              <Edit className="w-4 h-4 shrink-0" />
+              <span className="hidden xs:inline">Edit Table</span>
+              <span className="xs:hidden">Edit</span>
             </button>
             <button
               onClick={(e) => {
@@ -569,15 +571,16 @@ export function TablesPage() {
                 handleRegenerateQR();
               }}
               disabled={selectedTable.status === 'inactive'}
-              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-              style={{ fontSize: '14px', fontWeight: 600, borderRadius: '4px' }}
+              className="flex items-center justify-center xs:justify-start gap-2 px-3 xs:px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white whitespace-nowrap"
+              style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, borderRadius: '4px' }}
             >
-              <RefreshCcw className="w-4 h-4" />
-              Regenerate QR
+              <RefreshCcw className="w-4 h-4 shrink-0" />
+              <span className="hidden xs:inline">Regenerate QR</span>
+              <span className="xs:hidden">Regen</span>
             </button>
             <button
               onClick={handleCloseQRModal}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors self-end xs:self-auto"
             >
               <X className="w-5 h-5 text-gray-400" />
             </button>
