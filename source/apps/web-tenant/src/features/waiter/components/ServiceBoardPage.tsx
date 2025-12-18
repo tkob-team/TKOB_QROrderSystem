@@ -1,11 +1,9 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Toast } from '@/shared/components/ui/Toast';
-import { useAuth } from '@/shared/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import { 
   Bell,
   BellOff,
@@ -54,9 +52,6 @@ interface Tab {
 }
 
 export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps) {
-  const router = useRouter();
-  const { logout } = useAuth();
-  
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -573,7 +568,9 @@ export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps)
                                 </Badge>
                               )}
                               {/* Payment Status Badge */}
-                              <Badge variant={order.paymentStatus === 'paid' ? 'success' : 'warning'}>
+                              <Badge 
+                                variant={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+                              >
                                 <span style={{ fontSize: '11px' }}>
                                   {order.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
                                 </span>
