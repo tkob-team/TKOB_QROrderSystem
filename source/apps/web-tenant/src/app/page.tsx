@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/context/AuthContext';
+import { ROUTES } from '@/lib/routes';
 
 export default function HomePage() {
   const router = useRouter();
@@ -11,9 +12,9 @@ export default function HomePage() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.push('/admin/dashboard');
+        router.push(ROUTES.dashboard);
       } else {
-        router.push('/login');
+        router.push(ROUTES.login);
       }
     }
   }, [isAuthenticated, isLoading, router]);

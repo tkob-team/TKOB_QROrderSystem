@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       'account-settings': ROUTES.accountSettings,
       login: ROUTES.login,
       kds: ROUTES.kds,
-      'service-board': ROUTES.serviceBoard,
+      'service-board': ROUTES.waiterServiceBoard,
     };
 
     const route = routeMap[screen];

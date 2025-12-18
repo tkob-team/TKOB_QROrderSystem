@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ROUTES } from '@/lib/routes';
 
 // User role type matching RBAC requirements (3 roles only)
 export type UserRole = 'admin' | 'kds' | 'waiter';
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.removeItem('authToken');
     setUser(null);
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = ROUTES.login;
     }
   };
 

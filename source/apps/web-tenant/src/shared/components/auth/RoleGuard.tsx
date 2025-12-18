@@ -3,6 +3,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/shared/context/AuthContext';
+import { ROUTES } from '@/lib/routes';
 
 interface RoleGuardProps {
   children: ReactNode;
@@ -16,7 +17,7 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
   useEffect(() => {
     // If not authenticated and not loading, redirect to login
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push(ROUTES.login);
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -59,7 +60,7 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600 mb-6">
-            You don't have permission to access this page.
+            You don&apos;t have permission to access this page.
           </p>
           <div className="text-sm text-gray-500 mb-6">
             <p>Your role: <span className="font-semibold text-gray-700">{user.role}</span></p>

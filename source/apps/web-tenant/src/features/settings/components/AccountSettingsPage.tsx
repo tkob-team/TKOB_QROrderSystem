@@ -22,7 +22,7 @@ export function AccountSettingsPage() {
   // Profile state
   const [displayName, setDisplayName] = useState('TKOB Admin');
   const [email] = useState('admin@tkqr.com');
-  const [avatarInitials, setAvatarInitials] = useState('TA');
+  const [avatarInitials] = useState('TA');
   const [avatarColor, setAvatarColor] = useState('emerald');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
