@@ -351,11 +351,11 @@ export function TablesPage() {
                 Manage your restaurant tables and generate QR codes
               </p>
             </div>
-            <div className="flex flex-col xs:flex-row xs:items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
               {tables.length > 0 && (
                 <button
                   onClick={handleDownloadAll}
-                  className="flex items-center justify-center md:justify-start gap-2 px-4 sm:px-5 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-emerald-500 text-gray-700 hover:text-emerald-700 transition-all flex-1 sm:flex-none"
+                  className="flex items-center justify-center xs:justify-start gap-2 px-4 sm:px-5 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 hover:border-emerald-500 text-gray-700 hover:text-emerald-700 transition-all flex-1 xs:flex-none md:flex-none"
                   style={{ 
                     fontSize: 'clamp(13px, 4vw, 15px)', 
                     fontWeight: 600, 
@@ -370,7 +370,7 @@ export function TablesPage() {
               )}
               <button
                 onClick={handleOpenAddModal}
-                className="flex items-center justify-center md:justify-start gap-2 px-4 sm:px-5 py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white transition-all flex-1 sm:flex-none"
+                className="flex items-center justify-center xs:justify-start gap-2 px-4 sm:px-5 py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white transition-all flex-1 xs:flex-none md:flex-none"
                 style={{ 
                   fontSize: 'clamp(13px, 4vw, 15px)', 
                   fontWeight: 600, 
@@ -411,8 +411,8 @@ export function TablesPage() {
           </div>
 
           {/* Filter and Sort */}
-          <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-center gap-3 xs:gap-4 mb-4">
-            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45">
+          <div className="flex flex-col md:flex-row lg:flex-nowrap md:items-center gap-3 md:gap-4 mb-4">
+            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45 lg:flex-none lg:min-w-fit">
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
@@ -428,7 +428,7 @@ export function TablesPage() {
               <ChevronDown className="absolute right-3 xs:right-4 top-1/2 transform -translate-y-1/2 w-4 xs:w-5 h-4 xs:h-5 text-gray-400 pointer-events-none" />
             </div>
 
-            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45">
+            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45 lg:flex-none lg:min-w-fit">
               <select
                 value={selectedZone}
                 onChange={(e) => setSelectedZone(e.target.value)}
@@ -444,7 +444,7 @@ export function TablesPage() {
               <ChevronDown className="absolute right-3 xs:right-4 top-1/2 transform -translate-y-1/2 w-4 xs:w-5 h-4 xs:h-5 text-gray-400 pointer-events-none" />
             </div>
 
-            <div className="relative flex-1 xs:flex-none xs:min-w-48 sm:min-w-56">
+            <div className="relative flex-1 xs:flex-none xs:min-w-40 sm:min-w-45 lg:flex-none lg:min-w-fit">
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
