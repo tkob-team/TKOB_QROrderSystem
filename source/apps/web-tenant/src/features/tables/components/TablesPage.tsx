@@ -1,6 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import './TablesPage.css';
+import { useReactToPrint } from 'react-to-print';
+import QRCode from 'react-qr-code';
+import { saveAs } from 'file-saver';
 import { Card } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Toast } from '@/shared/components/ui/Toast';
@@ -47,6 +51,111 @@ export function TablesPage() {
   const [isDownloadingQR, setIsDownloadingQR] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [isFetchingTableDetails, setIsFetchingTableDetails] = useState(false);
+  
+  // QR Code printing ref
+  const qrPrintRef = useRef<HTMLDivElement>(null);
+  
+  // QR Code printing with error handling
+  const handlePrintQR = useReactToPrint({
+    contentRef: qrPrintRef,
+    documentTitle: `QR-Code-${selectedTable?.name || 'Table'}`,
+    onBeforePrint: () => {
+      // Validate that content exists before printing
+      if (!qrPrintRef.current) {
+        throw new Error('QR code content not found. Please try again.');
+      }
+      const svg = qrPrintRef.current.querySelector('svg');
+      if (!svg) {
+        throw new Error('QR code SVG not found. Please try again.');
+      }
+    },
+    onPrintError: (error: any) => {
+      console.error('Print error details:', error);
+      setToastMessage('Print failed: ' + (error?.message || 'Unknown error. Please try again.'));
+      setToastType('error');
+      setShowSuccessToast(true);
+    },
+    pageStyle: `
+      @page {
+        margin: 0;
+        size: A4;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    `,
+  });
+
+  // QR Code download as image (optimized for quality & size balance)
+  const handleDownloadQRImage = async () => {
+    if (!selectedTable || !qrPrintRef.current) return;
+    
+    try {
+      setIsDownloadingQR(true);
+      // Find SVG in the QR code ref
+      const svg = qrPrintRef.current.querySelector('svg');
+      if (!svg) throw new Error('QR code SVG not found');
+      
+      // Get actual SVG dimensions
+      const viewBox = svg.getAttribute('viewBox');
+      const [, , vbWidth, vbHeight] = viewBox?.split(' ').map(Number) || [0, 0, 256, 256];
+      
+      // 6x scale for high-quality 300x300 output (256 * 6 = 1536px internally, compressed to ~300px visible)
+      const scale = 6;
+      const canvas = document.createElement('canvas');
+      canvas.width = vbWidth * scale;
+      canvas.height = vbHeight * scale;
+      
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (!ctx) throw new Error('Failed to get canvas context');
+      
+      // Set background to white
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create image from SVG
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        
+        // Convert to PNG with optimal compression
+        // PNG uses lossless compression, so quality is preserved
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              console.log(`📦 QR Code Image: ${(blob.size / 1024).toFixed(1)}KB`);
+              saveAs(blob, `table-${selectedTable.tableNumber}.png`);
+            }
+            setIsDownloadingQR(false);
+          },
+          'image/png'
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        throw new Error('Failed to load SVG image');
+      };
+      img.src = url;
+    } catch (error) {
+      console.error('Failed to download QR code:', error);
+      setIsDownloadingQR(false);
+    }
+  };
   
   // Filter and sort state
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -562,14 +671,6 @@ export function TablesPage() {
     }
   };
 
-  const handlePrintQR = () => {
-    if (selectedTable) {
-      setToastMessage(`Printing QR code for ${selectedTable.name}...`);
-      setToastType('success');
-      setShowSuccessToast(true);
-    }
-  };
-
   // Helper functions
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -996,23 +1097,24 @@ export function TablesPage() {
           {/* QR Code Preview */}
           <div className="flex flex-col items-center gap-4">
             <div 
-              className={`w-64 h-64 bg-white border-4 rounded-lg flex items-center justify-center relative ${
+              className={`w-72 h-72 bg-white border-4 rounded-lg flex items-center justify-center relative ${
                 selectedTable.status === 'inactive' ? 'border-gray-300 opacity-60' : 'border-gray-200'
               }`}
               style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
             >
-              {/* QR Code Placeholder */}
-              <div className="w-56 h-56 rounded-lg p-4" style={{ background: 'linear-gradient(to right bottom, #111827, #1f2937, #111827)' }}>
-                <div className="w-full h-full bg-white rounded grid grid-cols-8 grid-rows-8 gap-0.5 p-2">
-                  {Array.from({ length: 64 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`${
-                        Math.random() > 0.5 ? 'bg-gray-900' : 'bg-white'
-                      } rounded-sm`}
-                    />
-                  ))}
-                </div>
+              {/* Real QR Code Component */}
+              <div 
+                ref={qrPrintRef}
+                data-qr-print
+                className="flex items-center justify-center p-4 bg-white rounded"
+              >
+                <QRCode 
+                  value={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`}
+                  size={256}
+                  level="H"
+                  bgColor="#FFFFFF"
+                  fgColor="#000000"
+                />
               </div>
               
               {/* Inactive Overlay */}
@@ -1081,34 +1183,50 @@ export function TablesPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleDownloadQR('png')}
-              disabled={selectedTable.status === 'inactive' || isDownloadingQR}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
-            >
-              <Download className="w-5 h-5" />
-              {isDownloadingQR ? 'Downloading...' : 'Download PNG'}
-            </button>
-            <button
-              onClick={() => handleDownloadQR('pdf')}
-              disabled={selectedTable.status === 'inactive' || isDownloadingQR}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
-            >
-              <Download className="w-5 h-5" />
-              {isDownloadingQR ? 'Downloading...' : 'Download PDF'}
-            </button>
-            <button
-              onClick={handlePrintQR}
-              disabled={selectedTable.status === 'inactive'}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 text-gray-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
-              style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px' }}
-            >
-              <Printer className="w-5 h-5" />
-              Print
-            </button>
+          <div className="flex flex-col gap-3">
+            {/* Backend Download Options */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleDownloadQR('png')}
+                disabled={selectedTable.status === 'inactive' || isDownloadingQR}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+              >
+                <Download className="w-5 h-5" />
+                {isDownloadingQR ? 'Downloading...' : 'Download PNG'}
+              </button>
+              <button
+                onClick={() => handleDownloadQR('pdf')}
+                disabled={selectedTable.status === 'inactive' || isDownloadingQR}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+              >
+                <Download className="w-5 h-5" />
+                {isDownloadingQR ? 'Downloading...' : 'Download PDF'}
+              </button>
+            </div>
+            
+            {/* Local QR Code Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownloadQRImage}
+                disabled={selectedTable.status === 'inactive' || isDownloadingQR}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white transition-all disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+              >
+                <Download className="w-5 h-5" />
+                {isDownloadingQR ? 'Downloading...' : 'Save Image'}
+              </button>
+              <button
+                onClick={() => handlePrintQR()}
+                disabled={selectedTable.status === 'inactive'}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 border-2 border-gray-300 text-gray-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+                style={{ fontSize: '15px', fontWeight: 600, borderRadius: '4px' }}
+              >
+                <Printer className="w-5 h-5" />
+                Print
+              </button>
+            </div>
           </div>
 
           {/* Info Text */}
