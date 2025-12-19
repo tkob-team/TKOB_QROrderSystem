@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, User, LogOut, Code } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
+import { config } from '@/lib/config';
 import type { UserRole } from '@/shared/context/AuthContext';
 
 import type { AdminScreenId } from './AdminShell';
@@ -64,7 +65,7 @@ export function UserMenu({
   const avatarColors = getAvatarColors();
 
   const { logout, switchRole } = useAuth();
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = config.useMockData;
 
   const handleLogout = () => {
     setIsOpen(false);
