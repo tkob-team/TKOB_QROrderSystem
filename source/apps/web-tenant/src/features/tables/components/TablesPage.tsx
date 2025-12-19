@@ -70,24 +70,23 @@ export function TablesPage() {
   
   const locationFilter = selectedZone !== 'All Locations' ? selectedZone : undefined;
   
-  // Map frontend sortOption to backend sortBy/sortOrder
-  const getSortParams = () => {
+  // Map frontend sortOption to backend sortBy/sortOrder - memoized to avoid unnecessary re-renders
+  const sortParams = useMemo(() => {
     switch (sortOption) {
       case 'Sort by: Table Number (Ascending)':
-        return { sortBy: 'tableNumber' as const, sortOrder: 'ASC' as const };
+        return { sortBy: 'tableNumber' as const, sortOrder: 'asc' as const };
       case 'Sort by: Capacity (Ascending)':
-        return { sortBy: 'capacity' as const, sortOrder: 'ASC' as const };
+        return { sortBy: 'capacity' as const, sortOrder: 'asc' as const };
       case 'Sort by: Capacity (Descending)':
-        return { sortBy: 'capacity' as const, sortOrder: 'DESC' as const };
+        return { sortBy: 'capacity' as const, sortOrder: 'desc' as const };
       case 'Sort by: Creation Date (Newest)':
-        return { sortBy: 'createdAt' as const, sortOrder: 'DESC' as const };
+        return { sortBy: 'createdAt' as const, sortOrder: 'desc' as const };
       default:
-        return { sortBy: 'tableNumber' as const, sortOrder: 'ASC' as const };
+        return { sortBy: 'tableNumber' as const, sortOrder: 'asc' as const };
     }
-  };
+  }, [sortOption]);
   
-  const sortParams = getSortParams();
-  
+  // Call API with all backend-driven filtering and sorting params
   const { data: tablesData, isLoading, error } = useTablesList({
     status: statusFilter,
     location: locationFilter,
@@ -104,6 +103,8 @@ export function TablesPage() {
       sortOrder: sortParams.sortOrder,
       isLoading,
       hasError: !!error,
+      receivedTablesCount: tablesData?.length || 0,
+      tableLocations: tablesData?.map(t => ({ id: t.id, location: t.location })) || [],
       errorDetails: error,
       tablesDataType: typeof tablesData,
       tablesDataIsArray: Array.isArray(tablesData),
@@ -115,7 +116,7 @@ export function TablesPage() {
     if (tablesData) {
       console.log('✅ [TablesPage] Backend returned filtered & sorted data:', tablesData);
     }
-  }, [tablesData, isLoading, error, statusFilter, locationFilter, sortParams.sortBy, sortParams.sortOrder]);
+  }, [tablesData, isLoading, error, statusFilter, locationFilter, sortParams]);
   
   const createTableMutation = useCreateTable();
   const updateTableMutation = useUpdateTable();
@@ -178,7 +179,7 @@ export function TablesPage() {
       const payload = {
         tableNumber: `Table ${formData.tableNumber}`,
         capacity: parseInt(formData.capacity),
-        location: formData.zone.charAt(0).toUpperCase() + formData.zone.slice(1),
+        location: formData.zone.toLowerCase(), // Send lowercase - backend will normalize
         description: formData.description,
         displayOrder: parseInt(formData.tableNumber),
       };
@@ -346,7 +347,7 @@ export function TablesPage() {
         data: {
           tableNumber: `Table ${formData.tableNumber}`,
           capacity: parseInt(formData.capacity),
-          location: formData.zone.charAt(0).toUpperCase() + formData.zone.slice(1),
+          location: formData.zone.toLowerCase(), // Send lowercase - backend will normalize
           description: formData.description.trim() || undefined,
           displayOrder: parseInt(formData.tableNumber),
           status: apiStatus,

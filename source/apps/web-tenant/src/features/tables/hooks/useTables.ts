@@ -14,25 +14,17 @@ import type {
  * List tables query
  */
 export const useTablesList = (params?: TableControllerFindAllParams) => {
-  // Only send activeOnly if explicitly provided in params
-  // Default behavior: fetch all tables (activeOnly not specified)
-  const queryParams = params 
-    ? { 
-        ...params,
-        // Remove undefined values to avoid sending them as query params
-        ...(params.activeOnly !== undefined && { activeOnly: params.activeOnly }),
-        ...(params.status !== undefined && { status: params.status }),
-        ...(params.location !== undefined && { location: params.location }),
-      }
-    : {};
+  // Pass all params directly to backend (status, location, sortBy, sortOrder)
+  // Backend handles filtering and sorting
+  const queryParams = params || {};
   
   return useQuery({
     queryKey: ['tables', 'list', queryParams],
     queryFn: async () => {
       console.log('🔍 [useTablesList] Calling API with params:', queryParams);
       try {
-        const result = await tablesService.listTables(queryParams.activeOnly !== undefined ? queryParams as TableControllerFindAllParams : undefined);
-        console.log('📦 [useTablesList] Raw response:', result);
+        const result = await tablesService.listTables(queryParams as TableControllerFindAllParams);
+        console.log('📦 [useTablesList] Backend returned filtered & sorted data:', result);
         return result;
       } catch (error) {
         console.error('❌ [useTablesList] Error:', error);
