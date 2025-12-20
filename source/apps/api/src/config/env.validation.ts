@@ -6,7 +6,9 @@ export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   
   // API Config
-  API_PORT: z.coerce.number().min(1000).max(65535).default(3000),
+  // PORT: Auto-set by Render/Railway/etc. Falls back to API_PORT or 3000
+  PORT: z.coerce.number().min(1000).max(65535).optional(),
+  API_PORT: z.coerce.number().min(1000).max(65535).optional(),
   
   // Database Config
   DATABASE_URL: z.string().url({ message: "Invalid Database URL format" }),

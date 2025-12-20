@@ -25,7 +25,12 @@ async function bootstrap() {
 
   // Get config service
   const configService = app.get<ConfigService<EnvConfig, true>>(ConfigService);
-  const port = configService.get('API_PORT', { infer: true });
+  
+  // Use PORT (set by Render) or API_PORT (local dev) or default 3000
+  const port = configService.get('PORT', { infer: true }) 
+    || configService.get('API_PORT', { infer: true }) 
+    || 3000;
+    
   const nodeEnv = configService.get('NODE_ENV', { infer: true });
 
   // ==================== COOKIE PARSER ====================
