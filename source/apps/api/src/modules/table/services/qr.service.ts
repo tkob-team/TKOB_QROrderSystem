@@ -128,12 +128,12 @@ export class QrService {
 
   /**
    * Build full QR URL for customer app (Haidilao style)
-   * New format: /api/v1/t/{token} instead of /menu?token={token}
+   * Frontend handler: /t/{token} → redirects to backend /api/v1/t/{token}
    */
   buildQrUrl(token: string): string {
     // Remove trailing slash if exists
     const baseUrl = this.customerAppUrl.replace(/\/$/, '');
-    return `${baseUrl}/api/v1/t/${token}`;
+    return `${baseUrl}/t/${token}`;
   }
 
   /**

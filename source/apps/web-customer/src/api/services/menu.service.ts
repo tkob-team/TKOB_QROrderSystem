@@ -1,59 +1,35 @@
-// Menu service - handles menu-related API calls
+// Menu service - handles menu-related API calls (Session-based)
+// Refactored to use Strategy Pattern
 
-import { USE_MOCK_API } from '@/lib/constants';
-import { menuHandlers } from '@/api/mocks';
-import apiClient from '@/api/client';
+import { StrategyFactory } from '@/api/strategies';
 import { ApiResponse, MenuItem } from '@/types';
+
+// Create strategy instance (mock or real based on API_MODE)
+const menuStrategy = StrategyFactory.createMenuStrategy();
 
 export const MenuService = {
   /**
-   * Get public menu with QR token
+   * Get public menu (session-based, no token needed)
+   * Cookie automatically sent by axios (withCredentials: true)
    */
-  async getPublicMenu(token: string): Promise<ApiResponse<{
+  async getPublicMenu(): Promise<ApiResponse<{
     items: MenuItem[];
     categories: string[];
   }>> {
-    if (USE_MOCK_API) {
-      return menuHandlers.getPublicMenu(token);
-    }
-    
-    const response = await apiClient.get(`/api/menu/public?token=${token}`);
-    return response.data;
+    return menuStrategy.getPublicMenu();
   },
   
   /**
    * Get single menu item by ID
    */
   async getMenuItem(id: string): Promise<ApiResponse<MenuItem>> {
-    if (USE_MOCK_API) {
-      return menuHandlers.getMenuItem(id);
-    }
-    
-    const response = await apiClient.get(`/api/menu/items/${id}`);
-    return response.data;
+    return menuStrategy.getMenuItem(id);
   },
   
   /**
    * Search menu items
    */
   async searchMenuItems(query: string): Promise<ApiResponse<MenuItem[]>> {
-    if (USE_MOCK_API) {
-      return menuHandlers.searchMenuItems(query);
-    }
-    
-    const response = await apiClient.get(`/api/menu/search?q=${query}`);
-    return response.data;
-  },
-  
-  /**
-   * Get items by category
-   */
-  async getItemsByCategory(category: string): Promise<ApiResponse<MenuItem[]>> {
-    if (USE_MOCK_API) {
-      return menuHandlers.getItemsByCategory(category);
-    }
-    
-    const response = await apiClient.get(`/api/menu/category/${category}`);
-    return response.data;
+    return menuStrategy.searchMenuItems(query);
   },
 };

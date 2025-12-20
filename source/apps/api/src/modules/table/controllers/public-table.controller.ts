@@ -63,8 +63,26 @@ export class PublicTableController {
       path: '/', // Available for all routes
     });
 
-    // 3. Redirect to /menu (clean URL, no token visible)
-    return response.redirect(302, result.redirectUrl);
+    // 3. Redirect to frontend  (clean URL, no token visible)
+    const frontendUrl = process.env.CUSTOMER_APP_URL || 'http://localhost:3001';
+    return response.redirect(302, `${frontendUrl}`);
+  }
+
+  /**
+   * Get current session info (table number, etc.)
+   */
+  @Get('session')
+  @Public()
+  @UseGuards(SessionGuard)
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Get current session information',
+    description: 'Returns table info for current session',
+  })
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 401, description: 'Session invalid or expired' })
+  async getSessionInfo(@Session() session: any) {
+    return this.sessionService.getSessionInfo(session.sessionId);
   }
 
   /**

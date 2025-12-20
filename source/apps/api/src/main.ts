@@ -39,9 +39,16 @@ async function bootstrap() {
 
   // ==================== CORS ====================
   const corsOrigins = configService.get('CORS_ORIGINS', { infer: true });
+  const allowedOrigins = corsOrigins 
+    ? corsOrigins.split(',') 
+    : ['http://localhost:3001', 'http://localhost:3000']; // Default for development
+  
   app.enableCors({
-    origin: corsOrigins ? corsOrigins.split(',') : '*',
+    origin: allowedOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   // ==================== EXCEPTION FILTERS ====================

@@ -59,24 +59,20 @@ interface UseMenuReturn {
 }
 
 /**
- * Hook to fetch public menu with QR token
+ * Hook to fetch public menu (session-based)
+ * No token needed - uses HttpOnly cookie automatically
  */
-export function useMenu(token?: string): UseMenuReturn {
+export function useMenu(): UseMenuReturn {
   const [items, setItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchMenu = async () => {
-    if (!token) {
-      setError('QR token is required')
-      return
-    }
-    
     try {
       setIsLoading(true)
       setError(null)
-      const response = await MenuService.getPublicMenu(token)
+      const response = await MenuService.getPublicMenu()
       
       if (response.success && response.data) {
         setItems(response.data.items)
@@ -92,9 +88,8 @@ export function useMenu(token?: string): UseMenuReturn {
   }
 
   useEffect(() => {
-    // Fetch with provided token or without (for mock mode)
     fetchMenu()
-  }, [token])
+  }, []) // No token dependency
 
   return {
     data: items,

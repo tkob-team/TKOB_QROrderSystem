@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TableSession, TableStatus } from '@prisma/client';
+import { PrismaService } from '@database/prisma.service';
 import { TableSessionRepository } from '../repositories/table-session.repository';
 import { TableRepository } from '../repositories/table.repository';
 import { QrService } from './qr.service';
@@ -16,6 +17,7 @@ export interface SessionData {
   tableId: string;
   tenantId: string;
   tableNumber: string;
+  restaurantName: string;
   scannedAt: Date;
 }
 
@@ -35,6 +37,7 @@ export class TableSessionService {
     private readonly sessionRepo: TableSessionRepository,
     private readonly tableRepo: TableRepository,
     private readonly qrService: QrService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -114,17 +117,24 @@ export class TableSessionService {
       throw new UnauthorizedException('Session has been cleared by staff');
     }
 
-    // Get table info
+    // Get table info with tenant
     const table = await this.tableRepo.findById(session.tableId);
     if (!table) {
       throw new NotFoundException('Table not found');
     }
+
+    // Get tenant info for restaurant name
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: session.tenantId },
+      select: { name: true },
+    });
 
     return {
       sessionId: session.id,
       tableId: session.tableId,
       tenantId: session.tenantId,
       tableNumber: table.tableNumber,
+      restaurantName: tenant?.name || 'Restaurant',
       scannedAt: session.scannedAt,
     };
   }

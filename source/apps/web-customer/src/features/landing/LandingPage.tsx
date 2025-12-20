@@ -4,27 +4,52 @@ import { useRouter } from 'next/navigation'
 import { Smartphone } from 'lucide-react'
 import { LanguageSwitcher } from '@/components'
 import { useLanguage } from '@/hooks/useLanguage'
+import { useSession } from '@/hooks/useSession'
+import { useEffect } from 'react'
 
 export function LandingPage() {
   const router = useRouter()
   const { language, setLanguage } = useLanguage()
+  const { session, loading, error } = useSession()
 
-  const mockRestaurant = { name: 'The Golden Spoon' } // TODO: Replace with API
-  const mockTable = { number: 5, guestCount: 2 } // TODO: Get from QR token
+  // Redirect if no session (not scanned QR)
+  useEffect(() => {
+    if (!loading && !session) {
+      console.log('[LandingPage] No session found, redirecting to invalid-qr')
+      router.push('/invalid-qr?reason=no-session')
+    }
+  }, [loading, session, router])
+
+  // Show loading while checking session
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p style={{ color: 'var(--gray-600)' }}>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If no session, show nothing (will redirect)
+  if (!session) {
+    return null
+  }
 
   const text = {
     EN: {
       welcome: 'Welcome to',
-      tableInfo: `You're at Table ${mockTable.number}`,
-      guestCount: `${mockTable.guestCount} guests`,
+      tableInfo: `You're at Table ${session.tableNumber}`,
+      guestCount: `2 guests`, // TODO: Get from session if available
       validText: 'Scan valid for today only',
       ctaButton: 'View Menu',
       helperText: 'Browse our menu and place your order directly from your table',
     },
     VI: {
       welcome: 'Chào mừng đến',
-      tableInfo: `Bạn đang ở bàn số ${mockTable.number}`,
-      guestCount: `${mockTable.guestCount} khách`,
+      tableInfo: `Bạn đang ở bàn số ${session.tableNumber}`,
+      guestCount: `2 khách`,
       validText: 'Mã QR có hiệu lực trong ngày hôm nay',
       ctaButton: 'Xem thực đơn',
       helperText: 'Duyệt thực đơn và đặt món ngay tại bàn của bạn',
@@ -41,7 +66,7 @@ export function LandingPage() {
           <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F97316' }}>
             <span className="text-white text-lg">🍽️</span>
           </div>
-          <span style={{ color: '#111827' }}>{mockRestaurant.name}</span>
+          <span style={{ color: '#111827' }}>{session?.restaurantName || 'The Golden Spoon'}</span>
         </div>
         <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />
       </div>
@@ -62,7 +87,7 @@ export function LandingPage() {
               {t.welcome}
             </p>
             <h1 className="mb-6" style={{ color: '#111827', fontSize: '26px', lineHeight: '1.3' }}>
-              {mockRestaurant.name}
+              {session?.restaurantName || 'The Golden Spoon'}
             </h1>
             
             {/* Table Info Card */}

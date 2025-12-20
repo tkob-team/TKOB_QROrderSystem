@@ -1,9 +1,13 @@
 // Table service - handles table session and QR validation
+// Refactored to use Strategy Pattern
 
-import { USE_MOCK_API } from '@/lib/constants';
-import { tableHandlers } from '@/api/mocks';
-import apiClient from '@/api/client';
+import { StrategyFactory, SessionInfo } from '@/api/strategies';
 import { ApiResponse, Table, Restaurant } from '@/types';
+
+// Create strategy instance (mock or real based on API_MODE)
+const tableStrategy = StrategyFactory.createTableStrategy();
+
+export type { SessionInfo };
 
 export const TableService = {
   /**
@@ -13,23 +17,21 @@ export const TableService = {
     table: Table;
     restaurant: Restaurant;
   }>> {
-    if (USE_MOCK_API) {
-      return tableHandlers.validateQRToken(token);
-    }
-    
-    const response = await apiClient.post('/api/table/validate-qr', { token });
-    return response.data;
+    return tableStrategy.validateQRToken(token);
+  },
+  
+  /**
+   * Get current session information (session-based)
+   * Cookie automatically sent by axios
+   */
+  async getCurrentSession(): Promise<SessionInfo> {
+    return tableStrategy.getCurrentSession();
   },
   
   /**
    * Get table information
    */
   async getTableInfo(tableId: string): Promise<ApiResponse<Table>> {
-    if (USE_MOCK_API) {
-      return tableHandlers.getTableInfo(tableId);
-    }
-    
-    const response = await apiClient.get(`/api/table/${tableId}`);
-    return response.data;
+    return tableStrategy.getTableInfo(tableId);
   },
 };

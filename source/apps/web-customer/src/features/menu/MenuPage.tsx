@@ -8,8 +8,8 @@ import { useLanguage } from '@/hooks/useLanguage'
 import { useCart } from '@/hooks/useCart'
 import { usePagination } from '@/hooks/usePagination'
 import { useMenu } from '@/hooks/useMenu'
+import { useSession } from '@/hooks/useSession'
 import { FeatureErrorBoundary } from '@/components/error'
-import { MOCK_QR_TOKEN } from '@/lib/constants'
 
 const ITEMS_PER_PAGE = 6
 
@@ -21,8 +21,11 @@ export function MenuPage() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [sortBy, setSortBy] = useState<'default' | 'popular'>('default')
 
-  // Fetch menu data
-  const { data: menuItems, isLoading, error } = useMenu(MOCK_QR_TOKEN)
+  // Fetch session info (table number, etc.)
+  const { session, loading: sessionLoading } = useSession()
+
+  // Fetch menu data (session-based, no token needed)
+  const { data: menuItems, isLoading, error } = useMenu()
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -91,7 +94,9 @@ export function MenuPage() {
               <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--orange-500)', fontSize: '12px' }}>🍽️</div>
               <span style={{ color: 'var(--gray-900)' }}>Restaurant</span>
             </div>
-            <p style={{ color: 'var(--gray-600)', fontSize: '13px' }}>{t.table} 5 · 2 {t.guests}</p>
+            <p style={{ color: 'var(--gray-600)', fontSize: '13px' }}>
+              {sessionLoading ? '...' : `${t.table} ${session?.tableNumber || '-'}`} · 2 {t.guests}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />

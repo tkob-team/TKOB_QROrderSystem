@@ -1,8 +1,20 @@
 // Application constants
 
-// API Mode: 'mock' or 'real'
-export const API_MODE = process.env.NEXT_PUBLIC_API_MODE || 'mock';
-export const USE_MOCK_API = API_MODE === 'mock';
+// API Mode: true = use mock data, false = use real API
+// Accepts: 'true', 'false', 'mock', 'real' (backward compatible)
+const apiModeValue = process.env.NEXT_PUBLIC_API_MODE || 'false';
+export const USE_MOCK_API = 
+  apiModeValue === 'true' || 
+  apiModeValue === 'mock' || 
+  apiModeValue === '1';
+export const API_MODE = USE_MOCK_API ? 'mock' : 'real';
+
+// Debug log
+if (typeof window !== 'undefined') {
+  console.log('[Constants] ENV:', process.env.NEXT_PUBLIC_API_MODE);
+  console.log('[Constants] USE_MOCK_API:', USE_MOCK_API);
+  console.log('[Constants] API_MODE:', API_MODE);
+}
 
 // Tax and charges
 export const TAX_RATE = 0.1; // 10%
