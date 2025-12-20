@@ -78,15 +78,10 @@ WORKDIR /app/source/apps/api
 
 USER nestjs
 
-EXPOSE 3000
-
 ENV NODE_ENV=production
 # Don't set PORT here - let Render set it automatically
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
 # Start command - skip migration for now, just start the app
 # Run migrations manually from Render dashboard or add as separate job
+# Render will automatically health check on the PORT it assigns
 CMD ["node", "dist/main"]
