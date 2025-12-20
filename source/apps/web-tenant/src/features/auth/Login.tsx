@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Card } from '@/shared/components/ui';
@@ -21,7 +21,7 @@ export function Login({ onNavigate }: LoginProps) {
   const [rememberMe, setRememberMe] = useState(false);
   const [language, setLanguage] = useState('EN');
   const [serverError, setServerError] = useState<string | null>(null);
-  const { devLogin, login, getDefaultRoute } = useAuth();
+  const { devLogin, login, getDefaultRoute, setRememberMeToken } = useAuth();
   const router = useRouter();
   const isDev = config.useMockData;
 
@@ -29,6 +29,7 @@ export function Login({ onNavigate }: LoginProps) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setValue,
   } = useForm<LoginFormData>({
     mode: 'onTouched',
     defaultValues: {
@@ -36,6 +37,19 @@ export function Login({ onNavigate }: LoginProps) {
       password: '',
     },
   });
+
+  // Load saved email from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('rememberMeEmail');
+      const wasRemembered = localStorage.getItem('rememberMe') === 'true';
+      
+      if (savedEmail && wasRemembered) {
+        setValue('email', savedEmail);
+        setRememberMe(true);
+      }
+    }
+  }, [setValue]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -47,14 +61,25 @@ export function Login({ onNavigate }: LoginProps) {
         return;
       }
 
-      // Call real backend API through AuthContext
-      console.log('[Login] Calling login with:', data.email);
-      await login(data.email, data.password);
+      // Call real backend API through AuthContext with rememberMe flag
+      console.log('[Login] Calling login with:', data.email, 'Remember me:', rememberMe);
+      await login(data.email, data.password, rememberMe);
       
-      console.log('[Login] Login successful, checking localStorage:', {
-        hasToken: !!localStorage.getItem('authToken'),
-        tokenLength: localStorage.getItem('authToken')?.length,
-      });
+      console.log('[Login] Login successful');
+      console.log('[Login] Token stored in:', rememberMe ? 'localStorage' : 'sessionStorage');
+      console.log('[Login] localStorage.authToken:', !!localStorage.getItem('authToken'));
+      console.log('[Login] sessionStorage.authToken:', !!sessionStorage.getItem('authToken'));
+      
+      // Save email for next login (only for UX, not for security)
+      if (rememberMe) {
+        localStorage.setItem('rememberMeEmail', data.email);
+        localStorage.setItem('rememberMe', 'true');
+        console.log('[Login] Email saved for next login');
+      } else {
+        localStorage.removeItem('rememberMeEmail');
+        localStorage.removeItem('rememberMe');
+        console.log('[Login] Email not saved - Remember me is disabled');
+      }
       
       // Navigate to user's default route based on role
       const defaultRoute = getDefaultRoute();

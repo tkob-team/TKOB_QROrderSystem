@@ -190,7 +190,10 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async verifyOtp(data: RegisterConfirmData): Promise<OtpVerificationResponse> {
-    console.log('[ApiAuthAdapter] Verify OTP called with registrationToken');
+    console.log('[ApiAuthAdapter] Verify OTP called with:', {
+      registrationToken: data.registrationToken ? data.registrationToken.substring(0, 20) + '...' : 'MISSING',
+      otp: data.otp ? '***' : 'MISSING',
+    });
 
     try {
       const response = await axios.post(
@@ -233,6 +236,13 @@ export class ApiAuthAdapter implements IAuthAdapter {
       console.error('[ApiAuthAdapter] Verify OTP error:', error);
 
       if (axios.isAxiosError(error) && error.response) {
+        console.error('[ApiAuthAdapter] Error response details:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+
         return {
           success: false,
           message: error.response.data?.message || 'Verification failed',

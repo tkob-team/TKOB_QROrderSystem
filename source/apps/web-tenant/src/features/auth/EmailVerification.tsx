@@ -3,6 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
 import { QrCode, Mail, CheckCircle, XCircle } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
+import { config } from '@/lib/config';
 import { authService } from './services';
 import "../../styles/globals.css";
 
@@ -251,7 +252,7 @@ export function EmailVerification({ onNavigate, userEmail = 'user@example.com', 
             </button>
 
             {/* Dev-only actions */}
-            {process.env.NODE_ENV === 'development' && (
+            {config.useMockData && (
               <div className="flex gap-2 items-center justify-center pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setState('verified')}
