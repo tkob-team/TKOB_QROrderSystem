@@ -30,17 +30,21 @@ export class TableService {
    */
   async create(tenantId: string, dto: CreateTableDto): Promise<Table> {
     try {
+      this.logger.debug(`Creating table: ${dto.tableNumber} for tenant: ${tenantId}`);
+      
       // Create table first (without QR)
       const table = await this.repo.create({
         tenantId,
         tableNumber: dto.tableNumber,
         capacity: dto.capacity,
         location: dto.location?.toLowerCase() || null, // Normalize location to lowercase
-        description: dto.description,
+        description: dto.description || null,
         displayOrder: dto.displayOrder ?? 0,
         status: TableStatus.AVAILABLE,
         active: true,
       });
+
+      this.logger.debug(`Table created with ID: ${table.id}`);
 
       // Generate QR with actual tableId
       const { token, tokenHash } = this.qrService.generateToken(table.id, tenantId);
@@ -51,6 +55,8 @@ export class TableService {
       this.logger.log(`Table created: ${dto.tableNumber} (ID: ${table.id})`);
       return updatedTable;
     } catch (error) {
+      this.logger.error(`Failed to create table: ${error.message}`, error.stack);
+      
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException(
           `Table number "${dto.tableNumber}" already exists in your restaurant`,

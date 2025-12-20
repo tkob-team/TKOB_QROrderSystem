@@ -59,15 +59,18 @@ export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './src/
 export { Calendar } from './src/components/calendar';
 
 // Toggle Components
-export { Toggle, ToggleGroup, ToggleGroupItem } from './src/components/toggle-group';
-export { Toggle as ToggleSingle } from './src/components/toggle';
+export { ToggleGroup, ToggleGroupItem } from './src/components/toggle-group';
+export { Toggle } from './src/components/toggle';
 
 // Chart Components
 export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, ChartStyle } from './src/components/chart';
 
 // Toast Notifications
-export { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport, useToast } from './src/components/sonner';
+export { Toaster } from './src/components/sonner';
+
+// Image
+export { OptimizedImage } from './src/components/optimized-image';
 
 // Utilities
-export { useMediaQuery } from './src/use-mobile';
-export * from './src/utils';
+export { useIsMobile } from './src/use-mobile';
+export { cn } from './src/utils';

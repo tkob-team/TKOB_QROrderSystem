@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import type { EnvConfig } from './config/env.validation';
+import cookieParser from 'cookie-parser';
 
 // Import filters
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -27,6 +28,10 @@ async function bootstrap() {
   const port = configService.get('API_PORT', { infer: true });
   const nodeEnv = configService.get('NODE_ENV', { infer: true });
 
+  // ==================== COOKIE PARSER ====================
+  // Required for session-based QR ordering (Haidilao style)
+  app.use(cookieParser());
+
   // ==================== GLOBAL PREFIX ====================
   app.setGlobalPrefix('api/v1', {
     exclude: ['/health'], // Health check endpoint
@@ -34,9 +39,16 @@ async function bootstrap() {
 
   // ==================== CORS ====================
   const corsOrigins = configService.get('CORS_ORIGINS', { infer: true });
+  const allowedOrigins = corsOrigins 
+    ? corsOrigins.split(',') 
+    : ['http://localhost:3001', 'http://localhost:3000']; // Default for development
+  
   app.enableCors({
-    origin: corsOrigins ? corsOrigins.split(',') : '*',
+    origin: allowedOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   // ==================== EXCEPTION FILTERS ====================

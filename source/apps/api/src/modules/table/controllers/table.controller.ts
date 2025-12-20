@@ -24,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { TableService } from '../services/table.service';
+import { TableSessionService } from '../services/table-session.service';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
 import { TableResponseDto, RegenerateQrResponseDto, BulkRegenerateQrResponseDto } from '../dto/table-response.dto';
@@ -31,8 +32,8 @@ import { TableListResponseDto } from '../dto/table-list-response.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
 import { TenantOwnershipGuard } from 'src/modules/tenant/guards/tenant-ownership.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole, TableStatus, Table } from '@prisma/client';
 import type { AuthenticatedUser } from 'src/common/interfaces/auth.interface';
 
@@ -40,7 +41,10 @@ import type { AuthenticatedUser } from 'src/common/interfaces/auth.interface';
 @Controller('admin/tables')
 @UseGuards(JwtAuthGuard, RolesGuard, TenantOwnershipGuard)
 export class TableController {
-  constructor(private readonly service: TableService) {}
+  constructor(
+    private readonly service: TableService,
+    private readonly sessionService: TableSessionService,
+  ) {}
 
   // ==================== CRUD ====================
 
@@ -265,6 +269,72 @@ export class TableController {
     @Body() body: { tableIds: string[]; status: TableStatus },
   ): Promise<{ updated: number }> {
     return this.service.bulkUpdateStatus(user.tenantId, body.tableIds, body.status);
+  }
+
+  // ==================== SESSION MANAGEMENT (HAIDILAO STYLE) ====================
+
+  @Post(':id/clear')
+  @Roles(UserRole.OWNER, UserRole.STAFF)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Clear table (Haidilao style)',
+    description:
+      'Staff marks table as cleared. Deactivates active session and frees the table.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      properties: {
+        message: { type: 'string', example: 'Table cleared successfully' },
+        tableId: { type: 'string' },
+        clearedAt: { type: 'string', format: 'date-time' },
+        clearedBy: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'No active session for this table' })
+  async clearTable(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') tableId: string,
+  ): Promise<{
+    message: string;
+    tableId: string;
+    clearedAt: Date;
+    clearedBy: string;
+  }> {
+    await this.sessionService.clearTable(tableId, user.userId);
+    return {
+      message: 'Table cleared successfully',
+      tableId,
+      clearedAt: new Date(),
+      clearedBy: user.userId,
+    };
+  }
+
+  @Get('sessions/active')
+  @Roles(UserRole.OWNER, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get all active sessions (for monitoring)',
+    description: 'Returns all tables currently in use with session info',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'array',
+      items: {
+        properties: {
+          sessionId: { type: 'string' },
+          tableId: { type: 'string' },
+          tableNumber: { type: 'string' },
+          scannedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  })
+  async getActiveSessions(@CurrentUser() user: AuthenticatedUser) {
+    return this.sessionService.getActiveSessions(user.tenantId);
   }
 
   // ==================== HELPER ====================

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Table, Prisma, TableStatus } from '@prisma/client';
-import { PrismaService } from 'src/database/prisma.service';
-import { BaseRepository } from 'src/database/repositories/base.repository';
+import { PrismaService } from '@database/prisma.service';
+import { BaseRepository } from '@database/repositories/base.repository';
 
 @Injectable()
 export class TableRepository extends BaseRepository<Table, Prisma.TableDelegate> {

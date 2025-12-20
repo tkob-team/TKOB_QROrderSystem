@@ -6,7 +6,7 @@ import {
   GoneException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EnvConfig } from 'src/config/env.validation';
+import { EnvConfig } from '@config/env.validation';
 import { TableRepository } from '../repositories/table.repository';
 import * as crypto from 'crypto';
 import * as QRCode from 'qrcode';
@@ -30,7 +30,7 @@ export class QrService {
   ) {
     // Load config với fallback values
     this.secret = this.config.get('JWT_SECRET', { infer: true }) || 'fallback-secret-key-change-in-production';
-    this.customerAppUrl = this.config.get('CUSTOMER_APP_URL', { infer: true }) || 'http://localhost:3001';
+    this.customerAppUrl = this.config.get('CUSTOMER_APP_URL', { infer: true }) || 'http://localhost:3000';
     this.maxAgeInDays = 365; // QR codes valid for 1 year by default
   }
 
@@ -127,10 +127,13 @@ export class QrService {
   }
 
   /**
-   * Build full QR URL for customer app
+   * Build full QR URL for customer app (Haidilao style)
+   * Frontend handler: /t/{token} → redirects to backend /api/v1/t/{token}
    */
   buildQrUrl(token: string): string {
-    return `${this.customerAppUrl}/menu?token=${token}`;
+    // Remove trailing slash if exists
+    const baseUrl = this.customerAppUrl.replace(/\/$/, '');
+    return `${baseUrl}/t/${token}`;
   }
 
   /**

@@ -256,6 +256,9 @@ model Table {
   qrTokenCreatedAt DateTime? @map("qr_token_created_at") // Thời điểm tạo QR
   qrInvalidatedAt  DateTime? @map("qr_invalidated_at") // Thời điểm invalidate (when regenerated)
 
+  // Session management (Haidilao style)
+  currentSessionId String? @map("current_session_id") // Active session ID
+
   // Metadata
   displayOrder Int     @default(0) @map("display_order")
   active       Boolean @default(true) // Soft delete flag
@@ -264,12 +267,40 @@ model Table {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions TableSession[] // One table can have many sessions (history)
   // orders       Order[]  // Future: relation to Order model (Epic 4)
 
   @@unique([tableNumber, tenantId], name: "table_number_tenant_unique")
   @@index([tenantId, status])
   @@index([tenantId, active])
   @@index([qrToken]) // Fast QR lookup
+  @@index([currentSessionId]) // Fast session lookup
   @@map("tables")
+}
+
+// TableSession - Quản lý phiên sử dụng bàn (Haidilao style)
+model TableSession {
+  id       String @id @default(uuid())
+  tableId  String @map("table_id")
+  tenantId String @map("tenant_id")
+
+  // Session lifecycle
+  scannedAt DateTime @default(now()) @map("scanned_at")
+  active    Boolean  @default(true)
+
+  // Cleared by staff (staff control when table is free)
+  clearedAt DateTime? @map("cleared_at")
+  clearedBy String?   @map("cleared_by") // Staff user ID
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([tableId, active])
+  @@index([tenantId, active])
+  @@index([active, createdAt]) // For querying active sessions
+  @@map("table_sessions")
 }

@@ -1,34 +1,25 @@
-import type { Metadata } from 'next';
-import { Providers } from './providers';
-import '@/styles/globals.css';
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import '@/styles/globals.css'
+import { Providers } from '@/lib/providers'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'TKOB Order - Restaurant Ordering System',
-  description: 'Scan QR code to browse menu and order from your table',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
-  themeColor: '#0ea5e9',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'TKOB Order',
-  },
-};
+  title: 'QR Dine - Restaurant Ordering System',
+  description: 'Scan QR code to order food at your table',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body className="antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>
-  );
+  )
 }

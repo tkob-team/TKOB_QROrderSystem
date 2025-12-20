@@ -39,7 +39,7 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
   
   // Customer App URL (for QR codes)
-  CUSTOMER_APP_URL: z.string().url().default('http://localhost:3001'),
+  CUSTOMER_APP_URL: z.string().url().default('http://localhost:3000'),
 });
 
 // 2. Export Type tự động từ Schema (Magic của Zod)

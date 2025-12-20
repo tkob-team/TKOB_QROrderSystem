@@ -1,37 +1,107 @@
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { Public } from '../../../common/decorators/public.decorator';
-import { QrService } from '../services/qr.service';
-import { PublicMenuResponseDto } from '../../menu/dto/menu-response.dto';
-import { MenuItemsService } from '../../menu/services/menu-item.service';
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiCookieAuth,
+} from '@nestjs/swagger';
+import { Public } from '@common/decorators/public.decorator';
+import { Session } from '@common/decorators/session.decorator';
+import { TableSessionService } from '../services/table-session.service';
+import { MenuItemsService } from '@modules/menu/services/menu-item.service';
+import { SessionGuard } from '../guards/session.guard';
 
 @ApiTags('Tables - Public')
-@Controller('menu')
+@Controller()
 export class PublicTableController {
   constructor(
-    private readonly qrService: QrService,
+    private readonly sessionService: TableSessionService,
     private readonly menuService: MenuItemsService,
   ) {}
 
-  @Get()
+  /**
+   * Scan QR Code Endpoint
+   * URL format: /t/{qrToken}
+   * Flow: Validate QR → Create Session → Set Cookie → Redirect to /menu
+   */
+  @Get('t/:qrToken')
   @Public()
   @ApiOperation({
-    summary: 'Get menu via QR token (for customers)',
-    description: 'Validates QR token and returns published menu for the table',
+    summary: 'Scan QR code (Haidilao style)',
+    description:
+      'Customer scans QR code, creates session, sets cookie, and redirects to menu',
   })
-  @ApiQuery({ name: 'qr_token', required: true, description: 'QR token from scanned code' })
-  @ApiResponse({ status: 200, type: PublicMenuResponseDto })
+  @ApiParam({ name: 'qrToken', description: 'QR token from scanned code' })
+  @ApiResponse({ status: 302, description: 'Redirect to /menu with session cookie' })
   @ApiResponse({ status: 400, description: 'Invalid QR token' })
-  @ApiResponse({ status: 410, description: 'QR code has been regenerated' })
-  async getMenuByQr(@Query('qr_token') qrToken: string) {
+  @ApiResponse({ status: 409, description: 'Table is already in use' })
+  async scanQr(
+    @Param('qrToken') qrToken: string,
+    @Res() response: any,
+  ) {
     if (!qrToken) {
       throw new BadRequestException('QR token is required');
     }
 
-    // Validate QR token and get tenant info
-    const { tableId, tenantId } = await this.qrService.validateToken(qrToken);
+    // 1. Scan QR → Create session
+    const result = await this.sessionService.scanQr(qrToken);
 
-    // Get published menu for the tenant
-    return this.menuService.getPublicMenu(tenantId);
+    // 2. Set HttpOnly cookie (secure, JS cannot access)
+    response.cookie('table_session_id', result.sessionId, {
+      httpOnly: true, // XSS protection
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+      sameSite: 'lax', // CSRF protection
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/', // Available for all routes
+    });
+
+    // 3. Redirect to frontend  (clean URL, no token visible)
+    const frontendUrl = process.env.CUSTOMER_APP_URL || 'http://localhost:3001';
+    return response.redirect(302, `${frontendUrl}`);
+  }
+
+  /**
+   * Get current session info (table number, etc.)
+   */
+  @Get('session')
+  @Public()
+  @UseGuards(SessionGuard)
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Get current session information',
+    description: 'Returns table info for current session',
+  })
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 401, description: 'Session invalid or expired' })
+  async getSessionInfo(@Session() session: any) {
+    return this.sessionService.getSessionInfo(session.sessionId);
+  }
+
+  /**
+   * Get Menu Endpoint (Session-based)
+   * Customer accesses menu via session cookie (no QR token in URL)
+   */
+  @Get('menu')
+  @Public()
+  @UseGuards(SessionGuard) // Validate session cookie
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Get menu for current session',
+    description: 'Returns menu based on session cookie (no QR token needed)',
+  })
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 401, description: 'Session invalid or expired' })
+  async getMenu(@Session() session: any) {
+    // Get published menu for the tenant from session
+    return this.menuService.getPublicMenu(session.tenantId);
   }
 }
+

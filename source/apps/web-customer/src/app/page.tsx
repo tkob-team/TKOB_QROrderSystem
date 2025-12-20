@@ -1,11 +1,5 @@
-import { Metadata } from 'next';
-import { LandingPage } from '@/features/landing';
+import { LandingPage } from '@/features/landing/LandingPage'
 
-export const metadata: Metadata = {
-  title: 'Welcome | TKOB Order',
-  description: 'Scan the QR code on your table to start ordering',
-};
-
-export default function Page() {
-  return <LandingPage />;
+export default function Home() {
+  return <LandingPage />
 }

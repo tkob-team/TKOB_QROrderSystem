@@ -21,7 +21,15 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@/*": ["src/*"],
+      "@common/*": ["src/common/*"],
+      "@modules/*": ["src/modules/*"],
+      "@config/*": ["src/config/*"],
+      "@database/*": ["src/database/*"],
+      "src/*": ["src/*"]
+    }
   },
   "exclude": ["node_modules", "dist", "build", ".next", "**/*.spec.ts"]
 }
