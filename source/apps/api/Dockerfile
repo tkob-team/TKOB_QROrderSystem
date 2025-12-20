@@ -65,16 +65,16 @@ COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nestjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder --chown=nestjs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-# Copy node_modules from root (includes Prisma CLI)
+# Copy node_modules from root (includes Prisma CLI and generated client)
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 
-# Copy built application
-COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/dist ./dist
+# Copy source structure to maintain relative paths
+COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/dist ./source/apps/api/dist
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/package.json ./source/apps/api/package.json
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma ./source/apps/api/prisma
 
-# Copy migration files
-COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma/migrations ./source/apps/api/prisma/migrations
+# Set working directory to match build structure
+WORKDIR /app/source/apps/api
 
 USER nestjs
 
