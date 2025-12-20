@@ -179,8 +179,8 @@ export function TablesPage() {
       // Wait a moment to ensure DOM is ready
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Trigger the print
-      await handlePrintQR();
+      // Trigger the print (useReactToPrint returns a sync callback, not a Promise)
+      handlePrintQR();
       
       setToastMessage('Print dialog opened');
       setToastType('success');
@@ -1285,7 +1285,7 @@ export function TablesPage() {
           {/* QR Code Preview */}
           <div className="flex flex-col items-center gap-4">
             <div 
-              className={`w-72 h-72 bg-white border-4 rounded-lg flex items-center justify-center relative ${
+              className={`w-80 h-80 bg-white border-4 rounded-lg flex items-center justify-center relative ${
                 selectedTable.status === 'inactive' ? 'border-gray-300 opacity-60' : 'border-gray-200'
               }`}
               style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
@@ -1294,11 +1294,18 @@ export function TablesPage() {
               <div 
                 ref={qrPrintRef}
                 data-qr-print
-                className="flex items-center justify-center p-4 bg-white rounded"
+                className="flex items-center justify-center bg-white rounded"
+                style={{ padding: '8px' }}
               >
                 <QRCode 
-                  value={selectedTable.qrToken ? `http://localhost:3000/menu?token=${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`}
-                  size={256}
+                  // Use same URL as backend: http://localhost:3000/t/{token}
+                  // For production, this will use CUSTOMER_APP_URL from backend config
+                  value={(() => {
+                    const url = selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`;
+                    console.log('🔍 Frontend QR URL:', url);
+                    return url;
+                  })()}
+                  size={284}
                   level="H"
                   bgColor="#FFFFFF"
                   fgColor="#000000"
@@ -1363,7 +1370,7 @@ export function TablesPage() {
                     className="text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-200 break-all"
                     style={{ fontSize: '13px', fontFamily: 'monospace' }}
                   >
-                    https://tkqr.app/t/{selectedTable.id}
+                    {selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`}
                   </p>
                 </div>
               </div>
@@ -1372,7 +1379,9 @@ export function TablesPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3">
-            {/* Backend Download Options */}
+            {/* Backend Download Options - Uses backend API */}
+            {/* QR Code will use: http://localhost:3000/t/{token} (from CUSTOMER_APP_URL) */}
+            {/* Size: 300px, Format: PNG/PDF */}
             <div className="flex gap-3">
               <button
                 onClick={() => handleDownloadQR('png')}

@@ -134,8 +134,31 @@ class AuthService {
    * Logout current user
    */
   async logout(refreshToken?: string): Promise<void> {
-    console.log('[AuthService] Logout request');
-    return this.adapter.logout(refreshToken);
+    console.log('[AuthService] Logout request', { 
+      hasRefreshToken: !!refreshToken,
+      authTokenExists: !!(typeof window !== 'undefined' && localStorage.getItem('authToken')),
+    });
+    
+    // Helper to get cookie value
+    const getCookie = (name: string): string | null => {
+      if (typeof window === 'undefined') return null;
+      const matches = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+      return matches ? decodeURIComponent(matches[1]) : null;
+    };
+    
+    // Try multiple sources for refreshToken: parameter -> localStorage -> cookie
+    let token = refreshToken;
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('refreshToken') || getCookie('refreshToken') || '';
+    }
+    
+    console.log('[AuthService] Using token:', { 
+      tokenLength: token?.length || 0,
+      tokenPreview: token ? `${token.substring(0, 10)}...` : 'EMPTY',
+      source: refreshToken ? 'parameter' : localStorage.getItem('refreshToken') ? 'localStorage' : getCookie('refreshToken') ? 'cookie' : 'none',
+    });
+    
+    return this.adapter.logout(token || '');
   }
 
   /**
