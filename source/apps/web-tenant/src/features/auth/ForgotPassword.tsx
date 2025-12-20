@@ -99,7 +99,6 @@ export function ForgotPassword({ onNavigate }: ForgotPasswordProps) {
             >
               {isLoading ? 'Sending...' : isLinkSent ? 'Link sent ✓' : 'Send reset link'}
             </Button>
-            </Button>
             
             {/* Show "Go to reset password" link after sending reset link */}
             {isLinkSent && (
