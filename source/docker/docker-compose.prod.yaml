@@ -1,0 +1,129 @@
+name: tkob-qroder-system-production
+
+services:
+  # Backend API Service
+  api:
+    build:
+      context: ../..
+      dockerfile: source/apps/api/Dockerfile
+    container_name: tkob-api-prod
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: ${DATABASE_URL}
+      
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Application
+      NODE_ENV: production
+      API_PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # URLs
+      CUSTOMER_APP_URL: ${CUSTOMER_APP_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - qr-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Customer Frontend Service
+  web-customer:
+    build:
+      context: ../..
+      dockerfile: source/apps/web-customer/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_APP_URL: ${CUSTOMER_APP_URL}
+    container_name: tkob-customer-prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_APP_URL: ${CUSTOMER_APP_URL}
+    ports:
+      - "${CUSTOMER_PORT:-3001}:3001"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - qr-network
+
+  # Tenant/Admin Frontend Service
+  web-tenant:
+    build:
+      context: ../..
+      dockerfile: source/apps/web-tenant/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_APP_URL: ${TENANT_APP_URL}
+    container_name: tkob-tenant-prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_APP_URL: ${TENANT_APP_URL}
+    ports:
+      - "${TENANT_PORT:-3002}:3002"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - qr-network
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: tkob-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - qr-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Nginx Reverse Proxy
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: tkob-nginx-prod
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - api
+  #     - web-customer
+  #     - web-tenant
+  #   networks:
+  #     - qr-network
+
+volumes:
+  redis_data_prod:
+
+networks:
+  qr-network:
+    driver: bridge
