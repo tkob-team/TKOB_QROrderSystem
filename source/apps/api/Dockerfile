@@ -87,4 +87,4 @@ ENV NODE_ENV=production
 # Start command - skip migration for now, just start the app
 # Run migrations manually from Render dashboard or add as separate job
 # Render will automatically health check on the PORT it assigns
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
