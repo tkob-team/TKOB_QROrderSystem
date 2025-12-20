@@ -311,7 +311,7 @@ export class TableService {
    */
   async bulkRegenerateAllQr(tenantId: string): Promise<BulkRegenerateQrResponseDto> {
     // Get all active tables
-    const tables = await this.repo.findByTenantId(tenantId, { activeOnly: true });
+    const { tables } = await this.repo.findByTenantId(tenantId, { activeOnly: true });
 
     if (tables.length === 0) {
       throw new BadRequestException('No active tables found');
