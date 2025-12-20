@@ -16,6 +16,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY source/apps/api/package.json ./source/apps/api/
 COPY source/packages ./source/packages
 
+# Enable hoisting for Docker (simpler module resolution)
+RUN echo "shamefully-hoist=true" > .npmrc
+
 # Install dependencies with build scripts enabled for native modules
 RUN pnpm install --frozen-lockfile --ignore-scripts=false
 
@@ -39,12 +42,12 @@ COPY --from=deps /app/source ./source
 # Copy source code
 COPY source/apps/api ./source/apps/api
 
-# Generate Prisma Client
+# Generate Prisma Client (run from app directory, prisma is hoisted to /app/node_modules)
 WORKDIR /app/source/apps/api
-RUN pnpm prisma generate --config=./prisma/prisma.config.ts
+RUN node /app/node_modules/prisma/build/index.js generate --schema=./prisma/schema.prisma
 
 # Build the application
-RUN pnpm build
+RUN node /app/node_modules/@nestjs/cli/bin/nest.js build
 
 # Debug: List contents to verify dist location
 RUN ls -la && ls -la dist/
