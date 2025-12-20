@@ -57,14 +57,21 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
+# Copy workspace files (needed for pnpm)
+COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nestjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=nestjs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+
+# Copy node_modules from root (includes Prisma CLI)
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+
 # Copy built application
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/package.json ./
-COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma ./prisma
+COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/package.json ./source/apps/api/package.json
+COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma ./source/apps/api/prisma
 
 # Copy migration files
-COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma/migrations ./prisma/migrations
+COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma/migrations ./source/apps/api/prisma/migrations
 
 USER nestjs
 
@@ -78,4 +85,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start command with migration
-CMD ["sh", "-c", "pnpm prisma migrate deploy --config=./prisma/prisma.config.ts && node dist/main"]
+CMD ["sh", "-c", "cd source/apps/api && npx prisma migrate deploy --config=./prisma/prisma.config.ts && cd /app && node dist/main"]
