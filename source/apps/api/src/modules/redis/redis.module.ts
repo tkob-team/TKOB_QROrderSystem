@@ -17,7 +17,6 @@ import { RedisService } from './redis.service';
           host: configService.get('REDIS_HOST', { infer: true }),
           port: configService.get('REDIS_PORT', { infer: true }),
           password: password || undefined,
-          db: configService.get('REDIS_DB', { infer: true }),
           tls: {}, // Enable TLS for Upstash
           maxRetriesPerRequest: 3,
           retryStrategy: (times) => {
