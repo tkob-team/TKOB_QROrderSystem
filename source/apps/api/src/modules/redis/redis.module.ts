@@ -18,12 +18,16 @@ import { RedisService } from './redis.service';
           port: configService.get('REDIS_PORT', { infer: true }),
           password: password || undefined,
           db: configService.get('REDIS_DB', { infer: true }),
-          ...(password ? { password } : {}), // Chỉ truyền password nếu có giá trị thực sự
+          tls: {}, // Enable TLS for Upstash
+          maxRetriesPerRequest: 3,
           retryStrategy: (times) => {
-            const delay = Math.min(times * 50, 2000);
+            if (times > 5) return null;
+            const delay = Math.min(times * 1000, 5000);
             return delay;
           },
-          lazyConnect: false, // Kết nối ngay lập tức
+          lazyConnect: false,
+          enableReadyCheck: false,
+          connectTimeout: 10000,
         });
 
         client.on('error', (err) => {
