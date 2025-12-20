@@ -46,6 +46,9 @@ RUN pnpm prisma generate --config=./prisma/prisma.config.ts
 # Build the application
 RUN pnpm build
 
+# Debug: List contents to verify dist location
+RUN ls -la && ls -la dist/
+
 # ======================
 # Stage 3: Runner
 # ======================
