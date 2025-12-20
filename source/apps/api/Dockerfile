@@ -78,6 +78,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/dist ./source/apps/api/dist
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/package.json ./source/apps/api/package.json
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/prisma ./source/apps/api/prisma
+COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api/start.sh ./source/apps/api/start.sh
+
+# Make start script executable
+RUN chmod +x ./source/apps/api/start.sh
 
 # Set working directory to match build structure
 WORKDIR /app/source/apps/api
@@ -87,7 +91,5 @@ USER nestjs
 ENV NODE_ENV=production
 # Don't set PORT here - let Render set it automatically
 
-# Start command - skip migration for now, just start the app
-# Run migrations manually from Render dashboard or add as separate job
-# Render will automatically health check on the PORT it assigns
-CMD ["node", "dist/src/main.js"]
+# Start command - run migrations then start app
+CMD ["./start.sh"]
