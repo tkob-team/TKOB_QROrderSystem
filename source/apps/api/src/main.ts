@@ -107,9 +107,10 @@ async function bootstrap() {
   }
 
   // ==================== START SERVER ====================
-  await app.listen(port);
+  // Listen on 0.0.0.0 to accept external connections (Docker/Cloud requirement)
+  await app.listen(port, '0.0.0.0');
 
-  Logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+  Logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`, 'Bootstrap');
   Logger.log(`📝 Environment: ${nodeEnv}`, 'Bootstrap');
 
   if (nodeEnv === 'development') {
