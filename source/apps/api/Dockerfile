@@ -29,6 +29,9 @@ RUN apk add --no-cache libc6-compat python3 make g++
 
 WORKDIR /app
 
+# Copy workspace files first
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/source ./source
