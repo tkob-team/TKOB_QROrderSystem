@@ -16,8 +16,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY source/apps/api/package.json ./source/apps/api/
 COPY source/packages ./source/packages
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies with build scripts enabled for native modules
+RUN pnpm install --frozen-lockfile --ignore-scripts=false
 
 # ======================
 # Stage 2: Builder
