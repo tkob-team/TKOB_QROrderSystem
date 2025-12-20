@@ -1370,7 +1370,7 @@ export function TablesPage() {
                     className="text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-200 break-all"
                     style={{ fontSize: '13px', fontFamily: 'monospace' }}
                   >
-                    {selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`}
+                    {selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || 'http://localhost:3001'}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`}
                   </p>
                 </div>
               </div>
