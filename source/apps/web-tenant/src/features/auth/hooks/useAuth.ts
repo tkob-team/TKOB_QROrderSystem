@@ -17,7 +17,15 @@ export const useLogin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (credentials: LoginDto) => authService.login(credentials),
+    mutationFn: (credentials: any) => {
+      // Extract rememberMe before sending to API
+      const { rememberMe, ...loginData } = credentials;
+      // Store rememberMe flag in sessionStorage temporarily for onSuccess to access
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('__rememberMe', rememberMe ? 'true' : 'false');
+      }
+      return authService.login(loginData as LoginDto);
+    },
     onSuccess: (data) => {
       console.log('[useLogin] Login successful, storing tokens:', {
         hasAccessToken: !!data.accessToken,
@@ -25,24 +33,40 @@ export const useLogin = () => {
         expiresIn: data.expiresIn,
       });
       
-      // Store auth token in both localStorage and cookie
+      // Get rememberMe flag from sessionStorage
+      const rememberMe = typeof window !== 'undefined' 
+        ? sessionStorage.getItem('__rememberMe') === 'true'
+        : false;
+      
+      // Choose storage based on "Remember me" preference
+      const storage = rememberMe ? localStorage : sessionStorage;
+      
       if (typeof window !== 'undefined') {
-        // localStorage for client-side access
-        localStorage.setItem('authToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken); // Store refreshToken in localStorage too
+        // Store in sessionStorage or localStorage based on rememberMe
+        storage.setItem('authToken', data.accessToken);
+        storage.setItem('refreshToken', data.refreshToken);
         
-        // Cookie for server-side middleware access
+        // Clean up temporary flag
+        sessionStorage.removeItem('__rememberMe');
+        
+        console.log(`[useLogin] Tokens stored in ${rememberMe ? 'localStorage' : 'sessionStorage'} (Remember me: ${rememberMe})`);
+        
+        // Always set cookies for middleware (server-side)
         const maxAge = data.expiresIn || 3600; // Default 1 hour
         document.cookie = `authToken=${data.accessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
         document.cookie = `refreshToken=${data.refreshToken}; path=/; max-age=${maxAge * 7}; SameSite=Lax`; // Refresh token lasts longer
         
-        console.log('[useLogin] Tokens stored in localStorage and cookies');
+        console.log('[useLogin] Cookies set for middleware');
       }
       // Invalidate current user query
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
     onError: (error) => {
       console.error('[useLogin] Login failed:', error);
+      // Clean up flag on error
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('__rememberMe');
+      }
     },
   });
 };
@@ -117,8 +141,11 @@ export const useLogout = () => {
     onSuccess: () => {
       // Clear auth data AFTER successful logout
       if (typeof window !== 'undefined') {
+        // Clear from both storages
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('refreshToken');
         // Clear both authToken and refreshToken cookies
         document.cookie = 'authToken=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';
@@ -132,6 +159,8 @@ export const useLogout = () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('refreshToken');
         document.cookie = 'authToken=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';
       }

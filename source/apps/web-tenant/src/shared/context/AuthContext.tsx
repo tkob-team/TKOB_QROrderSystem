@@ -24,12 +24,14 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   devLogin: (role: UserRole) => void; // For dev mode quick login - ONLY in mock mode
   switchRole: (role: UserRole) => void; // Dev mode role switching - ONLY in mock mode
   getDefaultRoute: () => string; // Get home route for current user role
   canAccess: (path: string) => boolean; // Check if current user can access path
+  setRememberMeToken: (token: string, expiryDays?: number) => void; // Save token for "Remember me"
+  clearRememberMeToken: () => void; // Clear remember me token on logout
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -40,18 +42,76 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [hasToken, setHasToken] = useState<boolean>(false);
   const router = useRouter();
+  
+  // Check for token on mount and watch for changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      setHasToken(!!token);
+      console.log('[AuthContext] Token check on mount:', !!token ? 'Found' : 'Not found');
+      
+      // If no token in storage but cookies might exist, clear them
+      if (!token) {
+        console.log('[AuthContext] No token in storage, clearing stale cookies');
+        document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        
+        // If we're on a protected route without token, redirect to login
+        const pathname = window.location.pathname;
+        if (pathname.startsWith('/admin') || pathname.startsWith('/kds') || pathname.startsWith('/waiter')) {
+          console.log('[AuthContext] No token on protected route, redirecting to login');
+          window.location.href = ROUTES.login;
+        }
+      }
+    }
+  }, []);
   
   // Use React Query hooks
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
   const { data: currentUserData, isLoading, refetch } = useCurrentUser({
-    enabled: typeof window !== 'undefined' && !!localStorage.getItem('authToken'),
+    // Only fetch user data if we have a token
+    enabled: hasToken,
   });
+
+  // Remember me token management
+  const setRememberMeToken = useCallback((token: string, expiryDays: number = 7) => {
+    try {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + expiryDays);
+      
+      const rememberMeData = {
+        token,
+        expiryTime: expiryDate.getTime(),
+        createdAt: Date.now(),
+      };
+      
+      localStorage.setItem('rememberMeToken', JSON.stringify(rememberMeData));
+      localStorage.setItem('rememberMeEnabled', 'true');
+      
+      console.log('[AuthContext] Remember me token saved, expires in', expiryDays, 'days');
+    } catch (error) {
+      console.error('[AuthContext] Failed to save remember me token:', error);
+    }
+  }, []);
+
+  const clearRememberMeToken = useCallback(() => {
+    try {
+      localStorage.removeItem('rememberMeToken');
+      localStorage.removeItem('rememberMeEnabled');
+      localStorage.removeItem('rememberMeEmail');
+      localStorage.removeItem('rememberMe');
+      console.log('[AuthContext] Remember me tokens cleared');
+    } catch (error) {
+      console.error('[AuthContext] Failed to clear remember me token:', error);
+    }
+  }, []);
 
   // Sync user state with React Query data
   useEffect(() => {
-    if (currentUserData?.user && 
+    if (hasToken && currentUserData?.user && 
         currentUserData.user.id && 
         currentUserData.user.email && 
         currentUserData.user.fullName &&
@@ -69,26 +129,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
         tenantId: currentUserData.user.tenantId,
       };
       setUser(mappedUser);
-    } else if (!isLoading) {
+      console.log('[AuthContext] User logged in:', mappedUser.email);
+    } else if (!hasToken || (!isLoading && !currentUserData?.user)) {
+      // No token found or query returned no user - clear user state
+      console.log('[AuthContext] User logged out (no token or user data)');
       setUser(null);
     }
-  }, [currentUserData, isLoading]);
+  }, [currentUserData, isLoading, hasToken]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
       const deviceInfo = typeof window !== 'undefined' 
         ? `${navigator.userAgent} | ${navigator.platform}`
         : 'Unknown device';
       
-      console.log('[AuthContext] Starting login for:', email);
+      console.log('[AuthContext] Starting login for:', email, 'Remember me:', rememberMe);
       
+      // Pass rememberMe flag to the mutation
       await loginMutation.mutateAsync({ 
         email, 
         password,
         deviceInfo,
-      });
+        rememberMe, // Pass this to useLogin hook
+      } as any);
       
-      console.log('[AuthContext] Login mutation successful, refetching user...');
+      console.log('[AuthContext] Login mutation successful, setting hasToken=true');
+      
+      // Mark that we have a token so useCurrentUser query will run
+      setHasToken(true);
       
       // Refetch current user after successful login
       await refetch();
@@ -106,19 +174,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
       .find(row => row.startsWith('refreshToken='))
       ?.split('=')[1];
     
+    // Clear remember me tokens
+    clearRememberMeToken();
+    
+    // Clear from both storages
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('refreshToken');
+    localStorage.removeItem('devRole');
+    document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    
+    // Update state to reflect no token
+    setHasToken(false);
+    setUser(null);
+    
+    console.log('[AuthContext] Logout complete, redirecting to login');
+    
     if (refreshToken) {
       logoutMutation.mutate(refreshToken);
-    } else {
-      // Fallback: clear local state
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('devRole');
-      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      setUser(null);
-      
-      if (typeof window !== 'undefined') {
-        window.location.href = ROUTES.login;
-      }
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.location.href = ROUTES.login;
     }
   };
 
@@ -248,6 +327,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         switchRole,
         getDefaultRoute,
         canAccess,
+        setRememberMeToken,
+        clearRememberMeToken,
       }}
     >
       {children}
