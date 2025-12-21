@@ -26,7 +26,7 @@ export const envSchema = z.object({
   
   // Email Config (SendGrid)
   SENDGRID_API_KEY: z.string().min(1, { message: "SendGrid API Key is required" }),
-  EMAIL_FROM: z.string().email({ message: "Invalid sender email format" }),
+  EMAIL_FROM: z.string().min(1, { message: "EMAIL_FROM is required" }),
   
   // OTP Config
   OTP_LENGTH: z.coerce.number().default(6),
