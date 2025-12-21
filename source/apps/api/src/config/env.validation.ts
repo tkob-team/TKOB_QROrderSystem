@@ -24,13 +24,9 @@ export const envSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
   REDIS_DB: z.coerce.number().default(0),
   
-  // Email Config
-  EMAIL_HOST: z.string().default('smtp.gmail.com'),
-  EMAIL_PORT: z.coerce.number().default(587),
-  EMAIL_SECURE: z.coerce.boolean().default(false),
-  EMAIL_USER: z.string().email(),
-  EMAIL_PASSWORD: z.string().min(1),
-  EMAIL_FROM: z.string().default('QR Ordering <noreply@qr-ordering.com>'),
+  // Email Config (SendGrid)
+  SENDGRID_API_KEY: z.string().min(1, { message: "SendGrid API Key is required" }),
+  EMAIL_FROM: z.string().email({ message: "Invalid sender email format" }),
   
   // OTP Config
   OTP_LENGTH: z.coerce.number().default(6),

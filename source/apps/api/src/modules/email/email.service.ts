@@ -1,30 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createTransport, Transporter } from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import { EnvConfig } from '../../config/env.validation';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: Transporter;
 
   constructor(private readonly configService: ConfigService<EnvConfig, true>) {
-    this.transporter = createTransport({
-      host: this.configService.get('EMAIL_HOST', { infer: true }),
-      port: this.configService.get('EMAIL_PORT', { infer: true }),
-      secure: this.configService.get('EMAIL_SECURE', { infer: true }),
-      auth: {
-        user: this.configService.get('EMAIL_USER', { infer: true }),
-        pass: this.configService.get('EMAIL_PASSWORD', { infer: true }),
-      },
-    });
+    // Initialize SendGrid with API key
+    const apiKey = this.configService.get('SENDGRID_API_KEY', { infer: true });
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+      this.logger.log('SendGrid initialized successfully');
+    } else {
+      this.logger.warn('SENDGRID_API_KEY not found - email service will not work');
+    }
   }
 
   async sendOTP(email: string, otp: string): Promise<void> {
     const from = this.configService.get('EMAIL_FROM', { infer: true });
     
     try {
-      await this.transporter.sendMail({
+      await sgMail.send({
         from,
         to: email,
         subject: 'Your OTP Code - QR Ordering Platform',
