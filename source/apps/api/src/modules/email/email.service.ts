@@ -10,6 +10,12 @@ export class EmailService {
   constructor(private readonly configService: ConfigService<EnvConfig, true>) {
     // Initialize SendGrid with API key
     const apiKey = this.configService.get('SENDGRID_API_KEY', { infer: true });
+    const emailFrom = this.configService.get('EMAIL_FROM', { infer: true });
+    
+    this.logger.log(`Initializing SendGrid...`);
+    this.logger.log(`EMAIL_FROM: ${emailFrom}`);
+    this.logger.log(`API Key present: ${apiKey ? 'YES (length: ' + apiKey.length + ')' : 'NO'}`);
+    
     if (apiKey) {
       sgMail.setApiKey(apiKey);
       this.logger.log('SendGrid initialized successfully');
@@ -21,6 +27,8 @@ export class EmailService {
   async sendOTP(email: string, otp: string): Promise<void> {
     const from = this.configService.get('EMAIL_FROM', { infer: true });
     
+    this.logger.log(`Attempting to send OTP to ${email} from ${from}`);
+    
     try {
       await sgMail.send({
         from,
@@ -30,13 +38,14 @@ export class EmailService {
       });
       
       this.logger.log(`OTP sent successfully to ${email}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : JSON.stringify(error);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      const errorCode = error?.code;
+      const errorResponse = error?.response?.body;
       
       this.logger.error(
         `Failed to send OTP to ${email}. Error: ${errorMessage}`,
-        errorStack,
+        `Code: ${errorCode}, Response: ${JSON.stringify(errorResponse)}`,
       );
       
       throw new Error(`Failed to send OTP email: ${errorMessage}`);
