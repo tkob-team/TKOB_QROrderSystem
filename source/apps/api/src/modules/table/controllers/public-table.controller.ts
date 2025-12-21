@@ -57,8 +57,8 @@ export class PublicTableController {
     // 2. Set HttpOnly cookie (secure, JS cannot access)
     response.cookie('table_session_id', result.sessionId, {
       httpOnly: true, // XSS protection
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-      sameSite: 'lax', // CSRF protection
+      secure: true, // HTTPS only (required for SameSite=None)
+      sameSite: 'none', // Allow cross-site cookies (Vercel <-> Render)
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/', // Available for all routes
     });
