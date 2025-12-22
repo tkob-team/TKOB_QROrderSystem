@@ -63,6 +63,9 @@ export class MenuItemsService {
       displayOrder: dto.displayOrder ?? 0,
       status: 'DRAFT',
       available: true,
+      preparationTime: dto.preparationTime,
+      chefRecommended: dto.chefRecommended ?? false,
+      popularity: 0, // Initialize to 0
     });
 
     // Attach modifier groups
@@ -111,6 +114,8 @@ export class MenuItemsService {
       ...(dto.allergens !== undefined && { allergens: dto.allergens }),
       ...(dto.displayOrder !== undefined && { displayOrder: dto.displayOrder }),
       ...(dto.available !== undefined && { available: dto.available }),
+      ...(dto.preparationTime !== undefined && { preparationTime: dto.preparationTime }),
+      ...(dto.chefRecommended !== undefined && { chefRecommended: dto.chefRecommended }),
     };
 
     await this.menuItemRepo.update(menuItemId, updateData);
@@ -167,6 +172,8 @@ export class MenuItemsService {
         tags: item.tags,
         allergens: item.allergens,
         modifierGroups,
+        preparationTime: item.preparationTime,
+        chefRecommended: item.chefRecommended,
       });
     }
 
@@ -195,4 +202,14 @@ export class MenuItemsService {
 
     return this.menuItemRepo.toggleAvailability(itemId, available);
   }
+
+  async incrementPopularity(itemId: string): Promise<void> {
+    await this.menuItemRepo.incrementPopularity(itemId);
+  }
+
+  // async recalculatePopularity(tenantId: string): Promise<void> {
+  //   // TODO: Implement when Order model exists
+  //   // Query order_items table, count by menu_item_id
+  //   // Update menu_items.popularity accordingly
+  // }
 }

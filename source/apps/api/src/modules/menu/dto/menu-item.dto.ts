@@ -158,6 +158,11 @@ export class UpdateMenuItemDto {
   @ApiPropertyOptional()
   @IsBoolean()
   @IsOptional()
+  chefRecommended?: boolean;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
   @ApiPropertyOptional()
   @IsUrl()
   @IsOptional()
