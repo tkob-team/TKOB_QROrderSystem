@@ -88,6 +88,79 @@ export class MenuPhotoService {
     return this.toResponseDto(photo);
   }
 
+  async uploadPhotos(
+    menuItemId: string,
+    files: Express.Multer.File[],
+  ): Promise<MenuItemPhotoResponseDto[]> {
+    // 1. Validate menu item exists
+    const item = await this.prisma.menuItem.findUnique({
+      where: { id: menuItemId },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Menu item not found');
+    }
+
+    // 2. Validate all files first (fail fast)
+    for (const file of files) {
+      this.validateFile(file);
+    }
+
+    // 3. Get starting display order
+    let displayOrder = await this.getNextDisplayOrder(menuItemId);
+
+    // 4. Check if this is first upload
+    const existingPhotoCount = await this.prisma.menuItemPhoto.count({
+      where: { menuItemId },
+    });
+    const isFirstUpload = existingPhotoCount === 0;
+
+    // 5. Process all files
+    const uploadedPhotos: MenuItemPhotoResponseDto[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Generate filename
+      const ext = path.extname(file.originalname);
+      const randomName = crypto.randomBytes(16).toString('hex');
+      const filename = `${randomName}${ext}`;
+      const filePath = path.join(this.uploadDir, filename);
+
+      // Save file
+      await fs.writeFile(filePath, file.buffer);
+
+      // Create photo record
+      const photo = await this.prisma.menuItemPhoto.create({
+        data: {
+          menuItemId,
+          url: `/uploads/menu-photos/${filename}`,
+          filename: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          displayOrder: displayOrder++,
+          isPrimary: isFirstUpload && i === 0, // First photo of first upload = primary
+        },
+      });
+
+      uploadedPhotos.push(this.toResponseDto(photo));
+    }
+
+    // 6. If first photo was uploaded, update menu item
+    if (isFirstUpload && uploadedPhotos.length > 0) {
+      const firstPhoto = uploadedPhotos[0];
+      await this.prisma.menuItem.update({
+        where: { id: menuItemId },
+        data: {
+          imageUrl: firstPhoto.url,
+          primaryPhotoId: firstPhoto.id,
+        },
+      });
+    }
+
+    return uploadedPhotos;
+  }
+
   toResponseDto(photo: {
     id: string;
     displayOrder: number;
@@ -235,7 +308,7 @@ export class MenuPhotoService {
       } else {
         await this.prisma.menuItem.update({
           where: { id: menuItemId },
-          data: { imageUrl: null },
+          data: { primaryPhotoId: null, imageUrl: null },
         });
       }
     }

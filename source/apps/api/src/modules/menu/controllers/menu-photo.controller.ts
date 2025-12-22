@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { MenuPhotoService } from '../services/mene-photo.service';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -18,6 +19,7 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -27,7 +29,7 @@ import { TenantOwnershipGuard } from '@/modules/tenant/guards/tenant-ownership.g
 import { MenuItemPhotoResponseDto, UpdatePhotoDto, UploadPhotoDto } from '../dto/menu-photo.dto';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Menu - Photos')
 @Controller('menu/items/:itemId/photos')
@@ -52,6 +54,42 @@ export class MenuPhotoController {
       throw new Error('File is required');
     }
     return this.photoService.uploadPhoto(itemId, file);
+  }
+
+  @Post('bulk')
+  @Roles(UserRole.OWNER, UserRole.STAFF)
+  @UseInterceptors(FilesInterceptor('files', 10)) // Max 10 files
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload multiple photos for menu item (max 10)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, type: [MenuItemPhotoResponseDto] })
+  @ApiResponse({ status: 400, description: 'Invalid files' })
+  async uploadPhotos(
+    @Param('itemId') itemId: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<MenuItemPhotoResponseDto[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('At least one file is required');
+    }
+
+    if (files.length > 10) {
+      throw new BadRequestException('Maximum 10 files allowed');
+    }
+
+    return this.photoService.uploadPhotos(itemId, files);
   }
 
   @Get()
