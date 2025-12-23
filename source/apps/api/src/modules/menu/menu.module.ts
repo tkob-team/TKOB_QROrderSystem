@@ -9,19 +9,33 @@ import { ModifierGroupController } from './controllers/modifier-group.controller
 import { ModifierGroupService } from './services/modifier-group.service';
 import { ModifierGroupRepository } from './repositories/modifier-group.repository';
 import { PublicMenuController } from './controllers/public-menu.controller';
+import { MulterModule } from '@nestjs/platform-express';
+import { MenuPhotoController } from './controllers/menu-photo.controller';
+import { MenuPhotoService } from './services/mene-photo.service';
 
 @Module({
+  imports: [
+    // Configure Multer for file uploads
+    MulterModule.register({
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 10,
+      },
+    }),
+  ],
   controllers: [
     MenuCategoryController,
     MenuItemsController,
     ModifierGroupController,
     PublicMenuController,
+    MenuPhotoController,
   ],
   providers: [
     // Services
     MenuCategoryService,
     MenuItemsService,
     ModifierGroupService,
+    MenuPhotoService,
 
     // Repository
     MenuCategoryRepository,

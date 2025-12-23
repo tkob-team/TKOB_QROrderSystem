@@ -10,6 +10,7 @@ import {
   MinLength,
   MaxLength,
   Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -37,6 +38,18 @@ export class CreateMenuItemDto {
   @IsNumber()
   @Min(0)
   price: number;
+
+  @ApiPropertyOptional({ example: 15, minimum: 0, maximum: 240 })
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  @Max(240)
+  preparationTime?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  chefRecommended?: boolean;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/spring-rolls.jpg' })
   @IsUrl()
@@ -86,6 +99,28 @@ export class MenuItemFiltersDto extends PaginationDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter chef recommendations only' })
+  @IsBoolean()
+  @IsOptional()
+  @Type(() => Boolean)
+  chefRecommended?: boolean;
+
+  @ApiPropertyOptional({
+    enum: ['popularity', 'price', 'name', 'createdAt'],
+    description: 'Sort field',
+  })
+  @IsString()
+  @IsOptional()
+  sortBy?: 'popularity' | 'price' | 'name' | 'createdAt';
+
+  @ApiPropertyOptional({
+    enum: ['asc', 'desc'],
+    description: 'Sort order',
+  })
+  @IsString()
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class UpdateMenuItemDto {
@@ -113,6 +148,21 @@ export class UpdateMenuItemDto {
   @Min(0)
   price?: number;
 
+  @ApiPropertyOptional()
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  @Max(240)
+  preparationTime?: number;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  chefRecommended?: boolean;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
   @ApiPropertyOptional()
   @IsUrl()
   @IsOptional()

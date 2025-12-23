@@ -8,6 +8,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export interface MenuItemWithRelations extends MenuItem {
   category?: any;
   modifierGroups?: any[];
+  photo?: any[];
 }
 
 @Injectable()
@@ -21,6 +22,9 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
       where: { id: itemId },
       include: {
         category: true,
+        photos: {
+          orderBy: [{ isPrimary: 'desc' }, { displayOrder: 'asc' }],
+        },
         modifierGroups: {
           include: {
             modifierGroup: {
@@ -55,17 +59,41 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
   }
 
   async findFiltered(tenantId: string, filters: MenuItemFiltersDto) {
+    let orderBy:
+      | Prisma.MenuItemOrderByWithRelationInput
+      | Prisma.MenuItemOrderByWithRelationInput[]
+      | undefined;
+
+    if (filters.sortBy) {
+      const sortOrder = filters.sortOrder || 'asc';
+
+      switch (filters.sortBy) {
+        case 'popularity':
+          orderBy = { popularity: sortOrder };
+          break;
+        case 'price':
+          orderBy = { price: sortOrder };
+          break;
+        case 'name':
+          orderBy = { name: sortOrder };
+          break;
+        case 'createdAt':
+          orderBy = { createdAt: sortOrder };
+          break;
+        default:
+          orderBy = { createdAt: 'desc' };
+      }
+    } else {
+      orderBy = { createdAt: 'desc' };
+    }
+
     return this.findPaginated(new PaginationDto(filters.page, filters.limit), {
       where: {
         tenantId,
         ...(filters.categoryId && { categoryId: filters.categoryId }),
         ...(filters.status && { status: filters.status }),
-        // nếu filters.available == false -> để như dưới nó sẽ bỏ qua và không xử lý trường hợp false
-        // ...(filters.available && { available: filters.available }),
-        // => so sánh với undefined
-        ...(filters.available != undefined && { available: filters.available }),
-        // nếu để như dưới thì xử lý hơi hardcode => không biết search theo trường nào
-        // ...(filters.search && { search: filters.search }),
+        ...(filters.available !== undefined && { available: filters.available }),
+        ...(filters.chefRecommended !== undefined && { chefRecommended: filters.chefRecommended }), // NEW
         ...(filters.search && {
           OR: [
             { name: { contains: filters.search, mode: 'insensitive' } },
@@ -75,10 +103,13 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
       },
       include: {
         category: true,
+        photos: {
+          // NEW: Include primary photo
+          where: { isPrimary: true },
+          take: 1,
+        },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy,
     });
   }
 
@@ -97,9 +128,15 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
         tenantId,
         status: 'PUBLISHED',
         available: true,
+        category: {
+          active: true,
+        },
       },
       include: {
         category: true,
+        photos: {
+          orderBy: [{ isPrimary: 'desc' }, { displayOrder: 'asc' }],
+        },
         modifierGroups: {
           include: {
             modifierGroup: {
@@ -114,7 +151,11 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
           orderBy: { displayOrder: 'asc' },
         },
       },
-      orderBy: [{ category: { displayOrder: 'asc' } }, { displayOrder: 'asc' }],
+      orderBy: [
+        { category: { displayOrder: 'asc' } },
+        { chefRecommended: 'desc' },
+        { displayOrder: 'asc' },
+      ],
     });
   }
 
@@ -147,6 +188,17 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
     return this.prisma.x.menuItem.update({
       where: { id: itemId },
       data: { available },
+    });
+  }
+
+  async incrementPopularity(itemId: string): Promise<void> {
+    await this.prisma.menuItem.update({
+      where: { id: itemId },
+      data: {
+        popularity: {
+          increment: 1,
+        },
+      },
     });
   }
 }

@@ -157,10 +157,14 @@ model MenuItem {
   name         String
   description  String?
   price        Decimal        @db.Decimal(10, 2) // Giá cơ bản
-  imageUrl     String?        @map("image_url")
+  imageUrl     String?        @map("image_url") // Deprecated, use photos instead
   status       MenuItemStatus @default(DRAFT) // DRAFT | PUBLISHED | ARCHIVED
   available    Boolean        @default(true) // Còn hàng hay không
   displayOrder Int            @default(0) @map("display_order")
+  preparationTime Int?        @map("preparation_time") // Minutes (0-240)
+  chefRecommended Boolean     @default(false) @map("chef_recommended")
+  popularity      Int         @default(0) // Cached counter for sorting
+  primaryPhotoId  String?     @map("primary_photo_id") // Reference to primary photo
 
   // JSON fields for flexible data
   tags      Json? @default("[]") // ["popular", "spicy", "vegetarian"]
@@ -174,11 +178,37 @@ model MenuItem {
   tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category       MenuCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   modifierGroups MenuItemModifier[] // Many-to-Many với ModifierGroup
+  photos         MenuItemPhoto[]    @relation("MenuItemPhotos") // NEW: Photo relation
 
   @@unique([name, tenantId, categoryId], name: "menu_items_name_tenant_category_unique")
   @@index([tenantId, status, available])
   @@index([tenantId, categoryId])
+  @@index([tenantId, popularity]) // NEW: Index for popularity sorting
+  @@index([tenantId, chefRecommended]) // NEW: Index for chef recommendations
   @@map("menu_items")
+}
+
+model MenuItemPhoto {
+  id          String   @id @default(uuid())
+  menuItemId  String   @map("menu_item_id")
+  url         String   // Full URL to image (e.g., S3, Cloudinary)
+  filename    String   // Original filename (sanitized)
+  mimeType    String   @map("mime_type") // image/jpeg, image/png, image/webp
+  size        Int      // File size in bytes
+  width       Int?     // Image width in pixels
+  height      Int?     // Image height in pixels
+  displayOrder Int     @default(0) @map("display_order")
+  isPrimary   Boolean  @default(false) @map("is_primary") // Only one primary per item
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  menuItem MenuItem @relation("MenuItemPhotos", fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([menuItemId])
+  @@index([menuItemId, isPrimary]) // Fast lookup for primary photo
+  @@map("menu_item_photos")
 }
 
 // Modifier Group (Nhóm tuỳ chọn: Size, Extras, Toppings)
