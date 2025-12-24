@@ -118,8 +118,43 @@ erDiagram
     MENU_ITEM_MODIFIER }|--|| MENU_ITEM : belongs_to_item
     MENU_ITEM_MODIFIER }|--|| MODIFIER_GROUP : belongs_to_group
 
-    %% Các bảng khác (ORDER, TABLE, ORDER_ITEM, ORDER_ACTIVITY_LOG...) chưa điền thuộc tính
+    %% --- TABLE MANAGEMENT ---
+    TABLE {
+        string id PK
+        string tenant_id FK
+        string table_number
+        int capacity
+        string location
+        string description
+        enum status
+        string qr_token UK
+        string qr_token_hash
+        datetime qr_token_created_at
+        datetime qr_invalidated_at
+        string current_session_id
+        int display_order
+        boolean active
+        datetime created_at
+        datetime updated_at
+    }
+
+    TABLE_SESSION {
+        string id PK
+        string table_id FK
+        string tenant_id FK
+        datetime scanned_at
+        boolean active
+        datetime cleared_at
+        string cleared_by
+        datetime created_at
+        datetime updated_at
+    }
+
+    %% TABLE RELATIONS
     TENANT ||--|{ TABLE : owns
+    TABLE ||--|{ TABLE_SESSION : has_sessions
+
+    %% Các bảng khác (ORDER, ORDER_ITEM, ORDER_ACTIVITY_LOG...) chưa điền thuộc tính
     TENANT ||--|{ ORDER : processes
     TABLE ||--o{ ORDER : places
     ORDER ||--|{ ORDER_ITEM : includes
