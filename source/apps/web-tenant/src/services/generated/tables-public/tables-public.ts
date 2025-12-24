@@ -14,67 +14,186 @@ import type {
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query'
-import type {
-  PublicMenuResponseDto,
-  PublicTableControllerGetMenuByQrParams
-} from '.././models'
 import { customInstance } from '../../axios';
 
 
 
 /**
- * Validates QR token and returns published menu for the table
- * @summary Get menu via QR token (for customers)
+ * Customer scans QR code, creates session, sets cookie, and redirects to menu
+ * @summary Scan QR code (Haidilao style)
  */
-export const publicTableControllerGetMenuByQr = (
-    params: PublicTableControllerGetMenuByQrParams,
+export const publicTableControllerScanQr = (
+    qrToken: string,
  signal?: AbortSignal
 ) => {
       
       
-      return customInstance<PublicMenuResponseDto>(
-      {url: `/api/v1/menu`, method: 'GET',
-        params, signal
+      return customInstance<unknown>(
+      {url: `/api/v1/t/${qrToken}`, method: 'GET', signal
     },
       );
     }
   
 
-export const getPublicTableControllerGetMenuByQrQueryKey = (params: PublicTableControllerGetMenuByQrParams,) => {
-    return [`/api/v1/menu`, ...(params ? [params]: [])] as const;
+export const getPublicTableControllerScanQrQueryKey = (qrToken: string,) => {
+    return [`/api/v1/t/${qrToken}`] as const;
     }
 
     
-export const getPublicTableControllerGetMenuByQrQueryOptions = <TData = Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>, TError = void>(params: PublicTableControllerGetMenuByQrParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>, TError, TData>>, }
+export const getPublicTableControllerScanQrQueryOptions = <TData = Awaited<ReturnType<typeof publicTableControllerScanQr>>, TError = void>(qrToken: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerScanQr>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getPublicTableControllerGetMenuByQrQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getPublicTableControllerScanQrQueryKey(qrToken);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>> = ({ signal }) => publicTableControllerGetMenuByQr(params, signal);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof publicTableControllerScanQr>>> = ({ signal }) => publicTableControllerScanQr(qrToken, signal);
 
       
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: !!(qrToken), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerScanQr>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type PublicTableControllerGetMenuByQrQueryResult = NonNullable<Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>>
-export type PublicTableControllerGetMenuByQrQueryError = void
+export type PublicTableControllerScanQrQueryResult = NonNullable<Awaited<ReturnType<typeof publicTableControllerScanQr>>>
+export type PublicTableControllerScanQrQueryError = void
 
 /**
- * @summary Get menu via QR token (for customers)
+ * @summary Scan QR code (Haidilao style)
  */
-export const usePublicTableControllerGetMenuByQr = <TData = Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>, TError = void>(
- params: PublicTableControllerGetMenuByQrParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetMenuByQr>>, TError, TData>>, }
+export const usePublicTableControllerScanQr = <TData = Awaited<ReturnType<typeof publicTableControllerScanQr>>, TError = void>(
+ qrToken: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerScanQr>>, TError, TData>>, }
 
   ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
-  const queryOptions = getPublicTableControllerGetMenuByQrQueryOptions(params,options)
+  const queryOptions = getPublicTableControllerScanQrQueryOptions(qrToken,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * Returns table info for current session
+ * @summary Get current session information
+ */
+export const publicTableControllerGetSessionInfo = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/session`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+export const getPublicTableControllerGetSessionInfoQueryKey = () => {
+    return [`/api/v1/session`] as const;
+    }
+
+    
+export const getPublicTableControllerGetSessionInfoQueryOptions = <TData = Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>, TError = void>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPublicTableControllerGetSessionInfoQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>> = ({ signal }) => publicTableControllerGetSessionInfo(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type PublicTableControllerGetSessionInfoQueryResult = NonNullable<Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>>
+export type PublicTableControllerGetSessionInfoQueryError = void
+
+/**
+ * @summary Get current session information
+ */
+export const usePublicTableControllerGetSessionInfo = <TData = Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetSessionInfo>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getPublicTableControllerGetSessionInfoQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * Returns menu based on session cookie (no QR token needed)
+ * @summary Get menu for current session
+ */
+export const publicTableControllerGetMenu = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/menu`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+export const getPublicTableControllerGetMenuQueryKey = () => {
+    return [`/api/v1/menu`] as const;
+    }
+
+    
+export const getPublicTableControllerGetMenuQueryOptions = <TData = Awaited<ReturnType<typeof publicTableControllerGetMenu>>, TError = void>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetMenu>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPublicTableControllerGetMenuQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof publicTableControllerGetMenu>>> = ({ signal }) => publicTableControllerGetMenu(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetMenu>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type PublicTableControllerGetMenuQueryResult = NonNullable<Awaited<ReturnType<typeof publicTableControllerGetMenu>>>
+export type PublicTableControllerGetMenuQueryError = void
+
+/**
+ * @summary Get menu for current session
+ */
+export const usePublicTableControllerGetMenu = <TData = Awaited<ReturnType<typeof publicTableControllerGetMenu>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof publicTableControllerGetMenu>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getPublicTableControllerGetMenuQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -388,14 +388,20 @@ export function TablesPage() {
     
     setIsFetchingTableDetails(true);
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
+      }
+      
       console.log('🔍 [GET /tables/:id] Request:', { id: selectedTable.id });
       
       // Fetch fresh data from server
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/tables/${selectedTable.id}`,
+        `${apiUrl}/api/v1/admin/tables/${selectedTable.id}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
@@ -573,14 +579,20 @@ export function TablesPage() {
   const handleDownloadAll = async () => {
     setIsDownloadingAll(true);
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
+      }
+      
       console.log('📥 [GET /tables/qr/download-all] Request:', { count: tables.length });
       
       // Call API endpoint for ZIP download
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/tables/qr/download-all`,
+        `${apiUrl}/api/v1/admin/tables/qr/download-all`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
@@ -635,18 +647,26 @@ export function TablesPage() {
   const handleBulkRegenerateQR = async () => {
     setIsBulkRegenLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
       if (!token) {
         throw new Error('No authentication token found. Please login again.');
       }
       
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      
+      // Validate API URL is loaded
+      if (!apiUrl) {
+        throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
+      }
+      
       const endpoint = `${apiUrl}/api/v1/admin/tables/qr/regenerate-all`;
       
       logger.log('🔄 [Bulk Regenerate QR] Starting...');
-      logger.log('📍 Endpoint:', endpoint);
-      logger.log('🔐 Token length:', token.length);
+      logger.log('📍 API URL from env:', apiUrl);
+      logger.log('📍 Full Endpoint:', endpoint);
+      logger.log('🔐 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+      logger.log('🔐 Token length:', token?.length || 0);
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -655,7 +675,7 @@ export function TablesPage() {
           'Content-Type': 'application/json',
         },
       });
-
+      
       logger.log('📡 Response status:', response.status, response.statusText);
       logger.log('📡 Response headers:', {
         'content-type': response.headers.get('content-type'),
@@ -781,14 +801,20 @@ export function TablesPage() {
     
     setIsDownloadingQR(true);
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
+      }
+      
       console.log(`📥 [GET /tables/:id/qr/download] Request:`, { id: selectedTable.id, format });
       
       // Call API endpoint
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/tables/${selectedTable.id}/qr/download?format=${format}`,
+        `${apiUrl}/api/v1/admin/tables/${selectedTable.id}/qr/download?format=${format}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
@@ -1301,7 +1327,7 @@ export function TablesPage() {
                   // Use same URL as backend: http://localhost:3000/t/{token}
                   // For production, this will use CUSTOMER_APP_URL from backend config
                   value={(() => {
-                    const url = selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`;
+                    const url = selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_CUSTOMER_APP_URL}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL}/qr/${selectedTable.id}`;
                     console.log('🔍 Frontend QR URL:', url);
                     return url;
                   })()}
@@ -1370,7 +1396,7 @@ export function TablesPage() {
                     className="text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-200 break-all"
                     style={{ fontSize: '13px', fontFamily: 'monospace' }}
                   >
-                    {selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_CUSTOMER_APP_URL || 'http://localhost:3001'}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/${selectedTable.id}`}
+                    {selectedTable.qrToken ? `${process.env.NEXT_PUBLIC_CUSTOMER_APP_URL}/t/${selectedTable.qrToken}` : `${process.env.NEXT_PUBLIC_API_URL}/qr/${selectedTable.id}`}
                   </p>
                 </div>
               </div>

@@ -40,13 +40,13 @@ export class AuthApiAdapter implements IAuthAdapter {
     return authControllerRefresh(data);
   }
 
-  async logout(refreshToken?: string): Promise<void> {
-    if (!refreshToken) {
+  async logout(data: LogoutDto): Promise<void> {
+    if (!data.refreshToken) {
       console.warn('[AuthApiAdapter] No refresh token provided for logout - will still attempt');
     }
     
     try {
-      await authControllerLogout({ refreshToken: refreshToken || '' });
+      await authControllerLogout(data);
       console.log('[AuthApiAdapter] Logout successful on server');
     } catch (error: any) {
       // If it's a network error, log but don't throw - allow local logout

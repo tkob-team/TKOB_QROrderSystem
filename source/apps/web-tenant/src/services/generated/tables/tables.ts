@@ -19,14 +19,18 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query'
 import type {
+  BulkRegenerateQrResponseDto,
   CreateTableDto,
   RegenerateQrResponseDto,
   TableControllerBulkUpdateStatus200,
   TableControllerBulkUpdateStatusBody,
+  TableControllerClearTable200,
   TableControllerDownloadAllQrParams,
   TableControllerDownloadQrParams,
   TableControllerFindAllParams,
+  TableControllerGetActiveSessions200Item,
   TableControllerUpdateStatusBody,
+  TableListResponseDto,
   TableResponseDto,
   UpdateTableDto
 } from '.././models'
@@ -100,7 +104,7 @@ export const tableControllerFindAll = (
 ) => {
       
       
-      return customInstance<TableResponseDto[]>(
+      return customInstance<TableListResponseDto>(
       {url: `/api/v1/admin/tables`, method: 'GET',
         params, signal
     },
@@ -502,6 +506,62 @@ export const useTableControllerRegenerateQr = <TError = unknown,
       return useMutation(mutationOptions);
     }
     /**
+ * Regenerates QR codes for all active tables. Old QR codes will be invalidated. Requires OWNER role.
+ * @summary Bulk regenerate QR codes for all tables
+ */
+export const tableControllerBulkRegenerateAllQr = (
+    
+ ) => {
+      
+      
+      return customInstance<BulkRegenerateQrResponseDto>(
+      {url: `/api/v1/admin/tables/qr/regenerate-all`, method: 'POST'
+    },
+      );
+    }
+  
+
+
+export const getTableControllerBulkRegenerateAllQrMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerBulkRegenerateAllQr>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof tableControllerBulkRegenerateAllQr>>, TError,void, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tableControllerBulkRegenerateAllQr>>, void> = () => {
+          
+
+          return  tableControllerBulkRegenerateAllQr()
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TableControllerBulkRegenerateAllQrMutationResult = NonNullable<Awaited<ReturnType<typeof tableControllerBulkRegenerateAllQr>>>
+    
+    export type TableControllerBulkRegenerateAllQrMutationError = void
+
+    /**
+ * @summary Bulk regenerate QR codes for all tables
+ */
+export const useTableControllerBulkRegenerateAllQr = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerBulkRegenerateAllQr>>, TError,void, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof tableControllerBulkRegenerateAllQr>>,
+        TError,
+        void,
+        TContext
+      > => {
+
+      const mutationOptions = getTableControllerBulkRegenerateAllQrMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
  * @summary Download QR code (PNG/SVG/PDF)
  */
 export const tableControllerDownloadQr = (
@@ -686,4 +746,121 @@ export const useTableControllerBulkUpdateStatus = <TError = unknown,
 
       return useMutation(mutationOptions);
     }
+    /**
+ * Staff marks table as cleared. Deactivates active session and frees the table.
+ * @summary Clear table (Haidilao style)
+ */
+export const tableControllerClearTable = (
+    id: string,
+ ) => {
+      
+      
+      return customInstance<TableControllerClearTable200>(
+      {url: `/api/v1/admin/tables/${id}/clear`, method: 'POST'
+    },
+      );
+    }
+  
+
+
+export const getTableControllerClearTableMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerClearTable>>, TError,{id: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof tableControllerClearTable>>, TError,{id: string}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tableControllerClearTable>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  tableControllerClearTable(id,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TableControllerClearTableMutationResult = NonNullable<Awaited<ReturnType<typeof tableControllerClearTable>>>
     
+    export type TableControllerClearTableMutationError = void
+
+    /**
+ * @summary Clear table (Haidilao style)
+ */
+export const useTableControllerClearTable = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerClearTable>>, TError,{id: string}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof tableControllerClearTable>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+
+      const mutationOptions = getTableControllerClearTableMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Returns all tables currently in use with session info
+ * @summary Get all active sessions (for monitoring)
+ */
+export const tableControllerGetActiveSessions = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TableControllerGetActiveSessions200Item[]>(
+      {url: `/api/v1/admin/tables/sessions/active`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+export const getTableControllerGetActiveSessionsQueryKey = () => {
+    return [`/api/v1/admin/tables/sessions/active`] as const;
+    }
+
+    
+export const getTableControllerGetActiveSessionsQueryOptions = <TData = Awaited<ReturnType<typeof tableControllerGetActiveSessions>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tableControllerGetActiveSessions>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTableControllerGetActiveSessionsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof tableControllerGetActiveSessions>>> = ({ signal }) => tableControllerGetActiveSessions(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof tableControllerGetActiveSessions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type TableControllerGetActiveSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof tableControllerGetActiveSessions>>>
+export type TableControllerGetActiveSessionsQueryError = unknown
+
+/**
+ * @summary Get all active sessions (for monitoring)
+ */
+export const useTableControllerGetActiveSessions = <TData = Awaited<ReturnType<typeof tableControllerGetActiveSessions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tableControllerGetActiveSessions>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getTableControllerGetActiveSessionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

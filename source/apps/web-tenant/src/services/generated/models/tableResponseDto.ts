@@ -19,6 +19,8 @@ export interface TableResponseDto {
   qrCodeUrl?: string;
   /** QR code generation timestamp */
   qrGeneratedAt?: string;
+  /** QR token to generate QR code URL */
+  qrToken?: string;
   status: TableResponseDtoStatus;
   tableNumber: string;
   tenantId: string;

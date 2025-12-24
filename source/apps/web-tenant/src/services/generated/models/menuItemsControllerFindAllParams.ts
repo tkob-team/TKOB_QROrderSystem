@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type { MenuItemsControllerFindAllStatus } from './menuItemsControllerFindAllStatus';
+import type { MenuItemsControllerFindAllSortBy } from './menuItemsControllerFindAllSortBy';
+import type { MenuItemsControllerFindAllSortOrder } from './menuItemsControllerFindAllSortOrder';
 
 export type MenuItemsControllerFindAllParams = {
 page?: number;
@@ -14,4 +16,16 @@ categoryId?: string;
 status?: MenuItemsControllerFindAllStatus;
 available?: boolean;
 search?: string;
+/**
+ * Filter chef recommendations only
+ */
+chefRecommended?: boolean;
+/**
+ * Sort field
+ */
+sortBy?: MenuItemsControllerFindAllSortBy;
+/**
+ * Sort order
+ */
+sortOrder?: MenuItemsControllerFindAllSortOrder;
 };

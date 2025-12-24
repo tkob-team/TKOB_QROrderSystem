@@ -197,6 +197,12 @@ export const customInstance = <T>(config: any): Promise<T> => {
     const duration = Date.now() - startTime;
     const errorData = error.response?.data || {};
     
+    // Skip logging for canceled requests (React Strict Mode behavior)
+    if (error.code === 'ERR_CANCELED' || error.message === 'canceled') {
+      // Silently skip - this is normal in React 18 Strict Mode (dev only)
+      throw error;
+    }
+    
     // Better error logging with proper error info extraction
     const errorInfo = {
       method: config.method?.toUpperCase() || 'UNKNOWN',

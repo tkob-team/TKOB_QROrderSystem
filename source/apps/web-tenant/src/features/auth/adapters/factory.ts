@@ -1,20 +1,15 @@
 /**
  * Auth Adapter Factory
- * Chooses between Mock and Real API adapter based on config
+ * Always uses real API adapter
  */
 
-import { config } from '@/lib/config';
 import type { IAuthAdapter } from './types';
-import { AuthMockAdapter } from './mock';
 import { AuthApiAdapter } from './api';
 
 /**
- * Get the appropriate auth adapter based on configuration
+ * Get the auth adapter (always real API)
  */
 export const getAuthAdapter = (): IAuthAdapter => {
-  if (config.useMockData) {
-    return new AuthMockAdapter();
-  }
   return new AuthApiAdapter();
 };
 
