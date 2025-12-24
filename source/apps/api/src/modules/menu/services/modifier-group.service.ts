@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ModifierGroupRepository } from '../repositories/modifier-group.repository';
 import { CreateModifierGroupDto, UpdateModifierGroupDto } from '../dto/modifier.dto';
 
@@ -53,6 +53,18 @@ export class ModifierGroupService {
 
   async delete(groupId: string) {
     await this.findById(groupId); // Verify exists
+
+    // Check if modifier is being used by menu items
+    const itemsUsing = await this.modifierRepo['prisma'].menuItemModifier.count({
+      where: { modifierGroupId: groupId },
+    });
+
+    if (itemsUsing > 0) {
+      throw new ConflictException({
+        message: `Cannot archive modifier group that is used by ${itemsUsing} menu item(s)`,
+        itemsAffected: itemsUsing,
+      });
+    }
 
     // Soft delete by setting active = false
     return this.modifierRepo.update(groupId, { active: false });

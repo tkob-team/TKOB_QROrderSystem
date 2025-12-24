@@ -71,7 +71,10 @@ export class ModifierGroupController {
   @Delete(':id')
   @Roles(UserRole.OWNER)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete modifier group' })
+  @ApiOperation({ 
+    summary: 'Archive modifier group',
+    description: 'Soft delete: Sets active = false after checking dependencies'
+  })
   @ApiResponse({ status: 204 })
   async delete(@Param('id') id: string) {
     await this.modifierService.delete(id);

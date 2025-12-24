@@ -71,11 +71,11 @@ export class MenuCategoryService {
 
     if (hasItems) {
       throw new ConflictException(
-        'Cannot delete category that contains menu items. Please move or delete all items first.',
+        'Cannot archive category that contains menu items. Please move or delete all items first.',
       );
     }
 
-    // Delete category
-    await this.categoryRepo.delete(categoryId);
+    // Soft delete: set active = false
+    await this.categoryRepo.update(categoryId, { active: false });
   }
 }

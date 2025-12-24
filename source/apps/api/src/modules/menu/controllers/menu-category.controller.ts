@@ -77,12 +77,15 @@ export class MenuCategoryController {
     return this.menuCategoryService.update(id, dto);
   }
 
-  // D: api delete one category
+  // D: api delete one category (soft delete)
   @Delete(':id')
   @Roles(UserRole.OWNER)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete menu category' })
+  @ApiOperation({ 
+    summary: 'Archive menu category',
+    description: 'Soft delete: Sets active = false'
+  })
   @ApiResponse({ status: 204 })
   async delete(@Param('id') id: string) {
     await this.menuCategoryService.delete(id);
