@@ -6,6 +6,7 @@ import { Card, Badge, Toast } from '@/shared/components/ui';
 import { MenuTabs } from '@/features/menu-management/components/MenuTabs';
 import { useAppRouter } from '@/shared/hooks/useAppRouter';
 import { ROUTES } from '@/lib/routes';
+import { CURRENCY_CONFIG } from '@/config/currency';
 import { Search, Plus, Edit, Trash2, Filter, XCircle, X, AlertTriangle } from 'lucide-react';
 
 // Import generated API hooks
@@ -606,7 +607,7 @@ export function MenuModifiersPage() {
                         <div key={option.id} className="flex items-center justify-between text-gray-600" style={{ fontSize: '12px' }}>
                           <span>{option.name}</span>
                           <span className="text-emerald-600" style={{ fontWeight: 600 }}>
-                            {option.priceDelta >= 0 ? '+' : ''}{option.priceDelta.toLocaleString()} VND
+                            {option.priceDelta >= 0 ? '+' : ''}{CURRENCY_CONFIG.format(option.priceDelta)}
                           </span>
                         </div>
                       ))}
@@ -823,7 +824,7 @@ export function MenuModifiersPage() {
                         handleAddOption();
                       }
                     }}
-                    placeholder="Price (VND)"
+                    placeholder={`Price (${CURRENCY_CONFIG.code})`}
                     className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <button
@@ -843,7 +844,7 @@ export function MenuModifiersPage() {
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">{option.name}</div>
                           <div className="text-xs text-gray-500">
-                            {option.priceDelta >= 0 ? '+' : ''}{option.priceDelta.toLocaleString()} VND
+                            {option.priceDelta >= 0 ? '+' : ''}{CURRENCY_CONFIG.format(option.priceDelta)}
                           </div>
                         </div>
                         <button
@@ -1045,7 +1046,7 @@ export function MenuModifiersPage() {
                         handleAddOption();
                       }
                     }}
-                    placeholder="Price (VND)"
+                    placeholder={`Price (${CURRENCY_CONFIG.code})`}
                     className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <button
@@ -1065,7 +1066,7 @@ export function MenuModifiersPage() {
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">{option.name}</div>
                           <div className="text-xs text-gray-500">
-                            {option.priceDelta >= 0 ? '+' : ''}{option.priceDelta.toLocaleString()} VND
+                            {option.priceDelta >= 0 ? '+' : ''}{CURRENCY_CONFIG.format(option.priceDelta)}
                           </div>
                         </div>
                         <button
