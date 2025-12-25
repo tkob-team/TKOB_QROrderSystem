@@ -55,6 +55,15 @@ export interface ITablesAdapter {
   }>;
 
   /**
+   * Regenerate QR codes for all tables
+   */
+  regenerateAllQR(): Promise<{
+    successCount: number;
+    totalProcessed: number;
+    generatedAt: string;
+  }>;
+
+  /**
    * Get distinct locations for filter dropdown
    */
   getLocations(): Promise<string[]>;

@@ -19,6 +19,7 @@ import {
   tableControllerUpdateStatus as apiUpdateTableStatus,
   tableControllerGetLocations,
   tableControllerRegenerateQr,
+  tableControllerBulkRegenerateAllQr,
 } from '@/services/generated/tables/tables';
 
 export class TablesApiAdapter implements ITablesAdapter {
@@ -27,16 +28,18 @@ export class TablesApiAdapter implements ITablesAdapter {
     try {
       const result = await tableControllerFindAll(params);
       console.log('🌐 [API Adapter] tableControllerFindAll response:', result);
-      console.log('🌐 [API Adapter] Response type:', typeof result);
-      console.log('🌐 [API Adapter] Is Array:', Array.isArray(result));
-      return result;
-    } catch (error: any) {
+      return result.data;
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { status?: number; statusText?: string; data?: unknown };
+        message?: string;
+      };
       console.error('🌐 [API Adapter] Error calling tableControllerFindAll:', {
         params,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        message: error.message,
-        errorData: error.response?.data,
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        message: err?.message,
+        errorData: err?.response?.data,
       });
       throw error;
     }
@@ -68,13 +71,17 @@ export class TablesApiAdapter implements ITablesAdapter {
       const result = await apiUpdateTableStatus(id, { status });
       console.log('🌐 [API Adapter] updateTableStatus success:', result);
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { status?: number; data?: unknown };
+        message?: string;
+      };
       console.error('🌐 [API Adapter] updateTableStatus error:', {
         id,
         status,
-        errorStatus: error.response?.status,
-        errorData: error.response?.data,
-        errorMessage: error.message,
+        errorStatus: err?.response?.status,
+        errorData: err?.response?.data,
+        errorMessage: err?.message,
       });
       throw error;
     }
@@ -87,6 +94,19 @@ export class TablesApiAdapter implements ITablesAdapter {
     generatedAt: string;
   }> {
     return tableControllerRegenerateQr(id);
+  }
+
+  async regenerateAllQR(): Promise<{
+    successCount: number;
+    totalProcessed: number;
+    generatedAt: string;
+  }> {
+    const result = await tableControllerBulkRegenerateAllQr();
+    return {
+      successCount: result.successCount,
+      totalProcessed: result.totalProcessed,
+      generatedAt: result.regeneratedAt,
+    };
   }
 
   async getLocations(): Promise<string[]> {

@@ -129,6 +129,20 @@ export const useRegenerateQR = () => {
 };
 
 /**
+ * Regenerate all QR codes mutation
+ */
+export const useRegenerateAllQR = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => tablesService.regenerateAllQR(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
+    },
+  });
+};
+
+/**
  * Get locations query
  */
 export const useLocations = () => {

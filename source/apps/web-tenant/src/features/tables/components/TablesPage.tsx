@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table as ShadcnTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@packages/ui';
 import { TableFormFields } from './TableFormFields';
 import { Plus, X, QrCode, Users, Download, Printer, Edit, RefreshCcw } from 'lucide-react';
+import { tablesService } from '@/services/tables';
 import {
   useTablesList,
   useTableById,
@@ -20,6 +21,7 @@ import {
   useDeleteTable,
   useUpdateTableStatus,
   useRegenerateQR,
+  useRegenerateAllQR,
 } from '@/features/tables/hooks/useTables';
 
 interface Table {
@@ -38,6 +40,7 @@ interface Table {
 
 export function TablesPage() {
   const queryClient = useQueryClient();
+  const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -282,6 +285,7 @@ export function TablesPage() {
   const deleteTableMutation = useDeleteTable();
   const updateStatusMutation = useUpdateTableStatus();
   const regenerateQRMutation = useRegenerateQR();
+  const regenerateAllQRMutation = useRegenerateAllQR();
 
   // Standardized error handler
   const handleApiError = (error: any, defaultMessage: string) => {
@@ -388,42 +392,38 @@ export function TablesPage() {
     
     setIsFetchingTableDetails(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
-      }
-      
-      console.log('🔍 [GET /tables/:id] Request:', { id: selectedTable.id });
-      
-      // Fetch fresh data from server
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await fetch(
-        `${apiUrl}/api/v1/admin/tables/${selectedTable.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-      
-      if (!response.ok) throw new Error(`Failed to fetch table: ${response.statusText}`);
-      
-      const result = await response.json();
-      const freshTable = result.data;
-      
-      console.log('✅ [GET /tables/:id] Response:', freshTable);
+      console.log('🔍 [tablesService.getTableById] Request:', { id: selectedTable.id, useMockData });
+
+      const freshTable = await queryClient.fetchQuery({
+        queryKey: ['tables', 'detail', selectedTable.id],
+        queryFn: () => tablesService.getTableById(selectedTable.id),
+        staleTime: 0,
+      });
+
+      console.log('✅ [tablesService.getTableById] Response:', freshTable);
+
+      const tableNumberRaw: unknown = (freshTable as any)?.tableNumber;
+      const tableNumberParsed =
+        typeof tableNumberRaw === 'number'
+          ? tableNumberRaw
+          : parseInt(String(tableNumberRaw ?? '').replace(/\D+/g, '') || '0', 10);
+
+      const nameValue =
+        typeof tableNumberRaw === 'number'
+          ? `Table ${tableNumberRaw}`
+          : String(tableNumberRaw ?? selectedTable.name);
       
       // Map fresh data to component format
       const mappedTable = {
         id: freshTable.id,
-        name: freshTable.tableNumber,
+        name: nameValue,
         capacity: freshTable.capacity,
         status: (freshTable.status === 'AVAILABLE' ? 'available' 
           : freshTable.status === 'OCCUPIED' ? 'occupied'
           : freshTable.status === 'RESERVED' ? 'reserved'
           : 'inactive') as 'available' | 'occupied' | 'reserved' | 'inactive',
         zone: freshTable.location?.toLowerCase() || 'indoor',
-        tableNumber: parseInt(freshTable.tableNumber?.replace('Table ', '') || '0'),
+        tableNumber: tableNumberParsed,
         description: freshTable.description || '',
       };
       
@@ -579,6 +579,13 @@ export function TablesPage() {
   const handleDownloadAll = async () => {
     setIsDownloadingAll(true);
     try {
+      if (useMockData) {
+        setToastMessage(`Downloaded ${tables.length} QR codes (mock)`);
+        setToastType('success');
+        setShowSuccessToast(true);
+        return;
+      }
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       if (!apiUrl) {
         throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
@@ -647,79 +654,17 @@ export function TablesPage() {
   const handleBulkRegenerateQR = async () => {
     setIsBulkRegenLoading(true);
     try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      console.log('🔄 [handleBulkRegenerateQR] Starting bulk regeneration');
+      const result = await regenerateAllQRMutation.mutateAsync();
       
-      if (!token) {
-        throw new Error('No authentication token found. Please login again.');
-      }
-      
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      
-      // Validate API URL is loaded
-      if (!apiUrl) {
-        throw new Error('API URL not configured. Please check NEXT_PUBLIC_API_URL in .env file');
-      }
-      
-      const endpoint = `${apiUrl}/api/v1/admin/tables/qr/regenerate-all`;
-      
-      logger.log('🔄 [Bulk Regenerate QR] Starting...');
-      logger.log('📍 API URL from env:', apiUrl);
-      logger.log('📍 Full Endpoint:', endpoint);
-      logger.log('🔐 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-      logger.log('🔐 Token length:', token?.length || 0);
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      logger.log('📡 Response status:', response.status, response.statusText);
-      logger.log('📡 Response headers:', {
-        'content-type': response.headers.get('content-type'),
-      });
-
-      if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        let errorData: any = {};
-        
-        try {
-          if (contentType?.includes('application/json')) {
-            errorData = await response.json();
-          } else {
-            const text = await response.text();
-            logger.log('📡 Response body (non-JSON):', text.substring(0, 500));
-            errorData = { message: `Server error ${response.status}: ${response.statusText}` };
-          }
-        } catch (parseErr) {
-          logger.error('Failed to parse error response:', parseErr);
-          errorData = { message: `Server error ${response.status}` };
-        }
-        
-        logger.error('❌ API Error Response:', errorData);
-        throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      
-      // Handle both direct response and wrapped response
-      const successCount = result.data?.successCount || result.successCount || result.data?.totalProcessed || result.totalProcessed || 0;
-      
-      setToastMessage(`✅ Bulk QR regeneration completed for ${successCount} table(s)`);
+      setToastMessage(`✅ Bulk QR regeneration completed for ${result.successCount} table(s)`);
       setToastType('success');
       setShowSuccessToast(true);
       setIsBulkRegenOpen(false);
       
-      // Refresh tables list to get updated QR tokens
-      await queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
+      logger.log('✅ Bulk QR regeneration success:', result);
     } catch (error: any) {
-      logger.error('❌ Bulk regenerate error:', {
-        message: error?.message,
-        stack: error?.stack,
-        error,
-      });
+      logger.error('❌ Bulk regenerate error:', error);
       const errorMessage = error?.message || 'Failed to regenerate all QR codes';
       setToastMessage(`❌ ${errorMessage}`);
       setToastType('error');
@@ -798,6 +743,19 @@ export function TablesPage() {
 
   const handleDownloadQR = async (format: 'png' | 'pdf') => {
     if (!selectedTable) return;
+
+    if (useMockData) {
+      if (format === 'png') {
+        await handleDownloadQRImage();
+        setToastMessage(`QR code downloaded as ${format.toUpperCase()} (mock)`);
+        setToastType('success');
+        setShowSuccessToast(true);
+        return;
+      }
+
+      await handlePrintQRWrapper();
+      return;
+    }
     
     setIsDownloadingQR(true);
     try {

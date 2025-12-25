@@ -167,7 +167,35 @@ export class TablesMockAdapter implements ITablesAdapter {
     return {
       tableId: id,
       qrToken: `qr_token_${Date.now()}`,
-      qrCodeUrl: table.qrCodeUrl,
+      qrCodeUrl: table.qrCodeUrl ?? `/api/v1/admin/tables/${id}/qr/download`,
+      generatedAt,
+    };
+  }
+
+  async regenerateAllQR(): Promise<{
+    successCount: number;
+    totalProcessed: number;
+    generatedAt: string;
+  }> {
+    await fakeDelay();
+
+    const generatedAt = new Date().toISOString();
+    
+    // Regenerate QR for all active tables
+    mockTables.forEach((table) => {
+      if (table.active) {
+        table.qrGeneratedAt = generatedAt;
+        table.updatedAt = generatedAt;
+      }
+    });
+
+    const successCount = mockTables.filter((t) => t.active).length;
+
+    console.log('🎭 [TablesMockAdapter] Regenerated QR codes for', successCount, 'tables');
+
+    return {
+      successCount,
+      totalProcessed: successCount,
       generatedAt,
     };
   }
@@ -175,7 +203,13 @@ export class TablesMockAdapter implements ITablesAdapter {
   async getLocations(): Promise<string[]> {
     await fakeDelay();
 
-    const locations = [...new Set(mockTables.map((t) => t.location))];
+    const locations = [
+      ...new Set(
+        mockTables
+          .map((t) => t.location)
+          .filter((location): location is string => typeof location === 'string' && location.length > 0)
+      ),
+    ];
     return locations;
   }
 }
