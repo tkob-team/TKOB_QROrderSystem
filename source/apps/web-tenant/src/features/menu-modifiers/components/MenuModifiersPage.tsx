@@ -121,6 +121,11 @@ export function MenuModifiersPage() {
     },
   });
 
+  // Helper function to normalize type format (convert API format to form format)
+  const normalizeType = (type: any): 'single' | 'multiple' => {
+    return type === 'SINGLE_CHOICE' || type === 'single' ? 'single' : 'multiple';
+  };
+
   // Filter logic - Both type AND status filters
   const visibleGroups = groups.filter((group) => {
     // Status filter: active vs archived
@@ -130,8 +135,9 @@ export function MenuModifiersPage() {
       if (!group.active) return false; // Hide archived when viewing active
     }
     
-    // Type filter: single vs multiple
-    const matchesType = selectedType === 'all' || group.type === selectedType;
+    // Type filter: single vs multiple (normalize both sides for comparison)
+    const normalizedGroupType = normalizeType(group.type);
+    const matchesType = selectedType === 'all' || normalizedGroupType === selectedType;
     
     // Search filter
     const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -236,7 +242,9 @@ export function MenuModifiersPage() {
     setEditingGroup(group);
     setFormName(group.name);
     setFormDescription(group.description || '');
-    setFormType(group.type);
+    // Convert API type format to form format
+    const formattedType = group.type === 'SINGLE_CHOICE' || group.type === 'single' ? 'single' : 'multiple';
+    setFormType(formattedType);
     setFormRequired(group.required);
     setFormOptions(group.options.map((opt, idx) => ({
       name: opt.name,
@@ -245,7 +253,7 @@ export function MenuModifiersPage() {
     })));
     
     // Set min/max based on type
-    if (group.type === 'single') {
+    if (formattedType === 'single') {
       setFormMinChoices(1);
       setFormMaxChoices(1);
     } else {
@@ -552,8 +560,8 @@ export function MenuModifiersPage() {
                           {group.name}
                         </h4>
                         <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <Badge variant={group.type === 'single' ? 'success' : 'neutral'}>
-                            {group.type === 'single' ? 'Choose 1' : 'Multi-select'}
+                          <Badge variant={normalizeType(group.type) === 'single' ? 'success' : 'neutral'}>
+                            {normalizeType(group.type) === 'single' ? 'Choose 1' : 'Multi-select'}
                           </Badge>
                           {!group.active && (
                             <Badge variant="neutral">Inactive</Badge>
