@@ -66,6 +66,20 @@ const categorySchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
 }) as any;
 
+// Constants for image validation
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+
+type PhotoItem = {
+  id: string;
+  file?: File;
+  previewUrl: string;
+  uploadedUrl?: string;
+  isPrimary: boolean;
+};
+
 type CategoryFormData = {
   name: string;
   description?: string | null;
@@ -234,7 +248,7 @@ export function MenuManagementPage() {
     description: '',
     price: '',
     status: 'available' as 'available' | 'unavailable' | 'sold_out',
-    image: null as File | null,
+    menuItemPhotos: [] as PhotoItem[],
     dietary: [] as string[],
     chefRecommended: false,
     modifierGroupIds: [] as string[], // Add modifier groups selection
@@ -458,7 +472,7 @@ export function MenuManagementPage() {
       description: '',
       price: '',
       status: 'available',
-      image: null,
+      menuItemPhotos: [],
       dietary: [],
       chefRecommended: false,
       modifierGroupIds: [],
@@ -476,7 +490,7 @@ export function MenuManagementPage() {
       description: item.description || '',
       price: String(item.price || ''),
       status: item.status === 'SOLD_OUT' ? 'sold_out' : (!item.isAvailable ? 'unavailable' : 'available'),
-      image: null,
+      menuItemPhotos: [],
       dietary: item.dietary || [],
       chefRecommended: item.chefRecommended || false,
       modifierGroupIds: item.modifierGroups?.map((mg: any) => mg.id) || [], // Load existing modifiers
@@ -484,7 +498,7 @@ export function MenuManagementPage() {
     setIsItemModalOpen(true);
   };
 
-  const handleOpenNewItemModal = () => {
+  const _handleOpenNewItemModal = () => {
     setItemModalMode('add');
     setCurrentEditItemId(null);
     setItemFormData({
@@ -493,7 +507,7 @@ export function MenuManagementPage() {
       description: '',
       price: '',
       status: 'available',
-      image: null,
+      menuItemPhotos: [],
       dietary: [],
       chefRecommended: false,
       modifierGroupIds: [], // Add modifierGroupIds
@@ -502,6 +516,7 @@ export function MenuManagementPage() {
   };
 
   const handleCloseItemModal = () => {
+    cleanupPhotoUrls();
     setIsItemModalOpen(false);
     setCurrentEditItemId(null);
     setItemFormData({
@@ -510,7 +525,7 @@ export function MenuManagementPage() {
       description: '',
       price: '',
       status: 'available',
-      image: null,
+      menuItemPhotos: [],
       dietary: [],
       chefRecommended: false,
       modifierGroupIds: [], // Reset modifiers
@@ -534,12 +549,16 @@ export function MenuManagementPage() {
           }
         });
 
-        // Upload photo nếu có
-        if (itemFormData.image && result?.id) {
-          await uploadPhotoMutation.mutateAsync({
-            itemId: result.id,
-            data: { file: itemFormData.image }
-          });
+        // Upload photos nếu có
+        if (itemFormData.menuItemPhotos.length > 0 && result?.id) {
+          for (const photo of itemFormData.menuItemPhotos) {
+            if (photo.file) {
+              await uploadPhotoMutation.mutateAsync({
+                itemId: result.id,
+                data: { file: photo.file }
+              });
+            }
+          }
         }
 
         setToastMessage(`Món "${itemFormData.name}" đã được tạo`);
@@ -556,12 +575,16 @@ export function MenuManagementPage() {
           }
         });
 
-        // Upload photo nếu có
-        if (itemFormData.image) {
-          await uploadPhotoMutation.mutateAsync({
-            itemId: currentEditItemId,
-            data: { file: itemFormData.image }
-          });
+        // Upload photos nếu có
+        if (itemFormData.menuItemPhotos.length > 0) {
+          for (const photo of itemFormData.menuItemPhotos) {
+            if (photo.file) {
+              await uploadPhotoMutation.mutateAsync({
+                itemId: currentEditItemId,
+                data: { file: photo.file }
+              });
+            }
+          }
         }
 
         setToastMessage(`Món "${itemFormData.name}" đã được cập nhật`);
@@ -572,12 +595,6 @@ export function MenuManagementPage() {
     } catch (error) {
       // Error đã được xử lý trong mutation
       console.error('Error in handleSaveItem:', error);
-    }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setItemFormData({ ...itemFormData, image: e.target.files[0] });
     }
   };
 
@@ -628,6 +645,123 @@ export function MenuManagementPage() {
       default:
         return null;
     }
+  };
+
+  // Validate image file
+  const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+    // Check MIME type
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      return { valid: false, error: `Invalid file type: ${file.name}. Only JPG, PNG, and WebP are allowed.` };
+    }
+
+    // Check extension
+    const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!ALLOWED_EXTENSIONS.has(extension)) {
+      return { valid: false, error: `Invalid extension: ${file.name}. Only .jpg, .jpeg, .png, and .webp are allowed.` };
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return { valid: false, error: `File too large: ${file.name}. Maximum size is ${MAX_FILE_SIZE_MB}MB.` };
+    }
+
+    return { valid: true };
+  };
+
+  // Handle multiple image uploads
+  const handleImageUpload = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const newPhotos: PhotoItem[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const validation = validateImageFile(file);
+
+      if (!validation.valid) {
+        errors.push(validation.error || 'Unknown error');
+        continue;
+      }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      const isPrimary = itemFormData.menuItemPhotos.length === 0 && newPhotos.length === 0;
+
+      newPhotos.push({
+        id: `temp_${Date.now()}_${i}`,
+        file,
+        previewUrl,
+        isPrimary,
+      });
+    }
+
+    // Update primary status if we're adding photos to empty array
+    if (itemFormData.menuItemPhotos.length === 0 && newPhotos.length > 0) {
+      newPhotos[0].isPrimary = true;
+    }
+
+    // Add valid photos to state
+    if (newPhotos.length > 0) {
+      setItemFormData({
+        ...itemFormData,
+        menuItemPhotos: [...itemFormData.menuItemPhotos, ...newPhotos],
+      });
+    }
+
+    // Show errors if any
+    if (errors.length > 0) {
+      setToastMessage(errors.join('; '));
+      setShowSuccessToast(true);
+    }
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleImageUpload(e.target.files);
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  // Remove photo and revoke URL
+  const removePhoto = (photoId: string) => {
+    const photo = itemFormData.menuItemPhotos.find(p => p.id === photoId);
+    if (photo && photo.previewUrl) {
+      URL.revokeObjectURL(photo.previewUrl);
+    }
+
+    const updatedPhotos = itemFormData.menuItemPhotos.filter(p => p.id !== photoId);
+
+    // If removed photo was primary, make first remaining photo primary
+    if (photo?.isPrimary && updatedPhotos.length > 0) {
+      updatedPhotos[0].isPrimary = true;
+    }
+
+    setItemFormData({
+      ...itemFormData,
+      menuItemPhotos: updatedPhotos,
+    });
+  };
+
+  // Set photo as primary
+  const setPhotoPrimary = (photoId: string) => {
+    const updatedPhotos = itemFormData.menuItemPhotos.map(photo => ({
+      ...photo,
+      isPrimary: photo.id === photoId,
+    }));
+    setItemFormData({
+      ...itemFormData,
+      menuItemPhotos: updatedPhotos,
+    });
+  };
+
+  // Clean up object URLs on modal close
+  const cleanupPhotoUrls = () => {
+    itemFormData.menuItemPhotos.forEach(photo => {
+      if (photo.previewUrl) {
+        URL.revokeObjectURL(photo.previewUrl);
+      }
+    });
   };
 
   // Compute viewport-clamped menu position
@@ -873,32 +1007,84 @@ export function MenuManagementPage() {
               </div>
 
               <div className="p-6 flex flex-col gap-5 overflow-y-auto">
-                {/* Image Upload */}
+                {/* Image Upload - Multiple Files */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-gray-900">Item Image</label>
+                  <label className="text-sm font-semibold text-gray-900">Item Photos</label>
                   
-                  {itemFormData.image ? (
-                    <div className="border-2 border-emerald-500 rounded-xl p-6 flex flex-col items-center gap-3 bg-emerald-50">
-                      <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center">
-                        <ImageIcon className="w-12 h-12 text-emerald-500" />
-                      </div>
-                      <p className="text-sm font-semibold text-emerald-700">{itemFormData.image.name}</p>
-                      <p className="text-xs text-emerald-600">{(itemFormData.image.size / 1024).toFixed(1)} KB</p>
-                      <button
-                        onClick={() => setItemFormData({ ...itemFormData, image: null })}
-                        className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
-                      >
-                        Remove image
-                      </button>
+                  {itemFormData.menuItemPhotos.length > 0 ? (
+                    <div className="space-y-3">
+                      {itemFormData.menuItemPhotos.map((photo) => (
+                        <div
+                          key={photo.id}
+                          className="border-2 border-emerald-500 rounded-xl p-4 flex items-center gap-4 bg-emerald-50"
+                        >
+                          <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                            <img
+                              src={photo.previewUrl}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-emerald-700 truncate">
+                              {photo.file?.name || 'Uploaded'}
+                            </p>
+                            <p className="text-xs text-emerald-600">
+                              {photo.file ? `${(photo.file.size / 1024).toFixed(1)} KB` : 'Server image'}
+                            </p>
+                            {photo.isPrimary && (
+                              <span className="inline-block mt-1 px-2 py-1 bg-emerald-600 text-white text-xs font-semibold rounded">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            {!photo.isPrimary && (
+                              <button
+                                type="button"
+                                onClick={() => setPhotoPrimary(photo.id)}
+                                className="px-3 py-1 text-xs font-medium text-emerald-700 bg-white border border-emerald-500 rounded hover:bg-emerald-50"
+                              >
+                                Set Primary
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removePhoto(photo.id)}
+                              className="text-sm font-semibold text-red-600 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Add more photos button */}
+                      <label className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-500 transition-colors">
+                        <Upload className="w-6 h-6 text-gray-400" />
+                        <p className="text-xs font-semibold text-gray-600">Add more photos</p>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".jpg,.jpeg,.png,.webp"
+                          onChange={handleFileInputChange}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
                   ) : (
-                    <label className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer hover:border-emerald-500">
+                    <label className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer hover:border-emerald-500 transition-colors">
                       <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
                         <Upload className="w-8 h-8 text-gray-400" />
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">Drop image or click to upload</p>
-                      <p className="text-xs text-gray-500">PNG, JPG or WEBP (max. 5MB)</p>
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      <p className="text-sm font-semibold text-gray-900">Drop photos or click to upload</p>
+                      <p className="text-xs text-gray-500">PNG, JPG or WEBP (max. 5MB per image)</p>
+                      <input
+                        type="file"
+                        multiple
+                        accept=".jpg,.jpeg,.png,.webp"
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                      />
                     </label>
                   )}
                 </div>
