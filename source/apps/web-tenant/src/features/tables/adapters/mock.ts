@@ -10,6 +10,7 @@ import type {
   TableResponseDto,
   TableControllerFindAllParams,
 } from '@/services/generated/models';
+import { mockTables as initialMockTables } from '@/services/mocks/tables-data';
 
 /**
  * Simulate network delay (200-500ms)
@@ -19,53 +20,7 @@ const fakeDelay = () => new Promise((resolve) => setTimeout(resolve, 200 + Math.
 /**
  * Mock tables in-memory storage
  */
-let mockTables: TableResponseDto[] = [
-  {
-    id: 'table-1',
-    tenantId: 'tenant-001',
-    tableNumber: 'Table 1',
-    capacity: 4,
-    location: 'Main Hall',
-    description: 'Near window',
-    status: 'AVAILABLE',
-    active: true,
-    displayOrder: 1,
-    qrCodeUrl: '/api/v1/admin/tables/table-1/qr/download',
-    qrGeneratedAt: new Date().toISOString(),
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'table-2',
-    tenantId: 'tenant-001',
-    tableNumber: 'Table 2',
-    capacity: 2,
-    location: 'Main Hall',
-    description: '',
-    status: 'OCCUPIED',
-    active: true,
-    displayOrder: 2,
-    qrCodeUrl: '/api/v1/admin/tables/table-2/qr/download',
-    qrGeneratedAt: new Date().toISOString(),
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'table-3',
-    tenantId: 'tenant-001',
-    tableNumber: 'VIP 1',
-    capacity: 8,
-    location: 'VIP Room',
-    description: 'Private room',
-    status: 'RESERVED',
-    active: true,
-    displayOrder: 3,
-    qrCodeUrl: '/api/v1/admin/tables/table-3/qr/download',
-    qrGeneratedAt: new Date().toISOString(),
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+let mockTables: TableResponseDto[] = JSON.parse(JSON.stringify(initialMockTables));
 
 export class TablesMockAdapter implements ITablesAdapter {
   async listTables(params?: TableControllerFindAllParams): Promise<TableResponseDto[]> {

@@ -187,31 +187,6 @@ export const customInstance = async <T>(config: any): Promise<T> => {
     hasData: !!config.data,
   });
   
-  // Check if mock mode and if we have mock data for this request
-  if (useMockData) {
-    const { getMockResponseForURL } = await import('./mocks/menu-service');
-    const mockResponse = await getMockResponseForURL(
-      config.method?.toUpperCase() || 'GET',
-      config.url,
-      config.data
-    );
-    
-    if (mockResponse) {
-      const duration = Date.now() - startTime;
-      console.log('🎭 [customInstance] Mock Response:', {
-        method: config.method,
-        url: config.url,
-        duration: `${duration}ms`,
-      });
-      
-      // Return mock data in the same format as real API
-      if (mockResponse.data && typeof mockResponse.data === 'object' && 'data' in mockResponse.data) {
-        return mockResponse.data.data as T;
-      }
-      return mockResponse.data as T;
-    }
-  }
-  
   return api(config).then(({ data }) => {
     const duration = Date.now() - startTime;
     console.log('🌐 [customInstance] Response received:', {

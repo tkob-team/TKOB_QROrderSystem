@@ -9,14 +9,13 @@ import { ROUTES } from '@/lib/routes';
 import { CURRENCY_CONFIG } from '@/config/currency';
 import { Search, Plus, Edit, Trash2, Filter, XCircle, X, AlertTriangle } from 'lucide-react';
 
-// Import generated API hooks
+// Import custom menu hooks (supports mock data)
 import {
-  useModifierGroupControllerFindAll,
-  useModifierGroupControllerCreate,
-  useModifierGroupControllerUpdate,
-  useModifierGroupControllerDelete,
-  getModifierGroupControllerFindAllQueryKey,
-} from '@/services/generated/menu-modifiers/menu-modifiers';
+  useModifierGroups,
+  useCreateModifierGroup,
+  useUpdateModifierGroup,
+  useDeleteModifierGroup,
+} from '@/features/menu-management/hooks/useMenu';
 
 
 interface ModifierGroup {
@@ -74,57 +73,16 @@ export function MenuModifiersPage() {
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Fetch Modifier Groups from API
-  const { data: groupsResponse } = useModifierGroupControllerFindAll({ activeOnly: false });
-  // axios.ts already unwraps {success, data} → groupsResponse is the array directly
-  // Cast API response to our extended ModifierGroup interface for displayOrder and active support
-  const groups = (groupsResponse || []) as ModifierGroup[];
+  // Fetch Modifier Groups from custom hook (supports mock data)
+  const { data: groupsResponse } = useModifierGroups({ activeOnly: false });
+  const groups = (Array.isArray(groupsResponse?.data) ? groupsResponse.data : []) as ModifierGroup[];
 
   // Modifier Group Mutations
-  const createGroupMutation = useModifierGroupControllerCreate({
-    mutation: {
-      onSuccess: async () => {
-        // Force immediate refetch to show changes instantly
-        await queryClient.refetchQueries({ queryKey: getModifierGroupControllerFindAllQueryKey({ activeOnly: false }) });
-        setShowCreateModal(false);
-        setToast({ message: 'Modifier group created successfully', type: 'success' });
-        resetForm();
-      },
-      onError: () => {
-        setToast({ message: 'Failed to create modifier group', type: 'error' });
-      },
-    },
-  });
+  const createGroupMutation = useCreateModifierGroup();
 
-  const updateGroupMutation = useModifierGroupControllerUpdate({
-    mutation: {
-      onSuccess: async () => {
-        await queryClient.refetchQueries({ queryKey: getModifierGroupControllerFindAllQueryKey({ activeOnly: false }) });
-        setShowEditModal(false);
-        setEditingGroup(null);
-        setToast({ message: 'Modifier group updated successfully', type: 'success' });
-        resetForm();
-      },
-      onError: () => {
-        setToast({ message: 'Failed to update modifier group', type: 'error' });
-      },
-    },
-  });
+  const updateGroupMutation = useUpdateModifierGroup();
 
-  const deleteGroupMutation = useModifierGroupControllerDelete({
-    mutation: {
-      onSuccess: async () => {
-        await queryClient.refetchQueries({ queryKey: getModifierGroupControllerFindAllQueryKey({ activeOnly: false }) });
-        setShowDeleteDialog(false);
-        setDeletingGroup(null);
-        setToast({ message: 'Modifier group archived successfully', type: 'success' });
-      },
-      onError: (error: { response?: { data?: { message?: string } } }) => {
-        const message = error.response?.data?.message || 'Failed to archive modifier group';
-        setToast({ message, type: 'error' });
-      },
-    },
-  });
+  const deleteGroupMutation = useDeleteModifierGroup();
 
   // Helper function to normalize type format (convert API format to form format)
   const normalizeType = (type: string): 'single' | 'multiple' => {

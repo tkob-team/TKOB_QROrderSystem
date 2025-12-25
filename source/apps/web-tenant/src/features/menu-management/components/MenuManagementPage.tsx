@@ -30,28 +30,20 @@ import {
 // React Query
 import { useQueryClient } from '@tanstack/react-query';
 
-// API Hooks - Categories
+// Menu Hooks - use custom hooks instead of generated ones for mock data support
 import {
-  useMenuCategoryControllerFindAll,
-  useMenuCategoryControllerCreate,
-  useMenuCategoryControllerDelete,
-  useMenuCategoryControllerUpdate,
-} from '@/services/generated/menu-categories/menu-categories';
+  useMenuCategories,
+  useMenuItems,
+  useModifierGroups,
+  useCreateMenuCategory,
+  useUpdateMenuCategory,
+  useDeleteMenuCategory,
+  useCreateMenuItem,
+  useUpdateMenuItem,
+  useDeleteMenuItem,
+} from '@/features/menu-management/hooks/useMenu';
 
-// API Hooks - Menu Items
-import {
-  useMenuItemsControllerFindAll,
-  useMenuItemsControllerCreate,
-  useMenuItemsControllerUpdate,
-  useMenuItemsControllerDelete,
-} from '@/services/generated/menu-items/menu-items';
-
-// API Hooks - Modifier Groups
-import {
-  useModifierGroupControllerFindAll,
-} from '@/services/generated/menu-modifiers/menu-modifiers';
-
-// API Hooks - Photos
+// API Hooks - Photos (still using generated for photos)
 import {
   useMenuPhotoControllerUploadPhoto,
 } from '@/services/generated/menu-photos/menu-photos';
@@ -149,109 +141,34 @@ export function MenuManagementPage() {
     },
   });
 
-  // Fetch Categories from API
-  const { data: categoriesResponse, isLoading: _categoriesLoading } = useMenuCategoryControllerFindAll();
-  // axios.ts already unwraps {success, data} → categoriesResponse is the array directly
-  const categories = categoriesResponse || [];
+  // Fetch Categories from custom hook (supports mock data)
+  const { data: categoriesResponse } = useMenuCategories();
+  const categories = Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : [];
 
-  // Fetch Menu Items from API
-  const { data: itemsResponse, isLoading: _itemsLoading } = useMenuItemsControllerFindAll();
-  // Backend returns paginated response: { data: MenuItemResponseDto[], meta: {...} }
-  // Axios unwraps outer { success, data } → menuItemsResponse = { data: [], meta: {} }
-  const menuItems = Array.isArray(itemsResponse) 
-    ? itemsResponse 
-    : (itemsResponse as any)?.data || [];
+  // Fetch Menu Items from custom hook (supports mock data)
+  const { data: itemsResponse } = useMenuItems();
+  const menuItems = Array.isArray(itemsResponse?.data) ? itemsResponse.data : [];
 
-  // Fetch Modifier Groups for selection
-  const { data: modifierGroupsResponse } = useModifierGroupControllerFindAll({ activeOnly: false });
-  const modifierGroups = modifierGroupsResponse || [];
+  // Fetch Modifier Groups from custom hook (supports mock data)
+  const { data: modifierGroupsResponse } = useModifierGroups({ activeOnly: false });
+  const modifierGroups = Array.isArray(modifierGroupsResponse?.data) ? modifierGroupsResponse.data : [];
 
   // Category Mutations
-  const createCategoryMutation = useMenuCategoryControllerCreate({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/categories'] });
-      },
-    }
-  });
+  const createCategoryMutation = useCreateMenuCategory();
 
-  const updateCategoryMutation = useMenuCategoryControllerUpdate({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/categories'] });
-      },
-    }
-  });
+  const updateCategoryMutation = useUpdateMenuCategory();
 
-  const deleteCategoryMutation = useMenuCategoryControllerDelete({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/categories'] });
-        setDeleteConfirmDialog({ open: false, categoryId: null, activeItemCount: 0 });
-        setToastMessage('Danh mục đã xóa thành công');
-        setShowSuccessToast(true);
-      },
-      onError: (error) => {
-        console.error('Error deleting category:', error);
-        setToastMessage('Có lỗi khi xóa danh mục');
-        setShowSuccessToast(true);
-      }
-    }
-  });
+  const deleteCategoryMutation = useDeleteMenuCategory();
 
   // Menu Item Mutations
-  const createItemMutation = useMenuItemsControllerCreate({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/item'] });
-        setToastMessage('Menu item created successfully');
-        setShowSuccessToast(true);
-      },
-      onError: (error) => {
-        console.error('Error creating item:', error);
-        setToastMessage('Failed to create menu item');
-        setShowSuccessToast(true);
-      }
-    }
-  });
+  const createItemMutation = useCreateMenuItem();
 
-  const updateItemMutation = useMenuItemsControllerUpdate({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/item'] });
-      },
-      onError: (error) => {
-        console.error('Error updating item:', error);
-        setToastMessage('Có lỗi khi cập nhật món ăn');
-        setShowSuccessToast(true);
-      }
-    }
-  });
+  const updateItemMutation = useUpdateMenuItem();
 
-  const deleteItemMutation = useMenuItemsControllerDelete({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/item'] });
-      },
-      onError: (error) => {
-        console.error('Error deleting item:', error);
-        setToastMessage('Có lỗi khi xóa món ăn');
-        setShowSuccessToast(true);
-      }
-    }
-  });
+  const deleteItemMutation = useDeleteMenuItem();
 
   // Photo Upload Mutation
-  const uploadPhotoMutation = useMenuPhotoControllerUploadPhoto({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/menu/item'] });
-      },
-      onError: (error) => {
-        console.error('Error uploading photo:', error);
-      }
-    }
-  });
+  const uploadPhotoMutation = useMenuPhotoControllerUploadPhoto();
   
   // Add/Edit Item Modal State
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -517,7 +434,7 @@ export function MenuManagementPage() {
       menuItemPhotos: [],
       dietary: item.tags || [], // Map tags from API to dietary
       chefRecommended: item.chefRecommended || false, // Load chef recommendation
-      modifierGroupIds: item.modifierGroups?.map((mg: any) => mg.id) || [], // Load existing modifiers
+      modifierGroupIds: item.modifierGroupIds || item.modifierGroups?.map((mg: any) => mg.id) || [], // Load existing modifiers
     });
     setIsItemModalOpen(true);
   };
