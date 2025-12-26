@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ModifierGroup, Prisma } from '@prisma/client';
+import { ModifierGroup, ModifierType, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma.service';
 import { BaseRepository } from 'src/database/repositories/base.repository';
 
@@ -20,6 +20,7 @@ export class ModifierGroupRepository extends BaseRepository<
     required: boolean;
     minChoices?: number;
     maxChoices?: number;
+    displayOrder?: number;
     options: Array<{ name: string; priceDelta: number; displayOrder: number }>;
   }) {
     // Sử dụng prisma.x để áp dụng tenant filter
@@ -32,6 +33,7 @@ export class ModifierGroupRepository extends BaseRepository<
         required: data.required,
         minChoices: data.minChoices || 0,
         maxChoices: data.maxChoices,
+        displayOrder: data.displayOrder,
         options: {
           create: data.options,
         },
@@ -42,11 +44,12 @@ export class ModifierGroupRepository extends BaseRepository<
     });
   }
 
-  async findAllActive(tenantId: string) {
+  async findAllActive(tenantId: string, type?: ModifierType) {
     return this.prisma.x.modifierGroup.findMany({
       where: {
         tenantId,
         active: true,
+        ...(type && { type }),
       },
       include: {
         options: {

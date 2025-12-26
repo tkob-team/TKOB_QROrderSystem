@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ModifierGroupRepository } from '../repositories/modifier-group.repository';
 import { CreateModifierGroupDto, UpdateModifierGroupDto } from '../dto/modifier.dto';
+import { ModifierType } from '@prisma/client';
 
 @Injectable()
 export class ModifierGroupService {
@@ -15,17 +16,21 @@ export class ModifierGroupService {
       required: dto.required,
       minChoices: dto.minChoices,
       maxChoices: dto.maxChoices,
+      displayOrder: dto.displayOrder,
       options: dto.options,
     });
   }
 
-  async findAll(tenantId: string, activeOnly = false) {
+  async findAll(tenantId: string, activeOnly = false, type?: ModifierType) {
     if (activeOnly) {
-      return this.modifierRepo.findAllActive(tenantId);
+      return this.modifierRepo.findAllActive(tenantId, type);
     }
 
     return this.modifierRepo.findAll({
-      where: { tenantId },
+      where: {
+        tenantId,
+        ...(type && { type }),
+      },
       include: {
         options: {
           orderBy: { displayOrder: 'asc' },

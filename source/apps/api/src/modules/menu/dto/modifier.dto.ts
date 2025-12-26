@@ -72,6 +72,13 @@ export class CreateModifierGroupDto {
   @Type(() => Number)
   maxChoices?: number;
 
+  @ApiPropertyOptional()
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  displayOrder?: number;
+
   @ApiProperty({
     type: [ModifierOptionDto],
     example: [
@@ -123,6 +130,19 @@ export class UpdateModifierGroupDto {
   @Min(1)
   @Type(() => Number)
   maxChoices?: number;
+
+  @ApiPropertyOptional()
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  displayOrder?: number;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  @Type(() => Boolean)
+  active?: boolean;
 
   @ApiPropertyOptional({ type: [ModifierOptionDto] })
   @IsArray()

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CreateMenuItemDto,
   MenuItemFiltersDto,
@@ -82,7 +82,7 @@ export class MenuItemsService {
   }
 
   async findById(menuItemId: string) {
-    const item = await this.menuItemRepo.findById(menuItemId);
+    const item = await this.menuItemRepo.findByIdWithDetails(menuItemId);
     if (!item) {
       throw new NotFoundException(ErrorMessages[ErrorCode.MENU_ITEM_NOT_FOUND]);
     }

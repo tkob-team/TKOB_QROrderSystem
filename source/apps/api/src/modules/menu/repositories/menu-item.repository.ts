@@ -21,7 +21,14 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
     return this.prisma.x.menuItem.findUnique({
       where: { id: itemId },
       include: {
-        category: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            displayOrder: true,
+            active: true,
+          },
+        },
         photos: {
           orderBy: [{ isPrimary: 'desc' }, { displayOrder: 'asc' }],
         },

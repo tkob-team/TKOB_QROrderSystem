@@ -1,4 +1,4 @@
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ModifierGroupService } from '../services/modifier-group.service';
 import {
   Body,
@@ -20,7 +20,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CreateModifierGroupDto, UpdateModifierGroupDto } from '../dto/modifier.dto';
 import type { AuthenticatedUser } from 'src/common/interfaces/auth.interface';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { ModifierType, UserRole } from '@prisma/client';
 import { ModifierGroupResponseDto } from '../dto/menu-response.dto';
 
 @ApiTags('Menu - Modifiers')
@@ -45,8 +45,24 @@ export class ModifierGroupController {
   @Roles(UserRole.OWNER, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Get all modifier groups' })
   @ApiResponse({ status: 200, type: [ModifierGroupResponseDto] })
-  async findAll(@CurrentUser() user: AuthenticatedUser, @Query('activeOnly') activeOnly?: boolean) {
-    return this.modifierService.findAll(user.tenantId, activeOnly);
+  @ApiQuery({
+    name: 'activeOnly',
+    required: false,
+    type: Boolean,
+    description: 'Filter by active status',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ModifierType,
+    description: 'Filter by modifier type',
+  })
+  async findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('activeOnly') activeOnly?: boolean,
+    @Query('type') type?: ModifierType,
+  ) {
+    return this.modifierService.findAll(user.tenantId, activeOnly, type);
   }
 
   // findById
@@ -71,9 +87,9 @@ export class ModifierGroupController {
   @Delete(':id')
   @Roles(UserRole.OWNER)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Archive modifier group',
-    description: 'Soft delete: Sets active = false after checking dependencies'
+    description: 'Soft delete: Sets active = false after checking dependencies',
   })
   @ApiResponse({ status: 204 })
   async delete(@Param('id') id: string) {

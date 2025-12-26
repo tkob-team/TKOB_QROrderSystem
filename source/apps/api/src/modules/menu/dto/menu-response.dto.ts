@@ -17,6 +17,9 @@ export class MenuCategoryResponseDto {
   active: boolean;
 
   @ApiProperty()
+  itemCount: number;
+
+  @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
@@ -62,6 +65,12 @@ export class ModifierGroupResponseDto {
   @ApiPropertyOptional()
   maxChoices?: number;
 
+  @ApiProperty()
+  displayOrder: number;
+
+  @ApiProperty()
+  active: boolean;
+
   @ApiProperty({ type: [ModifierOptionResponseDto] })
   options: ModifierOptionResponseDto[];
 }
@@ -78,6 +87,9 @@ export class MenuItemResponseDto {
 
   @ApiProperty()
   categoryId: string;
+
+  @ApiProperty()
+  categoryName: string;
 
   @ApiProperty()
   price: number;
@@ -103,8 +115,8 @@ export class MenuItemResponseDto {
   @ApiPropertyOptional({ type: MenuCategoryResponseDto })
   category?: MenuCategoryResponseDto;
 
-  // @ApiPropertyOptional({ type: [ModifierGroupResponseDto] })
-  // modifierGroups?: ModifierGroupResponseDto[];
+  @ApiPropertyOptional({ type: [ModifierGroupResponseDto] })
+  modifierGroups?: ModifierGroupResponseDto[];
 
   @ApiProperty()
   createdAt: Date;

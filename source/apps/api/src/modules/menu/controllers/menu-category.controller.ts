@@ -82,9 +82,9 @@ export class MenuCategoryController {
   @Roles(UserRole.OWNER)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Archive menu category',
-    description: 'Soft delete: Sets active = false'
+    description: 'Soft delete: Sets active = false',
   })
   @ApiResponse({ status: 204 })
   async delete(@Param('id') id: string) {
