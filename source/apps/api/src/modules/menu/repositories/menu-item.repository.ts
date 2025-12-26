@@ -115,6 +115,19 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
           where: { isPrimary: true },
           take: 1,
         },
+        modifierGroups: {
+          include: {
+            modifierGroup: {
+              include: {
+                options: {
+                  where: { active: true },
+                  orderBy: { displayOrder: 'asc' },
+                },
+              },
+            },
+          },
+          orderBy: { displayOrder: 'asc' },
+        },
       },
       orderBy,
     });

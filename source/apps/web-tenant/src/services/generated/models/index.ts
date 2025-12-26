@@ -36,6 +36,7 @@ export * from './menuItemsControllerFindAllSortOrder';
 export * from './menuItemsControllerFindAllStatus';
 export * from './menuPhotoControllerUploadPhotosBody';
 export * from './modifierGroupControllerFindAllParams';
+export * from './modifierGroupControllerFindAllType';
 export * from './modifierGroupResponseDto';
 export * from './modifierOptionDto';
 export * from './modifierOptionResponseDto';

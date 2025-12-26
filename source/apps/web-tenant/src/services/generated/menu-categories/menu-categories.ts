@@ -267,7 +267,8 @@ export const useMenuCategoryControllerUpdate = <TError = unknown,
       return useMutation(mutationOptions);
     }
     /**
- * @summary Delete menu category
+ * Soft delete: Sets active = false
+ * @summary Archive menu category
  */
 export const menuCategoryControllerDelete = (
     id: string,
@@ -306,7 +307,7 @@ const {mutation: mutationOptions} = options ?? {};
     export type MenuCategoryControllerDeleteMutationError = unknown
 
     /**
- * @summary Delete menu category
+ * @summary Archive menu category
  */
 export const useMenuCategoryControllerDelete = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof menuCategoryControllerDelete>>, TError,{id: string}, TContext>, }

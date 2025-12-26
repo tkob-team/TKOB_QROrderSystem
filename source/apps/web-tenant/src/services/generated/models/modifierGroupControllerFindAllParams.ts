@@ -5,7 +5,15 @@
  * API Documentation for QR Ordering Platform
  * OpenAPI spec version: 1.0
  */
+import type { ModifierGroupControllerFindAllType } from './modifierGroupControllerFindAllType';
 
 export type ModifierGroupControllerFindAllParams = {
-activeOnly: boolean;
+/**
+ * Filter by active status
+ */
+activeOnly?: boolean;
+/**
+ * Filter by modifier type
+ */
+type?: ModifierGroupControllerFindAllType;
 };

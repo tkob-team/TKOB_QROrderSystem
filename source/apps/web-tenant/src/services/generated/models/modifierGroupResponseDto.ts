@@ -8,7 +8,9 @@
 import type { ModifierOptionResponseDto } from './modifierOptionResponseDto';
 
 export interface ModifierGroupResponseDto {
+  active: boolean;
   description?: string;
+  displayOrder: number;
   id: string;
   maxChoices?: number;
   minChoices: number;

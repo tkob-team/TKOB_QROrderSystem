@@ -12,6 +12,7 @@ export interface MenuCategoryResponseDto {
   description?: string;
   displayOrder: number;
   id: string;
+  itemCount: number;
   name: string;
   updatedAt: string;
 }

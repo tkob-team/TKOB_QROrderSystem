@@ -9,7 +9,9 @@ import type { ModifierOptionDto } from './modifierOptionDto';
 import type { UpdateModifierGroupDtoType } from './updateModifierGroupDtoType';
 
 export interface UpdateModifierGroupDto {
+  active?: boolean;
   description?: string;
+  displayOrder?: number;
   maxChoices?: number;
   minChoices?: number;
   name?: string;

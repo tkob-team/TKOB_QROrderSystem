@@ -6,17 +6,20 @@
  * OpenAPI spec version: 1.0
  */
 import type { MenuCategoryResponseDto } from './menuCategoryResponseDto';
+import type { ModifierGroupResponseDto } from './modifierGroupResponseDto';
 
 export interface MenuItemResponseDto {
   allergens?: string[];
   available: boolean;
   category?: MenuCategoryResponseDto;
   categoryId: string;
+  categoryName: string;
   createdAt: string;
   description?: string;
   displayOrder: number;
   id: string;
   imageUrl?: string;
+  modifierGroups?: ModifierGroupResponseDto[];
   name: string;
   price: number;
   publishedAt?: string;

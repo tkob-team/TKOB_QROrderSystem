@@ -89,7 +89,7 @@ export const useModifierGroupControllerCreate = <TError = unknown,
  * @summary Get all modifier groups
  */
 export const modifierGroupControllerFindAll = (
-    params: ModifierGroupControllerFindAllParams,
+    params?: ModifierGroupControllerFindAllParams,
  signal?: AbortSignal
 ) => {
       
@@ -102,12 +102,12 @@ export const modifierGroupControllerFindAll = (
     }
   
 
-export const getModifierGroupControllerFindAllQueryKey = (params: ModifierGroupControllerFindAllParams,) => {
+export const getModifierGroupControllerFindAllQueryKey = (params?: ModifierGroupControllerFindAllParams,) => {
     return [`/api/v1/menu/modifiers`, ...(params ? [params]: [])] as const;
     }
 
     
-export const getModifierGroupControllerFindAllQueryOptions = <TData = Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError = unknown>(params: ModifierGroupControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError, TData>>, }
+export const getModifierGroupControllerFindAllQueryOptions = <TData = Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError = unknown>(params?: ModifierGroupControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -132,7 +132,7 @@ export type ModifierGroupControllerFindAllQueryError = unknown
  * @summary Get all modifier groups
  */
 export const useModifierGroupControllerFindAll = <TData = Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError = unknown>(
- params: ModifierGroupControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError, TData>>, }
+ params?: ModifierGroupControllerFindAllParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof modifierGroupControllerFindAll>>, TError, TData>>, }
 
   ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
@@ -267,7 +267,8 @@ export const useModifierGroupControllerUpdate = <TError = unknown,
       return useMutation(mutationOptions);
     }
     /**
- * @summary Delete modifier group
+ * Soft delete: Sets active = false after checking dependencies
+ * @summary Archive modifier group
  */
 export const modifierGroupControllerDelete = (
     id: string,
@@ -306,7 +307,7 @@ const {mutation: mutationOptions} = options ?? {};
     export type ModifierGroupControllerDeleteMutationError = unknown
 
     /**
- * @summary Delete modifier group
+ * @summary Archive modifier group
  */
 export const useModifierGroupControllerDelete = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof modifierGroupControllerDelete>>, TError,{id: string}, TContext>, }

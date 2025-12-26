@@ -10,6 +10,7 @@ import type { CreateModifierGroupDtoType } from './createModifierGroupDtoType';
 
 export interface CreateModifierGroupDto {
   description?: string;
+  displayOrder?: number;
   maxChoices?: number;
   minChoices?: number;
   name: string;
