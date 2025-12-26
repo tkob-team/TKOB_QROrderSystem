@@ -19,6 +19,7 @@ export interface ModifierGroup {
 }
 
 export interface FormOption {
+  id?: string;
   name: string;
   priceDelta: number;
   displayOrder: number;

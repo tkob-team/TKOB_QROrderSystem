@@ -276,6 +276,7 @@ export function useMenuModifiersPage() {
     setFormRequired(group.required);
     setFormOptions(
       group.options.map((opt, idx) => ({
+        id: opt.id,
         name: opt.name,
         priceDelta: opt.priceDelta,
         displayOrder: idx + 1,
@@ -330,26 +331,28 @@ export function useMenuModifiersPage() {
     }
 
     // Map form options, filtering out inactive ones and only sending active options
+    // Include id for existing options (for updates), exclude for new options
     const activeOptions = formOptions
       .filter(opt => opt.active !== false)
       .map(opt => ({
+        ...(opt.id ? { id: opt.id } : {}),
         name: opt.name,
-        priceDelta: opt.priceDelta,
-        displayOrder: opt.displayOrder,
+        priceDelta: Number(opt.priceDelta),
+        displayOrder: Number(opt.displayOrder),
       }));
 
     updateGroupMutation.mutate(
       {
         id: editingGroup.id,
-        body: {
+        data: {
           name: formName,
           description: formDescription || undefined,
           type: formType === 'single' ? 'SINGLE_CHOICE' : 'MULTI_CHOICE',
           required: formRequired,
-          minChoices: formMinChoices,
-          maxChoices: formMaxChoices,
-          displayOrder: formDisplayOrder,
-          active: formActive,
+          minChoices: Number(formMinChoices),
+          maxChoices: Number(formMaxChoices),
+          displayOrder: Number(formDisplayOrder),
+          active: Boolean(formActive),
           options: activeOptions,
         } as unknown as {
           name: string;
@@ -360,7 +363,7 @@ export function useMenuModifiersPage() {
           maxChoices: number;
           displayOrder: number;
           active: boolean;
-          options: Array<{ name: string; priceDelta: number; displayOrder: number }>;
+          options: Array<{ id?: string; name: string; priceDelta: number; displayOrder: number }>;
         },
       },
       {
