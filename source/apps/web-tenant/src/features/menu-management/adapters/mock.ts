@@ -13,13 +13,14 @@ const fakeDelay = () => new Promise((resolve) => setTimeout(resolve, 200 + Math.
 
 export class MenuMockAdapter implements IMenuAdapter {
   // Categories
-  async listCategories() {
+  async listCategories(params?: { activeOnly?: boolean }) {
     await fakeDelay();
-    console.log('🎭 [MenuMockAdapter] Returning mock categories');
+    console.log('🎭 [MenuMockAdapter] Returning mock categories', { params });
+    const filtered = params?.activeOnly ? mockCategories.filter((c) => c.active) : mockCategories;
     return {
-      data: mockCategories,
+      data: filtered,
       meta: {
-        total: mockCategories.length,
+        total: filtered.length,
         page: 1,
         limit: 100,
         totalPages: 1,

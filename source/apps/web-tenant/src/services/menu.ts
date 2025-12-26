@@ -16,8 +16,8 @@ import type {
 
 class MenuService {
   // Categories
-  async listCategories() {
-    return menuAdapter.listCategories();
+  async listCategories(params?: { activeOnly?: boolean }) {
+    return menuAdapter.listCategories(params);
   }
 
   async getCategoryById(id: string) {

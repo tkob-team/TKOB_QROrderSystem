@@ -15,6 +15,8 @@ type CategoryPanelProps = {
   onCategoryContextMenu: (e: React.MouseEvent, categoryId: string) => void;
   onCategoryActionClick: (e: React.MouseEvent, categoryId: string) => void;
   contextMenuOpenCategoryId: string | null;
+  showActiveOnlyCategories: boolean;
+  setShowActiveOnlyCategories: (show: boolean) => void;
 };
 
 export function CategoryPanel({
@@ -29,6 +31,8 @@ export function CategoryPanel({
   onCategoryContextMenu,
   onCategoryActionClick,
   contextMenuOpenCategoryId,
+  showActiveOnlyCategories,
+  setShowActiveOnlyCategories,
 }: CategoryPanelProps) {
   return (
     <div className="w-52 bg-white border-r border-gray-200 flex flex-col overflow-y-auto relative">
@@ -56,6 +60,19 @@ export function CategoryPanel({
           <option value="name">Name</option>
           <option value="createdAt">Creation Date</option>
         </select>
+      </div>
+
+      {/* Active Only Filter */}
+      <div className="p-3 border-b border-gray-200">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showActiveOnlyCategories}
+            onChange={(e) => setShowActiveOnlyCategories(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-emerald-600 cursor-pointer"
+          />
+          <span className="text-xs font-semibold text-gray-600">Active Only</span>
+        </label>
       </div>
 
       <div className="flex-1 p-1" onClick={() => {}}>

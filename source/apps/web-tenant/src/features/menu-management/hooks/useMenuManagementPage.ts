@@ -59,6 +59,7 @@ export function useMenuManagementPage() {
   const [sortOption, setSortOption] = useState('Sort by: Newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [categorySortBy, setCategorySortBy] = useState<'displayOrder' | 'name' | 'createdAt'>('displayOrder');
+  const [showActiveOnlyCategories, setShowActiveOnlyCategories] = useState(false);
   const [_selectedArchiveStatus, setSelectedArchiveStatus] = useState<'all' | 'archived'>('all');
   const [tempSelectedArchiveStatus, setTempSelectedArchiveStatus] = useState<'all' | 'archived'>('all');
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
@@ -112,7 +113,7 @@ export function useMenuManagementPage() {
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // ============ DATA FETCHING ============
-  const { data: categoriesResponse } = useMenuCategories();
+  const { data: categoriesResponse } = useMenuCategories({ activeOnly: showActiveOnlyCategories });
   const categories = Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : [];
 
   const { data: itemsResponse } = useMenuItems();
@@ -646,6 +647,8 @@ export function useMenuManagementPage() {
       setSearchQuery,
       categorySortBy,
       setCategorySortBy,
+      showActiveOnlyCategories,
+      setShowActiveOnlyCategories,
       tempSelectedArchiveStatus,
       setTempSelectedArchiveStatus,
       isAddCategoryModalOpen,

@@ -17,12 +17,12 @@ import type {
 /**
  * List menu categories query
  */
-export const useMenuCategories = () => {
+export const useMenuCategories = (params?: { activeOnly?: boolean }) => {
   return useQuery({
-    queryKey: ['menu', 'categories'],
+    queryKey: ['menu', 'categories', params],
     queryFn: async () => {
-      console.log('🔍 [useMenuCategories] Fetching categories');
-      const result = await menuService.listCategories();
+      console.log('🔍 [useMenuCategories] Fetching categories', { params });
+      const result = await menuService.listCategories(params);
       console.log('📦 [useMenuCategories] Received:', result);
       return result;
     },

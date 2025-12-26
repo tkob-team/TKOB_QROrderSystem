@@ -17,7 +17,7 @@ import type {
 
 export interface IMenuAdapter {
   // Categories
-  listCategories(): Promise<{ data: MenuCategoryResponseDto[]; meta: any }>;
+  listCategories(params?: { activeOnly?: boolean }): Promise<{ data: MenuCategoryResponseDto[]; meta: any }>;
   getCategoryById(id: string): Promise<MenuCategoryResponseDto>;
   createCategory(data: CreateMenuCategoryDto): Promise<MenuCategoryResponseDto>;
   updateCategory(id: string, data: UpdateMenuCategoryDto): Promise<MenuCategoryResponseDto>;

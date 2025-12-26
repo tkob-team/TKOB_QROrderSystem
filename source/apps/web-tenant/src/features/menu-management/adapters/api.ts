@@ -28,8 +28,8 @@ import {
 
 export class MenuApiAdapter implements IMenuAdapter {
   // Categories
-  async listCategories() {
-    return menuCategoryControllerFindAll();
+  async listCategories(params?: { activeOnly?: boolean }) {
+    return menuCategoryControllerFindAll(params);
   }
 
   async getCategoryById(id: string) {

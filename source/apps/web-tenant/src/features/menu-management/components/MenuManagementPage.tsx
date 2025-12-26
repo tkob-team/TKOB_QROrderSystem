@@ -125,6 +125,8 @@ export function MenuManagementPage() {
             getCategoryItemCount={derived.getCategoryItemCount}
             categorySortBy={state.categorySortBy}
             setCategorySortBy={state.setCategorySortBy}
+            showActiveOnlyCategories={state.showActiveOnlyCategories}
+            setShowActiveOnlyCategories={state.setShowActiveOnlyCategories}
             menuItems={data.menuItems}
             onAddCategory={handlers.handleOpenAddCategoryModal}
             onCategoryContextMenu={(e, categoryId) => {
