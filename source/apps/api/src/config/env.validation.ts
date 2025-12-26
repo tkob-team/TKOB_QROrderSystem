@@ -17,7 +17,8 @@ export const envSchema = z
     JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default('1h'),
     JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
 
-    // Redis Config
+    // Redis Config - Support both REDIS_URL (Render) and individual vars (local)
+    REDIS_URL: z.string().optional(), // Format: redis://default:password@host:port
     REDIS_HOST: z.string().default('localhost'),
     REDIS_PORT: z.coerce.number().default(6379),
     REDIS_PASSWORD: z.string().optional(),

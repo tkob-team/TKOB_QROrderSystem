@@ -21,61 +21,63 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  app.useLogger(['log', 'error', 'warn', 'debug', 'verbose']);
+  // Production logging level
+  const logLevels: ('log' | 'error' | 'warn' | 'debug' | 'verbose')[] =
+    process.env.NODE_ENV === 'production'
+      ? ['log', 'error', 'warn']
+      : ['log', 'error', 'warn', 'debug', 'verbose'];
+
+  app.useLogger(logLevels);
 
   // Get config service
   const configService = app.get<ConfigService<EnvConfig, true>>(ConfigService);
-  const port = configService.get('API_PORT', { infer: true });
+  const port = configService.get('API_PORT', { infer: true }) || 3000;
   const nodeEnv = configService.get('NODE_ENV', { infer: true });
 
   // ==================== COOKIE PARSER ====================
-  // Required for session-based QR ordering (Haidilao style)
   app.use(cookieParser());
 
   // ==================== GLOBAL PREFIX ====================
   app.setGlobalPrefix('api/v1', {
-    exclude: ['/health'], // Health check endpoint
+    exclude: ['/health', '/'], // Health check endpoints
   });
 
   // ==================== CORS ====================
   const corsOrigins = configService.get('CORS_ORIGINS', { infer: true });
-  const allowedOrigins = corsOrigins 
-    ? corsOrigins.split(',') 
-    : ['http://localhost:3001', 'http://localhost:3002', 'http://localhost:3000']; // Default for development
-  
+  const allowedOrigins = corsOrigins
+    ? corsOrigins.split(',').map((origin) => origin.trim())
+    : ['http://localhost:3001', 'http://localhost:3002', 'http://localhost:3000'];
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-tenant-id'],
     exposedHeaders: ['Set-Cookie'],
   });
 
   // ==================== EXCEPTION FILTERS ====================
-  // Order matters: Most specific first, most general last
-  const _reflector = app.get(Reflector);
-
   app.useGlobalFilters(
-    new AllExceptionsFilter(), // Catch-all (fallback)
-    new HttpExceptionFilter(), // HTTP exceptions
-    new PrismaExceptionFilter(), // Prisma database errors
+    new AllExceptionsFilter(),
+    new HttpExceptionFilter(),
+    new PrismaExceptionFilter(),
   );
 
   // ==================== INTERCEPTORS ====================
   app.useGlobalInterceptors(
-    new LoggingInterceptor(), // Log requests/responses
-    new TransformInterceptor(), // Transform success responses
-    new TimeoutInterceptor(30000), // 30s timeout
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+    new TimeoutInterceptor(30000),
   );
 
   // ==================== VALIDATION ====================
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip unknown properties
-      forbidNonWhitelisted: true, // Throw error on unknown properties
-      transform: true, // Auto-transform types
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
       transformOptions: {
-        enableImplicitConversion: true, // Convert strings to numbers, etc.
+        enableImplicitConversion: true,
       },
     }),
   );
@@ -101,15 +103,18 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api-docs', app, document, {
       swaggerOptions: {
-        persistAuthorization: true, // Remember auth token
+        persistAuthorization: true,
       },
     });
   }
 
-  // ==================== START SERVER ====================
-  await app.listen(port);
+  // ==================== HEALTH CHECK ENDPOINT ====================
+  // Render uses this to check if the service is healthy
 
-  Logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+  // ==================== START SERVER ====================
+  await app.listen(port, '0.0.0.0'); // Bind to all interfaces for Render
+
+  Logger.log(`🚀 Application is running on port ${port}`, 'Bootstrap');
   Logger.log(`📝 Environment: ${nodeEnv}`, 'Bootstrap');
 
   if (nodeEnv === 'development') {
@@ -119,4 +124,5 @@ async function bootstrap() {
 
 bootstrap().catch((err) => {
   Logger.error('NestJS bootstrap error:', err);
+  process.exit(1);
 });
