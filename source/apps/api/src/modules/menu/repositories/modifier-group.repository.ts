@@ -81,6 +81,8 @@ export class ModifierGroupRepository extends BaseRepository<
       required?: boolean;
       minChoices?: number;
       maxChoices?: number;
+      displayOrder?: number;
+      active?: boolean;
       options?: Array<{
         id?: string;
         name: string;
@@ -102,6 +104,8 @@ export class ModifierGroupRepository extends BaseRepository<
           required: data.required,
           minChoices: data.minChoices,
           maxChoices: data.maxChoices,
+          displayOrder: data.displayOrder,
+          active: data.active,
         },
       });
 
