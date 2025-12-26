@@ -9,38 +9,61 @@ export class EmailService {
   private transporter: Transporter;
 
   constructor(private readonly configService: ConfigService<EnvConfig, true>) {
+    const host = this.configService.get('EMAIL_HOST', { infer: true });
+    const port = this.configService.get('EMAIL_PORT', { infer: true });
+    const secure = this.configService.get('EMAIL_SECURE', { infer: true });
+    const user = this.configService.get('EMAIL_USER', { infer: true });
+    const pass = this.configService.get('EMAIL_PASSWORD', { infer: true });
+
     this.transporter = createTransport({
-      host: this.configService.get('EMAIL_HOST', { infer: true }),
-      port: this.configService.get('EMAIL_PORT', { infer: true }),
-      secure: this.configService.get('EMAIL_SECURE', { infer: true }),
-      auth: {
-        user: this.configService.get('EMAIL_USER', { infer: true }),
-        pass: this.configService.get('EMAIL_PASSWORD', { infer: true }),
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+      // 🔥 Thêm connection pooling & timeout config
+      pool: true, // Use connection pool
+      maxConnections: 5,
+      maxMessages: 10,
+      connectionTimeout: 10000, // 10s
+      greetingTimeout: 10000,
+      socketTimeout: 30000, // 30s
+      // Retry logic
+      retry: {
+        maxRetries: 3,
+        retryDelay: 1000,
       },
+    });
+
+    // Verify connection on startup
+    this.transporter.verify((error) => {
+      if (error) {
+        this.logger.error('Email service verification failed', error.stack);
+      } else {
+        this.logger.log('✅ Email service ready');
+      }
     });
   }
 
   async sendOTP(email: string, otp: string): Promise<void> {
     const from = this.configService.get('EMAIL_FROM', { infer: true });
-    
+
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from,
         to: email,
         subject: 'Your OTP Code - QR Ordering Platform',
         html: this.getOTPTemplate(otp),
       });
-      
-      this.logger.log(`OTP sent successfully to ${email}`);
+
+      this.logger.log(`✅ OTP sent to ${email} | MessageId: ${info.messageId}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : JSON.stringify(error);
-      
+
       this.logger.error(
-        `Failed to send OTP to ${email}. Error: ${errorMessage}`,
-        errorStack,
+        `❌ Failed to send OTP to ${email}. Error: ${errorMessage}`,
+        error instanceof Error ? error.stack : JSON.stringify(error),
       );
-      
+
       throw new Error(`Failed to send OTP email: ${errorMessage}`);
     }
   }

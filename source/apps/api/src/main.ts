@@ -17,9 +17,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
-  });
+  const app = await NestFactory.create(AppModule);
 
   // Production logging level
   const logLevels: ('log' | 'error' | 'warn' | 'debug' | 'verbose')[] =
@@ -64,10 +62,11 @@ async function bootstrap() {
   );
 
   // ==================== INTERCEPTORS ====================
+  // Tăng timeout lên 60s cho production
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
     new TransformInterceptor(),
-    new TimeoutInterceptor(30000),
+    new TimeoutInterceptor(process.env.NODE_ENV === 'production' ? 60000 : 30000), // 60s for prod
   );
 
   // ==================== VALIDATION ====================
