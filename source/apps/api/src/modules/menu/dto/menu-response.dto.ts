@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MenuItemPhotoResponseDto } from './menu-photo.dto';
 
 export class MenuCategoryResponseDto {
   @ApiProperty()
@@ -94,6 +95,9 @@ export class MenuItemResponseDto {
   @ApiProperty({ example: 15, minimum: 0, maximum: 240 })
   preparationTime: number;
 
+  @ApiProperty()
+  chefRecommended?: boolean;
+
   @ApiPropertyOptional()
   imageUrl?: string;
 
@@ -117,6 +121,9 @@ export class MenuItemResponseDto {
 
   @ApiPropertyOptional({ type: [ModifierGroupResponseDto] })
   modifierGroups?: ModifierGroupResponseDto[];
+
+  @ApiPropertyOptional({ type: [MenuItemPhotoResponseDto] })
+  photos?: MenuItemPhotoResponseDto[];
 
   @ApiProperty()
   createdAt: Date;

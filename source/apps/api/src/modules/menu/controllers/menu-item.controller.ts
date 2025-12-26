@@ -50,7 +50,7 @@ export class MenuItemsController {
   @Get()
   @Roles(UserRole.OWNER, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Get menu items with filters' })
-  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 200, type: [MenuItemResponseDto] })
   async findAll(@CurrentUser() user: AuthenticatedUser, @Query() query: MenuItemFiltersDto) {
     return this.menuItemsService.findFiltered(user.tenantId, query);
   }
