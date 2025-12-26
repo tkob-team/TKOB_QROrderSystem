@@ -19,19 +19,17 @@ export class EmailService {
       host,
       port,
       secure,
-      auth: { user, pass },
-      // 🔥 Thêm connection pooling & timeout config
-      pool: true, // Use connection pool
+      auth: {
+        user,
+        pass,
+      },
+      // 🔥 Connection pooling & timeout config
+      pool: true,
       maxConnections: 5,
       maxMessages: 10,
       connectionTimeout: 10000, // 10s
       greetingTimeout: 10000,
       socketTimeout: 30000, // 30s
-      // Retry logic
-      retry: {
-        maxRetries: 3,
-        retryDelay: 1000,
-      },
     });
 
     // Verify connection on startup
