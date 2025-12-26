@@ -129,6 +129,6 @@ export class MenuApiAdapter implements IMenuAdapter {
   }
 
   async deleteModifierGroup(id: string) {
-    await modifierGroupControllerDelete(id);
+    return modifierGroupControllerDelete(id);
   }
 }

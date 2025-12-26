@@ -393,8 +393,31 @@ export function useMenuModifiersPage() {
 
   const confirmDeleteGroup = () => {
     if (!deletingGroup) return;
-    deleteGroupMutation.mutate({
-      id: deletingGroup.id,
+    deleteGroupMutation.mutate(deletingGroup.id, {
+      onSuccess: () => {
+        setToast({
+          message: `Modifier group "${deletingGroup.name}" archived successfully`,
+          type: 'success',
+        });
+        setShowDeleteDialog(false);
+        setDeletingGroup(null);
+      },
+      onError: (error: any) => {
+        // Handle marked business validation errors from axios interceptor
+        if ((error as any).__isHandledBusinessError) {
+          setToast({
+            message: (error as any).__userMessage,
+            type: 'error',
+          });
+        } else {
+          // Handle AxiosError
+          const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || 'Failed to archive modifier group';
+          setToast({
+            message: errorMessage,
+            type: 'error',
+          });
+        }
+      },
     });
   };
 

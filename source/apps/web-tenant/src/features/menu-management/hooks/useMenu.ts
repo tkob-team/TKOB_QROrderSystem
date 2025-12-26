@@ -230,5 +230,8 @@ export const useDeleteModifierGroup = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu', 'modifier-groups'] });
     },
+    onError: (error: any) => {
+      console.error('Delete failed:', error);
+    },
   });
 };

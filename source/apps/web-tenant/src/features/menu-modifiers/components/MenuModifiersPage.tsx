@@ -14,7 +14,7 @@ import { DeleteModifierGroupDialog } from './DeleteModifierGroupDialog';
 export function MenuModifiersPage() {
   const { goTo } = useAppRouter();
   const vm = useMenuModifiersPage();
-  const { state, derived, handlers } = vm;
+  const { state, derived, handlers, mutations } = vm;
 
   return (
     <>
@@ -106,6 +106,7 @@ export function MenuModifiersPage() {
       <DeleteModifierGroupDialog
         isOpen={state.showDeleteDialog}
         group={state.deletingGroup}
+        isLoading={mutations.deleteGroupMutation.isPending}
         onClose={() => {
           state.setShowDeleteDialog(false);
           state.setDeletingGroup(null);

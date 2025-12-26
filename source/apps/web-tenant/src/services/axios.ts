@@ -234,21 +234,39 @@ export const customInstance = async <T>(config: any): Promise<T> => {
       hasToken: !!(config.headers?.Authorization),
     };
     
-    // Use proper object logging to avoid serialization issues
-    console.error('🌐 [customInstance] Request Failed:', JSON.stringify(errorInfo, null, 2));
+    // Only log 5xx server errors at error level, handle 4xx as expected business errors
+    const isServerError = error.response?.status && error.response.status >= 500;
+    const isValidationError = error.response?.status && error.response.status >= 400 && error.response.status < 500;
+    const isConflict = error.response?.status === 409;
     
-    // Log full error response data if available
-    if (error.response) {
-      // For 400 errors, provide validation details
-      if (error.response.status === 400) {
-        console.warn('⚠️ [customInstance] Bad Request (400) - URL:', config.url);
-        console.warn('⚠️ [customInstance] Validation errors:', errorData?.message || errorData?.error);
-        console.warn('⚠️ [customInstance] Full details:', JSON.stringify(errorData, null, 2));
-      }
-      
+    if (isServerError) {
+      console.error('🌐 [customInstance] Server Error:', JSON.stringify(errorInfo, null, 2));
       console.error('🌐 [customInstance] Server Response - Status:', error.response.status);
       console.error('🌐 [customInstance] Server Response - Data:', JSON.stringify(error.response.data, null, 2));
-    } else if (error.request) {
+    } else if (isValidationError) {
+      // 4xx errors are expected (validation, conflicts, not found, etc) - only log at debug/info level
+      console.debug('ℹ️ [customInstance] Client/Validation Error:', JSON.stringify(errorInfo, null, 2));
+      
+      // For 400 errors, provide validation details
+      if (error.response?.status === 400) {
+        console.debug('⚠️ [customInstance] Bad Request (400) - URL:', config.url);
+        console.debug('⚠️ [customInstance] Validation errors:', errorData?.message || errorData?.error);
+      }
+      
+      // For 409 Conflict, suppress the error display since it's handled by the UI
+      if (isConflict) {
+        console.debug('ℹ️ [customInstance] Conflict (409) - Action cannot be performed:', errorData?.error?.message || errorData?.message);
+        // Mark the error as a handled business error so React won't display it
+        (error as any).__isHandledBusinessError = true;
+        (error as any).__userMessage = errorData?.error?.message || errorData?.message || 'Conflict: Action cannot be performed';
+      }
+    } else {
+      // Network errors or unknown
+      console.error('🌐 [customInstance] Request Failed:', JSON.stringify(errorInfo, null, 2));
+    }
+    
+    // Log network/connection errors
+    if (error.request && !error.response) {
       console.error('🌐 [customInstance] Request Error (No Response)');
       console.error('  ❌ Cannot connect to backend API server');
       console.error('  Message:', error.message);
@@ -259,8 +277,6 @@ export const customInstance = async <T>(config: any): Promise<T> => {
       console.error('     1. Backend server is running (pnpm start:dev in apps/api)');
       console.error('     2. NEXT_PUBLIC_API_URL is correct:', baseURL);
       console.error('     3. No firewall blocking the connection');
-    } else {
-      console.error('🌐 [customInstance] Error:', error.message);
     }
     
     throw error;
