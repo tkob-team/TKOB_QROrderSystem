@@ -128,7 +128,37 @@ export function useMenuManagementPage() {
   const { data: categoriesResponse } = useMenuCategories({ activeOnly: showActiveOnlyCategories });
   const categories = Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : [];
 
-  const { data: itemsResponse } = useMenuItems();
+  // Build query parameters for menu items based on filters
+  const itemsQueryParams = {
+    categoryId: selectedCategory === 'all' ? undefined : selectedCategory,
+    status: selectedStatus === 'All Status' 
+      ? undefined 
+      : selectedStatus === 'Draft' 
+      ? 'DRAFT'
+      : selectedStatus === 'Published'
+      ? 'PUBLISHED'
+      : selectedStatus === 'Archived'
+      ? 'ARCHIVED'
+      : undefined,
+    available: selectedAvailability === 'all' 
+      ? undefined 
+      : selectedAvailability === 'available' 
+      ? true 
+      : false,
+    search: searchQuery || undefined,
+    sortBy: sortOption === 'Sort by: Popularity'
+      ? 'popularity'
+      : sortOption === 'Sort by: Price (Low)' || sortOption === 'Sort by: Price (High)'
+      ? 'price'
+      : sortOption?.includes('Name')
+      ? 'name'
+      : 'createdAt',
+    sortOrder: sortOption === 'Sort by: Price (High)' || sortOption === 'Sort by: Name (Z-A)'
+      ? 'desc'
+      : 'asc',
+  };
+
+  const { data: itemsResponse } = useMenuItems(itemsQueryParams);
   const menuItems = Array.isArray(itemsResponse?.data) ? itemsResponse.data : [];
 
   const { data: modifierGroupsResponse } = useModifierGroups({ activeOnly: false });
@@ -183,50 +213,8 @@ export function useMenuManagementPage() {
     }
   });
 
+  // Derived: Filter logic moved to server - just map categories
   const visibleMenuItems = menuItems
-    .filter((item: any) => {
-      if (selectedCategory === 'all') return true;
-      return item.categoryId === selectedCategory;
-    })
-    .filter((item: any) => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        item.name.toLowerCase().includes(query) ||
-        (item.description || '').toLowerCase().includes(query)
-      );
-    })
-    .filter((item: any) => {
-      if (selectedStatus === 'All Status') return true;
-      if (selectedStatus === 'Draft') return item.status === 'DRAFT';
-      if (selectedStatus === 'Published') return item.status === 'PUBLISHED';
-      if (selectedStatus === 'Archived') return item.status === 'ARCHIVED';
-      return true;
-    })
-    .filter((item: any) => {
-      if (selectedAvailability === 'all') return true;
-      if (selectedAvailability === 'available') return item.available === true;
-      if (selectedAvailability === 'unavailable') return item.available === false;
-      return true;
-    })
-    .sort((a: any, b: any) => {
-      if (sortOption === 'Sort by: Popularity') {
-        return (b.popularity || 0) - (a.popularity || 0);
-      }
-      if (sortOption === 'Sort by: Price (Low)') {
-        return (a.price || 0) - (b.price || 0);
-      }
-      if (sortOption === 'Sort by: Price (High)') {
-        return (b.price || 0) - (a.price || 0);
-      }
-      if (sortOption === 'Sort by: Name (A-Z)') {
-        return (a.name || '').localeCompare((b.name || ''), 'en', { numeric: true });
-      }
-      if (sortOption === 'Sort by: Name (Z-A)') {
-        return (b.name || '').localeCompare((a.name || ''), 'en', { numeric: true });
-      }
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    })
     .map((item: any) => {
       const category = categories?.find((cat: any) => cat.id === item.categoryId);
       return {

@@ -24,7 +24,7 @@ export interface IMenuAdapter {
   deleteCategory(id: string): Promise<void>;
 
   // Menu Items
-  listMenuItems(): Promise<{ data: MenuItemResponseDto[]; meta: any }>;
+  listMenuItems(params?: { categoryId?: string; status?: string; available?: boolean; search?: string; chefRecommended?: boolean; sortBy?: string; sortOrder?: string }): Promise<{ data: MenuItemResponseDto[]; meta: any }>;
   getMenuItemById(id: string): Promise<MenuItemResponseDto>;
   createMenuItem(data: CreateMenuItemDto): Promise<MenuItemResponseDto>;
   updateMenuItem(id: string, data: UpdateMenuItemDto): Promise<MenuItemResponseDto>;

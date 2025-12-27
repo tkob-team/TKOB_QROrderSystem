@@ -91,8 +91,8 @@ export class MenuApiAdapter implements IMenuAdapter {
   }
 
   // Menu Items
-  async listMenuItems(): Promise<{ data: any[]; meta: any }> {
-    const response = await menuItemsControllerFindAll();
+  async listMenuItems(params?: { categoryId?: string; status?: string; available?: boolean; search?: string; chefRecommended?: boolean; sortBy?: string; sortOrder?: string }): Promise<{ data: any[]; meta: any }> {
+    const response = await menuItemsControllerFindAll(params);
     
     // Handle undefined/null/void - early return
     if (response === undefined || response === null) {

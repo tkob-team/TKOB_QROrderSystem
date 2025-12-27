@@ -70,13 +70,65 @@ export class MenuMockAdapter implements IMenuAdapter {
   }
 
   // Menu Items
-  async listMenuItems() {
+  async listMenuItems(params?: { categoryId?: string; status?: string; available?: boolean; search?: string; chefRecommended?: boolean; sortBy?: string; sortOrder?: string }) {
     await fakeDelay();
-    console.log('🎭 [MenuMockAdapter] Returning mock menu items');
+    console.log('🎭 [MenuMockAdapter] Returning mock menu items', { params });
+    
+    let filtered = [...mockMenuItems];
+    
+    // Apply filters
+    if (params?.categoryId) {
+      filtered = filtered.filter((i) => i.categoryId === params.categoryId);
+    }
+    if (params?.status) {
+      filtered = filtered.filter((i) => i.status === params.status);
+    }
+    if (params?.available !== undefined) {
+      filtered = filtered.filter((i) => i.available === params.available);
+    }
+    if (params?.search) {
+      const query = params.search.toLowerCase();
+      filtered = filtered.filter((i) => 
+        i.name.toLowerCase().includes(query) || 
+        (i.description || '').toLowerCase().includes(query)
+      );
+    }
+    if (params?.chefRecommended) {
+      filtered = filtered.filter((i) => i.chefRecommended === true);
+    }
+    
+    // Apply sorting
+    if (params?.sortBy) {
+      const sortOrder = params.sortOrder === 'desc' ? -1 : 1;
+      filtered.sort((a: any, b: any) => {
+        let aVal, bVal;
+        switch (params.sortBy) {
+          case 'popularity':
+            aVal = a.popularity || 0;
+            bVal = b.popularity || 0;
+            break;
+          case 'price':
+            aVal = a.price || 0;
+            bVal = b.price || 0;
+            break;
+          case 'name':
+            aVal = a.name || '';
+            bVal = b.name || '';
+            return sortOrder * aVal.localeCompare(bVal);
+          case 'createdAt':
+          default:
+            aVal = new Date(a.createdAt || 0).getTime();
+            bVal = new Date(b.createdAt || 0).getTime();
+            break;
+        }
+        return sortOrder * ((aVal as number) > (bVal as number) ? 1 : -1);
+      });
+    }
+    
     return {
-      data: mockMenuItems,
+      data: filtered,
       meta: {
-        total: mockMenuItems.length,
+        total: filtered.length,
         page: 1,
         limit: 100,
         totalPages: 1,

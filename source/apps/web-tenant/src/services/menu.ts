@@ -37,8 +37,8 @@ class MenuService {
   }
 
   // Menu Items
-  async listMenuItems() {
-    return menuAdapter.listMenuItems();
+  async listMenuItems(params?: { categoryId?: string; status?: string; available?: boolean; search?: string; chefRecommended?: boolean; sortBy?: string; sortOrder?: string }) {
+    return menuAdapter.listMenuItems(params);
   }
 
   async getMenuItemById(id: string) {

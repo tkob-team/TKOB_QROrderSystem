@@ -34,12 +34,12 @@ export const useMenuCategories = (params?: { activeOnly?: boolean }) => {
 /**
  * List menu items query
  */
-export const useMenuItems = () => {
+export const useMenuItems = (params?: { categoryId?: string; status?: string; available?: boolean; search?: string; chefRecommended?: boolean; sortBy?: string; sortOrder?: string }) => {
   return useQuery({
-    queryKey: ['menu', 'items'],
+    queryKey: ['menu', 'items', params],
     queryFn: async () => {
-      console.log('🔍 [useMenuItems] Fetching menu items');
-      const result = await menuService.listMenuItems();
+      console.log('🔍 [useMenuItems] Fetching menu items', { params });
+      const result = await menuService.listMenuItems(params);
       console.log('📦 [useMenuItems] Received:', result);
       return result;
     },
