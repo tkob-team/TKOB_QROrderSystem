@@ -13,6 +13,7 @@ type ItemsFilterPanelProps = {
   tempSelectedChefRecommended: boolean;
   onTempChefRecommendedChange: (checked: boolean) => void;
   onResetFilters: () => void;
+  onApplyFilters: () => void;
 };
 
 export function ItemsFilterPanel({
@@ -25,6 +26,7 @@ export function ItemsFilterPanel({
   tempSelectedChefRecommended,
   onTempChefRecommendedChange,
   onResetFilters,
+  onApplyFilters,
 }: ItemsFilterPanelProps) {
   if (!showFilter) return null;
 
@@ -145,12 +147,18 @@ export function ItemsFilterPanel({
         </div>
 
         {/* Buttons */}
-        <div className="mt-2 pt-2 border-t border-gray-100 px-4">
+        <div className="mt-2 pt-2 border-t border-gray-100 px-4 flex gap-2">
           <button
             onClick={onResetFilters}
-            className="w-full px-3 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+            className="flex-1 px-3 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
           >
             Reset
+          </button>
+          <button
+            onClick={onApplyFilters}
+            className="flex-1 px-3 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
+          >
+            Apply
           </button>
         </div>
       </div>

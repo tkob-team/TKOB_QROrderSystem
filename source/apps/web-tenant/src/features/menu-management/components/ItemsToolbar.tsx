@@ -89,16 +89,9 @@ export function ItemsToolbar({
               tempSelectedChefRecommended={tempSelectedChefRecommended}
               onTempChefRecommendedChange={onTempChefRecommendedChange}
               onResetFilters={onResetFilters}
+              onApplyFilters={onApplyFilters}
             />
           </div>
-
-          {/* Apply button */}
-          <button
-            onClick={onApplyFilters}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors h-10"
-          >
-            Apply
-          </button>
 
           {/* Sort */}
           <div className="relative">
