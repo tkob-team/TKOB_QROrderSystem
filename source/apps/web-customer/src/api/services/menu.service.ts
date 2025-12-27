@@ -80,22 +80,34 @@ export const MenuService = {
    * Get public menu (session-based, no token needed)
    * Cookie automatically sent by axios (withCredentials: true)
    */
-  async getPublicMenu(tenantId?: string): Promise<ApiResponse<{
+  async getPublicMenu(
+    tenantId?: string,
+    options?: {
+      chefRecommended?: boolean;
+      sortBy?: 'displayOrder' | 'popularity' | 'price' | 'name';
+      sortOrder?: 'asc' | 'desc';
+      search?: string;
+      categoryId?: string;
+    }
+  ): Promise<ApiResponse<{
     items: MenuItem[];
     categories: string[];
   }>> {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[MenuService.getPublicMenu] calling /menu/public')
+        console.log('[MenuService.getPublicMenu] calling /menu/public', options)
       }
       // Swagger documents tenantId as query param; send it in params alongside pagination/sort
       const response = await apiClient.get<{ success: boolean; data: PublicMenuResponseDto }>('/menu/public', {
         params: {
           tenantId,
           page: 1,
-          limit: 20,
-          sortBy: 'displayOrder',
-          sortOrder: 'asc',
+          limit: 100,
+          sortBy: options?.sortBy || 'displayOrder',
+          sortOrder: options?.sortOrder || 'asc',
+          ...(options?.chefRecommended !== undefined && { chefRecommended: options.chefRecommended }),
+          ...(options?.search && { search: options.search }),
+          ...(options?.categoryId && { categoryId: options.categoryId }),
         },
       });
     

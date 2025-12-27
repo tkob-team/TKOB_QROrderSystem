@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, UtensilsCrossed, Search, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
+import { ShoppingCart, UtensilsCrossed, Search, ChevronLeft, ChevronRight, ArrowUpDown, X } from 'lucide-react'
 import { LanguageSwitcher, FoodCard, EmptyState, MenuPageSkeleton } from '@/components'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useCart } from '@/hooks/useCart'
@@ -13,13 +13,17 @@ import { FeatureErrorBoundary } from '@/components/error'
 
 const ITEMS_PER_PAGE = 6
 
+type SortOption = 'displayOrder' | 'popularity-asc' | 'popularity-desc' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc'
+
 export function MenuPage() {
   const router = useRouter()
   const { language, setLanguage } = useLanguage()
   const { itemCount } = useCart()
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [sortBy, setSortBy] = useState<'default' | 'popular'>('default')
+  const [sortBy, setSortBy] = useState<SortOption>('displayOrder')
+  const [filterChefRecommended, setFilterChefRecommended] = useState<boolean>(false)
+  const [showSortSheet, setShowSortSheet] = useState<boolean>(false)
 
   // Fetch session info (table number, etc.)
   const { session, loading: sessionLoading } = useSession()
@@ -40,19 +44,32 @@ export function MenuPage() {
     return menuItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
-      return matchesSearch && matchesCategory
+      const matchesChefRecommended = !filterChefRecommended || item.chefRecommended
+      return matchesSearch && matchesCategory && matchesChefRecommended
     })
-  }, [menuItems, searchQuery, selectedCategory])
+  }, [menuItems, searchQuery, selectedCategory, filterChefRecommended])
 
   // Sort
   const sortedItems = useMemo(() => {
-    return sortBy === 'popular'
-      ? [...filteredItems].sort((a, b) => {
-          const aIsPopular = a.badge === 'Popular' ? 1 : 0
-          const bIsPopular = b.badge === 'Popular' ? 1 : 0
-          return bIsPopular - aIsPopular
-        })
-      : filteredItems
+    const sorted = [...filteredItems]
+    
+    switch (sortBy) {
+      case 'popularity-asc':
+        return sorted.sort((a, b) => (a.popularity || 0) - (b.popularity || 0))
+      case 'popularity-desc':
+        return sorted.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+      case 'price-asc':
+        return sorted.sort((a, b) => a.basePrice - b.basePrice)
+      case 'price-desc':
+        return sorted.sort((a, b) => b.basePrice - a.basePrice)
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name))
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name))
+      case 'displayOrder':
+      default:
+        return sorted
+    }
   }, [filteredItems, sortBy])
 
   const pagination = usePagination({ items: sortedItems, itemsPerPage: ITEMS_PER_PAGE })
@@ -60,19 +77,38 @@ export function MenuPage() {
   const text = {
     EN: {
       table: 'Table', guests: 'guests', searchPlaceholder: 'Search dishes...',
-      sort: 'Sort:', default: 'Default', popular: 'Most popular',
+      sort: 'Sort', sortButton: 'Sort Options', displayOrder: 'Default', 
+      popularityAsc: 'Popularity (Low to High)', popularityDesc: 'Popularity (High to Low)',
+      priceAsc: 'Price (Low to High)', priceDesc: 'Price (High to Low)',
+      nameAsc: 'Name (A to Z)', nameDesc: 'Name (Z to A)',
       previous: 'Previous', next: 'Next', page: 'Page', of: 'of',
       noDishes: 'No dishes found', clearFilters: 'Clear filters',
+      chefRecommended: 'Chef Recommended Only', close: 'Close',
     },
     VI: {
       table: 'Bàn', guests: 'khách', searchPlaceholder: 'Tìm món ăn...',
-      sort: 'Sắp xếp:', default: 'Mặc định', popular: 'Phổ biến nhất',
+      sort: 'Sắp xếp', sortButton: 'Tùy chọn sắp xếp', displayOrder: 'Mặc định',
+      popularityAsc: 'Phổ biến (Thấp đến Cao)', popularityDesc: 'Phổ biến (Cao đến Thấp)',
+      priceAsc: 'Giá (Thấp đến Cao)', priceDesc: 'Giá (Cao đến Thấp)',
+      nameAsc: 'Tên (A đến Z)', nameDesc: 'Tên (Z đến A)',
       previous: 'Trước', next: 'Sau', page: 'Trang', of: 'của',
       noDishes: 'Không tìm thấy món nào', clearFilters: 'Xóa bộ lọc',
+      chefRecommended: 'Chỉ các món đề xuất của đầu bếp', close: 'Đóng',
     },
   }
 
   const t = text[language]
+
+  // Handle ESC key to close bottom sheet
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSortSheet) {
+        setShowSortSheet(false)
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [showSortSheet])
 
   // Show loading skeleton
   if (isLoading || sessionLoading) {
@@ -157,28 +193,32 @@ export function MenuPage() {
       {/* Content */}
       <div className="flex-1 p-4 pb-24">
         <div className="max-w-4xl mx-auto">
-        {/* Sort */}
-        <div className="flex justify-end items-center mb-3">
-          <div className="flex items-center gap-2">
-            <ArrowUpDown className="w-4 h-4" style={{ color: 'var(--gray-500)' }} />
-            <span style={{ color: 'var(--gray-600)', fontSize: '14px' }}>{t.sort}</span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setSortBy('default')}
-                className={`px-3 py-1.5 rounded-full transition-all ${sortBy === 'default' ? 'bg-(--orange-500) text-white' : 'bg-white border text-(--gray-700) hover:bg-(--gray-50)'}`}
-                style={sortBy !== 'default' ? { borderColor: 'var(--gray-300)', fontSize: '13px' } : { fontSize: '13px' }}
-              >
-                {t.default}
-              </button>
-              <button
-                onClick={() => setSortBy('popular')}
-                className={`px-3 py-1.5 rounded-full transition-all ${sortBy === 'popular' ? 'bg-(--orange-500) text-white' : 'bg-white border text-(--gray-700) hover:bg-(--gray-50)'}`}
-                style={sortBy !== 'popular' ? { borderColor: 'var(--gray-300)', fontSize: '13px' } : { fontSize: '13px' }}
-              >
-                {t.popular}
-              </button>
-            </div>
+        {/* Filters and Sort */}
+        <div className="flex items-center gap-3 mb-4">
+          {/* Chef Recommended Filter */}
+          <div className="flex-1 flex items-center gap-2 p-3 rounded-lg border" style={{ borderColor: 'var(--gray-300)' }}>
+            <input
+              type="checkbox"
+              id="chefRecommendedFilter"
+              checked={filterChefRecommended}
+              onChange={(e) => setFilterChefRecommended(e.target.checked)}
+              className="w-4 h-4 rounded cursor-pointer"
+              style={{ accentColor: 'var(--orange-500)' }}
+            />
+            <label htmlFor="chefRecommendedFilter" className="flex-1 cursor-pointer" style={{ fontSize: '14px', color: 'var(--gray-700)' }}>
+              {t.chefRecommended}
+            </label>
           </div>
+
+          {/* Sort Bottom Sheet Button */}
+          <button
+            onClick={() => setShowSortSheet(true)}
+            className="px-4 py-3 rounded-lg border flex items-center gap-2 transition-all hover:bg-(--gray-50)"
+            style={{ borderColor: 'var(--gray-300)' }}
+          >
+            <ArrowUpDown className="w-4 h-4" style={{ color: 'var(--gray-600)' }} />
+            <span style={{ fontSize: '14px', color: 'var(--gray-700)' }}>{t.sort}</span>
+          </button>
         </div>
 
         {pagination.currentItems.length > 0 ? (
@@ -221,11 +261,85 @@ export function MenuPage() {
             title={t.noDishes}
             message="Check back soon!"
             actionLabel={t.clearFilters}
-            onAction={() => { setSearchQuery(''); setSelectedCategory('All') }}
+            onAction={() => { setSearchQuery(''); setSelectedCategory('All'); setFilterChefRecommended(false); }}
           />
         )}
         </div>
       </div>
+
+      {/* Sort Bottom Sheet */}
+      {showSortSheet && (
+        <div 
+          className="fixed inset-0 z-40 flex items-end"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+          onClick={() => setShowSortSheet(false)}
+        >
+          <div 
+            className="w-full rounded-t-3xl bg-white"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '70vh', boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.15)' }}
+          >
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div 
+                className="rounded-full"
+                style={{ width: '36px', height: '4px', backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
+              />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pb-3">
+              <h3 style={{ fontSize: '16px', fontWeight: '500', color: 'var(--gray-900)' }}>
+                {t.sortButton}
+              </h3>
+              <button
+                onClick={() => setShowSortSheet(false)}
+                className="p-1 hover:bg-(--gray-100) rounded-full transition-all"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" style={{ color: 'var(--gray-500)' }} />
+              </button>
+            </div>
+
+            {/* Sort Options */}
+            <div className="px-4 pb-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(70vh - 80px)' }}>
+              {(
+                [
+                  { key: 'displayOrder', label: t.displayOrder },
+                  { key: 'popularity-asc', label: t.popularityAsc },
+                  { key: 'popularity-desc', label: t.popularityDesc },
+                  { key: 'price-asc', label: t.priceAsc },
+                  { key: 'price-desc', label: t.priceDesc },
+                  { key: 'name-asc', label: t.nameAsc },
+                  { key: 'name-desc', label: t.nameDesc },
+                ] as Array<{ key: SortOption; label: string }>
+              ).map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => {
+                    setSortBy(option.key)
+                    setShowSortSheet(false)
+                  }}
+                  className={`w-full px-4 py-3 rounded-lg text-left transition-all min-h-11 flex items-center ${
+                    sortBy === option.key
+                      ? 'text-white'
+                      : 'border text-(--gray-700) hover:bg-(--gray-50)'
+                  }`}
+                  style={
+                    sortBy === option.key
+                      ? { backgroundColor: 'var(--orange-500)', border: 'none' }
+                      : { borderColor: 'var(--gray-300)' }
+                  }
+                >
+                  <span style={{ fontSize: '15px', fontWeight: sortBy === option.key ? '500' : '400' }}>
+                    {option.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
