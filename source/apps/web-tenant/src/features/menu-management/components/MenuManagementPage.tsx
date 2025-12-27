@@ -70,6 +70,9 @@ export function MenuManagementPage() {
         onRemovePhoto={handlers.removePhoto}
         onSetPhotoPrimary={handlers.setPhotoPrimary}
         toggleDietary={handlers.toggleDietary}
+        photos={state.photoManager.photos}
+        isSaving={state.isSaving}
+        saveProgress={state.saveProgress}
       />
 
       <DeleteItemModal

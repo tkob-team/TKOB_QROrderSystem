@@ -3,7 +3,8 @@
 import React from 'react';
 import { Upload, X } from '../icons';
 import { MAX_FILE_SIZE_MB } from '../../utils/imageUpload';
-import type { ItemFormData, PhotoItem } from '../../hooks/useMenuManagementPage';
+import type { ItemFormData } from '../../hooks/useMenuManagementPage';
+import type { PhotoState } from '../../hooks/useMenuItemPhotoManager';
 
 type MenuItemModalProps = {
   isOpen: boolean;
@@ -15,9 +16,13 @@ type MenuItemModalProps = {
   categories: any[];
   modifierGroups: any[];
   onFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemovePhoto: (photoId: string) => void;
-  onSetPhotoPrimary: (photoId: string) => void;
+  onRemovePhoto: (localId: string) => void;
+  onSetPhotoPrimary: (localId: string) => void;
   toggleDietary: (tag: string) => void;
+  // Photo manager state
+  photos: PhotoState[];
+  isSaving: boolean;
+  saveProgress: string | null;
 };
 
 export function MenuItemModal({
@@ -33,6 +38,9 @@ export function MenuItemModal({
   onRemovePhoto,
   onSetPhotoPrimary,
   toggleDietary,
+  photos,
+  isSaving,
+  saveProgress,
 }: MenuItemModalProps) {
   if (!isOpen) return null;
 
@@ -56,17 +64,22 @@ export function MenuItemModal({
           {/* Image Upload - Multiple Files */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-900">Item Photos</label>
+            {mode === 'add' && (
+              <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                💡 Photos will be uploaded after the item is created
+              </p>
+            )}
 
-            {formData.menuItemPhotos.length > 0 ? (
+            {photos.length > 0 ? (
               <div className="space-y-3">
-                {formData.menuItemPhotos.map((photo) => (
+                {photos.map((photo) => (
                   <div
-                    key={photo.id}
+                    key={photo.localId}
                     className="border-2 border-emerald-500 rounded-xl p-4 flex items-center gap-4 bg-emerald-50"
                   >
                     <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                       <img
-                        src={photo.previewUrl}
+                        src={photo.previewUrl || photo.url}
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />
@@ -88,7 +101,7 @@ export function MenuItemModal({
                       {!photo.isPrimary && (
                         <button
                           type="button"
-                          onClick={() => onSetPhotoPrimary(photo.id)}
+                          onClick={() => onSetPhotoPrimary(photo.localId)}
                           className="px-3 py-1 text-xs font-medium text-emerald-700 bg-white border border-emerald-500 rounded hover:bg-emerald-50"
                         >
                           Set Primary
@@ -96,7 +109,7 @@ export function MenuItemModal({
                       )}
                       <button
                         type="button"
-                        onClick={() => onRemovePhoto(photo.id)}
+                        onClick={() => onRemovePhoto(photo.localId)}
                         className="text-sm font-semibold text-red-600 hover:text-red-700"
                       >
                         Remove
@@ -381,16 +394,27 @@ export function MenuItemModal({
         <div className="flex gap-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            disabled={isSaving}
+            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
-            disabled={!formData.name.trim() || !formData.price.trim()}
-            className="flex-1 px-4 py-3 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:bg-gray-300"
+            disabled={!formData.name.trim() || !formData.price.trim() || isSaving}
+            className="flex-1 px-4 py-3 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            {mode === 'add' ? 'Add Item' : 'Save Changes'}
+            {isSaving ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {saveProgress || 'Saving...'}
+              </span>
+            ) : (
+              mode === 'add' ? 'Add Item' : 'Save Changes'
+            )}
           </button>
         </div>
       </div>

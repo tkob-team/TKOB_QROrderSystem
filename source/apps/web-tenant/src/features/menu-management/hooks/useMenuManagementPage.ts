@@ -22,7 +22,15 @@ import {
 // API Hooks
 import {
   useMenuPhotoControllerUploadPhoto,
+  useMenuPhotoControllerUploadPhotos,
+  useMenuPhotoControllerGetPhotos,
+  useMenuPhotoControllerDeletePhoto,
+  useMenuPhotoControllerSetPrimary,
+  useMenuPhotoControllerUpdateOrder,
 } from '@/services/generated/menu-photos/menu-photos';
+
+// Photo Manager
+import { useMenuItemPhotoManager } from './useMenuItemPhotoManager';
 
 // Schema and Utils
 import { categorySchema, type CategoryFormData } from '../schemas/category.schema';
@@ -176,6 +184,17 @@ export function useMenuManagementPage() {
   const deleteItemMutation = useDeleteMenuItem();
   const publishItemMutation = usePublishMenuItem();
   const uploadPhotoMutation = useMenuPhotoControllerUploadPhoto();
+  const uploadPhotosBulkMutation = useMenuPhotoControllerUploadPhotos();
+  const deletePhotoMutation = useMenuPhotoControllerDeletePhoto();
+  const setPrimaryPhotoMutation = useMenuPhotoControllerSetPrimary();
+  const updatePhotoOrderMutation = useMenuPhotoControllerUpdateOrder();
+
+  // Photo Manager
+  const photoManager = useMenuItemPhotoManager();
+
+  // Submission state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<string>('');
 
   // ============ DERIVED COMPUTATIONS ============
   const getCategoryItemCount = (categoryId: string): number => {
@@ -380,6 +399,7 @@ export function useMenuManagementPage() {
       chefRecommended: false,
       modifierGroupIds: [],
     });
+    photoManager.reset(); // Initialize photo manager for add mode
     setIsItemModalOpen(true);
   };
 
@@ -402,13 +422,21 @@ export function useMenuManagementPage() {
       chefRecommended: item.chefRecommended || false,
       modifierGroupIds: item.modifierGroupIds || item.modifierGroups?.map((mg: any) => mg.id) || [],
     });
+    
+    // Initialize photo manager with existing photos if any
+    const existingPhotos = item.photos || item.menuItemPhotos || [];
+    photoManager.initializeFromExistingPhotos(existingPhotos);
+    
     setIsItemModalOpen(true);
   };
 
   const handleCloseItemModal = () => {
     cleanupPhotoUrls();
+    photoManager.reset(); // Cleanup photo manager state and object URLs
     setIsItemModalOpen(false);
     setCurrentEditItemId(null);
+    setIsSaving(false);
+    setSaveProgress('');
     setItemFormData({
       name: '',
       category: selectedCategory,
@@ -426,11 +454,33 @@ export function useMenuManagementPage() {
     });
   };
 
+  /**
+   * TWO-ROUNDTRIP FLOW for Menu Item + Photos
+   * 
+   * Why: Photos API requires itemId, but we don't have itemId until item is created.
+   * 
+   * Roundtrip 1: Create/Update menu item (get itemId)
+   * Roundtrip 2: Handle photos:
+   *   - Upload new files (bulk)
+   *   - Delete removed photos
+   *   - Set primary photo
+   *   - Update photo order
+   * 
+   * All photo operations happen AFTER item is saved, using the returned itemId.
+   */
   const handleSaveItem = async () => {
     if (!itemFormData.name.trim() || !itemFormData.price.trim()) return;
 
+    setIsSaving(true);
+    let itemId: string | null = null;
+    let photoUploadFailed = false;
+
     try {
+      // ============ ROUNDTRIP 1: Save Menu Item ============
+      setSaveProgress('Saving item...');
+
       if (itemModalMode === 'add') {
+        // CREATE mode
         const result = await createItemMutation.mutateAsync({
           name: itemFormData.name,
           categoryId: itemFormData.category,
@@ -443,20 +493,16 @@ export function useMenuManagementPage() {
           modifierGroupIds: itemFormData.modifierGroupIds.length > 0 ? itemFormData.modifierGroupIds : undefined,
         });
 
-        if (itemFormData.menuItemPhotos.length > 0 && result?.id) {
-          for (const photo of itemFormData.menuItemPhotos) {
-            if (photo.file) {
-              await uploadPhotoMutation.mutateAsync({
-                itemId: result.id,
-                data: { file: photo.file }
-              });
-            }
-          }
+        itemId = result?.id || null;
+        
+        if (!itemId) {
+          throw new Error('Failed to create item: no ID returned');
         }
 
-        setToastMessage(`Món "${itemFormData.name}" đã được tạo`);
       } else if (currentEditItemId) {
-        // Update basic item data (without status)
+        // EDIT mode
+        itemId = currentEditItemId;
+
         await updateItemMutation.mutateAsync({
           id: currentEditItemId,
           data: {
@@ -474,35 +520,138 @@ export function useMenuManagementPage() {
           }
         });
 
-        // Handle status changes separately (only DRAFT and PUBLISHED, ARCHIVED uses delete)
+        // Handle status changes separately
         if (itemFormData.status === 'DRAFT' || itemFormData.status === 'PUBLISHED') {
           await publishItemMutation.mutateAsync({
             id: currentEditItemId,
             status: itemFormData.status,
           });
         } else if (itemFormData.status === 'ARCHIVED') {
-          // Delete (soft delete) to archive
           await deleteItemMutation.mutateAsync(currentEditItemId);
         }
+      }
 
-        if (itemFormData.menuItemPhotos.length > 0) {
-          for (const photo of itemFormData.menuItemPhotos) {
-            if (photo.file) {
-              await uploadPhotoMutation.mutateAsync({
-                itemId: currentEditItemId,
-                data: { file: photo.file }
-              });
+      // ============ ROUNDTRIP 2: Handle Photos ============
+      if (itemId && photoManager.hasChanges) {
+        try {
+          setSaveProgress('Uploading photos...');
+
+          // Step 2a: Delete removed photos (Edit mode only)
+          if (photoManager.removedPhotoIds.length > 0) {
+            const deleteResults = await Promise.allSettled(
+              photoManager.removedPhotoIds.map(photoId =>
+                deletePhotoMutation.mutateAsync({ itemId, photoId })
+              )
+            );
+
+            const failedDeletes = deleteResults.filter(r => r.status === 'rejected');
+            if (failedDeletes.length > 0) {
+              console.error('Some photo deletions failed:', failedDeletes);
             }
           }
-        }
 
-        setToastMessage(`Món "${itemFormData.name}" đã được cập nhật`);
+          // Step 2b: Upload new files (bulk)
+          let uploadedPhotos: any[] = [];
+          const newFiles = photoManager.getNewFiles();
+          
+          if (newFiles.length > 0) {
+            try {
+              uploadedPhotos = await uploadPhotosBulkMutation.mutateAsync({
+                itemId,
+                data: { files: newFiles }
+              });
+            } catch (uploadError) {
+              console.error('Photo upload failed:', uploadError);
+              photoUploadFailed = true;
+              // Continue to show item saved but photos failed
+            }
+          }
+
+          // Step 2c: Re-fetch photos to get complete list with IDs
+          let allPhotos: any[] = [];
+          try {
+            allPhotos = await queryClient.fetchQuery({
+              queryKey: [`/api/v1/menu/items/${itemId}/photos`],
+              queryFn: async () => {
+                const response = await fetch(`/api/v1/menu/items/${itemId}/photos`, {
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+                  },
+                });
+                if (!response.ok) throw new Error('Failed to fetch photos');
+                return response.json();
+              },
+            });
+          } catch (fetchError) {
+            console.error('Failed to fetch photos after upload:', fetchError);
+            allPhotos = uploadedPhotos; // Fallback to uploaded photos
+          }
+
+          // Step 2d: Set primary photo
+          if (photoManager.primaryCandidateId && allPhotos.length > 0) {
+            let primaryPhotoId: string | null = null;
+
+            if (photoManager.isPrimaryCandidateNewFile()) {
+              // Primary is a newly uploaded file
+              const newFileIndex = photoManager.getPrimaryCandidateNewFileIndex();
+              if (newFileIndex >= 0 && newFileIndex < uploadedPhotos.length) {
+                primaryPhotoId = uploadedPhotos[newFileIndex]?.id || null;
+              }
+              // Fallback: use first uploaded photo
+              if (!primaryPhotoId && uploadedPhotos.length > 0) {
+                primaryPhotoId = uploadedPhotos[0]?.id || null;
+              }
+            } else {
+              // Primary is an existing photo
+              primaryPhotoId = photoManager.getPrimaryCandidatePhotoId();
+            }
+
+            if (primaryPhotoId) {
+              try {
+                await setPrimaryPhotoMutation.mutateAsync({
+                  itemId,
+                  photoId: primaryPhotoId,
+                });
+              } catch (primaryError) {
+                console.error('Failed to set primary photo:', primaryError);
+              }
+            }
+          }
+
+          // Step 2e: Update photo order (if needed)
+          // Note: This is complex and may require batch API or sequential updates
+          // For now, we skip order updates to avoid complexity
+          // TODO: Implement order updates if backend supports batch order API
+
+        } catch (photoError) {
+          console.error('Photo operations failed:', photoError);
+          photoUploadFailed = true;
+        }
+      }
+
+      // ============ Success Messages ============
+      if (photoUploadFailed) {
+        setToastMessage(
+          `Item "${itemFormData.name}" saved, but some photo operations failed. Please edit the item to retry.`
+        );
+      } else {
+        setToastMessage(
+          itemModalMode === 'add'
+            ? `Món "${itemFormData.name}" đã được tạo`
+            : `Món "${itemFormData.name}" đã được cập nhật`
+        );
       }
 
       setShowSuccessToast(true);
       handleCloseItemModal();
+
     } catch (error) {
       console.error('Error in handleSaveItem:', error);
+      setToastMessage('Failed to save item. Please try again.');
+      setShowSuccessToast(true);
+    } finally {
+      setIsSaving(false);
+      setSaveProgress('');
     }
   };
 
@@ -527,10 +676,14 @@ export function useMenuManagementPage() {
   };
 
   // ============ IMAGE UPLOAD HELPERS ============
+  /**
+   * Handle file selection from dropzone
+   * Validates files and adds them to photoManager
+   */
   const handleImageUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    const newPhotos: PhotoItem[] = [];
+    const validFiles: File[] = [];
     const errors: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -542,26 +695,11 @@ export function useMenuManagementPage() {
         continue;
       }
 
-      const previewUrl = URL.createObjectURL(file);
-      const isPrimary = itemFormData.menuItemPhotos.length === 0 && newPhotos.length === 0;
-
-      newPhotos.push({
-        id: `temp_${Date.now()}_${i}`,
-        file,
-        previewUrl,
-        isPrimary,
-      });
+      validFiles.push(file);
     }
 
-    if (itemFormData.menuItemPhotos.length === 0 && newPhotos.length > 0) {
-      newPhotos[0].isPrimary = true;
-    }
-
-    if (newPhotos.length > 0) {
-      setItemFormData({
-        ...itemFormData,
-        menuItemPhotos: [...itemFormData.menuItemPhotos, ...newPhotos],
-      });
+    if (validFiles.length > 0) {
+      photoManager.addNewFiles(validFiles);
     }
 
     if (errors.length > 0) {
@@ -575,33 +713,21 @@ export function useMenuManagementPage() {
     e.target.value = '';
   };
 
-  const removePhoto = (photoId: string) => {
-    const photo = itemFormData.menuItemPhotos.find(p => p.id === photoId);
-    if (photo && photo.previewUrl) {
-      URL.revokeObjectURL(photo.previewUrl);
-    }
-
-    const updatedPhotos = itemFormData.menuItemPhotos.filter(p => p.id !== photoId);
-
-    if (photo?.isPrimary && updatedPhotos.length > 0) {
-      updatedPhotos[0].isPrimary = true;
-    }
-
-    setItemFormData({
-      ...itemFormData,
-      menuItemPhotos: updatedPhotos,
-    });
+  /**
+   * Remove photo from photoManager
+   * If existing photo: marks for deletion on server
+   * If new file: just removes from local state and cleans up object URL
+   */
+  const removePhoto = (localId: string) => {
+    photoManager.removePhoto(localId);
   };
 
-  const setPhotoPrimary = (photoId: string) => {
-    const updatedPhotos = itemFormData.menuItemPhotos.map(photo => ({
-      ...photo,
-      isPrimary: photo.id === photoId,
-    }));
-    setItemFormData({
-      ...itemFormData,
-      menuItemPhotos: updatedPhotos,
-    });
+  /**
+   * Set photo as primary candidate
+   * Actual server update happens on save
+   */
+  const setPhotoPrimary = (localId: string) => {
+    photoManager.setPrimary(localId);
   };
 
   const cleanupPhotoUrls = useCallback(() => {
@@ -771,6 +897,10 @@ export function useMenuManagementPage() {
       setCurrentEditItemId,
       itemFormData,
       setItemFormData,
+      // Photo management (TWO-ROUNDTRIP flow)
+      photoManager,
+      isSaving,
+      saveProgress,
     },
 
     data: {
