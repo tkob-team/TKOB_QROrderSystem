@@ -50,15 +50,14 @@ export function CategoryPanel({
 
       {/* Sort Control */}
       <div className="px-3 py-2 border-b border-gray-200">
-        <label className="text-xs font-semibold text-gray-600 block mb-2">Sort by:</label>
         <select
           value={categorySortBy}
           onChange={(e) => setCategorySortBy(e.target.value as 'displayOrder' | 'name' | 'createdAt')}
           className="w-full text-xs border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:border-emerald-500"
         >
-          <option value="displayOrder">Display Order</option>
-          <option value="name">Name</option>
-          <option value="createdAt">Creation Date</option>
+          <option value="displayOrder">Sort by: Display Order</option>
+          <option value="name">Sort by: Name</option>
+          <option value="createdAt">Sort by: Creation Date</option>
         </select>
       </div>
 

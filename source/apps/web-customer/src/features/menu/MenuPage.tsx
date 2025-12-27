@@ -88,7 +88,7 @@ export function MenuPage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
       {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-white border-b" style={{ borderColor: 'var(--gray-200)' }}>
-        <div className="max-w-4xl mx-auto flex justify-between items-center p-4">
+        <div className="max-w-4xl mx-auto flex justify-between items-center px-4 py-2">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--orange-500)', fontSize: '12px' }}>🍽️</div>
@@ -116,7 +116,7 @@ export function MenuPage() {
         </div>
 
         {/* Categories */}
-        <div className="overflow-x-auto px-4 pb-3 hide-scrollbar">
+        <div className="overflow-x-auto px-4 pb-2 hide-scrollbar">
           <div className="max-w-4xl mx-auto flex gap-2">
             <button
               onClick={() => setSelectedCategory('All')}
@@ -139,7 +139,7 @@ export function MenuPage() {
         </div>
 
         {/* Search */}
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-2">
           <div className="max-w-4xl mx-auto relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'var(--gray-400)' }} />
             <input

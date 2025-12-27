@@ -56,7 +56,7 @@ export function BottomNav() {
       style={{ borderColor: 'var(--gray-200)' }}
     >
       <div className="max-w-[480px] mx-auto">
-        <nav className="flex items-center justify-around px-2 py-2">
+        <nav className="flex items-center justify-around px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
