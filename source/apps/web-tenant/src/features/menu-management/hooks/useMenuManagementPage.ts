@@ -5,11 +5,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 
+// Services
+import { menuService } from '@/services/menu';
+
 // Menu Hooks
 import {
   useMenuCategories,
   useMenuItems,
   useModifierGroups,
+  useMenuItemById,
   useCreateMenuCategory,
   useUpdateMenuCategory,
   useDeleteMenuCategory,
@@ -406,29 +410,60 @@ export function useMenuManagementPage() {
     setIsItemModalOpen(true);
   };
 
-  const handleOpenEditItemModal = (e: React.MouseEvent, item: any) => {
+  const handleOpenEditItemModal = async (e: React.MouseEvent, item: any) => {
     e.stopPropagation();
     setItemModalMode('edit');
     setCurrentEditItemId(item.id);
-    setItemFormData({
-      name: item.name,
-      category: item.categoryId || selectedCategory,
-      description: item.description || '',
-      price: String(item.price || ''),
-      prepTimeMinutes: item.preparationTime || null,
-      status: item.status || 'DRAFT',
-      available: item.available ?? true,
-      displayOrder: item.displayOrder ?? 0,
-      menuItemPhotos: [],
-      dietary: item.tags || [],
-      allergens: item.allergens || [],
-      chefRecommended: item.chefRecommended || false,
-      modifierGroupIds: item.modifierGroupIds || item.modifierGroups?.map((mg: any) => mg.id) || [],
-    });
     
-    // Initialize photo manager with existing photos if any
-    const existingPhotos = item.photos || item.menuItemPhotos || [];
-    photoManager.initializeFromExistingPhotos(existingPhotos);
+    // Fetch full item details including all photos (Get All only returns primary photo)
+    try {
+      const fullItemData = await queryClient.fetchQuery({
+        queryKey: ['menu', 'item', item.id],
+        queryFn: () => menuService.getMenuItemById(item.id),
+      });
+      
+      setItemFormData({
+        name: fullItemData.name,
+        category: fullItemData.categoryId || selectedCategory,
+        description: fullItemData.description || '',
+        price: String(fullItemData.price || ''),
+        prepTimeMinutes: fullItemData.preparationTime || null,
+        status: fullItemData.status || 'DRAFT',
+        available: fullItemData.available ?? true,
+        displayOrder: fullItemData.displayOrder ?? 0,
+        menuItemPhotos: [],
+        dietary: fullItemData.tags || [],
+        allergens: fullItemData.allergens || [],
+        chefRecommended: fullItemData.chefRecommended || false,
+        modifierGroupIds: fullItemData.modifierGroupIds || fullItemData.modifierGroups?.map((mg: any) => mg.id) || [],
+      });
+      
+      // Initialize photo manager with existing photos from full data
+      const existingPhotos = fullItemData.photos || fullItemData.menuItemPhotos || [];
+      photoManager.initializeFromExistingPhotos(existingPhotos);
+      
+    } catch (error) {
+      console.error('Failed to fetch item details:', error);
+      // Fallback to list data if fetch fails
+      setItemFormData({
+        name: item.name,
+        category: item.categoryId || selectedCategory,
+        description: item.description || '',
+        price: String(item.price || ''),
+        prepTimeMinutes: item.preparationTime || null,
+        status: item.status || 'DRAFT',
+        available: item.available ?? true,
+        displayOrder: item.displayOrder ?? 0,
+        menuItemPhotos: [],
+        dietary: item.tags || [],
+        allergens: item.allergens || [],
+        chefRecommended: item.chefRecommended || false,
+        modifierGroupIds: item.modifierGroupIds || item.modifierGroups?.map((mg: any) => mg.id) || [],
+      });
+      
+      const existingPhotos = item.photos || item.menuItemPhotos || [];
+      photoManager.initializeFromExistingPhotos(existingPhotos);
+    }
     
     setIsItemModalOpen(true);
   };
