@@ -4,11 +4,22 @@ import { PrismaService } from 'src/database/prisma.service';
 import { BaseRepository } from 'src/database/repositories/base.repository';
 import { MenuItemFiltersDto } from '../dto/menu-item.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { MenuSortByEnum, SortOrderEnum } from '../dto/menu-publish.dto';
 
 export interface MenuItemWithRelations extends MenuItem {
   category?: any;
   modifierGroups?: any[];
   photo?: any[];
+}
+
+export interface PublicMenuFilters {
+  search?: string;
+  categoryId?: string;
+  chefRecommended?: boolean;
+  sortBy?: MenuSortByEnum;
+  sortOrder?: SortOrderEnum;
+  page?: number;
+  limit?: number;
 }
 
 @Injectable()
@@ -157,6 +168,125 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
         { displayOrder: 'asc' },
       ],
     });
+  }
+
+  async findPublishedMenuPaginated(
+    tenantId: string,
+    filters: PublicMenuFilters,
+  ): Promise<{
+    data: MenuItemWithRelations[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  }> {
+    const {
+      search,
+      categoryId,
+      chefRecommended,
+      sortBy = MenuSortByEnum.DISPLAY_ORDER,
+      sortOrder = SortOrderEnum.ASC,
+      page = 1,
+      limit = 20,
+    } = filters;
+
+    // Build where clause
+    const where: Prisma.MenuItemWhereInput = {
+      tenantId,
+      status: 'PUBLISHED',
+      available: true,
+      category: {
+        active: true,
+      },
+      ...(categoryId && { categoryId }),
+      ...(chefRecommended !== undefined && { chefRecommended }),
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { tags: { array_contains: [search] } },
+        ],
+      }),
+    };
+
+    // Build orderBy clause
+    let orderBy:
+      | Prisma.MenuItemOrderByWithRelationInput
+      | Prisma.MenuItemOrderByWithRelationInput[];
+
+    switch (sortBy) {
+      case MenuSortByEnum.POPULARITY:
+        orderBy = [{ popularity: sortOrder }, { displayOrder: 'asc' }];
+        break;
+      case MenuSortByEnum.PRICE:
+        orderBy = [{ price: sortOrder }, { displayOrder: 'asc' }];
+        break;
+      case MenuSortByEnum.NAME:
+        orderBy = [{ name: sortOrder }, { displayOrder: 'asc' }];
+        break;
+      case MenuSortByEnum.DISPLAY_ORDER:
+      default:
+        orderBy = [
+          { category: { displayOrder: 'asc' } },
+          { chefRecommended: 'desc' },
+          { displayOrder: sortOrder },
+        ];
+        break;
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Execute queries in parallel
+    const [items, total] = await Promise.all([
+      this.prisma.x.menuItem.findMany({
+        where,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              displayOrder: true,
+            },
+          },
+          photos: {
+            orderBy: [{ isPrimary: 'desc' }, { displayOrder: 'asc' }],
+          },
+          modifierGroups: {
+            include: {
+              modifierGroup: {
+                include: {
+                  options: {
+                    where: { active: true },
+                    orderBy: { displayOrder: 'asc' },
+                  },
+                },
+              },
+            },
+            orderBy: { displayOrder: 'asc' },
+          },
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      this.prisma.menuItem.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: items,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
+    };
   }
 
   async publish(itemId: string) {

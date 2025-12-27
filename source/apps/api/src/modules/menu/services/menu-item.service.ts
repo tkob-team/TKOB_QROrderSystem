@@ -8,6 +8,7 @@ import { MenuCategoryRepository } from '../repositories/menu-category.repository
 import { MenuItemsRepository } from '../repositories/menu-item.repository';
 import { ErrorCode, ErrorMessages } from 'src/common/constants/error-codes.constant';
 import { ModifierGroupRepository } from '../repositories/modifier-group.repository';
+import { MenuSortByEnum, PublicMenuFiltersDto, SortOrderEnum } from '../dto/menu-publish.dto';
 
 @Injectable()
 export class MenuItemsService {
@@ -134,23 +135,49 @@ export class MenuItemsService {
     return this.menuItemRepo.softDelete(menuItemId);
   }
 
-  async getPublicMenu(tenantId: string) {
-    const items = await this.menuItemRepo.findPublishedMenu(tenantId);
+  async getPublicMenu(tenantId: string, filters?: PublicMenuFiltersDto) {
+    const {
+      search,
+      categoryId,
+      chefRecommended,
+      sortBy = MenuSortByEnum.DISPLAY_ORDER,
+      sortOrder = SortOrderEnum.ASC,
+      page = 1,
+      limit = 20,
+    } = filters || {};
 
-    // Group by category
+    // Get paginated items with filters
+    const result = await this.menuItemRepo.findPublishedMenuPaginated(tenantId, {
+      search,
+      categoryId,
+      chefRecommended,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    });
+
+    // Group items by category
     const categoriesMap = new Map<
       string,
-      { id: string; name: string; displayOrder: number; items: any[] }
+      { id: string; name: string; description?: string; displayOrder: number; items: any[] }
     >();
 
-    for (const item of items) {
-      const categoryId = (item.category as { id: string }).id;
+    for (const item of result.data) {
+      const category = item.category as {
+        id: string;
+        name: string;
+        description?: string;
+        displayOrder: number;
+      };
+      const categoryId = category.id;
 
       if (!categoriesMap.has(categoryId)) {
         categoriesMap.set(categoryId, {
-          id: (item.category as { id: string }).id,
-          name: (item.category as { name: string }).name,
-          displayOrder: (item.category as { displayOrder: number }).displayOrder,
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          displayOrder: category.displayOrder,
           items: [],
         });
       }
@@ -163,24 +190,43 @@ export class MenuItemsService {
         }),
       );
 
+      // Get primary photo
+      const primaryPhoto =
+        (item.photo ?? []).find((p: any) => p.isPrimary) || (item.photo ?? [])[0];
+
       categoriesMap.get(categoryId)!.items.push({
         id: item.id,
         name: item.name,
         description: item.description,
         price: item.price,
-        imageUrl: item.imageUrl,
+        imageUrl: item.imageUrl || primaryPhoto?.url,
+        primaryPhoto: primaryPhoto || null,
+        photos: item.photo || [],
         tags: item.tags,
         allergens: item.allergens,
         modifierGroups,
         preparationTime: item.preparationTime,
         chefRecommended: item.chefRecommended,
+        popularity: item.popularity,
+        displayOrder: item.displayOrder,
       });
     }
 
+    // Sort categories by displayOrder
+    const categories = Array.from(categoriesMap.values()).sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
+
     return {
-      categories: Array.from(categoriesMap.values()).sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-      ),
+      categories,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+        hasNext: result.hasNext,
+        hasPrevious: result.hasPrevious,
+      },
       publishedAt: new Date(),
     };
   }

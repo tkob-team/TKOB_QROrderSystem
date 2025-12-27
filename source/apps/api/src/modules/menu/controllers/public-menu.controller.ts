@@ -2,12 +2,14 @@ import { BadRequestException, Controller, Get, Headers, Query } from '@nestjs/co
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MenuItemsService } from '../services/menu-item.service';
 import { PublicMenuResponseDto } from '../dto/menu-response.dto';
+import { PublicMenuFiltersDto } from '../dto/menu-publish.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../../common/interfaces/auth.interface';
 
 @ApiTags('Menu - Public')
 @Controller('menu/public')
+@ApiBearerAuth()
 export class PublicMenuController {
   constructor(private readonly itemService: MenuItemsService) {}
 
@@ -18,21 +20,21 @@ export class PublicMenuController {
     description:
       'Public endpoint - can be accessed with or without authentication. If not authenticated, tenantId must be provided via query parameter or header.',
   })
-  @ApiResponse({ status: 200, type: PublicMenuResponseDto })
   @ApiQuery({
     name: 'tenantId',
     required: false,
-    description: 'Restaurant/Tenant ID (required for unauthenticated requests)',
-    example: '629f5ab4-dc6a-48ca-b5ad-d18558829611',
+    description: 'Tenant ID (required if not authenticated)',
   })
-  @ApiBearerAuth()
+  @ApiResponse({ status: 200, type: PublicMenuResponseDto })
   async getPublicMenu(
-    @CurrentUser() user?: AuthenticatedUser,
+    @Query() filters: PublicMenuFiltersDto,
     @Query('tenantId') queryTenantId?: string,
     // @Headers('x-tenant-id') headerTenantId?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ) {
     // Priority: Authenticated user > Query param > Header
     const tenantId = user?.tenantId || queryTenantId;
+    // || headerTenantId;
 
     if (!tenantId) {
       throw new BadRequestException(
@@ -40,6 +42,6 @@ export class PublicMenuController {
       );
     }
 
-    return this.itemService.getPublicMenu(tenantId);
+    return this.itemService.getPublicMenu(tenantId, filters);
   }
 }

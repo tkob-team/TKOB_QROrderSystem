@@ -135,13 +135,93 @@ export class MenuItemResponseDto {
   publishedAt?: Date;
 }
 
+export class PaginationMetaDto {
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  totalPages: number;
+
+  @ApiProperty()
+  hasNext: boolean;
+
+  @ApiProperty()
+  hasPrevious: boolean;
+}
+
+export class PublicMenuItemDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiProperty()
+  price: number;
+
+  @ApiPropertyOptional()
+  imageUrl?: string;
+
+  @ApiPropertyOptional({ type: MenuItemPhotoResponseDto })
+  primaryPhoto?: MenuItemPhotoResponseDto;
+
+  @ApiPropertyOptional({ type: [MenuItemPhotoResponseDto] })
+  photos?: MenuItemPhotoResponseDto[];
+
+  @ApiPropertyOptional()
+  tags?: string[];
+
+  @ApiPropertyOptional()
+  allergens?: string[];
+
+  @ApiProperty({ type: [ModifierGroupResponseDto] })
+  modifierGroups: ModifierGroupResponseDto[];
+
+  @ApiProperty()
+  preparationTime: number;
+
+  @ApiProperty()
+  chefRecommended: boolean;
+
+  @ApiProperty()
+  popularity: number;
+
+  @ApiProperty()
+  displayOrder: number;
+}
+
+export class PublicMenuCategoryDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiProperty()
+  displayOrder: number;
+
+  @ApiProperty({ type: [PublicMenuItemDto] })
+  items: PublicMenuItemDto[];
+}
+
 export class PublicMenuResponseDto {
-  @ApiProperty({ type: [MenuCategoryResponseDto] })
-  categories: Array<
-    MenuCategoryResponseDto & {
-      items: MenuItemResponseDto[];
-    }
-  >;
+  @ApiProperty({ type: [PublicMenuCategoryDto] })
+  categories: PublicMenuCategoryDto[];
+
+  @ApiProperty({ type: PaginationMetaDto })
+  pagination: PaginationMetaDto;
 
   @ApiProperty()
   publishedAt: Date;
