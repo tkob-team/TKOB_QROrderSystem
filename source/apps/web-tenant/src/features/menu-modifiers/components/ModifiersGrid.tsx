@@ -110,7 +110,7 @@ export function ModifiersGrid({
                   {group.options.length}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <span
                   className="text-gray-600"
                   style={{ fontSize: '12px', fontWeight: 600 }}
@@ -123,7 +123,7 @@ export function ModifiersGrid({
                 >
                   {group.linkedItems ?? 0}
                 </span>
-              </div>
+              </div> */}
             </div>
 
             {/* Sample Options Preview */}

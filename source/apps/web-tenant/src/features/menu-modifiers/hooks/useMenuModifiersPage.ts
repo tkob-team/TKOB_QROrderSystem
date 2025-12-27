@@ -13,11 +13,11 @@ import { normalizeModifierType } from '../utils/normalizeModifierType';
 export function useMenuModifiersPage() {
   // Filter state - Applied filters
   const [selectedType, setSelectedType] = useState<'all' | 'single' | 'multiple'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'archived'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'archived'>('active');
 
   // Temporary filter state (used in dropdown before Apply)
   const [tempSelectedType, setTempSelectedType] = useState<'all' | 'single' | 'multiple'>('all');
-  const [tempSelectedStatus, setTempSelectedStatus] = useState<'all' | 'archived'>('all');
+  const [tempSelectedStatus, setTempSelectedStatus] = useState<'all' | 'active' | 'archived'>('active');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -50,7 +50,7 @@ export function useMenuModifiersPage() {
   // API queries and mutations
   // Build query parameters based on selected filters
   const queryParams = {
-    activeOnly: selectedStatus === 'archived' ? false : selectedStatus === 'all' ? undefined : true,
+    activeOnly: selectedStatus === 'archived' ? false : selectedStatus === 'active' ? true : undefined,
     type: selectedType === 'all' 
       ? undefined 
       : selectedType === 'single' 
@@ -430,9 +430,9 @@ export function useMenuModifiersPage() {
 
   const handleResetFilters = () => {
     setTempSelectedType('all');
-    setTempSelectedStatus('all');
+    setTempSelectedStatus('active');
     setSelectedType('all');
-    setSelectedStatus('all');
+    setSelectedStatus('active');
     setShowFilterDropdown(false);
   };
 

@@ -12,8 +12,8 @@ type ModifiersToolbarProps = {
   onToggleFilterDropdown: () => void;
   tempSelectedType: 'all' | 'single' | 'multiple';
   onTempTypeChange: (type: 'all' | 'single' | 'multiple') => void;
-  tempSelectedStatus: 'all' | 'archived';
-  onTempStatusChange: (status: 'all' | 'archived') => void;
+  tempSelectedStatus: 'active' | 'all';
+  onTempStatusChange: (status: 'active' | 'all') => void;
   singleCount: number;
   multiCount: number;
   activeCount: number;
@@ -160,8 +160,8 @@ export function ModifiersToolbar({
                         <input
                           type="radio"
                           name="status-filter"
-                          checked={tempSelectedStatus === 'all'}
-                          onChange={() => onTempStatusChange('all')}
+                          checked={tempSelectedStatus === 'active'}
+                          onChange={() => onTempStatusChange('active')}
                           className="w-4 h-4 text-emerald-600"
                         />
                         <span className="text-sm text-gray-700">Active Groups</span>
@@ -175,11 +175,11 @@ export function ModifiersToolbar({
                         <input
                           type="radio"
                           name="status-filter"
-                          checked={tempSelectedStatus === 'archived'}
-                          onChange={() => onTempStatusChange('archived')}
+                          checked={tempSelectedStatus === 'all'}
+                          onChange={() => onTempStatusChange('all')}
                           className="w-4 h-4 text-emerald-600"
                         />
-                        <span className="text-sm text-gray-700">Archived Groups</span>
+                        <span className="text-sm text-gray-700">All Groups</span>
                       </div>
                       {/* Count display disabled */}
                       {/* <span className="text-xs text-gray-500">{archivedCount}</span> */}
