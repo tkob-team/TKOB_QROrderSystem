@@ -62,7 +62,7 @@ interface UseMenuReturn {
  * Hook to fetch public menu (session-based)
  * No token needed - uses HttpOnly cookie automatically
  */
-export function useMenu(): UseMenuReturn {
+export function useMenu(tenantId?: string): UseMenuReturn {
   const [items, setItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -70,9 +70,17 @@ export function useMenu(): UseMenuReturn {
 
   const fetchMenu = async () => {
     try {
+      if (!tenantId) {
+        // Wait until tenant context is available (session load)
+        setIsLoading(false)
+        return
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[useMenu] fetching menu')
+      }
       setIsLoading(true)
       setError(null)
-      const response = await MenuService.getPublicMenu()
+      const response = await MenuService.getPublicMenu(tenantId)
       
       if (response.success && response.data) {
         setItems(response.data.items)
@@ -81,6 +89,9 @@ export function useMenu(): UseMenuReturn {
         setError(response.message || 'Failed to fetch menu')
       }
     } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[useMenu] fetchMenu error', err)
+      }
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsLoading(false)
@@ -89,7 +100,7 @@ export function useMenu(): UseMenuReturn {
 
   useEffect(() => {
     fetchMenu()
-  }, []) // No token dependency
+  }, [tenantId])
 
   return {
     data: items,

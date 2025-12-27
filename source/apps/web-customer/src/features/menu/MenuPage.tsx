@@ -24,8 +24,8 @@ export function MenuPage() {
   // Fetch session info (table number, etc.)
   const { session, loading: sessionLoading } = useSession()
 
-  // Fetch menu data (session-based, no token needed)
-  const { data: menuItems, isLoading, error } = useMenu()
+  // Fetch menu data (session cookie provides tenant context)
+  const { data: menuItems, isLoading, error } = useMenu(session?.tenantId)
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -75,7 +75,7 @@ export function MenuPage() {
   const t = text[language]
 
   // Show loading skeleton
-  if (isLoading) {
+  if (isLoading || sessionLoading) {
     return <MenuPageSkeleton />
   }
 

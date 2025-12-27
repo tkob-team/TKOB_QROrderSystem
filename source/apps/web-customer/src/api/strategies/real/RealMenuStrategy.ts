@@ -53,6 +53,7 @@ interface PublicMenuResponseDto {
 
 export class RealMenuStrategy implements IMenuStrategy {
   async getPublicMenu(): Promise<ApiResponse<{ items: MenuItem[]; categories: string[] }>> {
+    // Use public menu (backend exposes at /menu)
     const response = await apiClient.get<{ success: boolean; data: PublicMenuResponseDto }>('/menu');
     
     // Backend wraps response in { success, data } via TransformInterceptor
@@ -82,11 +83,12 @@ export class RealMenuStrategy implements IMenuStrategy {
         // Backend already filtered by status='PUBLISHED', so all items here are published
         // We only need to check the 'available' field
         let availability: 'Available' | 'Unavailable' | 'Sold out';
-        
+
         if (item.available === false) {
           availability = 'Unavailable';
         } else {
           // Default to Available (available === true or undefined means available)
+          // Since backend already filters by available=true, all items should be available
           availability = 'Available';
         }
 

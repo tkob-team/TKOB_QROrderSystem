@@ -9,6 +9,7 @@ import { OptimizedImage } from '@packages/ui';
 import { PeopleUsuallyAdd } from '@/components/sections/PeopleUsuallyAdd';
 import { MenuService } from '@/api/services/menu.service';
 import { useCart } from '@/hooks/useCart';
+import { useSession } from '@/hooks/useSession';
 import { toast } from 'sonner';
 
 interface ItemDetailProps {
@@ -18,6 +19,8 @@ interface ItemDetailProps {
 export function ItemDetailPage({ itemId }: ItemDetailProps) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { session } = useSession();
+  const tenantId = session?.tenantId;
   
   // Fetch item data với React Query
   const { data: itemResponse, isLoading, error } = useQuery({
@@ -27,8 +30,9 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
   
   // Fetch all menu items for recommendations
   const { data: menuResponse } = useQuery({
-    queryKey: ['menu-items'],
-    queryFn: () => MenuService.getPublicMenu()
+    queryKey: ['menu-items', tenantId],
+    queryFn: () => MenuService.getPublicMenu(tenantId!),
+    enabled: !!tenantId,
   });
   
   const item = itemResponse?.data;
