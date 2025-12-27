@@ -12,6 +12,7 @@ import { PublicMenuController } from './controllers/public-menu.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { MenuPhotoController } from './controllers/menu-photo.controller';
 import { MenuPhotoService } from './services/mene-photo.service';
+import { StorageModule } from './infrastructure/storage/storage.module';
 
 @Module({
   imports: [
@@ -22,6 +23,8 @@ import { MenuPhotoService } from './services/mene-photo.service';
         files: 10,
       },
     }),
+
+    StorageModule,
   ],
   controllers: [
     MenuCategoryController,

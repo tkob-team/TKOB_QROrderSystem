@@ -2,8 +2,10 @@ import { defineConfig } from '@prisma/config';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Lùi ra 1 cấp (..) để tìm file .env ở apps/api/
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Load .env file (development only)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '..', '.env') });
+}
 
 export default defineConfig({
   datasource: {

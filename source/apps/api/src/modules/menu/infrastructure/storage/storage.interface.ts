@@ -48,7 +48,7 @@ export interface UploadOptions {
   metadata?: Record<string, string>;
 
   /** Access control (public/private) */
-  acl?: 'public-read' | 'private';
+  // acl?: 'public-read' | 'private';
 }
 
 /**
