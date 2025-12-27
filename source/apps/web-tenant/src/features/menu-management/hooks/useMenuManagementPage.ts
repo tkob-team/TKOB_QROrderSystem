@@ -27,7 +27,10 @@ import {
   useMenuPhotoControllerDeletePhoto,
   useMenuPhotoControllerSetPrimary,
   useMenuPhotoControllerUpdateOrder,
+  menuPhotoControllerGetPhotos,
+  getMenuPhotoControllerGetPhotosQueryKey,
 } from '@/services/generated/menu-photos/menu-photos';
+import type { MenuItemPhotoResponseDto } from '@/services/generated/models';
 
 // Photo Manager
 import { useMenuItemPhotoManager } from './useMenuItemPhotoManager';
@@ -551,7 +554,7 @@ export function useMenuManagementPage() {
           }
 
           // Step 2b: Upload new files (bulk)
-          let uploadedPhotos: any[] = [];
+          let uploadedPhotos: MenuItemPhotoResponseDto[] = [];
           const newFiles = photoManager.getNewFiles();
           
           if (newFiles.length > 0) {
@@ -568,23 +571,25 @@ export function useMenuManagementPage() {
           }
 
           // Step 2c: Re-fetch photos to get complete list with IDs
-          let allPhotos: any[] = [];
+          // Use Orval-generated function with customInstance (applies baseURL)
+          let allPhotos: MenuItemPhotoResponseDto[] = [];
           try {
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('[photos] Refetching via Orval/axios for itemId:', itemId);
+            }
             allPhotos = await queryClient.fetchQuery({
-              queryKey: [`/api/v1/menu/items/${itemId}/photos`],
-              queryFn: async () => {
-                const response = await fetch(`/api/v1/menu/items/${itemId}/photos`, {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-                  },
-                });
-                if (!response.ok) throw new Error('Failed to fetch photos');
-                return response.json();
-              },
+              queryKey: getMenuPhotoControllerGetPhotosQueryKey(itemId),
+              queryFn: () => menuPhotoControllerGetPhotos(itemId),
             });
           } catch (fetchError) {
             console.error('Failed to fetch photos after upload:', fetchError);
-            allPhotos = uploadedPhotos; // Fallback to uploaded photos
+            // Non-blocking: use uploaded photos as fallback
+            allPhotos = uploadedPhotos;
+            // Show non-blocking toast
+            if (!photoUploadFailed) {
+              setToastMessage('Uploaded photos successfully, but failed to refresh gallery.');
+              setShowSuccessToast(true);
+            }
           }
 
           // Step 2d: Set primary photo
