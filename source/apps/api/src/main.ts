@@ -94,8 +94,11 @@ async function bootstrap() {
       .addTag('Menu - Categories', 'Menu categories management')
       .addTag('Menu - Items', 'Menu items management')
       .addTag('Menu - Modifiers', 'Menu item modifiers management')
+      .addTag('Menu - Photos', 'Menu photo management')
       .addTag('Menu - Public', 'Menu public management')
       .addTag('Tables', 'Table management & QR codes')
+      .addTag('Tables - Public', 'Table QR code scanning and session management')
+      .addTag('Cart', 'Customer cart management')
       .addTag('Orders', 'Order placement & management')
       .addTag('Payments', 'Payment processing')
       .build();

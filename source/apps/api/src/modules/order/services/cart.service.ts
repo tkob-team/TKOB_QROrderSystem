@@ -8,7 +8,7 @@ import {
 import { RedisService } from '@/modules/redis/redis.service';
 import { PrismaService } from '@/database/prisma.service';
 import { $Enums } from '@prisma/client';
-import { Decimal, JsonValue } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/library';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CartItem {
@@ -69,8 +69,8 @@ export class CartService {
       throw new BadRequestException('Menu item is currently unavailable');
     }
 
-    // 2. Validate modifiers
-    const validatedModifiers = this.validateModifiers(menuItem, dto.modifiers || []);
+    // 2. Validate modifiers and fetch full data from DB
+    const validatedModifiers = this.validateAndEnrichModifiers(menuItem, dto.modifiers || []);
 
     // 3. Calculate item price
     const modifiersTotal = validatedModifiers.reduce((sum, m) => sum + m.priceDelta, 0);
@@ -199,57 +199,33 @@ export class CartService {
     );
   }
 
-  private validateModifiers(
+  private validateAndEnrichModifiers(
     menuItem: {
       modifierGroups: ({
         modifierGroup: {
           options: {
             id: string;
             name: string;
-            createdAt: Date;
-            updatedAt: Date;
-            displayOrder: number;
-            active: boolean;
-            groupId: string;
             priceDelta: Decimal;
+            // ...other fields
           }[];
         } & {
           id: string;
           name: string;
-          createdAt: Date;
-          updatedAt: Date;
-          tenantId: string;
-          description: string | null;
-          displayOrder: number;
-          active: boolean;
           type: $Enums.ModifierType;
           required: boolean;
           minChoices: number;
           maxChoices: number | null;
+          // ...other fields
         };
-      } & { createdAt: Date; displayOrder: number; menuItemId: string; modifierGroupId: string })[];
+      } & { menuItemId: string; modifierGroupId: string })[];
     } & {
       id: string;
       name: string;
-      status: $Enums.MenuItemStatus;
-      createdAt: Date;
-      updatedAt: Date;
-      tenantId: string;
-      description: string | null;
-      displayOrder: number;
-      categoryId: string;
       price: Decimal;
-      imageUrl: string | null;
-      available: boolean;
-      preparationTime: number | null;
-      chefRecommended: boolean;
-      popularity: number;
-      primaryPhotoId: string | null;
-      tags: JsonValue | null;
-      allergens: JsonValue | null;
-      publishedAt: Date | null;
+      // ...other fields
     },
-    modifiers: CartModifierDto[],
+    modifiers: { groupId: string; optionId: string }[],
   ): CartModifierDto[] {
     const validated: CartModifierDto[] = [];
     const modifierGroups = menuItem.modifierGroups || [];
@@ -276,11 +252,11 @@ export class CartService {
         );
       }
 
-      // Validate each option exists
+      // Validate each option exists and enrich with DB data
       for (const modifier of selectedModifiers) {
         const option = mg.options.find((o) => o.id === modifier.optionId);
         if (!option) {
-          throw new BadRequestException(`Invalid modifier option: ${modifier.optionName}`);
+          throw new BadRequestException(`Invalid modifier option ID: ${modifier.optionId}`);
         }
 
         validated.push({

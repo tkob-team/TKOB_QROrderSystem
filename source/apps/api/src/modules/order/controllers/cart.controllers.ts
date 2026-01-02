@@ -18,7 +18,7 @@ import { Session } from '@/common/decorators/session.decorator';
 import { AddToCartDto, CartResponseDto, UpdateCartItemDto } from '../dtos/cart.dto';
 import { SessionData } from '@/modules/table/services/table-session.service';
 
-@ApiTags('Orders - Cart')
+@ApiTags('Cart')
 @Controller('cart')
 @UseGuards(SessionGuard)
 @Public()
