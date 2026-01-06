@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Button, Input } from '@/shared/components/ui';
+import { Card, Button, Input } from '@/shared/components';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -72,7 +72,7 @@ function StaffInvitationSignupContent() {
       {/* Logo */}
       <div className="absolute top-8 left-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
             <QrCode className="w-6 h-6 text-white" />
           </div>
           <span className="font-semibold text-gray-900" style={{ fontSize: '20px' }}>
@@ -100,7 +100,7 @@ function StaffInvitationSignupContent() {
           {/* Form */}
           <div className="flex flex-col gap-4">
             {/* Email Display */}
-            <div className="p-4 bg-gray-50 rounded-xl">
+            <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-gray-600" style={{ fontSize: '13px' }}>
                   Email
@@ -153,7 +153,7 @@ function StaffInvitationSignupContent() {
             />
 
             {/* Password Requirements */}
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-blue-900" style={{ fontSize: '13px' }}>
                 Password requirements:
               </p>

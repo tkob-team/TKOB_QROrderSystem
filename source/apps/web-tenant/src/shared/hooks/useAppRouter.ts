@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ROUTES } from '@/lib/routes';
+import { ROUTES } from '@/shared/config';
 
 /**
  * useAppRouter

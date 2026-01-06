@@ -1,1 +1,4 @@
-export { MenuPreviewPage } from './components/MenuPreviewPage';
+/**
+ * Menu Preview Feature (Customer View)
+ */
+export { MenuPreviewPage } from './ui/MenuPreviewPage';

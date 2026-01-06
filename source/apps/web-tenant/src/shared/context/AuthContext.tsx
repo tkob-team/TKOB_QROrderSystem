@@ -2,11 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ROUTES } from '@/lib/routes';
-import { getHomeRouteForRole, canAccessRoute } from '@/lib/navigation';
-import type { UserRole as NavigationUserRole } from '@/lib/navigation';
+import { ROUTES } from '@/shared/config';
+import { getHomeRouteForRole, canAccessRoute } from '@/shared/config';
+import type { UserRole as NavigationUserRole } from '@/shared/config';
 import { useLogin, useLogout, useCurrentUser } from '@/features/auth/hooks/useAuth';
-import { config } from '@/lib/config';
+import { config } from '@/shared/config';
 
 // User role type matching RBAC requirements (3 roles only)
 export type UserRole = 'admin' | 'kds' | 'waiter';
@@ -111,26 +111,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sync user state with React Query data
   useEffect(() => {
-    if (hasToken && currentUserData?.user && 
-        currentUserData.user.id && 
-        currentUserData.user.email && 
-        currentUserData.user.fullName &&
-        currentUserData.user.role &&
-        currentUserData.user.tenantId) {
+    // getCurrentUser() now returns AuthUserResponseDto directly, not { user: ... }
+    if (hasToken && currentUserData && 
+        currentUserData.id && 
+        currentUserData.email && 
+        currentUserData.fullName &&
+        currentUserData.role &&
+        currentUserData.tenantId) {
       const mappedUser: User = {
-        id: currentUserData.user.id,
-        email: currentUserData.user.email,
-        name: currentUserData.user.fullName,
-        role: (currentUserData.user.role.toLowerCase() === 'owner' 
+        id: currentUserData.id,
+        email: currentUserData.email,
+        name: currentUserData.fullName,
+        role: (currentUserData.role.toLowerCase() === 'owner' 
           ? 'admin' 
-          : currentUserData.user.role.toLowerCase() === 'kitchen' 
+          : currentUserData.role.toLowerCase() === 'kitchen' 
             ? 'kds' 
             : 'waiter') as UserRole,
-        tenantId: currentUserData.user.tenantId,
+        tenantId: currentUserData.tenantId,
       };
       setUser(mappedUser);
       console.log('[AuthContext] User logged in:', mappedUser.email);
-    } else if (!hasToken || (!isLoading && !currentUserData?.user)) {
+    } else if (!hasToken || (!isLoading && !currentUserData)) {
       // No token found or query returned no user - clear user state
       console.log('[AuthContext] User logged out (no token or user data)');
       setUser(null);

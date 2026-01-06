@@ -3,7 +3,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { tablesService } from '@/services/tables';
+import { tablesAdapter } from '@/features/tables/data';
 import type {
   CreateTableDto,
   UpdateTableDto,
@@ -23,7 +23,7 @@ export const useTablesList = (params?: TableControllerFindAllParams) => {
     queryFn: async () => {
       console.log('🔍 [useTablesList] Calling API with params:', queryParams);
       try {
-        const result = await tablesService.listTables(queryParams as TableControllerFindAllParams);
+        const result = await tablesAdapter.listTables(queryParams as TableControllerFindAllParams);
         console.log('📦 [useTablesList] Backend returned filtered & sorted data:', result);
         return result;
       } catch (error) {
@@ -42,7 +42,7 @@ export const useTablesList = (params?: TableControllerFindAllParams) => {
 export const useTableById = (id: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['tables', 'detail', id],
-    queryFn: () => tablesService.getTableById(id),
+    queryFn: () => tablesAdapter.getTableById(id),
     enabled: options?.enabled ?? !!id,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
@@ -55,7 +55,7 @@ export const useCreateTable = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateTableDto) => tablesService.createTable(data),
+    mutationFn: (data: CreateTableDto) => tablesAdapter.createTable(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
     },
@@ -70,7 +70,7 @@ export const useUpdateTable = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateTableDto }) =>
-      tablesService.updateTable(id, data),
+      tablesAdapter.updateTable(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['tables', 'detail', variables.id] });
@@ -85,7 +85,7 @@ export const useDeleteTable = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => tablesService.deleteTable(id),
+    mutationFn: (id: string) => tablesAdapter.deleteTable(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
     },
@@ -105,7 +105,7 @@ export const useUpdateTableStatus = () => {
     }: {
       id: string;
       status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'INACTIVE';
-    }) => tablesService.updateTableStatus(id, status),
+    }) => tablesAdapter.updateTableStatus(id, status),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['tables', 'detail', variables.id] });
@@ -120,7 +120,7 @@ export const useRegenerateQR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => tablesService.regenerateQR(id),
+    mutationFn: (id: string) => tablesAdapter.regenerateQR(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['tables', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['tables', 'detail', id] });
@@ -148,7 +148,7 @@ export const useRegenerateAllQR = () => {
 export const useLocations = () => {
   return useQuery({
     queryKey: ['tables', 'locations'],
-    queryFn: () => tablesService.getLocations(),
+    queryFn: () => tablesAdapter.getLocations(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

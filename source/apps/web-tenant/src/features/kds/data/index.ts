@@ -1,0 +1,1 @@
+export { kdsAdapter } from './factory';

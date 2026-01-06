@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import OnboardingWizard from '@/features/auth/OnboardingWizard';
+import { OnboardingWizard } from '@/features/auth';
 
 export default function OnboardingPage() {
   const router = useRouter();

@@ -1,17 +1,9 @@
-import { Metadata } from 'next';
-import { RoleGuard } from '@/shared/components/auth';
-import { MenuModifiersPage } from '@/features/menu-modifiers';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Modifiers | TKQR Admin',
-  description:
-    'Manage reusable modifier groups (sizes, toppings, extras) for your menu items',
 };
 
 export default function MenuModifiersRoute() {
-  return (
-    <RoleGuard allowedRoles={['admin']}>
-      <MenuModifiersPage />
-    </RoleGuard>
-  );
+  redirect('/admin/menu?tab=modifiers');
 }

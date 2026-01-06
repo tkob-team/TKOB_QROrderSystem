@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
-import { RoleGuard } from '@/shared/components/auth';
-import { MenuManagementPage } from '@/features/menu-management';
+import { RoleGuard } from '@/shared/guards';
+import { MenuHubPage } from '@/features/menu';
 
 export const metadata: Metadata = {
   title: 'Menu Management | TKOB Admin',
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function MenuPage() {
   return (
     <RoleGuard allowedRoles={['admin']}>
-      <MenuManagementPage />
+      <MenuHubPage />
     </RoleGuard>
   );
 }

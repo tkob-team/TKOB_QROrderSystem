@@ -1,8 +1,8 @@
 'use client';
 
-import React, { Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import ResetPassword from '@/features/auth/ResetPassword';
+import React from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ResetPassword } from '@/features/auth';
 
 /**
  * Reset Password Page
@@ -15,20 +15,17 @@ import ResetPassword from '@/features/auth/ResetPassword';
  * 
  * Example URL: /auth/reset-password?token=abc123&email=user@example.com
  */
-function ResetPasswordContent() {
+export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read token and email from URL query parameters
+  const token = searchParams.get('token');
+  const email = searchParams.get('email');
 
   return (
     <ResetPassword 
       onNavigate={(path) => router.push(path)}
     />
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense>
-      <ResetPasswordContent />
-    </Suspense>
   );
 }

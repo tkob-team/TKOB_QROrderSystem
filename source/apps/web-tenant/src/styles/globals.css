@@ -1,106 +1,166 @@
 @import "tailwindcss";
+@import "./tokens.css";
 
+/* ===================================
+   CUSTOM FONTS - Using Next.js font loader
+   Fonts are loaded in layout.tsx for better performance
+   CSS variables: --font-rouge-script, --font-poppins, --font-inter
+   =================================== */
+
+/* ===================================
+   FONT FAMILY CSS VARIABLES
+   =================================== */
 :root {
-  /* Emerald - Platform brand */
-  --emerald-50: #ecfdf5;
-  --emerald-100: #d1fae5;
-  --emerald-200: #a7f3d0;
-  --emerald-500: #10b981;
-  --emerald-600: #059669;
-  --emerald-700: #047857;
+  --font-display: var(--font-rouge-script), 'Rouge Script', cursive;
+  --font-heading: var(--font-poppins), 'Poppins', system-ui, sans-serif;
+  --font-body: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+}
 
-  /* Orange - Food & CTA accent */
+/* ===================================
+   FONT UTILITY CLASSES
+   =================================== */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-rouge-script), 'Rouge Script', cursive !important;
+    font-weight: 400 !important; /* Rouge Script only has regular weight */
+  }
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Apply default body font */
+body {
+  font-family: var(--font-body);
+}
+
+/* ===================================
+   TYPOGRAPHY SCALE
+   =================================== */
+/* Page Titles */
+.text-page-title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem; /* 28px */
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .text-page-title {
+    font-size: 2rem; /* 32px */
+  }
+}
+
+/* Section Headers */
+.text-section-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Card Titles */
+.text-card-title {
+  font-family: var(--font-body);
+  font-size: 1rem; /* 16px */
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Body Text */
+.text-body {
+  font-family: var(--font-body);
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Small/Caption Text */
+.text-caption {
+  font-family: var(--font-body);
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* Labels */
+.text-label {
+  font-family: var(--font-body);
+  font-size: 0.875rem; /* 14px */
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ===================================
+   LEGACY VARIABLES (backwards compat)
+   Will be removed after full migration
+   =================================== */
+:root {
+  /* Map old emerald to new primary */
+  --emerald-50: rgb(var(--primary-50));
+  --emerald-100: rgb(var(--primary-100));
+  --emerald-200: rgb(var(--primary-200));
+  --emerald-500: rgb(var(--primary-500));
+  --emerald-600: rgb(var(--primary-600));
+  --emerald-700: rgb(var(--primary-700));
+
+  /* Map old grays to new neutrals */
+  --gray-50: rgb(var(--neutral-50));
+  --gray-100: rgb(var(--neutral-100));
+  --gray-200: rgb(var(--neutral-200));
+  --gray-300: rgb(var(--neutral-300));
+  --gray-400: rgb(var(--neutral-400));
+  --gray-500: rgb(var(--neutral-500));
+  --gray-600: rgb(var(--neutral-600));
+  --gray-700: rgb(var(--neutral-700));
+  --gray-900: rgb(var(--neutral-900));
+
+  /* Semantic mappings */
+  --red-50: rgb(var(--error-50));
+  --red-100: rgb(var(--error-100));
+  --red-500: rgb(var(--error-500));
+  --red-600: rgb(var(--error-600));
+
+  --blue-50: rgb(var(--info-50));
+  --blue-100: rgb(var(--info-100));
+  --blue-500: rgb(var(--info-500));
+  --blue-600: rgb(var(--info-600));
+
+  --amber-100: rgb(var(--warning-100));
+  --amber-500: rgb(var(--warning-500));
+  --amber-600: rgb(var(--warning-600));
+
   --orange-50: #fff7ed;
   --orange-100: #ffedd5;
   --orange-500: #f97316;
   --orange-600: #ea580c;
-
-  /* Amber - Warning states */
-  --amber-100: #fef3c7;
-  --amber-200: #fde68a;
-  --amber-500: #f59e0b;
-  --amber-600: #d97706;
-
-  /* Red - Error states */
-  --red-50: #fef2f2;
-  --red-100: #fee2e2;
-  --red-200: #fecaca;
-  --red-500: #ef4444;
-  --red-600: #dc2626;
-
-  /* Blue - Info states */
-  --blue-50: #eff6ff;
-  --blue-100: #dbeafe;
-  --blue-200: #bfdbfe;
-  --blue-500: #3b82f6;
-  --blue-600: #2563eb;
-
-  /* Neutrals */
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-900: #111827;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Oxygen", "Ubuntu", "Cantarell", sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: var(--gray-50);
-  color: var(--gray-900);
-}
-
-/* Typography hierarchy */
-h1 {
-  font-size: 36px;
-  font-weight: 600;
-  line-height: 1.2;
-  margin: 0;
-}
-
-h2 {
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.3;
-  margin: 0;
-}
-
-h3 {
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.4;
-  margin: 0;
 }
 
 p,
 body {
-  font-size: 16px;
+  font-size: 16px;  /* text-base */
   font-weight: 400;
-  line-height: 1.5;
+  line-height: 1.5; /* line-height-normal */
   margin: 0;
 }
 
 label {
-  font-size: 14px;
+  font-size: 14px;  /* text-sm */
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.5; /* line-height-normal */
 }
 
 caption,
 small {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.4;
+  font-size: 12px;  /* text-xs */
+  font-weight: 400;
+  line-height: 1.5; /* line-height-normal */
 }
 
 button {
@@ -146,4 +206,163 @@ button {
 
 .animate-scale-in {
   animation: scaleIn 0.3s ease-out;
+}
+
+/* Shimmer animation for skeletons */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Slide-in animation for drawer */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* ===================================
+   SPACING & LAYOUT STANDARDS
+   =================================== */
+:root {
+  /* Border Radius Scale */
+  --radius-sm: 6px;   /* badges, tags */
+  --radius-md: 8px;   /* buttons, inputs */
+  --radius-lg: 12px;  /* cards, modals */
+  --radius-xl: 16px;  /* large containers */
+  --radius-avatar: 12px; /* avatars - NOT full circle */
+  
+  /* Spacing Scale */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* Component Heights */
+  --height-input: 40px;     /* h-10 */
+  --height-input-lg: 44px;  /* h-11 */
+  --height-button: 40px;    /* h-10 */
+  --height-button-lg: 44px; /* h-11 */
+  
+  /* Page Layout */
+  --page-padding: 24px;     /* p-6 */
+  --page-padding-lg: 32px;  /* lg:p-8 */
+  --card-padding: 16px;     /* p-4 */
+  --card-padding-lg: 24px;  /* lg:p-6 */
+  --card-gap: 16px;         /* gap-4 */
+  --card-gap-lg: 24px;      /* lg:gap-6 */
+  --section-gap: 24px;      /* space-y-6 */
+  --section-gap-lg: 32px;   /* lg:space-y-8 */
+}
+
+/* ===================================
+   SEMANTIC BACKGROUND UTILITIES
+   Maps custom class names to solid colors
+   =================================== */
+.bg-primary {
+  background-color: #ffffff !important; /* white - cards, modals */
+}
+
+.bg-secondary {
+  background-color: #f9fafb !important; /* gray-50 - page background */
+}
+
+.bg-elevated {
+  background-color: #f3f4f6 !important; /* gray-100 - elevated surfaces */
+}
+
+/* ===================================
+   SEMANTIC TEXT COLOR UTILITIES
+   =================================== */
+.text-text-primary {
+  color: #111827 !important; /* gray-900 - main text */
+}
+
+.text-text-secondary {
+  color: #4b5563 !important; /* gray-600 - secondary text */
+}
+
+.text-text-tertiary {
+  color: #9ca3af !important; /* gray-400 - muted text */
+}
+
+/* ===================================
+   ACCENT COLOR UTILITIES
+   =================================== */
+.bg-accent-500 {
+  background-color: #10b981 !important; /* emerald-500 */
+}
+
+.bg-accent-600 {
+  background-color: #059669 !important; /* emerald-600 */
+}
+
+.text-accent-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+.text-accent-600 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+.hover\:bg-accent-600:hover {
+  background-color: #059669 !important;
+}
+
+.hover\:bg-accent-700:hover {
+  background-color: #047857 !important;
+}
+
+/* ===================================
+   BORDER COLOR UTILITIES
+   =================================== */
+.border-default {
+  border-color: #e5e7eb !important; /* gray-200 */
+}
+
+/* Page container standard */
+.page-container {
+  padding: var(--page-padding);
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding: var(--page-padding-lg);
+  }
+}
+
+/* Card standard */
+.card-standard {
+  padding: var(--card-padding);
+  border-radius: var(--radius-lg);
+}
+
+@media (min-width: 1024px) {
+  .card-standard {
+    padding: var(--card-padding-lg);
+  }
+}
+
+/* Section spacing */
+.section-spacing > * + * {
+  margin-top: var(--section-gap);
+}
+
+@media (min-width: 1024px) {
+  .section-spacing > * + * {
+    margin-top: var(--section-gap-lg);
+  }
 }

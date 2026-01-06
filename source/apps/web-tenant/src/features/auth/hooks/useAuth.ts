@@ -3,7 +3,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authService } from '@/services/auth';
+import { authAdapter } from '@/features/auth/data';
 import type {
   LoginDto,
   RegisterSubmitDto,
@@ -24,7 +24,7 @@ export const useLogin = () => {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('__rememberMe', rememberMe ? 'true' : 'false');
       }
-      return authService.login(loginData as LoginDto);
+      return authAdapter.login(loginData as LoginDto);
     },
     onSuccess: (data) => {
       console.log('[useLogin] Login successful, storing tokens:', {
@@ -41,10 +41,12 @@ export const useLogin = () => {
       // Choose storage based on "Remember me" preference
       const storage = rememberMe ? localStorage : sessionStorage;
       
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && data.accessToken) {
         // Store in sessionStorage or localStorage based on rememberMe
         storage.setItem('authToken', data.accessToken);
-        storage.setItem('refreshToken', data.refreshToken);
+        if (data.refreshToken) {
+          storage.setItem('refreshToken', data.refreshToken);
+        }
         
         // Clean up temporary flag
         sessionStorage.removeItem('__rememberMe');
@@ -76,7 +78,7 @@ export const useLogin = () => {
  */
 export const useRegisterSubmit = () => {
   return useMutation({
-    mutationFn: (data: RegisterSubmitDto) => authService.registerSubmit(data),
+    mutationFn: (data: RegisterSubmitDto) => authAdapter.signup(data as any),
   });
 };
 
@@ -87,15 +89,19 @@ export const useRegisterConfirm = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RegisterConfirmDto) => authService.registerConfirm(data),
+    mutationFn: (data: RegisterConfirmDto) => authAdapter.verifyOtp(data as any),
     onSuccess: (data) => {
       // Store auth token in both localStorage and cookie
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && data.accessToken) {
         localStorage.setItem('authToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken); // Store refreshToken in localStorage too
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken); 
+        }
         const maxAge = data.expiresIn || 3600;
         document.cookie = `authToken=${data.accessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
-        document.cookie = `refreshToken=${data.refreshToken}; path=/; max-age=${maxAge * 7}; SameSite=Lax`;
+        if (data.refreshToken) {
+          document.cookie = `refreshToken=${data.refreshToken}; path=/; max-age=${maxAge * 7}; SameSite=Lax`;
+        }
       }
       // Invalidate current user query
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
@@ -108,10 +114,10 @@ export const useRegisterConfirm = () => {
  */
 export const useRefreshToken = () => {
   return useMutation({
-    mutationFn: (refreshToken: string) => authService.refreshToken(refreshToken),
+    mutationFn: (refreshToken: string) => authAdapter.refreshToken({ refreshToken }),
     onSuccess: (data) => {
       // Update auth token
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && data.accessToken) {
         localStorage.setItem('authToken', data.accessToken);
       }
     },
@@ -131,7 +137,7 @@ export const useLogout = () => {
       console.log('[useLogout] authToken in localStorage:', !!localStorage.getItem('authToken'));
       
       try {
-        await authService.logout(refreshToken);
+        await authAdapter.logout(refreshToken);
         console.log('[useLogout] Logout successful, clearing local data');
       } catch (error) {
         console.error('[useLogout] Logout failed:', error);
@@ -176,7 +182,7 @@ export const useLogoutAll = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => authService.logoutAll(),
+    mutationFn: () => authAdapter.logoutAll(),
     onSuccess: () => {
       // Clear auth data
       if (typeof window !== 'undefined') {
@@ -197,7 +203,7 @@ export const useLogoutAll = () => {
 export const useCurrentUser = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => authService.getCurrentUser(),
+    queryFn: () => authAdapter.getCurrentUser(),
     enabled: options?.enabled ?? true,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false,

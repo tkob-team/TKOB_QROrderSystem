@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import ForgotPassword from '@/features/auth/ForgotPassword';
+import { ForgotPassword } from '@/features/auth';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();

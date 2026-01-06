@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Signup from '@/features/auth/Signup';
+import { Signup } from '@/features/auth';
 
 function SignupContent() {
   const router = useRouter();

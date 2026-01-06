@@ -2,9 +2,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Public routes that don't require authentication
-const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password'];
+const publicRoutes = [
+  '/auth/login', 
+  '/auth/signup', 
+  '/auth/forgot-password', 
+  '/auth/reset-password',
+  // Marketing/Landing pages - accessible to everyone
+  '/home',
+  '/about',
+  '/help',
+];
 
-// Routes accessible only when not authenticated
+// Routes accessible only when not authenticated (will redirect to dashboard if logged in)
 const authOnlyRoutes = ['/auth/login', '/auth/signup'];
 
 export function middleware(request: NextRequest) {
@@ -18,13 +27,23 @@ export function middleware(request: NextRequest) {
   
   console.log('[middleware] isAuthenticated:', isAuthenticated);
 
-  // Allow public routes
+  // Allow public/marketing routes for everyone
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     // If authenticated user tries to access login/signup, redirect to dashboard
     if (isAuthenticated && authOnlyRoutes.some(route => pathname.startsWith(route))) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
     return NextResponse.next();
+  }
+
+  // Root path "/" - redirect based on auth state
+  if (pathname === '/') {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    } else {
+      // Redirect to landing page for non-authenticated users
+      return NextResponse.redirect(new URL('/home', request.url));
+    }
   }
 
   // Protected routes require authentication

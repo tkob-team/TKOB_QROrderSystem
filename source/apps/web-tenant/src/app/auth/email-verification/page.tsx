@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import EmailVerification from '@/features/auth/EmailVerification';
+import { EmailVerification } from '@/features/auth';
 
 function EmailVerificationContent() {
   const router = useRouter();

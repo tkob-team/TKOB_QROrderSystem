@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { AdminShell } from '@/shared/components/ui';
+import { AdminShell } from '@/shared/components';
 
 interface AdminLayoutProps {
   children: ReactNode;

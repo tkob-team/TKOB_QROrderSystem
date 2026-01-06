@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { RoleGuard } from '@/shared/components/auth';
+import { RoleGuard } from '@/shared/guards';
 import { DashboardPage } from '@/features/dashboard';
 
 export const metadata: Metadata = {
