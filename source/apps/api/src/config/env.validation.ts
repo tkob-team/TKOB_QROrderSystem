@@ -26,17 +26,17 @@ export const envSchema = z
 
     // Email Config - Support multiple providers
     EMAIL_PROVIDER: z.enum(['smtp', 'sendgrid']).default('smtp'),
-    
+
     // SendGrid Config
     SENDGRID_API_KEY: z.string().optional(),
-    
+
     // SMTP Config (legacy)
     EMAIL_HOST: z.string().optional(),
     EMAIL_PORT: z.coerce.number().optional(),
     EMAIL_SECURE: z.coerce.boolean().optional(),
     EMAIL_USER: z.string().optional(),
     EMAIL_PASSWORD: z.string().optional(),
-    
+
     // Common
     EMAIL_FROM: z.string().default('QR Ordering <noreply@qr-ordering.com>'),
 

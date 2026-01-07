@@ -3,7 +3,7 @@
  * Real API implementation using Orval generated functions
  */
 
-import type { ITablesAdapter } from './tables-adapter.interface';
+import type { ITablesAdapter } from '../adapter.interface';
 import type {
   CreateTableDto,
   UpdateTableDto,

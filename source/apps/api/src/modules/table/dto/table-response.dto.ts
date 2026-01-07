@@ -29,21 +29,21 @@ export class TableResponseDto {
   @ApiProperty({ example: 0 })
   displayOrder: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: '/api/v1/admin/tables/123/qr/download',
-    description: 'URL to download QR code' 
+    description: 'URL to download QR code',
   })
   qrCodeUrl?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'eyJhbGc...signature',
-    description: 'QR token to generate QR code URL' 
+    description: 'QR token to generate QR code URL',
   })
   qrToken?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: '2024-01-15T10:30:00.000Z',
-    description: 'QR code generation timestamp' 
+    description: 'QR code generation timestamp',
   })
   qrGeneratedAt?: Date;
 
@@ -58,54 +58,54 @@ export class RegenerateQrResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   tableId: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'eyJhbGc...signature',
-    description: 'New QR token' 
+    description: 'New QR token',
   })
   qrToken: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: '/api/v1/admin/tables/123/qr/download',
-    description: 'URL to download new QR code' 
+    description: 'URL to download new QR code',
   })
   qrCodeUrl: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: '2024-01-15T10:30:00.000Z',
-    description: 'Generation timestamp' 
+    description: 'Generation timestamp',
   })
   generatedAt: Date;
 }
 
 export class BulkRegenerateQrResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 15,
-    description: 'Total number of tables processed' 
+    description: 'Total number of tables processed',
   })
   totalProcessed: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 15,
-    description: 'Number of QR codes successfully regenerated' 
+    description: 'Number of QR codes successfully regenerated',
   })
   successCount: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 0,
-    description: 'Number of failures' 
+    description: 'Number of failures',
   })
   failureCount: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: ['Table 1', 'Table 2', 'VIP-A'],
     description: 'List of affected table numbers',
-    type: [String]
+    type: [String],
   })
   affectedTables: string[];
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: '2024-01-15T10:30:00.000Z',
-    description: 'Bulk operation timestamp' 
+    description: 'Bulk operation timestamp',
   })
   regeneratedAt: Date;
 }

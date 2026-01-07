@@ -24,9 +24,7 @@ export class SessionGuard implements CanActivate {
     const sessionId = request.cookies?.table_session_id;
 
     if (!sessionId) {
-      throw new UnauthorizedException(
-        'No active session. Please scan QR code to start ordering.',
-      );
+      throw new UnauthorizedException('No active session. Please scan QR code to start ordering.');
     }
 
     try {

@@ -3,7 +3,7 @@
  * Simulates API responses with fake delay and error scenarios
  */
 
-import type { ITablesAdapter } from './tables-adapter.interface';
+import type { ITablesAdapter } from '../adapter.interface';
 import type {
   CreateTableDto,
   UpdateTableDto,

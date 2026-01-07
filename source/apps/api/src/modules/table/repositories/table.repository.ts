@@ -34,11 +34,11 @@ export class TableRepository extends BaseRepository<Table, Prisma.TableDelegate>
       ...baseWhere,
       ...(options?.status && { status: options.status }),
       // Case-insensitive location filter (also include NULL for 'indoor' since that's the default)
-      ...(options?.location && { 
+      ...(options?.location && {
         OR: [
           { location: { equals: options.location, mode: 'insensitive' } },
           ...(options.location.toLowerCase() === 'indoor' ? [{ location: null }] : []),
-        ]
+        ],
       }),
     };
 
@@ -69,11 +69,7 @@ export class TableRepository extends BaseRepository<Table, Prisma.TableDelegate>
   /**
    * Update QR token (for regeneration)
    */
-  async updateQrToken(
-    tableId: string,
-    qrToken: string,
-    qrTokenHash: string,
-  ): Promise<Table> {
+  async updateQrToken(tableId: string, qrToken: string, qrTokenHash: string): Promise<Table> {
     return (this.delegate as any).update({
       where: { id: tableId },
       data: {

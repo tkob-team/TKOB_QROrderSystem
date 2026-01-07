@@ -15,10 +15,7 @@ export class TableSessionRepository extends BaseRepository<
   /**
    * Create new session for table
    */
-  async createSession(data: {
-    tableId: string;
-    tenantId: string;
-  }): Promise<TableSession> {
+  async createSession(data: { tableId: string; tenantId: string }): Promise<TableSession> {
     return this.create({
       tableId: data.tableId,
       tenantId: data.tenantId,
@@ -85,10 +82,7 @@ export class TableSessionRepository extends BaseRepository<
   /**
    * Get session history for table (for analytics)
    */
-  async getTableSessionHistory(
-    tableId: string,
-    limit: number = 10,
-  ): Promise<TableSession[]> {
+  async getTableSessionHistory(tableId: string, limit: number = 10): Promise<TableSession[]> {
     return this.prisma.tableSession.findMany({
       where: {
         tableId,
