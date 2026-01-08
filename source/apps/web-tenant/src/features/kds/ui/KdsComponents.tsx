@@ -9,8 +9,8 @@ import React from 'react';
 import { Badge } from '@/shared/components/Badge';
 import { Card } from '@/shared/components/Card';
 import { Bell, BellOff, RefreshCw, Clock, ChevronDown, LogOut, Check } from 'lucide-react';
-import type { KdsColumnConfig, KdsSummaryCounts } from '../types';
-import { formatKdsTime } from '../constants';
+import type { KdsColumnConfig, KdsSummaryCounts } from '../model/types';
+import { formatKdsTime } from '../utils/formatKdsTime';
 
 /**
  * KdsHeaderBar Props

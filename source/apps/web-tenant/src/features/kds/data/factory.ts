@@ -3,9 +3,9 @@
  */
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
-import { kdsApi } from './api-kds.adapter';
-import { kdsMock } from './mock-kds.adapter';
-import type { IKdsAdapter } from './kds-adapter.interface';
+import { kdsApi } from './api/api-kds.adapter';
+import { kdsMock } from './mocks/mock-kds.adapter';
+import type { IKdsAdapter } from './adapter.interface';
 
 function createKdsAdapter(): IKdsAdapter {
   const useMock = isMockEnabled('kds');

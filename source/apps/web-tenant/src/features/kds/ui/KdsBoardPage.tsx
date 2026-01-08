@@ -12,11 +12,12 @@ import {
   KdsColumn,
   KdsEmptyColumn,
 } from './KdsComponents';
-import { KdsTicketCard } from './KdsTicketCard';
+import { KdsTicketCard } from './components/cards/KdsTicketCard';
 
 // Import types and constants
-import type { KdsOrder, KdsStatus, KdsSummaryCounts } from '../types';
-import { KDS_COLUMNS, KDS_BUTTON_CONFIG, MOCK_KDS_ORDERS } from '../constants';
+import type { KdsOrder, KdsStatus, KdsSummaryCounts } from '../model/types';
+import { KDS_COLUMNS } from '../model/constants';
+import { KDS_BUTTON_CONFIG } from '../utils/buttonConfig';
 
 interface KdsBoardPageProps {
   showKdsProfile?: boolean;
@@ -40,7 +41,7 @@ export function KdsBoardPage({
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [orders, setOrders] = useState<KdsOrder[]>(MOCK_KDS_ORDERS);
+  const [orders, setOrders] = useState<KdsOrder[]>([]);
 
   // ========== EFFECTS ==========
   // Update current time every second

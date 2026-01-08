@@ -8,7 +8,7 @@
 import React from 'react';
 import { Card } from '@/shared/components/Card';
 import { Clock, AlertCircle } from 'lucide-react';
-import type { KdsOrder, OrderItem, KdsButtonConfig } from '../types';
+import type { KdsOrder, OrderItem, KdsButtonConfig } from '../../../model/types';
 
 /**
  * KdsTicketItemRow Props
