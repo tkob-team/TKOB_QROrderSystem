@@ -5,9 +5,9 @@
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
 import { config } from '@/shared/config';
-import type { IDashboardAdapter } from './dashboard-adapter.interface';
-import { MockDashboardAdapter } from './mock-dashboard.adapter';
-import { ApiDashboardAdapter } from './api-dashboard.adapter';
+import type { IDashboardAdapter } from './adapter.interface';
+import { MockDashboardAdapter } from './mocks/mock-dashboard.adapter';
+import { ApiDashboardAdapter } from './api/api-dashboard.adapter';
 
 function createDashboardAdapter(): IDashboardAdapter {
   const useMock = isMockEnabled('dashboard');

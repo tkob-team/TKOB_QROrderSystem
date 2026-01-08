@@ -3,7 +3,7 @@
  * Real API implementation for dashboard data
  */
 
-import type { IDashboardAdapter } from './dashboard-adapter.interface';
+import type { IDashboardAdapter } from '../adapter.interface';
 import type {
   MockOrder,
   RevenueDataPoint,
@@ -13,7 +13,7 @@ import type {
   KPIData,
   TimePeriod,
   ChartPeriod,
-} from '../model/types';
+} from '../../model/types';
 
 export class ApiDashboardAdapter implements IDashboardAdapter {
   constructor(private apiUrl: string) {}

@@ -4,8 +4,8 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { dashboardAdapter } from '../data/factory';
-import type { TimePeriod, ChartPeriod } from '../model/types';
+import { dashboardAdapter } from '../../data/factory';
+import type { TimePeriod, ChartPeriod } from '../../model/types';
 
 export function useDashboardOrders() {
   return useQuery({

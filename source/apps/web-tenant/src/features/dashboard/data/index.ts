@@ -3,7 +3,7 @@
  * Barrel exports for data adapters
  */
 
-export * from './dashboard-adapter.interface';
-export * from './mock-dashboard.adapter';
-export * from './api-dashboard.adapter';
+export * from './adapter.interface';
+export * from './mocks/mock-dashboard.adapter';
+export * from './api/api-dashboard.adapter';
 export { dashboardAdapter } from './factory';
