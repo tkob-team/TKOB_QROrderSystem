@@ -3,8 +3,8 @@
  * Real API implementation for staff data
  */
 
-import type { IStaffAdapter } from './staff-adapter.interface';
-import type { StaffMember, RoleOption } from '../model/types';
+import type { IStaffAdapter } from '../adapter.interface';
+import type { StaffMember, RoleOption } from '../../model/types';
 
 export class ApiStaffAdapter implements IStaffAdapter {
   constructor(private apiUrl: string) {}

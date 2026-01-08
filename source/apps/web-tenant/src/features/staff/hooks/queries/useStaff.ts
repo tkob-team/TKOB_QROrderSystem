@@ -4,8 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { staffAdapter } from '../data/factory';
-import type { StaffMember } from '../model/types';
+import { staffAdapter } from '../../data/factory';
+import type { StaffMember } from '../../model/types';
 
 export function useStaffMembers() {
   return useQuery({
