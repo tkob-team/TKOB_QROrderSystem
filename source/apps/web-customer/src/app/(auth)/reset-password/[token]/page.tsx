@@ -1,4 +1,4 @@
-import { ResetPasswordTokenPage } from '@/features/auth/ResetPasswordTokenPage'
+import { ResetPasswordTokenPage } from '@/features/auth'
 
 type Params = Promise<{ token: string }>
 

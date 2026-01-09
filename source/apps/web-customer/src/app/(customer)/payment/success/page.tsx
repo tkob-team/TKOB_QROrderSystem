@@ -1,4 +1,4 @@
-import { OrderConfirmationPage } from '@/features/orders/OrderConfirmationPage'
+import { OrderConfirmationPage } from '@/features/orders'
 
 type SearchParams = Promise<{ orderId?: string }>
 
