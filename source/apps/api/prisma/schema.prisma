@@ -46,6 +46,31 @@ enum TableStatus {
   INACTIVE // Tạm ngưng sử dụng (bảo trì, etc.)
 }
 
+enum OrderStatus {
+  PENDING         // Waiting for payment confirmation
+  RECEIVED        // Order received (either paid or bill-to-table)
+  PREPARING       // Kitchen is preparing
+  READY           // Ready to serve
+  SERVED          // Delivered to table
+  COMPLETED       // Customer finished, ready to pay (bill-to-table)
+  PAID            // Payment completed
+  CANCELLED       // Order cancelled
+}
+
+enum PaymentMethod {
+  BILL_TO_TABLE   // Pay at table after eating (default for Vietnam)
+  CARD_ONLINE     // Pay online via Stripe
+  CASH            // Cash payment (recorded by staff)
+}
+
+enum PaymentStatus {
+  PENDING         // Waiting for payment
+  PROCESSING      // Payment being processed
+  COMPLETED       // Payment successful
+  FAILED          // Payment failed
+  REFUNDED        // Payment refunded
+}
+
 // 3. Model TENANT
 model Tenant {
   id     String       @id @default(uuid()) // PK là UUID
@@ -70,6 +95,7 @@ model Tenant {
   modifierGroups ModifierGroup[]
   menuCategories MenuCategory[]
   tables         Table[] // Relation to Table model
+  orders          Order[]
 
   @@map("tenants") // Tên bảng trong DB là số nhiều 'tenants'
 }
@@ -178,7 +204,8 @@ model MenuItem {
   tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category       MenuCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   modifierGroups MenuItemModifier[] // Many-to-Many với ModifierGroup
-  photos         MenuItemPhoto[]    @relation("MenuItemPhotos") // NEW: Photo relation
+  photos         MenuItemPhoto[]    @relation("MenuItemPhotos")
+  orderItems     OrderItem[]
 
   @@unique([name, tenantId, categoryId], name: "menu_items_name_tenant_category_unique")
   @@index([tenantId, status, available])
@@ -299,7 +326,7 @@ model Table {
   // Relations
   tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions TableSession[] // One table can have many sessions (history)
-  // orders       Order[]  // Future: relation to Order model (Epic 4)
+  orders   Order[]
 
   @@unique([tableNumber, tenantId], name: "table_number_tenant_unique")
   @@index([tenantId, status])
@@ -333,4 +360,102 @@ model TableSession {
   @@index([tenantId, active])
   @@index([active, createdAt]) // For querying active sessions
   @@map("table_sessions")
+}
+
+// Order (Main order entity)
+model Order {
+  id              String        @id @default(uuid())
+  orderNumber     String        @unique @map("order_number") // "ORD-20250102-0001"
+  tenantId        String        @map("tenant_id")
+  tableId         String        @map("table_id")
+  sessionId       String?       @map("session_id") // Link to TableSession
+  
+  // Customer info
+  customerName    String?       @map("customer_name")
+  customerNotes   String?       @map("customer_notes") @db.Text
+  
+  // Order details
+  status          OrderStatus   @default(PENDING)
+  subtotal        Decimal       @db.Decimal(10, 2)
+  tax             Decimal       @default(0) @db.Decimal(10, 2)
+  total           Decimal       @db.Decimal(10, 2)
+  
+  // Payment
+  paymentMethod   PaymentMethod @default(BILL_TO_TABLE) @map("payment_method")
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt          DateTime?     @map("paid_at")
+  
+  // // Stripe payment (if applicable)
+  // stripePaymentIntentId String? @map("stripe_payment_intent_id")
+  
+  // Metadata
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  servedAt        DateTime?     @map("served_at")
+  completedAt     DateTime?     @map("completed_at")
+  
+  // Relations
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  table           Table         @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  items           OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tableId, status])
+  @@index([orderNumber])
+  @@index([sessionId])
+  @@map("orders")
+}
+
+// Order Item (Line item with modifiers)
+model OrderItem {
+  id              String   @id @default(uuid())
+  orderId         String   @map("order_id")
+  menuItemId      String   @map("menu_item_id")
+  
+  // Snapshot of menu item at order time
+  name            String
+  price           Decimal  @db.Decimal(10, 2)
+  quantity        Int      @default(1)
+  
+  // Modifiers selected (JSON array)
+  modifiers       Json?    @default("[]") // [{ groupId, groupName, optionId, optionName, priceDelta }]
+  
+  // Calculated prices
+  itemTotal       Decimal  @db.Decimal(10, 2) @map("item_total") // (price + modifiers) * quantity
+  
+  // Special instructions
+  notes           String?  @db.Text
+  
+  // Kitchen status (for KDS)
+  prepared        Boolean  @default(false)
+  preparedAt      DateTime? @map("prepared_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
+
+// Order Status History (Audit trail)
+model OrderStatusHistory {
+  id              String      @id @default(uuid())
+  orderId         String      @map("order_id")
+  status          OrderStatus
+  notes           String?     @db.Text
+  changedBy       String?     @map("changed_by") // User ID (staff)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  
+  // Relations
+  order           Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId, createdAt])
+  @@map("order_status_history")
 }

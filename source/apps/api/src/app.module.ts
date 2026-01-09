@@ -13,6 +13,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { MenuModule } from './modules/menu/menu.module';
 import { TableModule } from './modules/table/table.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { TableModule } from './modules/table/table.module';
     TenantModule,
     MenuModule,
     TableModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [

@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { MenuPhotoService } from '../services/mene-photo.service';
+import { MenuPhotoService } from '../services/menu-photo.service';
 import {
   BadRequestException,
   Body,

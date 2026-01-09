@@ -37,13 +37,16 @@ export class PublicTableController {
     // 1. Scan QR → Create session
     const result = await this.sessionService.scanQr(qrToken);
 
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
     // 2. Set HttpOnly cookie (secure, JS cannot access)
     response.cookie('table_session_id', result.sessionId, {
-      httpOnly: true, // XSS protection
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-      sameSite: 'none',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/', // Available for all routes
+      httpOnly: true,
+      secure: !isDevelopment, // false trong dev
+      sameSite: isDevelopment ? 'lax' : 'none', // 'lax' cho dev
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+      domain: isDevelopment ? 'localhost' : undefined, // ✅ Thêm domain
     });
 
     // 3. Redirect to frontend  (clean URL, no token visible)

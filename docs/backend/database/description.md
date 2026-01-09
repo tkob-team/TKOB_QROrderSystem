@@ -1,7 +1,7 @@
 # TÀI LIỆU MÔ TẢ DATABASE
 
-- **Version**: 2.1
-- **Last Updated**: 2025-12-25
+- **Version**: 2.2
+- **Last Updated**: 2026-01-02
 
 ---
 
@@ -24,6 +24,7 @@
 | menu_items      | [MenuItem]          | Món ăn của tenant                                                  |
 | modifier_groups | [ModifierGroup]     | Nhóm tuỳ chọn của tenant                                           |
 | tables          | [Table]             | Danh sách bàn ăn của tenant                                        |
+| orders          | [Order]             | Đơn hàng của tenant                                                |
 
 ---
 
@@ -86,28 +87,30 @@
 
 ## MENU_ITEM
 
-| Field            | Type               | Description                                  |
-| ---------------- | ------------------ | -------------------------------------------- |
-| id               | string             | Primary Key (UUID)                           |
-| tenant_id        | string             | Foreign Key đến TENANT                       |
-| category_id      | string             | Foreign Key đến MENU_CATEGORY                |
-| name             | string             | Tên món ăn                                   |
-| description      | string?            | Mô tả món ăn                                 |
-| price            | decimal            | Giá cơ bản                                   |
-| image_url        | string?            | (Deprecated) Link ảnh món ăn cũ              |
-| status           | enum               | MenuItemStatus: DRAFT, PUBLISHED, ARCHIVED   |
-| available        | boolean            | Còn hàng hay không                           |
-| display_order    | int                | Thứ tự hiển thị                              |
-| preparation_time | int?               | Thời gian chuẩn bị (phút)                    |
-| chef_recommended | boolean            | Món đầu bếp khuyên dùng                      |
-| popularity       | int                | Điểm phổ biến (để sắp xếp)                   |
-| primary_photo_id | string?            | ID của ảnh đại diện chính                    |
-| tags             | json?              | Tag món ăn (popular, spicy, vegetarian, ...) |
-| allergens        | json?              | Dị ứng (nuts, gluten, dairy, ...)            |
-| created_at       | datetime           | Thời điểm tạo                                |
-| updated_at       | datetime           | Thời điểm cập nhật cuối                      |
-| published_at     | datetime?          | Thời điểm publish                            |
-
+| Field             | Type               | Description                                  |
+| ----------------- | ------------------ | -------------------------------------------- |
+| id                | string             | Primary Key (UUID)                           |
+| tenant_id         | string             | Foreign Key đến TENANT                       |
+| category_id       | string             | Foreign Key đến MENU_CATEGORY                |
+| name              | string             | Tên món ăn                                   |
+| description       | string?            | Mô tả món ăn                                 |
+| price             | decimal            | Giá cơ bản                                   |
+| image_url         | string?            | (Deprecated) Link ảnh món ăn cũ              |
+| status            | enum               | MenuItemStatus: DRAFT, PUBLISHED, ARCHIVED   |
+| available         | boolean            | Còn hàng hay không                           |
+| display_order     | int                | Thứ tự hiển thị                              |
+| preparation_time  | int?               | Thời gian chuẩn bị (phút)                    |
+| chef_recommended  | boolean            | Món đầu bếp khuyên dùng                      |
+| popularity        | int                | Điểm phổ biến (để sắp xếp)                   |
+| primary_photo_id  | string?            | ID của ảnh đại diện chính                    |
+| tags              | json?              | Tag món ăn (popular, spicy, vegetarian, ...) |
+| allergens         | json?              | Dị ứng (nuts, gluten, dairy, ...)            |
+| created_at        | datetime           | Thời điểm tạo                                |
+| updated_at        | datetime           | Thời điểm cập nhật cuối                      |
+| published_at      | datetime?          | Thời điểm publish                            |
+| modifier_groups   | [MenuItemModifier] | Các nhóm tuỳ chọn liên kết                   |
+| photos            | [MenuItemPhoto]    | Danh sách ảnh món ăn                         |
+| order_items       | [OrderItem]        | Các dòng món ăn trong đơn hàng               |
 
 ---
 
@@ -187,7 +190,7 @@
 | capacity            | int            | Sức chứa (số người)                           |
 | location            | string?        | Vị trí (Tầng 1, Ngoài trời...)                |
 | description         | string?        | Mô tả thêm                                    |
-| status              | enum           | TableStatus: AVAILABLE, OCCUPIED, RESERVED... |
+| status              | enum           | TableStatus: AVAILABLE, OCCUPIED, ...         |
 | qr_token            | string?        | Token bảo mật cho QR Code (Unique)            |
 | qr_token_hash       | string?        | Hash của token để verify                      |
 | qr_token_created_at | datetime?      | Thời điểm tạo QR                              |
@@ -198,6 +201,7 @@
 | created_at          | datetime       | Thời điểm tạo                                 |
 | updated_at          | datetime       | Thời điểm cập nhật cuối                       |
 | sessions            | [TableSession] | Lịch sử các phiên sử dụng bàn                 |
+| orders              | [Order]        | Đơn hàng trên bàn này                         |
 
 ---
 
@@ -214,6 +218,69 @@
 | cleared_by | string?   | ID nhân viên dọn bàn (User ID)        |
 | created_at | datetime  | Thời điểm tạo                         |
 | updated_at | datetime  | Thời điểm cập nhật cuối               |
+| table      | Table     | Bàn liên kết                          |
+
+---
+
+## ORDER
+
+| Field             | Type                    | Description                                    |
+| ----------------- | ----------------------- | ---------------------------------------------- |
+| id                | string                  | Primary Key (UUID)                             |
+| order_number      | string                  | Mã đơn hàng (unique)                           |
+| tenant_id         | string                  | Foreign Key đến TENANT                         |
+| table_id          | string                  | Foreign Key đến TABLE                          |
+| session_id        | string?                 | Foreign Key đến TABLE_SESSION                  |
+| customer_name     | string?                 | Tên khách hàng                                 |
+| customer_notes    | string?                 | Ghi chú của khách                              |
+| status            | enum                    | OrderStatus                                    |
+| subtotal          | decimal                 | Tổng tiền trước thuế                           |
+| tax               | decimal                 | Thuế                                            |
+| total             | decimal                 | Tổng tiền thanh toán                           |
+| created_at        | datetime                | Thời điểm tạo                                  |
+| updated_at        | datetime                | Thời điểm cập nhật cuối                        |
+| served_at         | datetime?               | Thời điểm phục vụ                              |
+| completed_at      | datetime?               | Thời điểm hoàn thành                           |
+| tenant            | Tenant                  | Tenant liên kết                                |
+| table             | Table                   | Bàn liên kết                                   |
+| items             | [OrderItem]             | Danh sách món trong đơn                        |
+| status_history    | [OrderStatusHistory]    | Lịch sử trạng thái đơn hàng                    |
+
+---
+
+## ORDER_ITEM
+
+| Field         | Type     | Description                                                      |
+| ------------- | -------- | ---------------------------------------------------------------- |
+| id            | string   | Primary Key (UUID)                                               |
+| order_id      | string   | Foreign Key đến ORDER                                            |
+| menu_item_id  | string   | Foreign Key đến MENU_ITEM                                        |
+| name          | string   | Tên món tại thời điểm đặt                                        |
+| price         | decimal  | Giá món tại thời điểm đặt                                        |
+| quantity      | int      | Số lượng                                                         |
+| modifiers     | json?    | Các tuỳ chọn đã chọn (array: [{groupId, groupName, ...}])        |
+| item_total    | decimal  | Tổng tiền dòng này (đã tính modifiers)                           |
+| notes         | string?  | Ghi chú riêng cho món                                            |
+| prepared      | boolean  | Đã chuẩn bị xong chưa                                            |
+| prepared_at   | datetime?| Thời điểm bếp báo đã chuẩn bị xong                              |
+| created_at    | datetime | Thời điểm tạo                                                    |
+| updated_at    | datetime | Thời điểm cập nhật cuối                                          |
+| order         | Order    | Đơn hàng liên kết                                                |
+| menu_item     | MenuItem | Món ăn liên kết                                                  |
+
+---
+
+## ORDER_STATUS_HISTORY
+
+| Field         | Type     | Description                                 |
+| ------------- | -------- | ------------------------------------------- |
+| id            | string   | Primary Key (UUID)                          |
+| order_id      | string   | Foreign Key đến ORDER                       |
+| status        | enum     | Trạng thái đơn hàng tại thời điểm thay đổi   |
+| notes         | string?  | Ghi chú khi thay đổi trạng thái             |
+| changed_by    | string?  | User ID nhân viên thay đổi trạng thái       |
+| created_at    | datetime | Thời điểm thay đổi trạng thái               |
+| order         | Order    | Đơn hàng liên kết                           |
 
 ---
 
@@ -224,4 +291,5 @@
 - **UserStatus**: ACTIVE, INACTIVE, PENDING, LOCKED
 - **MenuItemStatus**: DRAFT, PUBLISHED, ARCHIVED
 - **ModifierType**: SINGLE_CHOICE, MULTI_CHOICE
-- **TableStatus**: AVAILABLE, OCCUPIED,
+- **TableStatus**: AVAILABLE, OCCUPIED, RESERVED, INACTIVE
+- **OrderStatus**: PENDING, RECEIVED, PREPARING, READY, SERVED, COMPLETED, PAID, CANCELLED

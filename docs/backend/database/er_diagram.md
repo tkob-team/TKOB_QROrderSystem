@@ -1,4 +1,4 @@
-```mermaid
+```Mermaid
 erDiagram
     %% --- IDENTITY & AUTH ---
     USER {
@@ -63,11 +63,30 @@ erDiagram
         enum status
         boolean available
         int display_order
+        int preparation_time
+        boolean chef_recommended
+        int popularity
+        string primary_photo_id
         json tags
         json allergens
         datetime created_at
         datetime updated_at
         datetime published_at
+    }
+
+    MENU_ITEM_PHOTO {
+        string id PK
+        string menu_item_id FK
+        string url
+        string filename
+        string mime_type
+        int size
+        int width
+        int height
+        int display_order
+        boolean is_primary
+        datetime created_at
+        datetime updated_at
     }
 
     MODIFIER_GROUP {
@@ -103,21 +122,6 @@ erDiagram
         datetime created_at
     }
 
-    %% RELATIONS
-    TENANT ||--|{ USER : owns
-    TENANT ||--|| TENANT_PAYMENT_CONFIG : has
-    USER ||--o{ USER_SESSION : has_login
-
-    TENANT ||--|{ MENU_CATEGORY : owns
-    TENANT ||--|{ MENU_ITEM : owns
-    TENANT ||--|{ MODIFIER_GROUP : owns
-
-    MENU_CATEGORY ||--|{ MENU_ITEM : contains
-    MENU_ITEM }|--|{ MODIFIER_GROUP : uses_implicit_n_n
-    MODIFIER_GROUP ||--|{ MODIFIER_OPTION : contains
-    MENU_ITEM_MODIFIER }|--|| MENU_ITEM : belongs_to_item
-    MENU_ITEM_MODIFIER }|--|| MODIFIER_GROUP : belongs_to_group
-
     %% --- TABLE MANAGEMENT ---
     TABLE {
         string id PK
@@ -150,13 +154,73 @@ erDiagram
         datetime updated_at
     }
 
-    %% TABLE RELATIONS
+    %% --- ORDER MANAGEMENT ---
+    ORDER {
+        string id PK
+        string order_number UK
+        string tenant_id FK
+        string table_id FK
+        string session_id FK
+        string customer_name
+        string customer_notes
+        enum status
+        decimal subtotal
+        decimal tax
+        decimal total
+        datetime created_at
+        datetime updated_at
+        datetime served_at
+        datetime completed_at
+    }
+
+    ORDER_ITEM {
+        string id PK
+        string order_id FK
+        string menu_item_id FK
+        string name
+        decimal price
+        int quantity
+        json modifiers
+        decimal item_total
+        string notes
+        boolean prepared
+        datetime prepared_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    ORDER_STATUS_HISTORY {
+        string id PK
+        string order_id FK
+        enum status
+        string notes
+        string changed_by
+        datetime created_at
+    }
+
+    %% RELATIONS
+    TENANT ||--|{ USER : owns
+    TENANT ||--|| TENANT_PAYMENT_CONFIG : has
+    USER ||--o{ USER_SESSION : has_login
+
+    TENANT ||--|{ MENU_CATEGORY : owns
+    TENANT ||--|{ MENU_ITEM : owns
+    TENANT ||--|{ MODIFIER_GROUP : owns
+
+    MENU_CATEGORY ||--|{ MENU_ITEM : contains
+    MENU_ITEM }|--|{ MODIFIER_GROUP : uses_implicit_n_n
+    MODIFIER_GROUP ||--|{ MODIFIER_OPTION : contains
+    MENU_ITEM_MODIFIER }|--|| MENU_ITEM : belongs_to_item
+    MENU_ITEM_MODIFIER }|--|| MODIFIER_GROUP : belongs_to_group
+
+    MENU_ITEM ||--|{ MENU_ITEM_PHOTO : has_photos
+
     TENANT ||--|{ TABLE : owns
     TABLE ||--|{ TABLE_SESSION : has_sessions
 
-    %% Các bảng khác (ORDER, ORDER_ITEM, ORDER_ACTIVITY_LOG...) chưa điền thuộc tính
     TENANT ||--|{ ORDER : processes
     TABLE ||--o{ ORDER : places
+    TABLE_SESSION ||--o{ ORDER : session_orders
     ORDER ||--|{ ORDER_ITEM : includes
-    ORDER ||--o{ ORDER_ACTIVITY_LOG : tracks
+    ORDER ||--|{ ORDER_STATUS_HISTORY : status_audit
 ```

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
-import { MenuPhotoService } from '@/modules/menu/services/mene-photo.service';
+import { MenuPhotoService } from '@/modules/menu/services/menu-photo.service';
 import { UnsplashService } from './unplash.service';
 
 /**

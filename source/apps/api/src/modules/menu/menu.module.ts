@@ -11,7 +11,7 @@ import { ModifierGroupRepository } from './repositories/modifier-group.repositor
 import { PublicMenuController } from './controllers/public-menu.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { MenuPhotoController } from './controllers/menu-photo.controller';
-import { MenuPhotoService } from './services/mene-photo.service';
+import { MenuPhotoService } from './services/menu-photo.service';
 import { StorageModule } from './infrastructure/storage/storage.module';
 
 @Module({
