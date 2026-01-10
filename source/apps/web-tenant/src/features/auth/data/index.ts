@@ -1,9 +1,7 @@
 /**
- * Auth Adapters Index
- * Export all adapter-related types and instances
+ * Auth Data Layer - Public API
+ * Only export factory and types (NOT concrete adapters)
  */
 
-export * from './auth-adapter.interface';
-export * from './mock-auth.adapter';
-export * from './api-auth.adapter';
-export * from './factory';
+export type { IAuthAdapter } from './adapter.interface';
+export { getAuthAdapter } from './factory';

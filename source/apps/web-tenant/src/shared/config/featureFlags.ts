@@ -27,6 +27,7 @@ export const featureFlags = {
     analytics: env.useMock,
     dashboard: env.useMock,
     staff: env.useMock,
+    settings: env.useMock,
   },
 } as const;
 

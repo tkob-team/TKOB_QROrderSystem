@@ -124,8 +124,8 @@ Every feature MUST have `index.ts` that exports public API:
 ```typescript
 // features/menu/index.ts
 
-// UI Components (public)
-export { MenuHubPage } from "./ui/MenuHubPage";
+// UI Pages
+export { MenuHubPage } from "./ui/pages/MenuHubPage";
 export { MenuItemCard } from "./ui/components/MenuItemCard";
 
 // Hooks (if used by other features/pages)

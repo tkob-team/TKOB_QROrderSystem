@@ -4,9 +4,9 @@
  */
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
-import type { ITablesAdapter } from './tables-adapter.interface';
-import { TablesApiAdapter } from './api-tables.adapter';
-import { TablesMockAdapter } from './mock-tables.adapter';
+import type { ITablesAdapter } from './adapter.interface';
+import { TablesApiAdapter } from './api/api-tables.adapter';
+import { TablesMockAdapter } from './mocks/mock-tables.adapter';
 
 function createTablesAdapter(): ITablesAdapter {
   const useMock = isMockEnabled('tables');

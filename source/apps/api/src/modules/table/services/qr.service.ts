@@ -29,8 +29,10 @@ export class QrService {
     private readonly tableRepo: TableRepository,
   ) {
     // Load config với fallback values
-    this.secret = this.config.get('JWT_SECRET', { infer: true }) || 'fallback-secret-key-change-in-production';
-    this.customerAppUrl = this.config.get('CUSTOMER_APP_URL', { infer: true }) || 'http://localhost:3000';
+    this.secret =
+      this.config.get('JWT_SECRET', { infer: true }) || 'fallback-secret-key-change-in-production';
+    this.customerAppUrl =
+      this.config.get('CUSTOMER_APP_URL', { infer: true }) || 'http://localhost:3000';
     this.maxAgeInDays = 365; // QR codes valid for 1 year by default
   }
 
@@ -101,9 +103,7 @@ export class QrService {
       }
 
       if (table.qrInvalidatedAt) {
-        throw new GoneException(
-          'Mã QR đã bị vô hiệu hóa. Vui lòng yêu cầu nhân viên hỗ trợ.',
-        );
+        throw new GoneException('Mã QR đã bị vô hiệu hóa. Vui lòng yêu cầu nhân viên hỗ trợ.');
       }
 
       // Check expiration (optional)
@@ -139,7 +139,10 @@ export class QrService {
   /**
    * Generate QR code image (PNG)
    */
-  async generateQrCodeImage(token: string, format: 'png' | 'svg' = 'png'): Promise<Buffer | string> {
+  async generateQrCodeImage(
+    token: string,
+    format: 'png' | 'svg' = 'png',
+  ): Promise<Buffer | string> {
     const qrUrl = this.buildQrUrl(token);
 
     if (format === 'svg') {

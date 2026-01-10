@@ -1,11 +1,21 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsInt, IsOptional, IsEnum, IsBoolean, MinLength, MaxLength, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  MinLength,
+  MaxLength,
+  Min,
+  Max,
+} from 'class-validator';
 import { TableStatus } from '@prisma/client';
 
 export class UpdateTableDto {
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'Table 1A',
-    description: 'Table number/name' 
+    description: 'Table number/name',
   })
   @IsOptional()
   @IsString()
@@ -13,11 +23,11 @@ export class UpdateTableDto {
   @MaxLength(50)
   tableNumber?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 6,
     minimum: 1,
     maximum: 20,
-    description: 'Number of seats' 
+    description: 'Number of seats',
   })
   @IsOptional()
   @IsInt()
@@ -25,44 +35,44 @@ export class UpdateTableDto {
   @Max(20)
   capacity?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'VIP Room',
-    description: 'Table location/zone' 
+    description: 'Table location/zone',
   })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   location?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'Near window',
-    description: 'Additional description' 
+    description: 'Additional description',
   })
   @IsOptional()
   @IsString()
   @MaxLength(500)
   description?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     enum: TableStatus,
     example: TableStatus.OCCUPIED,
-    description: 'Table status' 
+    description: 'Table status',
   })
   @IsOptional()
   @IsEnum(TableStatus)
   status?: TableStatus;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: true,
-    description: 'Active status (soft delete)' 
+    description: 'Active status (soft delete)',
   })
   @IsOptional()
   @IsBoolean()
   active?: boolean;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 1,
-    description: 'Display order' 
+    description: 'Display order',
   })
   @IsOptional()
   @IsInt()

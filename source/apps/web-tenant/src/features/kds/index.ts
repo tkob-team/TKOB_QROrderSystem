@@ -3,10 +3,10 @@
  * Unified exports
  */
 
-// UI Components
-export { KdsBoardPage } from './ui/KdsBoardPage';
-export { KDSBoard } from './ui/KDSBoard';
+// UI Pages
+export { KdsBoardPage } from './ui/pages/KdsBoardPage';
 
-// Model
+// Model (types & constants)
 export * from './model/types';
 export * from './model/constants';
+

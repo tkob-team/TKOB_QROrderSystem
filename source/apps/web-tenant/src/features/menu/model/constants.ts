@@ -4,21 +4,26 @@
  * Shared constants for menu management
  */
 
-import type { MenuItemFormData, SortOption, DietaryTag } from './types';
+import type { MenuItemFormData, SortOption, DietaryTag, Allergen, MenuItemStatus } from './types';
 
 /**
  * Initial form data for menu item
  */
 export const INITIAL_MENU_ITEM_FORM: MenuItemFormData = {
   name: '',
-  category: '',
+  categoryId: '',                  // Renamed
   description: '',
-  price: '',
-  status: 'available',
-  image: null,
+  price: 0,                        // Changed to number
+  status: 'DRAFT',                 // Default to DRAFT
+  available: true,                 // Default to available
+  preparationTime: 0,              // Default 0 minutes
+  allergens: [],                   // Empty array
   dietary: [],
   chefRecommended: false,
+  displayOrder: 0,                 // Default to 0
+  photos: [],                      // Empty array for multiple photos
   modifierGroupIds: [],
+  photosToDelete: [],              // Track photos to delete
 };
 
 /**
@@ -26,9 +31,9 @@ export const INITIAL_MENU_ITEM_FORM: MenuItemFormData = {
  */
 export const STATUS_FILTER_OPTIONS = [
   'All Status',
-  'Available',
-  'Unavailable',
-  'Sold Out',
+  'DRAFT',
+  'PUBLISHED',
+  'ARCHIVED',
 ];
 
 /**
@@ -36,9 +41,9 @@ export const STATUS_FILTER_OPTIONS = [
  */
 export const SORT_OPTIONS: SortOption[] = [
   'Sort by: Newest',
-  'Sort by: Popularity',
-  'Sort by: Price (Low)',
-  'Sort by: Price (High)',
+  'Popularity',
+  'Price (Low)',
+  'Price (High)',
 ];
 
 /**
@@ -58,6 +63,29 @@ export const DIETARY_TAG_OPTIONS: { value: DietaryTag; label: string }[] = [
   { value: 'gluten-free', label: 'Gluten-Free' },
   { value: 'spicy', label: 'Spicy' },
   { value: 'halal', label: 'Halal' },
+];
+
+/**
+ * Common allergens for selection
+ */
+export const ALLERGEN_OPTIONS: { value: Allergen; label: string }[] = [
+  { value: 'gluten', label: 'Gluten' },
+  { value: 'dairy', label: 'Dairy' },
+  { value: 'eggs', label: 'Eggs' },
+  { value: 'nuts', label: 'Nuts' },
+  { value: 'soy', label: 'Soy' },
+  { value: 'shellfish', label: 'Shellfish' },
+  { value: 'fish', label: 'Fish' },
+  { value: 'sesame', label: 'Sesame' },
+];
+
+/**
+ * Status options for menu items (API values)
+ */
+export const STATUS_OPTIONS: { value: MenuItemStatus; label: string }[] = [
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'PUBLISHED', label: 'Published' },
+  { value: 'ARCHIVED', label: 'Archived' },
 ];
 
 /**

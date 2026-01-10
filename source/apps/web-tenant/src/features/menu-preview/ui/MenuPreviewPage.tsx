@@ -2,21 +2,30 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/shared/components';
-import { useMenuItems } from '@/features/menu/hooks';
+import { useMenuPreviewController } from '@/features/menu/hooks';
 import { Search, ChevronRight } from 'lucide-react';
 
 // Customer-facing menu preview - no authentication required
 // Accessed via QR code scan: /menu or /menu?table=5
 export function MenuPreviewPage() {
-  const { data: menuItems = [] } = useMenuItems();
+  const { data: menuItems = [] } = useMenuPreviewController();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Normalize data shape from query (array or { data })
+  const itemsArray = useMemo<any[]>(() => {
+    // If API returns pagination wrapper { data, meta }
+    if (menuItems && typeof menuItems === 'object' && !Array.isArray(menuItems) && 'data' in menuItems) {
+      return ((menuItems as any).data as any[]) || [];
+    }
+    return (menuItems as any[]) || [];
+  }, [menuItems]);
 
   // Extract unique categories from menu items
   const categories = useMemo(() => {
     const categoryMap = new Map<string, { id: string; name: string; itemCount: number }>();
     
-    menuItems.forEach(item => {
+    itemsArray.forEach(item => {
       if (item.available) {
         const catId = item.categoryId;
         if (!categoryMap.has(catId)) {
@@ -32,11 +41,11 @@ export function MenuPreviewPage() {
     });
     
     return Array.from(categoryMap.values());
-  }, [menuItems]);
+  }, [itemsArray]);
 
   // Filter items by search and category
   const filteredItems = useMemo(() => {
-    return menuItems
+    return itemsArray
       .filter(item => item.available) // Only show available items
       .filter(item => {
         if (!searchQuery) return true;
@@ -50,7 +59,7 @@ export function MenuPreviewPage() {
         if (!selectedCategory) return true;
         return item.categoryId === selectedCategory;
       });
-  }, [menuItems, searchQuery, selectedCategory]);
+  }, [itemsArray, searchQuery, selectedCategory]);
 
   // Group by category
   const groupedItems = useMemo(() => {

@@ -10,7 +10,7 @@
 export type TableStatus = 'available' | 'occupied' | 'reserved' | 'inactive';
 
 /**
- * Table zone/location enum
+ * Table zone/location enum (for form inputs only)
  */
 export type TableZone = 'indoor' | 'outdoor' | 'patio' | 'vip';
 
@@ -22,8 +22,8 @@ export interface Table {
   name: string;
   capacity: number;
   status: TableStatus;
-  zone: TableZone;
-  tableNumber: number;
+  location: string;
+  tableNumber: string;
   createdAt: Date;
   description?: string;
   hasActiveOrders?: boolean;
@@ -51,6 +51,7 @@ export interface TableFormData {
   tableNumber: string;
   status: TableStatus;
   description: string;
+  originalTableNumber?: string; // Track original table number format for editing
 }
 
 /**

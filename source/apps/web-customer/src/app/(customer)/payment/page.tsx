@@ -1,4 +1,4 @@
-import { PaymentPage } from '@/features/payment/PaymentPage'
+import { PaymentPage } from '@/features/payment'
 
 export default function Payment() {
   return <PaymentPage />

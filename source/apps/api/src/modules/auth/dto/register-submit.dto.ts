@@ -26,7 +26,7 @@ export class RegisterSubmitDto {
   @MaxLength(50)
   tenantName: string;
 
-  @ApiProperty({ example: 'pho-ngon-123'})
+  @ApiProperty({ example: 'pho-ngon-123' })
   @IsString()
   @Matches(/^[a-z0-9-]+$/, {
     message: 'Slug must contain only lowercase letters, numbers, and hyphens',

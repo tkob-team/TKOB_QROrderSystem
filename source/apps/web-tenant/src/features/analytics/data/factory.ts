@@ -5,9 +5,9 @@
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
 import { config } from '@/shared/config';
-import type { IAnalyticsAdapter } from './analytics-adapter.interface';
-import { MockAnalyticsAdapter } from './mock-analytics.adapter';
-import { ApiAnalyticsAdapter } from './api-analytics.adapter';
+import type { IAnalyticsAdapter } from './adapter.interface';
+import { MockAnalyticsAdapter } from './mocks/mock-analytics.adapter';
+import { ApiAnalyticsAdapter } from './api/api-analytics.adapter';
 
 function createAnalyticsAdapter(): IAnalyticsAdapter {
   const useMock = isMockEnabled('analytics');

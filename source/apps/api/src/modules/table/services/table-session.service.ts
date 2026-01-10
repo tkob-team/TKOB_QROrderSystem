@@ -89,9 +89,7 @@ export class TableSessionService {
       currentSessionId: session.id,
     });
 
-    this.logger.log(
-      `Session created: ${session.id} for table ${table.tableNumber} (${tableId})`,
-    );
+    this.logger.log(`Session created: ${session.id} for table ${table.tableNumber} (${tableId})`);
 
     return {
       sessionId: session.id,

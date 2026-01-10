@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/shared/config';
 import { getHomeRouteForRole, canAccessRoute } from '@/shared/config';
 import type { UserRole as NavigationUserRole } from '@/shared/config';
-import { useLogin, useLogout, useCurrentUser } from '@/features/auth/hooks/useAuth';
+import { useAuthController } from '@/features/auth';
 import { config } from '@/shared/config';
 
 // User role type matching RBAC requirements (3 roles only)
@@ -69,12 +69,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
   
   // Use React Query hooks
-  const loginMutation = useLogin();
-  const logoutMutation = useLogout();
-  const { data: currentUserData, isLoading, refetch } = useCurrentUser({
+  const controller = useAuthController({
     // Only fetch user data if we have a token
-    enabled: hasToken,
+    enabledCurrentUser: hasToken,
   });
+  
+  const loginMutation = controller.loginMutation;
+  const logoutMutation = controller.logoutMutation;
+  const currentUserData = controller.currentUserQuery.data;
+  const isLoading = controller.currentUserQuery.isLoading;
+  const refetch = controller.currentUserQuery.refetch;
 
   // Remember me token management
   const setRememberMeToken = useCallback((token: string, expiryDays: number = 7) => {

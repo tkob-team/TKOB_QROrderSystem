@@ -1,4 +1,4 @@
-import { StaffPage } from '@/features/staff/ui/StaffPage';
+import { StaffPage } from '@/features/staff';
 
 export default function Staff() {
   return <StaffPage />;

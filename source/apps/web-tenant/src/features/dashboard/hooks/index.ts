@@ -3,4 +3,5 @@
  * Barrel exports
  */
 
-export * from './useDashboard';
+export * from './useDashboardController';
+export * from './useDashboardPage';

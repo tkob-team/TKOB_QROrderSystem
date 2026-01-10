@@ -21,6 +21,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 9',
     time: '1:45 PM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
     items: [
       { name: 'Chicken Wings', quantity: 1, price: 14.00, modifiers: ['Buffalo sauce', 'Extra crispy'] },
       { name: 'Onion Rings', quantity: 1, price: 7.00 },
@@ -39,6 +40,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 12',
     time: '1:30 PM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
     items: [
       { name: 'Sushi Platter', quantity: 1, price: 35.00, modifiers: ['No wasabi'] },
       { name: 'Miso Soup', quantity: 2, price: 4.50 },
@@ -57,6 +59,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 5',
     time: '1:20 PM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 70 * 60 * 1000).toISOString(),
     items: [
       { name: 'Grilled Salmon', quantity: 1, price: 28.00 },
       { name: 'Steamed Vegetables', quantity: 1, price: 8.00 },
@@ -75,6 +78,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 3',
     time: '12:45 PM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 105 * 60 * 1000).toISOString(),
     items: [
       { name: 'Margherita Pizza', quantity: 1, price: 16.00, modifiers: ['Extra cheese'] },
       { name: 'Caesar Salad', quantity: 1, price: 9.00 },
@@ -92,6 +96,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 8',
     time: '12:30 PM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
     items: [
       { name: 'Beef Burger', quantity: 2, price: 15.00, modifiers: ['No pickles'] },
       { name: 'French Fries', quantity: 2, price: 5.00 },
@@ -110,6 +115,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 2',
     time: '12:05 PM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 145 * 60 * 1000).toISOString(),
     items: [
       { name: 'Pad Thai', quantity: 1, price: 18.00 },
       { name: 'Spring Rolls', quantity: 1, price: 8.00 },
@@ -128,6 +134,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 7',
     time: '11:35 AM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 175 * 60 * 1000).toISOString(),
     items: [
       { name: 'Pasta Carbonara', quantity: 2, price: 18.50, modifiers: ['Extra bacon'] },
       { name: 'Garlic Bread', quantity: 1, price: 6.00 },
@@ -145,6 +152,7 @@ export const INITIAL_ORDERS: Order[] = [
     table: 'Table 6',
     time: '11:15 AM',
     date: 'Dec 8, 2024',
+    createdAt: new Date(Date.now() - 195 * 60 * 1000).toISOString(),
     items: [
       { name: 'Chicken Salad', quantity: 1, price: 14.00 },
       { name: 'Sparkling Water', quantity: 1, price: 3.50 },

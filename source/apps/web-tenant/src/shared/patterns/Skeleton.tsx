@@ -110,8 +110,7 @@ export function TableSkeleton({
               {Array.from({ length: columns }).map((_, colIndex) => (
                 <Skeleton
                   key={colIndex}
-                  className="h-4 flex-1"
-                  style={{ width: colIndex === 0 ? '60%' : '100%' }}
+                  className={`h-4 flex-1 ${colIndex === 0 ? 'max-w-[60%]' : ''}`}
                 />
               ))}
             </div>

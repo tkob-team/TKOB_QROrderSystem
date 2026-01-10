@@ -81,7 +81,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || React.useId();
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
     const hasError = !!error;
     const actualVariant = hasError ? 'error' : variant;
 
@@ -137,7 +138,7 @@ Input.displayName = 'Input';
    PASSWORD INPUT (WITH TOGGLE)
    =================================== */
 
-export interface PasswordInputProps extends Omit<InputProps, 'type'> {}
+export type PasswordInputProps = Omit<InputProps, 'type'>;
 
 export const PasswordInput = React.forwardRef<
   HTMLInputElement,
@@ -176,7 +177,7 @@ PasswordInput.displayName = 'PasswordInput';
    SEARCH INPUT (WITH ICON)
    =================================== */
 
-export interface SearchInputProps extends Omit<InputProps, 'type'> {
+export interface SearchInputProps extends Omit<InputProps, 'type' | 'onSubmit'> {
   /** Called when input value changes (for local filtering/suggestions) */
   onSearch?: (value: string) => void;
   /** Called when user presses Enter (for API calls) */
@@ -225,7 +226,8 @@ export interface TextareaProps
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, error, label, helperText, id, ...props }, ref) => {
-    const textareaId = id || React.useId();
+    const generatedId = React.useId();
+    const textareaId = id || generatedId;
     const hasError = !!error;
 
     return (

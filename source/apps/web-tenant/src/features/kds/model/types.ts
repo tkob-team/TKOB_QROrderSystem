@@ -51,7 +51,8 @@ export interface KdsColumnConfig {
  */
 export interface KdsButtonConfig {
   text: string;
-  icon: React.ComponentType<{ className?: string }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: any; // Lucide icon component (UI-facing config)
   className: string;
 }
 

@@ -3,9 +3,9 @@
  */
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
-import { waiterApi } from './api-waiter.adapter';
-import { waiterMock } from './mock-waiter.adapter';
-import type { IWaiterAdapter } from './waiter-adapter.interface';
+import { waiterApi } from './api/api-waiter.adapter';
+import { waiterMock } from './mocks/mock-waiter.adapter';
+import type { IWaiterAdapter } from './adapter.interface';
 
 function createWaiterAdapter(): IWaiterAdapter {
   const useMock = isMockEnabled('waiter');

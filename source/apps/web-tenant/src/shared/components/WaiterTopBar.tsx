@@ -40,9 +40,6 @@ export function WaiterTopBar({
 
       <div className="flex items-center gap-4">
         <UserMenu 
-          userName={userName} 
-          userRole={userRole} 
-          avatarColor={avatarColor} 
           onNavigate={onNavigate}
         />
       </div>

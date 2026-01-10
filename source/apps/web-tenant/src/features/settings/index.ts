@@ -1,5 +1,5 @@
 /**
  * Settings Feature
  */
-export { AccountSettingsPage } from './ui/AccountSettingsPage';
-export { TenantProfilePage } from './ui/TenantProfilePage';
+export { AccountSettingsPage } from './ui/pages/AccountSettingsPage';
+export { TenantProfilePage } from './ui/pages/TenantProfilePage';

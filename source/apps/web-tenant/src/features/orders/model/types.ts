@@ -24,6 +24,7 @@ export interface Order {
   orderStatus: OrderStatus;
   time: string;
   date: string;
+  createdAt: string;
   timeline: {
     placed?: string;
     confirmed?: string;

@@ -2,15 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { TableResponseDto } from './table-response.dto';
 
 export class TableListMetaDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 25,
-    description: 'Total number of tables for this restaurant (without filters)' 
+    description: 'Total number of tables for this restaurant (without filters)',
   })
   totalAll: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 10,
-    description: 'Number of tables after applying filters' 
+    description: 'Number of tables after applying filters',
   })
   totalFiltered: number;
 }

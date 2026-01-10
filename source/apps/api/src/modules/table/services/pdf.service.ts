@@ -38,9 +38,12 @@ export class PdfService {
         doc.on('error', reject);
 
         // Header
-        doc.fontSize(24).font('Helvetica-Bold').text(options.restaurantName || 'Smart Restaurant', {
-          align: 'center',
-        });
+        doc
+          .fontSize(24)
+          .font('Helvetica-Bold')
+          .text(options.restaurantName || 'Smart Restaurant', {
+            align: 'center',
+          });
 
         doc.moveDown(0.5);
 
@@ -79,13 +82,9 @@ export class PdfService {
 
         // Instructions
         const instructionText = options.instructions || 'Scan to view menu and place order';
-        doc
-          .fontSize(16)
-          .font('Helvetica-Bold')
-          .fillColor('#059669')
-          .text(instructionText, {
-            align: 'center',
-          });
+        doc.fontSize(16).font('Helvetica-Bold').fillColor('#059669').text(instructionText, {
+          align: 'center',
+        });
 
         doc.moveDown(1);
 
@@ -132,9 +131,12 @@ export class PdfService {
           }
 
           // Header
-          doc.fontSize(20).font('Helvetica-Bold').text(tableOptions.restaurantName || 'Smart Restaurant', {
-            align: 'center',
-          });
+          doc
+            .fontSize(20)
+            .font('Helvetica-Bold')
+            .text(tableOptions.restaurantName || 'Smart Restaurant', {
+              align: 'center',
+            });
 
           doc.moveDown(0.5);
 

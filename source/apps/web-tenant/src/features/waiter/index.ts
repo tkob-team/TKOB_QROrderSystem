@@ -1,11 +1,15 @@
 /**
  * Waiter Feature - Service Board
- * Unified exports
+ * Public API exports
  */
 
 // UI Components
-export { ServiceBoardPage } from './ui/ServiceBoardPage';
+export { ServiceBoardPage } from './ui/pages/ServiceBoardPage';
 
-// Model
-export * from './model/types';
+// Hooks (Controller only - NOT query hooks)
+export { useWaiterController } from './hooks';
+export type { UseWaiterControllerReturn } from './hooks';
+
+// Model (Types & Constants)
+export type * from './model/types';
 export * from './model/constants';

@@ -1,4 +1,4 @@
-import { ChangePasswordPage } from '@/features/profile/ChangePasswordPage'
+import { ChangePasswordPage } from '@/features/profile'
 
 export default function ChangePassword() {
   return <ChangePasswordPage />

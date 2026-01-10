@@ -63,7 +63,7 @@ export function AboutPage() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600">
-            We're a team of passionate developers and designers on a mission to help restaurants 
+            We&apos;re a team of passionate developers and designers on a mission to help restaurants 
             thrive in the digital age.
           </p>
         </div>
@@ -90,7 +90,7 @@ export function AboutPage() {
                   real challenges faced by restaurant owners every day.
                 </p>
                 <p>
-                  Today, we're proud to offer a comprehensive solution that helps restaurants 
+                  Today, we&apos;re proud to offer a comprehensive solution that helps restaurants 
                   streamline operations, reduce errors, and deliver better customer experiences.
                 </p>
               </div>

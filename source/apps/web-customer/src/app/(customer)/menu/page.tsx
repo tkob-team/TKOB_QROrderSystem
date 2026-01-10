@@ -1,4 +1,4 @@
-import { MenuPage } from '@/features/menu/MenuPage'
+import { MenuPage } from '@/features/menu'
 import { FeatureErrorBoundary } from '@/components/error'
 
 export default function Menu() {

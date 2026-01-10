@@ -1,4 +1,4 @@
-import { AnalyticsPage } from '@/features/analytics/ui/AnalyticsPage';
+import { AnalyticsPage } from '@/features/analytics';
 
 export default function Analytics() {
   return <AnalyticsPage />;
