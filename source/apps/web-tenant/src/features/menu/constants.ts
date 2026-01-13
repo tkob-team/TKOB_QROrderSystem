@@ -4,4 +4,4 @@
  */
 
 export * from './model/constants';
-export * from './model/modifier-constants';
+export * from './model/modifiers';

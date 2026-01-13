@@ -1,5 +1,6 @@
 import { PrismaService } from '../prisma.service';
-import { PaginationDto, PaginatedResponseDto } from '../../common/dto/pagination.dto';
+import type { PaginationDto } from '../../common/dto/pagination.dto';
+import { PaginatedResponseDto } from '../../common/dto/pagination.dto';
 
 /**
  * Base Repository

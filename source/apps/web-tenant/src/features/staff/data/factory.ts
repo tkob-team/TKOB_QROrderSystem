@@ -5,9 +5,9 @@
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
 import { config } from '@/shared/config';
-import type { IStaffAdapter } from './staff-adapter.interface';
-import { MockStaffAdapter } from './mock-staff.adapter';
-import { ApiStaffAdapter } from './api-staff.adapter';
+import type { IStaffAdapter } from './adapter.interface';
+import { MockStaffAdapter } from './mocks/mock-staff.adapter';
+import { ApiStaffAdapter } from './api/api-staff.adapter';
 
 function createStaffAdapter(): IStaffAdapter {
   const useMock = isMockEnabled('staff');

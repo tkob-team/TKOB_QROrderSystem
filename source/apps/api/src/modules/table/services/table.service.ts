@@ -31,7 +31,7 @@ export class TableService {
   async create(tenantId: string, dto: CreateTableDto): Promise<Table> {
     try {
       this.logger.debug(`Creating table: ${dto.tableNumber} for tenant: ${tenantId}`);
-      
+
       // Create table first (without QR)
       const table = await this.repo.create({
         tenantId,
@@ -56,7 +56,7 @@ export class TableService {
       return updatedTable;
     } catch (error) {
       this.logger.error(`Failed to create table: ${error.message}`, error.stack);
-      
+
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException(
           `Table number "${dto.tableNumber}" already exists in your restaurant`,
@@ -359,7 +359,9 @@ export class TableService {
       }
     }
 
-    this.logger.log(`Bulk QR regeneration completed: ${successCount} success, ${failureCount} failed`);
+    this.logger.log(
+      `Bulk QR regeneration completed: ${successCount} success, ${failureCount} failed`,
+    );
 
     return {
       totalProcessed: tables.length,

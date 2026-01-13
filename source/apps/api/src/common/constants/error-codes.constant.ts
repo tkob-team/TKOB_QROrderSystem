@@ -120,7 +120,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.TABLE_INACTIVE]: 'Table is temporarily unavailable. Please ask staff for assistance.',
   [ErrorCode.TABLE_QR_INVALID]: 'Invalid QR code. Please ask staff for assistance.',
   [ErrorCode.TABLE_QR_EXPIRED]: 'QR code has expired. Please ask staff for assistance.',
-  [ErrorCode.TABLE_QR_REGENERATED]: 'This QR code is no longer valid. Please ask staff for assistance.',
+  [ErrorCode.TABLE_QR_REGENERATED]:
+    'This QR code is no longer valid. Please ask staff for assistance.',
   [ErrorCode.TABLE_HAS_ACTIVE_ORDERS]: 'Cannot delete table with active orders',
 
   // Order

@@ -12,9 +12,3 @@ export * from './forms'
 
 // Indicators
 export * from './indicators'
-
-// Modals
-export * from './modals'
-
-// Sections
-export * from './sections'

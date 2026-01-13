@@ -18,6 +18,7 @@ export interface RoleOption {
   label: string;
   description: string;
   color: string;
+  bg: string;
 }
 
 export interface EditForm {

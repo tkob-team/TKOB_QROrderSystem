@@ -42,8 +42,6 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
           <OptimizedImage
             src={item.imageUrl}
             alt={item.name}
-            width={160}
-            height={160}
             className="w-full h-28 md:h-40 object-cover rounded-lg"
             style={{
               opacity: isSoldOut ? 0.5 : 1,

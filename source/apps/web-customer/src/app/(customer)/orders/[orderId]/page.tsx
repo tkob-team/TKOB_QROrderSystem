@@ -1,4 +1,4 @@
-import { OrderDetailPage } from '@/features/orders/OrderDetailPage'
+import { OrderDetailPage } from '@/features/orders'
 
 type Params = Promise<{ orderId: string }>
 

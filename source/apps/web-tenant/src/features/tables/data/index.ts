@@ -1,9 +1,6 @@
 /**
- * Tables Adapters Index
- * Export all adapter-related types and instances
+ * Tables Data Layer - Adapter Factory
+ * Export only the adapter instance (internal use via hooks layer)
  */
 
-export * from './tables-adapter.interface';
-export * from './mock-tables.adapter';
-export * from './api-tables.adapter';
-export * from './factory';
+export { tablesAdapter } from './factory';

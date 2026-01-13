@@ -1,12 +1,13 @@
-// Orders Feature - Unified Exports
+// Orders Feature - Unified Public API Exports
 
-// UI Components
-export { OrdersPage } from './ui/OrdersPage';
-export { OrderDetailDrawer } from './ui/OrderDetailDrawer';
+// Pages
+export { OrdersPage } from './ui/pages';
+export { OrderDetailDrawer } from './ui/modals';
 
-// Model
+// Model (types and constants - canonical, from model/ only)
 export * from './model/types';
 export * from './model/constants';
+
 
 // Hooks
 export * from './hooks';

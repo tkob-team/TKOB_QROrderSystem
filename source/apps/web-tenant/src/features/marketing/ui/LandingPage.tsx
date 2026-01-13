@@ -299,7 +299,7 @@ export function LandingPage() {
               Everything You Need to Run Your Restaurant
             </h2>
             <p className="text-lg text-gray-600">
-              From front-of-house to back-of-house, we've got you covered with powerful tools designed for modern restaurants.
+              From front-of-house to back-of-house, we&apos;ve got you covered with powerful tools designed for modern restaurants.
             </p>
           </div>
 
@@ -351,7 +351,7 @@ export function LandingPage() {
                   ))}
                 </div>
                 <p className="text-gray-700 leading-relaxed mb-6 italic">
-                  "{testimonial.quote}"
+                  &quot;{testimonial.quote}&quot;
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-2xl">
@@ -379,7 +379,7 @@ export function LandingPage() {
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-gray-600">
-              Start free, upgrade when you're ready. No hidden fees.
+              Start free, upgrade when you&apos;re ready. No hidden fees.
             </p>
           </div>
 

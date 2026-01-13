@@ -43,7 +43,7 @@ export class TokenService {
 
     const expiresIn = this.config.get('JWT_ACCESS_TOKEN_EXPIRES_IN', {
       infer: true,
-    }) as JwtSignOptions['expiresIn'];
+    });
 
     const token = this.jwt.sign(payload, { expiresIn });
 
@@ -63,7 +63,7 @@ export class TokenService {
 
     const expiresIn = this.config.get('JWT_REFRESH_TOKEN_EXPIRES_IN', {
       infer: true,
-    }) as JwtSignOptions['expiresIn'];
+    });
 
     const token = this.jwt.sign(payload, { expiresIn });
 
@@ -107,7 +107,7 @@ export class TokenService {
    * @returns Decoded payload or null
    */
   decodeToken<T = any>(token: string): T | null {
-    return this.jwt.decode(token) as T;
+    return this.jwt.decode(token);
   }
 
   /**

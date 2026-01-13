@@ -14,6 +14,8 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   closeButton?: boolean;
+  headerActions?: React.ReactNode;
+  disableBackdropClose?: boolean;
 }
 
 export function Modal({
@@ -25,6 +27,8 @@ export function Modal({
   children,
   footer,
   closeButton = true,
+  headerActions,
+  disableBackdropClose = false,
 }: ModalProps) {
   if (!isOpen) return null;
 
@@ -44,7 +48,7 @@ export function Modal({
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
       }}
-      onClick={onClose}
+      onClick={disableBackdropClose ? undefined : onClose}
     >
       <div
         className={`bg-white w-full ${maxWidthClass} flex flex-col animate-scale-in relative border border-default`}
@@ -56,7 +60,7 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between p-6 border-b border-default shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-default shrink-0 gap-3">
           <div className="flex flex-col gap-1">
             <h3 className="text-text-primary" style={{ fontSize: '22px', fontWeight: 700 }}>
               {title}
@@ -67,14 +71,17 @@ export function Modal({
               </p>
             )}
           </div>
-          {closeButton && (
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-elevated rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-text-tertiary" />
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {headerActions}
+            {closeButton && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-elevated rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-text-tertiary" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Content - Scrollable */}

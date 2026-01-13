@@ -13,7 +13,7 @@ export class EmailService implements OnModuleInit {
   private smtpTransporter: Transporter | null = null;
 
   constructor(private readonly configService: ConfigService<EnvConfig, true>) {
-    this.provider = this.configService.get('EMAIL_PROVIDER', { infer: true }) as EmailProvider;
+    this.provider = this.configService.get('EMAIL_PROVIDER', { infer: true });
   }
 
   async onModuleInit() {

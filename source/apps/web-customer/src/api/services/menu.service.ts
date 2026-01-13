@@ -1,7 +1,11 @@
 // Menu service - handles menu-related API calls
+// Refactored to use Strategy Pattern
 
-import apiClient from '@/api/client';
+import { StrategyFactory } from '@/api/strategies';
 import { ApiResponse, MenuItem } from '@/types';
+
+// Create strategy instance (mock or real based on API_MODE)
+const menuStrategy = StrategyFactory.createMenuStrategy();
 
 interface MenuCategoryDto {
   id: string;
@@ -78,7 +82,7 @@ interface PublicMenuResponseDto {
 export const MenuService = {
   /**
    * Get public menu (session-based, no token needed)
-   * Cookie automatically sent by axios (withCredentials: true)
+   * Uses strategy pattern for mock/real API
    */
   async getPublicMenu(
     tenantId?: string,
@@ -95,81 +99,19 @@ export const MenuService = {
   }>> {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[MenuService.getPublicMenu] calling /menu/public', options)
+        console.log('[MenuService.getPublicMenu] using strategy pattern', options)
       }
-      // Swagger documents tenantId as query param; send it in params alongside pagination/sort
-      const response = await apiClient.get<{ success: boolean; data: PublicMenuResponseDto }>('/menu/public', {
-        params: {
-          tenantId,
-          page: 1,
-          limit: 100,
-          sortBy: options?.sortBy || 'displayOrder',
-          sortOrder: options?.sortOrder || 'asc',
-          ...(options?.chefRecommended !== undefined && { chefRecommended: options.chefRecommended }),
-          ...(options?.search && { search: options.search }),
-          ...(options?.categoryId && { categoryId: options.categoryId }),
-        },
-      });
-    
-    // Backend wraps response in { success, data } via TransformInterceptor
-      const menuData = response.data.data;
-    
-    // Transform backend response to frontend format
-    const items: MenuItem[] = menuData.categories.flatMap(cat =>
-      cat.items.map(item => {
-        const rawPrice = item.price as number | string | undefined;
-        const numericPrice =
-          typeof rawPrice === 'number'
-            ? rawPrice
-            : rawPrice != null
-              ? parseFloat(String(rawPrice))
-              : 0;
+      
+      // Use strategy to get menu data
+      const response = await menuStrategy.getPublicMenu();
+      
+      if (!response.success || !response.data) {
+        return response;
+      }
 
-        // Map availability: available=false -> Unavailable, otherwise Available
-        const availability: 'Available' | 'Unavailable' = item.available === false ? 'Unavailable' : 'Available';
-
-        // Determine badge based on backend flags
-        let badge: "Chef's recommendation" | 'Popular' | undefined;
-        if (item.chefRecommended) {
-          badge = "Chef's recommendation";
-        } else if (item.popularity && item.popularity > 0) {
-          badge = 'Popular';
-        }
-
-        // Normalize modifier groups to ensure priceDelta is numeric
-        const normalizedModifierGroups = item.modifierGroups?.map(g => ({
-          ...g,
-          options: g.options.map(o => ({
-            ...o,
-            priceDelta: typeof o.priceDelta === 'number' ? o.priceDelta : parseFloat(String(o.priceDelta)) || 0,
-          })),
-        }));
-
-        // Filter dietary tags to supported set
-        const allowedDietary = ['Vegan', 'Vegetarian', 'Spicy', 'Gluten-Free'] as const;
-        const dietary = ((item.tags || []).filter(t => (allowedDietary as readonly string[]).includes(t)) as MenuItem['dietary']);
-
-        return {
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          category: cat.name,
-          basePrice: Number.isFinite(numericPrice) ? numericPrice : 0,
-          imageUrl: item.primaryPhoto?.url || item.imageUrl || '',
-          primaryPhoto: item.primaryPhoto || undefined,
-          photos: item.photos,
-          modifierGroups: normalizedModifierGroups,
-          preparationTime: item.preparationTime,
-          chefRecommended: item.chefRecommended,
-          popularity: item.popularity,
-          dietary,
-          badge,
-          availability,
-        };
-      })
-    );
-    
-    const categories = menuData.categories.map(cat => cat.name);
+      // Data from strategy is already in MenuItem format (from mock)
+      const items = response.data.items;
+      const categories = response.data.categories;
     
       return {
         success: true,
@@ -190,15 +132,13 @@ export const MenuService = {
    * Get single menu item by ID
    */
   async getMenuItem(id: string): Promise<ApiResponse<MenuItem>> {
-    const response = await apiClient.get<{ success: boolean; data: ApiResponse<MenuItem> }>(`/api/menu/items/${id}`);
-    return response.data.data;
+    return menuStrategy.getMenuItem(id);
   },
   
   /**
    * Search menu items
    */
   async searchMenuItems(query: string): Promise<ApiResponse<MenuItem[]>> {
-    const response = await apiClient.get<{ success: boolean; data: ApiResponse<MenuItem[]> }>(`/api/menu/search`, { params: { q: query } });
-    return response.data.data;
+    return menuStrategy.searchMenuItems(query);
   },
 };

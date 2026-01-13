@@ -62,10 +62,7 @@ export class SessionService {
    * @param deviceInfo - Device information
    * @returns Token pair
    */
-  async createSessionWithTokens(
-    userId: string,
-    deviceInfo?: string,
-  ): Promise<TokenPair> {
+  async createSessionWithTokens(userId: string, deviceInfo?: string): Promise<TokenPair> {
     // Fetch user to get email, role, tenantId
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

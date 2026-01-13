@@ -5,9 +5,9 @@
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
 import { config } from '@/shared/config';
-import type { IAuthAdapter } from './auth-adapter.interface';
-import { ApiAuthAdapter } from './api-auth.adapter';
-import { MockAuthAdapter } from './mock-auth.adapter';
+import type { IAuthAdapter } from './adapter.interface';
+import { ApiAuthAdapter } from './api/api-auth.adapter';
+import { MockAuthAdapter } from './mocks/mock-auth.adapter';
 
 /**
  * Get the auth adapter (mock or real based on feature flag)
@@ -23,7 +23,3 @@ export const getAuthAdapter = (): IAuthAdapter => {
  */
 export const authAdapter = getAuthAdapter();
 
-/**
- * Legacy alias for backward compatibility
- */
-export const authService = authAdapter;

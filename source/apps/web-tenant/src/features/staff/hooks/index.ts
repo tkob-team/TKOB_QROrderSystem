@@ -1,6 +1,6 @@
 /**
  * Staff Hooks
- * Barrel exports
+ * Public barrel: controller only (queries are internal)
  */
 
-export * from './useStaff';
+export * from './useStaffController';

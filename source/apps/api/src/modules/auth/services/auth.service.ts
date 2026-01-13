@@ -16,7 +16,7 @@ import * as bcrypt from 'bcrypt';
  * - Orchestrate auth flows (login, logout, refresh)
  * - Delegate specific tasks to specialized services
  * - Handle password verification
- * 
+ *
  * This is a THIN service that coordinates other services
  */
 @Injectable()
@@ -247,11 +247,7 @@ export class AuthService {
    * @param oldPassword - Current password
    * @param newPassword - New password
    */
-  async changePassword(
-    userId: string,
-    oldPassword: string,
-    newPassword: string,
-  ): Promise<void> {
+  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
     // Verify old password
     const isValid = await this.verifyPassword(userId, oldPassword);
     if (!isValid) {

@@ -12,6 +12,7 @@ export { StatCard, type StatCardProps } from './StatCard';
 export { Tabs, TabPanel } from './Tabs';
 export { Select, MultiSelect, type SelectOption } from './Select';
 export { Pagination, SimplePagination } from './Pagination';
+export { Switch, type SwitchProps } from './Switch';
 
 // Legacy components (will be redesigned later)
 export { Modal, type ModalProps } from './Modal';

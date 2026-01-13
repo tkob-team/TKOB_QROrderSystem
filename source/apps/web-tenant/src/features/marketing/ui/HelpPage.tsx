@@ -248,8 +248,8 @@ export function HelpPage() {
                 Get in Touch
               </h2>
               <p className="text-gray-600 mb-8 leading-relaxed">
-                Have a question that isn't answered above? We'd love to hear from you. 
-                Fill out the form and we'll get back to you within 24 hours.
+                Have a question that isn&apos;t answered above? We&apos;d love to hear from you. 
+                Fill out the form and we&apos;ll get back to you within 24 hours.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-gray-600">

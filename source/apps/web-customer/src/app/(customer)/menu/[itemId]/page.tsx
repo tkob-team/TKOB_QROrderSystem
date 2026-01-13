@@ -1,4 +1,4 @@
-import { ItemDetailPage } from '@/features/item-detail/ItemDetailPage'
+import { ItemDetailPage } from '@/features/item-detail'
 import { FeatureErrorBoundary } from '@/components/error'
 
 type Params = Promise<{ itemId: string }>

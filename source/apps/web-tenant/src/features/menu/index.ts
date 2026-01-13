@@ -5,15 +5,14 @@
  */
 
 // Main pages
-export { MenuHubPage } from './ui/MenuHubPage';
-export { MenuManagementPage } from './ui/MenuManagementPage';
-export { MenuItemModifiersPage } from './ui/MenuItemModifiersPage';
-export { MenuModifiersPage } from './ui/MenuModifiersPage';
+export { MenuHubPage } from './ui/pages/MenuHubPage';
+export { MenuManagementPage } from './ui/pages/MenuManagementPage';
+export { MenuModifiersPage } from './ui/pages/MenuModifiersPage';
 
 // Components
 export { MenuTabs } from './ui/MenuTabs';
 
-// Hooks (React Query)
+// Hooks (controllers only)
 export * from './hooks';
 
 // Model (types & constants)

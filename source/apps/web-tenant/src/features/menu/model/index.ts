@@ -16,7 +16,7 @@ export type {
   ToastType,
 } from './types';
 
-// Re-export modifier types
+// Re-export modifier types, constants, and configuration
 export type {
   ModifierType,
   ModifierStatus,
@@ -25,11 +25,17 @@ export type {
   ModifierGroupFormData,
   ModifierFilters,
   ModifierTypeConfig,
-} from './modifier-types';
+  ModalMode,
+} from './modifiers';
+export {
+  INITIAL_MODIFIER_FORM,
+  MODIFIER_TYPE_CONFIG,
+  TYPE_FILTER_OPTIONS,
+  MODIFIER_STATUS_FILTER_OPTIONS,
+  VALIDATION_RULES,
+  DEFAULT_CHOICES,
+  BACKEND_TYPE_MAP,
+} from './modifiers';
 
-// Re-export modal mode (unified)
-export type { ModalMode } from './types';
-
-// Re-export constants
+// Re-export menu item constants
 export * from './constants';
-export * from './modifier-constants';
