@@ -1,6 +1,7 @@
 // API Auth Adapter - Calls real backend API
 
 import axios from 'axios';
+import { logger } from '@/shared/utils/logger';
 import type { IAuthAdapter } from '../adapter.interface';
 import type {
   LoginCredentials,
@@ -24,7 +25,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    console.log('[ApiAuthAdapter] Login called with:', credentials.email);
+    logger.info('[auth] LOGIN_ATTEMPT');
 
     try {
       const response = await axios.post(
@@ -43,6 +44,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
         localStorage.setItem('authToken', accessToken);
       }
 
+      logger.info('[auth] LOGIN_SUCCESS', { role: user?.role, tenantId: user?.tenantId });
+
       return {
         accessToken,
         refreshToken,
@@ -57,7 +60,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
         tenant,
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Login error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] LOGIN_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(error.response.data?.message || 'Login failed');
@@ -68,7 +72,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async signup(data: SignupData): Promise<RegisterSubmitResponseDto> {
-    console.log('[ApiAuthAdapter] Signup called with:', data);
+    logger.info('[auth] SIGNUP_ATTEMPT');
 
     try {
       // Step 1: Submit registration data and get OTP
@@ -83,16 +87,12 @@ export class ApiAuthAdapter implements IAuthAdapter {
         }
       );
 
-      console.log('[ApiAuthAdapter] Register submit response:', submitResponse.data);
-      console.log('[ApiAuthAdapter] Looking for registrationToken:', {
-        data: submitResponse.data,
-        keys: Object.keys(submitResponse.data || {}),
-      });
+      logger.debug('[auth] SIGNUP_SUBMIT_RESPONSE_RECEIVED', { hasRegistrationToken: !!submitResponse.data?.registrationToken });
 
       // Backend should return registrationToken, message, and expiresIn
       const { registrationToken, message, expiresIn } = submitResponse.data;
 
-      console.log('[ApiAuthAdapter] Found registration token:', registrationToken ? 'YES' : 'NO');
+      logger.info('[auth] SIGNUP_OTP_SENT');
 
       return {
         registrationToken,
@@ -100,7 +100,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
         expiresIn,
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Signup error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] SIGNUP_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
         const errorData = error.response.data as any;
@@ -114,7 +115,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async forgotPassword(data: ForgotPasswordData): Promise<{ success: boolean; message: string }> {
-    console.log('[ApiAuthAdapter] Forgot password called with:', data.email);
+    logger.info('[auth] FORGOT_PASSWORD_ATTEMPT');
 
     try {
       const response = await axios.post(
@@ -122,12 +123,15 @@ export class ApiAuthAdapter implements IAuthAdapter {
         { email: data.email }
       );
 
+      logger.info('[auth] FORGOT_PASSWORD_EMAIL_SENT');
+
       return {
         success: true,
         message: response.data?.message || 'Reset link sent',
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Forgot password error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] FORGOT_PASSWORD_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -144,7 +148,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async resetPassword(data: ResetPasswordData): Promise<{ success: boolean; message: string }> {
-    console.log('[ApiAuthAdapter] Reset password called');
+    logger.info('[auth] RESET_PASSWORD_ATTEMPT');
 
     try {
       const response = await axios.post(
@@ -155,12 +159,15 @@ export class ApiAuthAdapter implements IAuthAdapter {
         }
       );
 
+      logger.info('[auth] RESET_PASSWORD_SUCCESS');
+
       return {
         success: true,
         message: response.data?.message || 'Password reset successful',
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Reset password error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] RESET_PASSWORD_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -177,10 +184,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async verifyOtp(data: RegisterConfirmData): Promise<OtpVerificationResponse> {
-    console.log('[ApiAuthAdapter] Verify OTP called with:', {
-      registrationToken: data.registrationToken ? data.registrationToken.substring(0, 20) + '...' : 'MISSING',
-      otp: data.otp ? '***' : 'MISSING',
-    });
+    logger.debug('[auth] VERIFY_OTP_ATTEMPT');
 
     try {
       const response = await axios.post(
@@ -195,16 +199,14 @@ export class ApiAuthAdapter implements IAuthAdapter {
       const responseData = response.data?.data || response.data;
       const { accessToken, refreshToken, expiresIn, user, tenant } = responseData;
 
-      console.log('[ApiAuthAdapter] Response data structure:', {
-        hasData: !!response.data?.data,
-        hasAccessToken: !!accessToken,
-        hasUser: !!user,
-      });
+      logger.debug('[auth] VERIFY_OTP_RESPONSE_RECEIVED', { hasAccessToken: !!accessToken, hasUser: !!user });
 
       // Store token in localStorage
       if (typeof window !== 'undefined' && accessToken) {
         localStorage.setItem('authToken', accessToken);
       }
+
+      logger.info('[auth] VERIFY_OTP_SUCCESS', { role: user?.role, tenantId: user?.tenantId });
 
       return {
         accessToken,
@@ -220,16 +222,10 @@ export class ApiAuthAdapter implements IAuthAdapter {
         tenant,
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Verify OTP error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] VERIFY_OTP_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
-        console.error('[ApiAuthAdapter] Error response details:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers,
-        });
-
         throw new Error(error.response.data?.message || 'Verification failed');
       }
 
@@ -238,7 +234,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async resendOtp(data: { email: string }): Promise<{ success: boolean; message: string }> {
-    console.log('[ApiAuthAdapter] Resend OTP called');
+    logger.info('[auth] RESEND_OTP_ATTEMPT');
 
     try {
       const response = await axios.post(
@@ -246,12 +242,15 @@ export class ApiAuthAdapter implements IAuthAdapter {
         { email: data.email }
       );
 
+      logger.info('[auth] RESEND_OTP_SUCCESS');
+
       return {
         success: true,
         message: response.data?.message || 'OTP sent',
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Resend OTP error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] RESEND_OTP_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -268,19 +267,22 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async checkSlugAvailability(slug: string): Promise<SlugAvailabilityResponse> {
-    console.log('[ApiAuthAdapter] Check slug availability:', slug);
+    logger.debug('[auth] CHECK_SLUG_ATTEMPT', { slug });
 
     try {
       const response = await axios.get(
         `${this.apiUrl}/api/v1/auth/check-slug/${slug}`
       );
 
+      logger.debug('[auth] CHECK_SLUG_RESULT', { available: response.data?.available });
+
       return {
         available: response.data?.available || false,
         message: response.data?.message,
       };
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Check slug error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] CHECK_SLUG_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
       if (axios.isAxiosError(error) && error.response) {
         return {
@@ -297,7 +299,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
   }
 
   async logout(refreshToken?: string): Promise<void> {
-    console.log('[ApiAuthAdapter] Logout called');
+    logger.info('[auth] LOGOUT_ATTEMPT');
 
     try {
       if (refreshToken) {
@@ -311,8 +313,11 @@ export class ApiAuthAdapter implements IAuthAdapter {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
       }
+
+      logger.info('[auth] LOGOUT_SUCCESS');
     } catch (error: unknown) {
-      console.error('[ApiAuthAdapter] Logout error:', error);
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.warn('[auth] LOGOUT_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
       // Still clear local storage even if API call fails
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');

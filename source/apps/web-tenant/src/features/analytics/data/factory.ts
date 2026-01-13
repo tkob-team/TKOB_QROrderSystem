@@ -11,7 +11,6 @@ import { ApiAnalyticsAdapter } from './api/api-analytics.adapter';
 
 function createAnalyticsAdapter(): IAnalyticsAdapter {
   const useMock = isMockEnabled('analytics');
-  console.log('[AnalyticsFactory] Mock enabled:', useMock);
   if (useMock) {
     return new MockAnalyticsAdapter();
   }

@@ -4,13 +4,18 @@
  */
 
 import { isMockEnabled } from '@/shared/config/featureFlags';
+import { logger } from '@/shared/utils/logger';
 import { menuApi } from './api/menuApi';
 import { menuMock } from './mocks/menuMock';
 import type { IMenuAdapter } from './adapter.interface';
 
+const logDataEnabled = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
+
 function createMenuAdapter(): IMenuAdapter {
   const useMock = isMockEnabled('menu');
-  console.log('[MenuFactory] Mock enabled:', useMock);
+  if (logDataEnabled) {
+    logger.info('[data] ADAPTER_MODE', { feature: 'menu', mode: useMock ? 'MOCK' : 'REAL_API' });
+  }
   if (useMock) return menuMock as unknown as IMenuAdapter;
   // Adapt real API to IMenuAdapter contract where needed
   const adapted: IMenuAdapter = {

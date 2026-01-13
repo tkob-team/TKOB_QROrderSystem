@@ -10,7 +10,6 @@ import type { IOrdersAdapter } from './adapter.interface';
 
 function createOrdersAdapter(): IOrdersAdapter {
   const useMock = isMockEnabled('orders');
-  console.log('[OrdersFactory] Mock enabled:', useMock);
   return useMock ? ordersMock : ordersApi;
 }
 

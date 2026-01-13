@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Poppins, Rouge_Script } from 'next/font/google';
 import { Providers } from './providers';
+import { RouteChangeLogger } from '@/shared/dev/RouteChangeLogger';
+import { UnhandledErrorHandler } from '@/shared/dev/UnhandledErrorHandler';
 import '@/styles/globals.css';
 
 // Load fonts using Next.js font loader (more reliable than CSS @import)
@@ -43,7 +45,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} ${rougeScript.variable}`}>
       <body className={`${inter.className} antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <RouteChangeLogger />
+          <UnhandledErrorHandler />
+          {children}
+        </Providers>
       </body>
     </html>
   );

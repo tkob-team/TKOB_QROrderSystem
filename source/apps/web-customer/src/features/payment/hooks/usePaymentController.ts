@@ -10,19 +10,15 @@ import type { PaymentController, PaymentStatus } from '../model'
 import { PaymentDataFactory } from '../data'
 
 interface UsePaymentControllerProps {
-  total: number
-  itemCount: number
   orderId?: string
-  existingOrder?: Order | null
+  order?: Order | null
   onPaymentSuccess?: () => void
   onPaymentFailure?: () => void
 }
 
 export function usePaymentController({
-  total,
-  itemCount,
   orderId,
-  existingOrder,
+  order,
   onPaymentSuccess,
   onPaymentFailure,
 }: UsePaymentControllerProps): PaymentController {
@@ -44,37 +40,44 @@ export function usePaymentController({
     }
     didStartRef.current = true;
 
-    // Guard: Ensure orderId exists before starting payment
-    const finalOrderId = orderId || existingOrder?.id;
-    if (!finalOrderId) {
+    // Guard: Ensure order exists with valid ID
+    const finalOrderId = orderId || order?.id;
+    const amount = order?.total;
+    
+    if (!finalOrderId || !order || !amount) {
       if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.warn('[Payment Controller] Cannot start payment: orderId is missing');
+        console.warn('[Payment Controller] Cannot start payment: missing order or amount', {
+          finalOrderId,
+          hasOrder: !!order,
+          amount,
+        });
       }
-      debugError('Payment', 'start_missing_order_id')
+      debugError('Payment', 'start_missing_order_data')
       setPaymentStatus('failed');
-      setError('Invalid order. Please create an order first.');
+      setError('Invalid order data. Cannot process payment.');
       return;
     }
 
     if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[Payment Controller] Starting payment process', {
+      console.log('[Payment Controller] Starting payment process from order snapshot', {
         orderId: finalOrderId,
-        amount: total,
-        itemCount,
+        amount: amount,
+        itemCount: order.items?.length,
+        paymentMethod: order.paymentMethod,
       });
     }
 
     debugLog('Payment', 'start', {
       orderId: finalOrderId,
-      amount: total,
-      itemCount,
+      amount: amount,
+      itemCount: order.items?.length,
     })
 
     try {
       const strategy = PaymentDataFactory.getStrategy();
       const response = await strategy.processCardPayment({
         orderId: finalOrderId,
-        amount: total,
+        amount: amount,
         sessionId: session?.tableId,
       });
 
@@ -93,7 +96,7 @@ export function usePaymentController({
         debugLog('Payment', 'success', { orderId: finalOrderId })
         setPaymentStatus('success');
         
-        // Invalidate queries to refresh order data
+        // Invalidate queries to refresh order data from storage
         queryClient.invalidateQueries({ queryKey: ['order', finalOrderId] });
         if (session?.tableId) {
           queryClient.invalidateQueries({ queryKey: ['orders', session.tableId] });
@@ -137,11 +140,9 @@ export function usePaymentController({
     () => ({
       paymentStatus,
       error,
-      total,
-      itemCount,
-      existingOrder,
+      order,
     }),
-    [paymentStatus, error, total, itemCount, existingOrder]
+    [paymentStatus, error, order]
   )
 
   const goBack = () => {

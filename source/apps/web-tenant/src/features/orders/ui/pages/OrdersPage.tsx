@@ -11,7 +11,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Toast, Modal } from '@/shared/components';
 import { PageHeader, ErrorState } from '@/shared/patterns';
 import { Alert, AlertDescription } from '@packages/ui';
@@ -24,11 +24,7 @@ import { OrderDetailDrawer } from '../modals';
 
 export function OrdersPage() {
   // Data layer
-  const { orders, updateOrder } = useOrdersData();
-  
-  // Loading/Error states (simulated - would come from API in real app)
-  const [isLoading] = useState(false);
-  const [error] = useState<Error | null>(null);
+  const { orders, updateOrder, isLoading, error } = useOrdersData();
   
   // Filters layer
   const {

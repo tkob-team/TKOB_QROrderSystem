@@ -11,7 +11,6 @@ import { ApiStaffAdapter } from './api/api-staff.adapter';
 
 function createStaffAdapter(): IStaffAdapter {
   const useMock = isMockEnabled('staff');
-  console.log('[StaffFactory] Mock enabled:', useMock);
   if (useMock) {
     return new MockStaffAdapter();
   }

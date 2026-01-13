@@ -4,6 +4,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/shared/utils/logger';
 import { menuAdapter } from '../../data';
 
 const MODIFIERS_QUERY_KEY = ['menu', 'modifiers'] as const;
@@ -11,7 +12,17 @@ const MODIFIERS_QUERY_KEY = ['menu', 'modifiers'] as const;
 export const useModifiers = (_params?: { activeOnly?: boolean }) => {
   return useQuery({
     queryKey: ['menu', 'modifiers'],
-    queryFn: () => menuAdapter.modifiers.findAll(),
+    queryFn: async () => {
+      logger.info('[menu] MODIFIERS_LIST_QUERY_ATTEMPT');
+      try {
+        const result = await menuAdapter.modifiers.findAll();
+        logger.info('[menu] MODIFIERS_LIST_QUERY_SUCCESS', { count: result?.length || 0 });
+        return result;
+      } catch (error) {
+        logger.error('[menu] MODIFIERS_LIST_QUERY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
+        throw error;
+      }
+    },
     select: (data) => {
       // Clone data to ensure new array/object references on every query
       // This allows memoized selectors in controller to re-compute when data changes in-place
@@ -28,7 +39,7 @@ export const useCreateModifier = (options?: { mutation?: any }) => {
   return useMutation({
     mutationFn: (data: any) => menuAdapter.modifiers.create(data),
     onSuccess: (data) => {
-      console.log('[useCreateModifier] onSuccess, calling controller callback first');
+      logger.debug('[menu] CREATE_MODIFIER_ATTEMPT');
       // Call controller callback first to handle cache update
       options?.mutation?.onSuccess?.(data);
       // Background sync after callback completes

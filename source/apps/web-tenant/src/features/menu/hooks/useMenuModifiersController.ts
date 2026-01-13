@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/shared/utils/logger';
 import { useCreateModifier, useDeleteModifier, useModifiers, useUpdateModifier } from './queries/modifiers';
 import { DEFAULT_CHOICES, INITIAL_MODIFIER_FORM, type ModifierFilters, type ModifierGroupFormData, type ModalMode } from '../model/modifiers';
 
@@ -13,12 +14,12 @@ export function useMenuModifiersController() {
   // ========== DATA LAYER ==========
   const modifiersQuery = useModifiers({ activeOnly: false });
   const groups = modifiersQuery.data || [];
-  console.log('[useMenuModifiersController] groups updated:', groups.length);
+  logger.debug('[menu] MODIFIERS_LOADED', { count: groups.length });
 
   const createGroupMutation = useCreateModifier({
     mutation: {
       onSuccess: async (newGroup: any) => {
-        console.log('[MenuModifiersController] create onSuccess, updating cache with dedupe...');
+        logger.debug('[menu] CREATE_MODIFIER_SUCCESS');
         // Optimistic update: add new group to cache, deduplicate by id
         // Use setQueriesData to update ALL cache entries (base + parameterized keys)
         queryClient.setQueriesData({ queryKey: MODIFIERS_QUERY_KEY }, (old: any[] | undefined) => {
@@ -28,7 +29,6 @@ export function useMenuModifiersController() {
           const deduped = old.filter((g: any) => String(g.id) !== newId);
           return [newGroup, ...deduped];
         });
-        console.log('[MenuModifiersController] cache updated, background sync triggered');
         setShowCreateModal(false);
         setToast({ message: 'Modifier group created successfully', type: 'success' });
         resetForm();
@@ -42,7 +42,7 @@ export function useMenuModifiersController() {
   const updateGroupMutation = useUpdateModifier({
     mutation: {
       onSuccess: async (updatedGroup: any) => {
-        console.log('[MenuModifiersController] update onSuccess, updating cache...');
+        logger.debug('[menu] UPDATE_MODIFIER_SUCCESS');
         // Optimistic update: replace group in cache
         // Use setQueriesData to update ALL cache entries (base + parameterized keys)
         queryClient.setQueriesData({ queryKey: MODIFIERS_QUERY_KEY }, (old: any[] | undefined) => {
@@ -65,7 +65,7 @@ export function useMenuModifiersController() {
   const deleteGroupMutation = useDeleteModifier({
     mutation: {
       onSuccess: async (_, groupId: string) => {
-        console.log('[MenuModifiersController] delete onSuccess, updating cache with id normalization...');
+        logger.debug('[menu] DELETE_MODIFIER_SUCCESS');
         // Optimistic update: mark group as archived in cache, normalize id comparison
         // Use setQueriesData to update ALL cache entries (base + parameterized keys)
         const deleteId = String(groupId);
@@ -73,7 +73,6 @@ export function useMenuModifiersController() {
           if (!old) return [];
           return old.map((g: any) => (String(g.id) === deleteId ? { ...g, active: false } : g));
         });
-        console.log('[MenuModifiersController] cache updated, background sync triggered');
         setShowDeleteDialog(false);
         setDeletingGroup(null);
         setToast({ message: 'Modifier group deleted successfully', type: 'success' });
@@ -152,7 +151,7 @@ export function useMenuModifiersController() {
       })
       .sort((a: any, b: any) => (a.displayOrder || 999) - (b.displayOrder || 999));
     
-    console.log('[getFilteredGroups] filtered groups:', filtered.length, 'from total:', groups.length);
+    logger.debug('[menu] FILTER_MODIFIERS', { filtered: filtered.length, total: groups.length });
     return filtered;
   };
 
@@ -297,7 +296,7 @@ export function useMenuModifiersController() {
       })),
     };
 
-    console.log('[ModifiersController] Save:', { mode: modalMode, payload });
+    logger.debug('[menu] SAVE_MODIFIER_ATTEMPT', { mode: modalMode });
 
     if (modalMode === 'create') {
       createGroupMutation.mutate(payload as any);

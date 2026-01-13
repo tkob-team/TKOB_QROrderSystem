@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/context/AuthContext';
+import { logger } from '@/shared/utils/logger';
 import { config, ROUTES } from '@/shared/config';
 import { AuthPageHeader } from '../components/AuthPageHeader';
 import {
@@ -113,7 +114,7 @@ export function Login({ onNavigate }: LoginProps) {
       }
 
       // Production authentication
-      console.log('[Login] Calling login with:', data.email);
+      logger.debug('[auth] LOGIN_PAGE_ATTEMPT');
       await login(data.email, data.password, rememberMe);
 
       // Save remember me preference
@@ -127,10 +128,10 @@ export function Login({ onNavigate }: LoginProps) {
 
       // Navigate to default route
       const defaultRoute = getDefaultRoute();
-      console.log('[Login] Navigating to:', defaultRoute);
+      logger.debug('[auth] LOGIN_PAGE_NAVIGATE', { route: defaultRoute });
       router.push(defaultRoute);
     } catch (error: unknown) {
-      console.error('[Login] Login failed:', error);
+      logger.error('[auth] LOGIN_PAGE_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
 
       if (isDev && error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as {
@@ -147,7 +148,7 @@ export function Login({ onNavigate }: LoginProps) {
   };
 
   const handleDevLogin = (role: 'admin' | 'kds' | 'waiter') => {
-    console.log('[Login] Dev login:', role);
+    logger.debug('[auth] LOGIN_PAGE_DEV_LOGIN', { role });
     if (typeof window !== 'undefined') {
       localStorage.clear();
     }

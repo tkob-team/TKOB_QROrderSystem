@@ -3,22 +3,42 @@
 import { ApiResponse, Order, CartItem } from '@/types';
 import { mockOrders, setMockCurrentOrder, loadOrdersFromStorage, saveOrdersToStorage } from '../data';
 import { delay, createSuccessResponse, createErrorResponse } from '../utils';
+import { readOrders, writeOrders, upsertOrder as upsertOrderInStorage } from '@/features/orders/data/mock/orderStorage';
+import { debugOrder } from '@/features/orders/dev/orderDebug';
 
 let orderIdCounter = 1;
 
 /**
  * Initialize orders from storage or get from in-memory array
+ * 
+ * NOTE: tableId is required when available. Falls back to in-memory mockOrders if not provided.
+ * This maintains backward compatibility while encouraging canonical storage use.
  */
-function getOrInitializeOrders(sessionId?: string): Order[] {
-  // If no sessionId, use in-memory orders (for session persistence)
+function getOrInitializeOrders(tableId?: string, sessionId?: string): Order[] {
+  // Prefer canonical storage if tableId is available
+  if (tableId) {
+    try {
+      const stored = readOrders(tableId);
+      if (stored.length > 0) {
+        // Update in-memory array to match stored data for compatibility
+        mockOrders.length = 0;
+        mockOrders.push(...stored);
+        return mockOrders;
+      }
+    } catch (err) {
+      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
+        console.warn('[Order Handler] Failed to load from canonical storage, using in-memory:', err);
+      }
+    }
+  }
+
+  // Fallback to old behavior for backward compatibility
   if (!sessionId) {
     return mockOrders;
   }
 
-  // Otherwise, load from localStorage with session key
   const stored = loadOrdersFromStorage(sessionId);
   if (stored.length > 0) {
-    // Update in-memory array to match stored data
     mockOrders.length = 0;
     mockOrders.push(...stored);
     return mockOrders;
@@ -30,6 +50,8 @@ function getOrInitializeOrders(sessionId?: string): Order[] {
 export const orderHandlers = {
   /**
    * Create new order
+   * 
+   * Uses canonical storage module to ensure deterministic persistence
    */
   async createOrder(data: {
     tableId: string;
@@ -45,67 +67,91 @@ export const orderHandlers = {
       return createErrorResponse('Order must contain at least one item');
     }
     
+    if (!data.tableId) {
+      return createErrorResponse('tableId is required for order creation');
+    }
+    
     if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
       console.log('[Order Handler] Creating order with', data.items.length, 'items for table:', data.tableId);
     }
     
-    // Calculate totals
-    const subtotal = data.items.reduce((sum, item) => {
-      let itemPrice = item.menuItem.basePrice;
-      
-      // Add size price
-      if (item.selectedSize && item.menuItem.sizes) {
-        const size = item.menuItem.sizes.find(s => s.size === item.selectedSize);
-        if (size) {
-          itemPrice = size.price;
-        }
-      }
-      
-      // Add topping prices
-      if (item.menuItem.toppings) {
-        item.selectedToppings.forEach(toppingId => {
-          const topping = item.menuItem.toppings!.find(t => t.id === toppingId);
-          if (topping) {
-            itemPrice += topping.price;
+    try {
+      // Calculate totals
+      const subtotal = data.items.reduce((sum, item) => {
+        let itemPrice = item.menuItem.basePrice;
+        
+        // Add size price
+        if (item.selectedSize && item.menuItem.sizes) {
+          const size = item.menuItem.sizes.find(s => s.size === item.selectedSize);
+          if (size) {
+            itemPrice = size.price;
           }
-        });
+        }
+        
+        // Add topping prices
+        if (item.menuItem.toppings) {
+          item.selectedToppings.forEach(toppingId => {
+            const topping = item.menuItem.toppings!.find(t => t.id === toppingId);
+            if (topping) {
+              itemPrice += topping.price;
+            }
+          });
+        }
+        
+        return sum + (itemPrice * item.quantity);
+      }, 0);
+      
+      const tax = subtotal * 0.1; // 10%
+      const serviceCharge = subtotal * 0.05; // 5%
+      const total = subtotal + tax + serviceCharge;
+      
+      // Create order with canonical payment status values
+      const order: Order = {
+        id: `order-${orderIdCounter++}`,
+        tableNumber: '12',
+        items: data.items,
+        customerName: data.customerName,
+        notes: data.notes,
+        subtotal,
+        tax,
+        serviceCharge,
+        total,
+        paymentMethod: data.paymentMethod,
+        // Use canonical enum values (matching Order type definition)
+        paymentStatus: data.paymentMethod === 'counter' ? 'Unpaid' : 'Paid',
+        status: 'Pending',
+        createdAt: new Date(),
+        estimatedReadyMinutes: 20,
+      };
+      
+      // Persist using canonical storage module
+      upsertOrderInStorage(data.tableId, order);
+      
+      // Log structured event
+      debugOrder('create-order', {
+        tableId: data.tableId,
+        orderId: order.id,
+        paymentStatus: order.paymentStatus,
+        orderStatus: order.status,
+        itemCount: order.items.length,
+        total: order.total,
+        storageKey: `tkob_mock_orders:${data.tableId}`,
+        callsite: 'order.handler.createOrder',
+      });
+      
+      // Also maintain in-memory reference for compatibility
+      mockOrders.push(order);
+      setMockCurrentOrder(order);
+      
+      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
+        console.log('[Order Handler] Order created via canonical storage:', order.id, '- Items:', order.items.length);
       }
       
-      return sum + (itemPrice * item.quantity);
-    }, 0);
-    
-    const tax = subtotal * 0.1; // 10%
-    const serviceCharge = subtotal * 0.05; // 5%
-    const total = subtotal + tax + serviceCharge;
-    
-    // Create order
-    const order: Order = {
-      id: `order-${orderIdCounter++}`,
-      tableNumber: '12',
-      items: data.items,
-      customerName: data.customerName,
-      notes: data.notes,
-      subtotal,
-      tax,
-      serviceCharge,
-      total,
-      paymentMethod: data.paymentMethod,
-      paymentStatus: data.paymentMethod === 'counter' ? 'Unpaid' : 'Paid',
-      status: 'Pending',
-      createdAt: new Date(),
-      estimatedReadyMinutes: 20,
-    };
-    
-    // Store order in both memory and storage
-    mockOrders.push(order);
-    saveOrdersToStorage(mockOrders, data.tableId);
-    setMockCurrentOrder(order);
-    
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[Order Handler] Order created:', order.id, '- Items:', order.items.length);
+      return createSuccessResponse(order, 'Order placed successfully');
+    } catch (err) {
+      console.error('[Order Handler] Failed to create order:', err);
+      return createErrorResponse('Failed to create order');
     }
-    
-    return createSuccessResponse(order, 'Order placed successfully');
   },
   
   /**

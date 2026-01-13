@@ -19,7 +19,7 @@ export function OrdersByStatusSection({ ordersByStatus }: OrdersByStatusSectionP
       <div className="flex flex-col gap-5">
         <h3 className="text-lg font-bold text-neutral-900">Orders by Status</h3>
         <div className="flex items-center justify-center" style={{ width: '100%', height: '300px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={ordersByStatus}

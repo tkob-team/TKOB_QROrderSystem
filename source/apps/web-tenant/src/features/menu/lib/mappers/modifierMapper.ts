@@ -4,6 +4,13 @@
  */
 
 import type { ModifierGroupResponseDto } from '@/services/generated/models';
+import { logger } from '@/shared/utils/logger';
+import { getTypeChanges, samplePayload } from '@/shared/utils/dataInspector';
+
+const logDataEnabled = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
+const logFull =
+  process.env.NEXT_PUBLIC_LOG_DATA === 'true' &&
+  process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
 
 export type ModifierGroupVM = {
   id: string;
@@ -23,6 +30,16 @@ export type ModifierGroupVM = {
  * Pure function: no side effects, deterministic output
  */
 export function mapModifierGroupDtoToVM(dto: any): ModifierGroupVM {
+  if (logDataEnabled) {
+    const dtoKeys = dto && typeof dto === 'object' ? Object.keys(dto).slice(0, 8) : [];
+    logger.info('[data] MAPPER_INPUT', {
+      mapper: 'mapModifierGroupDtoToVM',
+      dtoKeys,
+      hasId: !!dto?.id,
+      hasPrice: !!dto?.price,
+    });
+  }
+
   const d = dto as Partial<ModifierGroupResponseDto> & Record<string, any>;
   
   // Normalize type: convert backend types (SINGLE_CHOICE, MULTI_CHOICE) to UI types (single, multiple)
@@ -33,7 +50,7 @@ export function mapModifierGroupDtoToVM(dto: any): ModifierGroupVM {
     type = 'single';
   }
 
-  return {
+  const vm = {
     id: String(d.id),
     name: d.name ?? '',
     description: d.description ?? undefined,
@@ -45,4 +62,24 @@ export function mapModifierGroupDtoToVM(dto: any): ModifierGroupVM {
     displayOrder: d.displayOrder,
     optionCount: (d as any).options?.length ?? 0,
   };
+
+  if (logFull) {
+    logger.info('[data] MAPPER_SAMPLE', {
+      mapper: 'mapModifierGroupDtoToVM',
+      dto: samplePayload(dto, { allowKeys: ['name', 'description', 'title', 'label', 'note'] }),
+      vm: samplePayload(vm, { allowKeys: ['name', 'description', 'title', 'label', 'note'] }),
+    });
+  }
+
+  if (logDataEnabled) {
+    const vmKeys = Object.keys(vm).slice(0, 8);
+    const typeChanges = getTypeChanges(dto ?? {}, vm, ['id', 'type', 'required', 'minChoices', 'maxChoices', 'isActive']);
+    logger.info('[data] MAPPER_OUTPUT', {
+      mapper: 'mapModifierGroupDtoToVM',
+      vmKeys,
+      typeChanges,
+    });
+  }
+
+  return vm;
 }

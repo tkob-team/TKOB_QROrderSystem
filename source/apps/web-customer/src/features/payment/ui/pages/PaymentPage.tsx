@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { OrdersDataFactory } from '@/features/orders/data'
 import { CardPaymentPage } from './CardPaymentPage'
+import { debugOrder } from '@/features/orders/dev/orderDebug'
 
 export function PaymentPage() {
   const router = useRouter()
@@ -21,6 +22,12 @@ export function PaymentPage() {
     queryFn: async () => {
       if (!orderId) return null;
       
+      debugOrder('payment-start', {
+        orderId,
+        source,
+        callsite: 'PaymentPage.queryFn',
+      });
+      
       if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
         console.log('[Payment Page] Loading order:', orderId);
       }
@@ -29,11 +36,26 @@ export function PaymentPage() {
       const response = await strategy.getOrder(orderId);
       
       if (response.success && response.data) {
+        debugOrder('read-order-detail', {
+          orderId,
+          total: response.data.total,
+          itemCount: response.data.items?.length || 0,
+          paymentStatus: response.data.paymentStatus,
+          callsite: 'PaymentPage.queryFn',
+        });
+        
         if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
           console.log('[Payment Page] Order loaded:', response.data.id, '- Items:', response.data.items?.length || 0, '- Total:', response.data.total);
         }
         return response.data;
       }
+      
+      debugOrder('read-order-detail', {
+        orderId,
+        status: 'failed',
+        reason: 'Order not found',
+        callsite: 'PaymentPage.queryFn',
+      });
       
       if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
         console.warn('[Payment Page] Order not found:', orderId);
@@ -53,6 +75,13 @@ export function PaymentPage() {
   }, [orderId])
 
   const handlePaymentSuccess = () => {
+    debugOrder('payment-success-navigation', {
+      orderId,
+      source,
+      navigatingTo: source === 'order' ? `/orders/${orderId}?paid=1` : `/payment/success?orderId=${orderId}`,
+      callsite: 'PaymentPage.handlePaymentSuccess',
+    });
+    
     if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
       console.log('[Payment Page] Payment success, source:', source);
     }
@@ -67,6 +96,12 @@ export function PaymentPage() {
   }
 
   const handlePaymentFailure = () => {
+    debugOrder('payment-failed', {
+      orderId,
+      source,
+      callsite: 'PaymentPage.handlePaymentFailure',
+    });
+    
     if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
       console.log('[Payment Page] Payment failed');
     }
@@ -219,10 +254,8 @@ export function PaymentPage() {
 
   return (
     <CardPaymentPage
-      total={orderData?.total || 0}
-      itemCount={orderData?.items?.length || 0}
       orderId={orderId}
-      existingOrder={orderData || null}
+      order={orderData}
       onPaymentSuccess={handlePaymentSuccess}
       onPaymentFailure={handlePaymentFailure}
       onBack={handleBack}

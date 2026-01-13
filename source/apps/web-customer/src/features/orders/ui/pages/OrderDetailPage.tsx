@@ -10,6 +10,7 @@ import type { Order as ApiOrder } from '@/types/order'
 import { ORDERS_TEXT } from '../../model'
 import { RequestBillButton } from '../components/sections/RequestBillButton'
 import { OrderStatusTimeline } from '../components/OrderStatusTimeline'
+import { debugOrder } from '../../dev/orderDebug'
 
 interface OrderDetailPageProps {
   orderId: string
@@ -46,27 +47,9 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
   const { language } = useLanguage()
   const t = ORDERS_TEXT[language]
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
+  const [paymentSuccessShownRef, setPaymentSuccessShownRef] = useState(false)
 
-  // Check if returning from payment
-  useEffect(() => {
-    const paid = searchParams.get('paid')
-    if (paid === '1') {
-      setShowPaymentSuccess(true)
-      // Remove the query param
-      const url = new URL(window.location.href)
-      url.searchParams.delete('paid')
-      window.history.replaceState({}, '', url.toString())
-      
-      // Auto-hide after 5 seconds
-      const timer = setTimeout(() => {
-        setShowPaymentSuccess(false)
-      }, 5000)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [searchParams])
-
-  const { data: order, isLoading, error } = useQuery({
+  const { data: order, isLoading, error, refetch } = useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
       const strategy = OrdersDataFactory.getStrategy()
@@ -81,6 +64,68 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
       return apiOrder
     },
   })
+
+  // Handle payment success: if ?paid=1 exists, refetch order and show banner only if actually paid
+  useEffect(() => {
+    const paid = searchParams.get('paid')
+    if (paid === '1' && !paymentSuccessShownRef) {
+      debugOrder('read-order-detail', {
+        orderId,
+        event: 'Detected ?paid=1 param, refetching',
+        callsite: 'OrderDetailPage.useEffect',
+      });
+      
+      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
+        console.log('[OrderDetail] Detected ?paid=1, refetching order to verify payment status')
+      }
+      
+      // Refetch to get latest order state from storage
+      refetch().then((result) => {
+        if (result.data && result.data.paymentStatus === 'Paid') {
+          // Payment is confirmed as Paid - show banner and mark as shown
+          setPaymentSuccessShownRef(true)
+          setShowPaymentSuccess(true)
+          
+          debugOrder('payment-success-navigation', {
+            orderId,
+            paymentStatus: result.data.paymentStatus,
+            verificationResult: 'Confirmed as Paid',
+            callsite: 'OrderDetailPage.useEffect',
+          });
+          
+          // Remove the query param
+          const url = new URL(window.location.href)
+          url.searchParams.delete('paid')
+          window.history.replaceState({}, '', url.toString())
+          
+          if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
+            console.log('[OrderDetail] Order confirmed as Paid, showing success banner')
+          }
+          
+          // Auto-hide banner after 5 seconds
+          const timer = setTimeout(() => {
+            setShowPaymentSuccess(false)
+          }, 5000)
+          return () => clearTimeout(timer)
+        } else if (result.data) {
+          // Payment not yet reflected in storage, remove param and don't show banner
+          debugOrder('payment-success-navigation', {
+            orderId,
+            paymentStatus: result.data.paymentStatus,
+            verificationResult: 'NOT confirmed as Paid',
+            callsite: 'OrderDetailPage.useEffect',
+          });
+          
+          if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
+            console.log('[OrderDetail] Order paymentStatus is', result.data.paymentStatus, '- not showing success banner')
+          }
+          const url = new URL(window.location.href)
+          url.searchParams.delete('paid')
+          window.history.replaceState({}, '', url.toString())
+        }
+      })
+    }
+  }, [searchParams, refetch, paymentSuccessShownRef])
 
   const isLive = order ? isLiveOrder(order) : false
 
@@ -100,8 +145,8 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
       </div>
 
       <div className="p-4">
-        {/* Payment Success Banner */}
-        {showPaymentSuccess && (
+        {/* Payment Success Banner - Only show if order is actually PAID */}
+        {showPaymentSuccess && order && order.paymentStatus === 'Paid' && (
           <div 
             className="mb-4 bg-white rounded-xl p-4 border-2 animate-in fade-in slide-in-from-top-2 duration-300"
             style={{ borderColor: 'var(--emerald-500)' }}

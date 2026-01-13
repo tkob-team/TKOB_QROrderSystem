@@ -4,6 +4,7 @@
     "next/typescript"
   ],
   "rules": {
+    "no-console": "error",
     "@typescript-eslint/no-unused-vars": [
       "warn",
       {
@@ -13,5 +14,28 @@
     ],
     "@typescript-eslint/no-explicit-any": "warn",
     "react-hooks/exhaustive-deps": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/shared/utils/logger.ts"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "src/services/axios.ts",
+        "src/middleware.ts",
+        "src/shared/context/**",
+        "src/shared/config/**",
+        "src/features/**/data/factory.ts"
+      ],
+      "rules": {
+        "no-console": [
+          "error",
+          { "allow": ["error"] }
+        ]
+      }
+    }
+  ]
 }

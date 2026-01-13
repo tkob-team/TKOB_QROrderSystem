@@ -7,6 +7,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import { logger } from '@/shared/utils/logger';
 import { ROUTES } from '@/shared/config';
 import { fadeInUp, shake, scaleIn } from '@/shared/utils/animations';
 import {
@@ -121,7 +123,7 @@ export function StaffInvitationSignup({ onNavigate }: StaffInvitationSignupProps
       await new Promise(resolve => setTimeout(resolve, 1500));
       setPageState('success');
     } catch (err) {
-      console.error('[StaffInvitationSignup] Error:', err);
+      logger.error('[auth] STAFF_INVITATION_SIGNUP_ERROR', { message: err instanceof Error ? err.message : 'Unknown error' });
       setError('Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);

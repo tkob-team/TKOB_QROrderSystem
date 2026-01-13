@@ -4,5 +4,6 @@
  */
 
 export { useTablesPageController } from './useTablesPageController';
+export { useTablesController } from '../data/useTablesController';
 export { useTablesQRActions } from './useTablesQRActions';
 export { useTablesViewModel } from './useTablesViewModel';

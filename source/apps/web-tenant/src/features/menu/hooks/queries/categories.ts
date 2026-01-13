@@ -4,13 +4,24 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/shared/utils/logger';
 import { menuAdapter } from '../../data';
 import type { CreateMenuCategoryDto, UpdateMenuCategoryDto } from '@/services/generated/models';
 
 export const useMenuCategories = () => {
   return useQuery({
     queryKey: ['menu', 'categories'],
-    queryFn: () => menuAdapter.categories.findAll(),
+    queryFn: async () => {
+      logger.info('[menu] CATEGORIES_LIST_QUERY_ATTEMPT');
+      try {
+        const result = await menuAdapter.categories.findAll();
+        logger.info('[menu] CATEGORIES_LIST_QUERY_SUCCESS', { count: result?.length || 0 });
+        return result;
+      } catch (error) {
+        logger.error('[menu] CATEGORIES_LIST_QUERY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
+        throw error;
+      }
+    },
   });
 };
 

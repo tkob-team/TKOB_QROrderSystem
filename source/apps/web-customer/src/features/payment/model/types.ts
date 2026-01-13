@@ -5,9 +5,7 @@ export type PaymentStatus = 'waiting' | 'success' | 'failed'
 export interface PaymentState {
   paymentStatus: PaymentStatus
   error: string | null
-  total: number
-  itemCount: number
-  existingOrder?: Order | null
+  order?: Order | null
 }
 
 export interface PaymentActions {

@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
+import { logger } from '@/shared/utils/logger';
 import {
   useLogin,
   useRegisterSubmit,
@@ -99,12 +100,14 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
   const checkSlugAvailability = useCallback(async (slug: string) => {
     if (!slug) return null;
     
+    logger.info('[auth] CHECK_SLUG_ATTEMPT', { hasSlug: !!slug });
     setIsCheckingSlug(true);
     try {
       const result = await authAdapter.checkSlugAvailability(slug);
+      logger.info('[auth] CHECK_SLUG_SUCCESS', { available: result.available });
       return result;
     } catch (error) {
-      console.error('[useAuthController] Check slug error:', error);
+      logger.error('[auth] CHECK_SLUG_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
       return { available: false, message: 'Failed to check availability' };
     } finally {
       setIsCheckingSlug(false);
@@ -113,6 +116,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
 
   // Orchestration: Verify OTP
   const verifyOtp = useCallback(async (params: { registrationToken: string; otp: string }) => {
+    logger.info('[auth] VERIFY_OTP_ATTEMPT');
     setIsVerifyingOtp(true);
     setVerifyOtpError(null);
     
@@ -120,6 +124,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
       const result = await authAdapter.verifyOtp(params);
       
       if (result.accessToken) {
+        logger.info('[auth] VERIFY_OTP_SUCCESS');
         return { success: true, accessToken: result.accessToken };
       } else {
         const error = 'Verification failed. Please try again.';
@@ -127,8 +132,8 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
         return { success: false, message: error };
       }
     } catch (err) {
-      console.error('[useAuthController] Verify OTP error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Verification failed. Please try again.';
+      logger.error('[auth] VERIFY_OTP_ERROR', { message: errorMessage });
       setVerifyOtpError(errorMessage);
       return { success: false, message: errorMessage };
     } finally {
@@ -142,6 +147,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
       return { success: false, message: 'Please wait before resending' };
     }
     
+    logger.info('[auth] RESEND_OTP_ATTEMPT');
     setIsResendingOtp(true);
     setResendOtpError(null);
     
@@ -149,6 +155,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
       const result = await authAdapter.resendOtp({ email });
       
       if (result.success) {
+        logger.info('[auth] RESEND_OTP_SUCCESS');
         // Start cooldown
         setResendCooldown(60);
         if (cooldownTimerRef.current) {
@@ -173,8 +180,8 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
         return { success: false, message: error };
       }
     } catch (err) {
-      console.error('[useAuthController] Resend OTP error:', err);
       const errorMessage = 'Failed to resend code. Please try again.';
+      logger.error('[auth] RESEND_OTP_ERROR', { message: err instanceof Error ? err.message : 'Unknown error' });
       setResendOtpError(errorMessage);
       return { success: false, message: errorMessage };
     } finally {
@@ -184,13 +191,15 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
 
   // Orchestration: Send forgot password link
   const sendForgotPasswordLink = useCallback(async (email: string) => {
+    logger.info('[auth] FORGOT_PASSWORD_ATTEMPT');
     setIsSendingResetLink(true);
     
     try {
       const result = await authAdapter.forgotPassword({ email });
+      logger.info('[auth] FORGOT_PASSWORD_SUCCESS');
       return result;
     } catch (error) {
-      console.error('[useAuthController] Forgot password error:', error);
+      logger.error('[auth] FORGOT_PASSWORD_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
       return { success: false, message: 'Failed to send reset link. Please try again.' };
     } finally {
       setIsSendingResetLink(false);
@@ -199,6 +208,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
 
   // Orchestration: Reset password
   const resetPassword = useCallback(async (params: { token: string; newPassword: string }) => {
+    logger.info('[auth] RESET_PASSWORD_ATTEMPT');
     setIsResettingPassword(true);
     setResetPasswordError(null);
     
@@ -208,11 +218,12 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
         newPassword: params.newPassword,
       });
       if (result.success) {
+        logger.info('[auth] RESET_PASSWORD_SUCCESS');
         setIsResettingPassword(false);
       }
       return result;
     } catch (err) {
-      console.error('[useAuthController] Reset password error:', err);
+      logger.error('[auth] RESET_PASSWORD_ERROR', { message: err instanceof Error ? err.message : 'Unknown error' });
       const errorMessage = 'Something went wrong. Please try again.';
       setResetPasswordError(errorMessage);
       setIsResettingPassword(false);

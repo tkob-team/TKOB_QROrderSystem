@@ -11,6 +11,12 @@ import type {
   TableControllerFindAllParams,
 } from '@/services/generated/models';
 import type { QRDownloadFormat } from '../../model/types';
+import { logger } from '@/shared/utils/logger';
+import { samplePayload } from '@/shared/utils/dataInspector';
+
+const logFullDataEnabled =
+  process.env.NEXT_PUBLIC_LOG_DATA === 'true' &&
+  process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
 
 /**
  * Simulate network delay (200-500ms)
@@ -284,6 +290,14 @@ export class TablesMockAdapter implements ITablesAdapter {
   async createTable(data: CreateTableDto): Promise<TableResponseDto> {
     await fakeDelay();
 
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'tables',
+        op: 'create',
+        payload: samplePayload(data),
+      });
+    }
+
     // Simulate duplicate table number error
     if (mockTables.some((t) => t.tableNumber === data.tableNumber)) {
       throw new Error('Table number already exists');
@@ -306,11 +320,26 @@ export class TablesMockAdapter implements ITablesAdapter {
     };
 
     mockTables.push(newTable);
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'tables',
+        op: 'create',
+        data: samplePayload(newTable),
+      });
+    }
     return newTable;
   }
 
   async updateTable(id: string, data: UpdateTableDto): Promise<TableResponseDto> {
     await fakeDelay();
+
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'tables',
+        op: 'update',
+        payload: samplePayload({ id, ...data }),
+      });
+    }
 
     const index = mockTables.findIndex((t) => t.id === id);
     if (index === -1) {
@@ -332,11 +361,26 @@ export class TablesMockAdapter implements ITablesAdapter {
     };
 
     mockTables[index] = updated;
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'tables',
+        op: 'update',
+        data: samplePayload(updated),
+      });
+    }
     return updated;
   }
 
   async deleteTable(id: string): Promise<void> {
     await fakeDelay();
+
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'tables',
+        op: 'delete',
+        payload: samplePayload({ id }),
+      });
+    }
 
     const index = mockTables.findIndex((t) => t.id === id);
     if (index === -1) {
@@ -351,6 +395,14 @@ export class TablesMockAdapter implements ITablesAdapter {
     // Soft delete
     mockTables[index].active = false;
     mockTables[index].updatedAt = new Date().toISOString();
+
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'tables',
+        op: 'delete',
+        data: samplePayload({ success: true }),
+      });
+    }
   }
 
   async updateTableStatus(
@@ -358,6 +410,14 @@ export class TablesMockAdapter implements ITablesAdapter {
     status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'INACTIVE'
   ): Promise<TableResponseDto> {
     await fakeDelay();
+
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'tables',
+        op: 'status.update',
+        payload: samplePayload({ id, status }),
+      });
+    }
 
     const index = mockTables.findIndex((t) => t.id === id);
     if (index === -1) {
@@ -367,6 +427,13 @@ export class TablesMockAdapter implements ITablesAdapter {
     mockTables[index].status = status;
     mockTables[index].updatedAt = new Date().toISOString();
 
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'tables',
+        op: 'status.update',
+        data: samplePayload(mockTables[index]),
+      });
+    }
     return mockTables[index];
   }
 
