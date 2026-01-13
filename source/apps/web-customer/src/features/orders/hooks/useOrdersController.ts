@@ -3,11 +3,14 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
+import { log } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 import { Order, type OrdersState, toFeatureOrder } from '../model'
 import type { Order as ApiOrder } from '@/types/order'
 import { OrdersDataFactory } from '../data'
+import { orderQueryKeys } from '../data/cache/orderQueryKeys'
 import { useSession } from '@/features/tables/hooks/useSession'
-import { USE_MOCK_API } from '@/lib/constants'
+import { USE_MOCK_API } from '@/shared/config'
 
 export function useOrdersController() {
   const router = useRouter()
@@ -20,7 +23,7 @@ export function useOrdersController() {
   // Mock/API data (replace with real API calls)
   // Current session orders (all orders in this session, sorted desc)
   const { data: currentSessionOrders = [], isLoading: currentLoading } = useQuery({
-    queryKey: ['currentOrder', sessionId],
+    queryKey: orderQueryKeys.currentOrder(sessionId || 'default'),
     queryFn: async () => {
       const strategy = OrdersDataFactory.getStrategy()
       // In mock, returns all orders in current session
@@ -28,8 +31,8 @@ export function useOrdersController() {
       const historyResp = await strategy.getOrderHistory('mock-user', sessionId)
       const list = (historyResp.data || []) as ApiOrder[]
       // Sort desc by createdAt (most recent first)
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.log('[Orders Controller] getOrderHistory returned', list.length, 'orders for session:', sessionId)
+      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+        log('data', 'getOrderHistory returned orders for session', { count: list.length, sessionId: maskId(sessionId || '') }, { feature: 'orders' })
       }
       const sorted = list
         .slice()
@@ -39,7 +42,7 @@ export function useOrdersController() {
     enabled: !!sessionId,
   })
   const { data: orderHistory = [], isLoading: historyLoading } = useQuery({
-    queryKey: ['orderHistory', sessionId],
+    queryKey: orderQueryKeys.orderHistory(sessionId || 'default'),
     queryFn: async () => {
       const strategy = OrdersDataFactory.getStrategy()
       const resp = await strategy.getOrderHistory('mock-user', sessionId)

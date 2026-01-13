@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Mail, ArrowRight, Loader2 } from 'lucide-react'
 import { useState } from 'react'
-import { LanguageSwitcher } from '@/components/common'
+import { LanguageSwitcher } from '@/shared/components/common'
 import { Language } from '@/types/common'
 import { useAuthController } from '../../hooks'
 import { AUTH_TEXT } from '../../model'

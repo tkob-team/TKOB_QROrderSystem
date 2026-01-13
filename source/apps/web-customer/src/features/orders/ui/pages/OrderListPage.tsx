@@ -2,7 +2,9 @@
 
 import { ArrowRight, ClipboardList, LogIn, CreditCard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useLanguage } from '@/hooks/useLanguage'
+import { useLanguage } from '@/shared/hooks/useLanguage'
+import { log } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 import { useOrdersController } from '../../hooks'
 import { ORDERS_TEXT } from '../../model'
 
@@ -29,8 +31,8 @@ export function OrderListPage() {
 
   const handlePayNow = (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent order detail navigation
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[OrderList] Navigate to payment for order:', orderId)
+    if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+      log('ui', 'Navigate to payment for order', { orderId: maskId(orderId) }, { feature: 'orders' })
     }
     router.push(`/payment?orderId=${orderId}&source=order`)
   }

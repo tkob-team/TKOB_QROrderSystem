@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/features/tables/hooks/useSession'
+import { orderQueryKeys } from '@/features/orders/data/cache/orderQueryKeys'
+import { log, logError } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 import type { Order } from '@/types'
 import { debugLog, debugError } from '@/lib/debug'
 import type { PaymentController, PaymentStatus } from '../model'
@@ -33,9 +36,7 @@ export function usePaymentController({
   // Explicit payment starter (idempotent / StrictMode-safe)
   const startPayment = async () => {
     if (didStartRef.current) {
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.log('[Payment Controller] Payment already started, skipping duplicate call');
-      }
+      log('ui', 'Payment already started, skipping duplicate', { orderId: maskId(orderId || '') }, { feature: 'payment', dedupe: true, dedupeTtlMs: 5000 });
       return;
     }
     didStartRef.current = true;
@@ -45,27 +46,15 @@ export function usePaymentController({
     const amount = order?.total;
     
     if (!finalOrderId || !order || !amount) {
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.warn('[Payment Controller] Cannot start payment: missing order or amount', {
-          finalOrderId,
-          hasOrder: !!order,
-          amount,
-        });
-      }
+      logError('ui', 'Cannot start payment: missing order data', { hasOrderId: !!finalOrderId, hasOrder: !!order, hasAmount: !!amount }, { feature: 'payment' });
       debugError('Payment', 'start_missing_order_data')
       setPaymentStatus('failed');
       setError('Invalid order data. Cannot process payment.');
       return;
     }
 
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[Payment Controller] Starting payment process from order snapshot', {
-        orderId: finalOrderId,
-        amount: amount,
-        itemCount: order.items?.length,
-        paymentMethod: order.paymentMethod,
-      });
-    }
+    const startTime = Date.now()
+    log('data', 'Payment process start', { orderId: maskId(finalOrderId), amount, itemCount: order.items?.length || 0, paymentMethod: order.paymentMethod }, { feature: 'payment' });
 
     debugLog('Payment', 'start', {
       orderId: finalOrderId,
@@ -81,34 +70,56 @@ export function usePaymentController({
         sessionId: session?.tableId,
       });
 
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.log('[Payment Controller] Payment response received:', {
-          success: response.success,
-          status: response.data?.status,
-          message: response.message,
-        });
-      }
+      log('data', 'Payment response received', { success: response.success, status: response.data?.status, durationMs: Date.now() - startTime }, { feature: 'payment' });
 
       if (response.success && response.data?.status === 'completed') {
-        if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-          console.log('[Payment Controller] Payment completed successfully for order:', finalOrderId);
-        }
+        log('data', 'Payment completed successfully', { orderId: maskId(finalOrderId), durationMs: Date.now() - startTime }, { feature: 'payment' });
         debugLog('Payment', 'success', { orderId: finalOrderId })
         setPaymentStatus('success');
         
-        // Invalidate queries to refresh order data from storage
-        queryClient.invalidateQueries({ queryKey: ['order', finalOrderId] });
+        // Invalidate all relevant query keys to refresh order data from storage
         if (session?.tableId) {
-          queryClient.invalidateQueries({ queryKey: ['orders', session.tableId] });
+          const invalidationKeys = [
+            orderQueryKeys.order(finalOrderId),
+            orderQueryKeys.orders(session.tableId),
+            orderQueryKeys.currentOrder(session.tableId),
+            orderQueryKeys.orderHistory(session.tableId),
+          ];
+          
+          // Log cache invalidation with redacted data
+          log(
+            'data',
+            'Invalidating order queries after payment',
+            {
+              orderId: finalOrderId,
+              tableId: session.tableId,
+              keyCount: invalidationKeys.length,
+            },
+            { feature: 'payment', dedupe: false },
+          );
+          
+          // Invalidate all keys
+          invalidationKeys.forEach((key) => {
+            queryClient.invalidateQueries({ queryKey: key });
+          });
+        } else {
+          // No session, just invalidate the specific order
+          log(
+            'data',
+            'Invalidating order query after payment',
+            {
+              orderId: finalOrderId,
+            },
+            { feature: 'payment', dedupe: false },
+          );
+          queryClient.invalidateQueries({ queryKey: orderQueryKeys.order(finalOrderId) });
         }
         
         if (onPaymentSuccess) {
           onPaymentSuccess();
         }
       } else {
-        if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-          console.log('[Payment Controller] Payment failed:', response.message);
-        }
+        logError('data', 'Payment failed', { orderId: maskId(finalOrderId), reason: response.message }, { feature: 'payment' });
         debugLog('Payment', 'failure', {
           orderId: finalOrderId,
           reason: response.message,
@@ -120,11 +131,8 @@ export function usePaymentController({
         }
       }
     } catch (err) {
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.error('[Payment Controller] Payment error:', err);
-      }
+      logError('data', 'Payment error', err, { feature: 'payment' });
       debugError('Payment', 'error', err)
-      console.error('[usePaymentController] Payment error:', err);
       setPaymentStatus('failed');
       setError(err instanceof Error ? err.message : 'Payment processing error');
       if (onPaymentFailure) {

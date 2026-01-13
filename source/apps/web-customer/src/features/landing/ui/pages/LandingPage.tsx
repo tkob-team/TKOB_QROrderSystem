@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation'
 import { Smartphone } from 'lucide-react'
 import { useEffect } from 'react'
-import { LanguageSwitcher } from '@/components'
-import { useLanguage } from '@/hooks/useLanguage'
-import { useSession } from '@/hooks/useSession'
+import { LanguageSwitcher } from '@/shared/components'
+import { useLanguage } from '@/shared/hooks/useLanguage'
+import { useSession } from '@/features/tables/hooks'
+import { log } from '@/shared/logging/logger'
 import { LANDING_TEXT } from '../../model/constants'
 
 export function LandingPage() {
@@ -16,7 +17,7 @@ export function LandingPage() {
   // Redirect if no session (not scanned QR)
   useEffect(() => {
     if (!loading && !session) {
-      console.log('[LandingPage] No session found, redirecting to invalid-qr')
+      log('nav', 'No session found, redirecting to invalid-qr', null, { feature: 'landing' })
       router.push('/invalid-qr?reason=no-session')
     }
   }, [loading, session, router])

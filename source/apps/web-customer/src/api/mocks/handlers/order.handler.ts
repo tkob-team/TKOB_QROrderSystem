@@ -3,8 +3,10 @@
 import { ApiResponse, Order, CartItem } from '@/types';
 import { mockOrders, setMockCurrentOrder, loadOrdersFromStorage, saveOrdersToStorage } from '../data';
 import { delay, createSuccessResponse, createErrorResponse } from '../utils';
-import { readOrders, writeOrders, upsertOrder as upsertOrderInStorage } from '@/features/orders/data/mock/orderStorage';
+import { readOrders, writeOrders, upsertOrder as upsertOrderInStorage } from '@/features/orders/data/mocks/orderStorage';
 import { debugOrder } from '@/features/orders/dev/orderDebug';
+import { log } from '@/shared/logging/logger';
+import { maskId } from '@/shared/logging/helpers';
 
 let orderIdCounter = 1;
 
@@ -26,8 +28,8 @@ function getOrInitializeOrders(tableId?: string, sessionId?: string): Order[] {
         return mockOrders;
       }
     } catch (err) {
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.warn('[Order Handler] Failed to load from canonical storage, using in-memory:', err);
+      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+        log('mock', 'Failed to load from canonical storage, using in-memory', { tableId: maskId(tableId), error: String(err) }, { feature: 'orders' });
       }
     }
   }
@@ -71,8 +73,8 @@ export const orderHandlers = {
       return createErrorResponse('tableId is required for order creation');
     }
     
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[Order Handler] Creating order with', data.items.length, 'items for table:', data.tableId);
+    if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+      log('mock', 'Creating order', { itemsCount: data.items.length, tableId: maskId(data.tableId) }, { feature: 'orders' });
     }
     
     try {
@@ -117,12 +119,28 @@ export const orderHandlers = {
         serviceCharge,
         total,
         paymentMethod: data.paymentMethod,
-        // Use canonical enum values (matching Order type definition)
-        paymentStatus: data.paymentMethod === 'counter' ? 'Unpaid' : 'Paid',
+        // All orders start as Unpaid; payment handler updates to Paid after processing
+        paymentStatus: 'Unpaid',
         status: 'Pending',
         createdAt: new Date(),
         estimatedReadyMinutes: 20,
       };
+      
+      // Log order creation with redacted data
+      log(
+        'mock',
+        'Order created',
+        {
+          orderId: order.id,
+          tableId: data.tableId,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          orderStatus: order.status,
+          itemCount: order.items.length,
+          total: order.total,
+        },
+        { feature: 'orders', dedupe: false },
+      );
       
       // Persist using canonical storage module
       upsertOrderInStorage(data.tableId, order);

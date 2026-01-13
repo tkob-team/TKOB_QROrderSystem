@@ -1,7 +1,16 @@
 /**
  * Unified debug logging utility for web-customer
- * Gate all logs behind NEXT_PUBLIC_DEBUG_CUSTOMER env flag
+ * Compatibility layer over shared logging core
  */
+
+import { log, logError } from '@/shared/logging/logger'
+
+const USE_LOGGING = process.env.NEXT_PUBLIC_USE_LOGGING === 'true'
+
+function formatMessage(feature: string, action: string): string {
+  const timestamp = new Date().toISOString().slice(11, 19) // HH:MM:SS
+  return `[${timestamp}] [${feature}] ${action}`
+}
 
 /**
  * Log a debug message with feature and action context
@@ -10,53 +19,25 @@
  * @param data Optional data to log
  */
 export function debugLog(feature: string, action: string, data?: any) {
-  // Only log if debug flag is enabled
-  if (process.env.NEXT_PUBLIC_DEBUG_CUSTOMER !== 'true') {
-    return
-  }
+  if (!USE_LOGGING) return
 
-  const timestamp = new Date().toISOString().slice(11, 19) // HH:MM:SS
-  const prefix = `[${timestamp}] [${feature}]`
-
-  if (data !== undefined) {
-    console.log(`${prefix} ${action}`, data)
-  } else {
-    console.log(`${prefix} ${action}`)
-  }
+  log('ui', formatMessage(feature, action), data, { feature, dedupe: false })
 }
 
 /**
  * Log a warning message
  */
 export function debugWarn(feature: string, action: string, data?: any) {
-  if (process.env.NEXT_PUBLIC_DEBUG_CUSTOMER !== 'true') {
-    return
-  }
+  if (!USE_LOGGING) return
 
-  const timestamp = new Date().toISOString().slice(11, 19)
-  const prefix = `[${timestamp}] [${feature}]`
-
-  if (data !== undefined) {
-    console.warn(`${prefix} ${action}`, data)
-  } else {
-    console.warn(`${prefix} ${action}`)
-  }
+  log('ui', formatMessage(feature, action), data, { feature, dedupe: false })
 }
 
 /**
  * Log an error message
  */
 export function debugError(feature: string, action: string, error?: any) {
-  if (process.env.NEXT_PUBLIC_DEBUG_CUSTOMER !== 'true') {
-    return
-  }
+  if (!USE_LOGGING) return
 
-  const timestamp = new Date().toISOString().slice(11, 19)
-  const prefix = `[${timestamp}] [${feature}]`
-
-  if (error !== undefined) {
-    console.error(`${prefix} ${action}`, error)
-  } else {
-    console.error(`${prefix} ${action}`)
-  }
+  logError('ui', formatMessage(feature, action), error, { feature, dedupe: false })
 }

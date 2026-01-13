@@ -1,4 +1,4 @@
-import { BottomNav } from '@/components'
+import { BottomNav } from '@/shared/components'
 
 export default function CustomerLayout({
   children,

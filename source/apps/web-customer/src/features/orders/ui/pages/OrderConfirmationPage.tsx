@@ -3,8 +3,10 @@
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { CheckCircle, Clock } from 'lucide-react'
-import { useLanguage } from '@/hooks/useLanguage'
-import { useCart } from '@/hooks/useCart'
+import { useLanguage } from '@/shared/hooks/useLanguage'
+import { useCart } from '@/shared/hooks/useCart'
+import { log } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 import { Order } from '@/types/order'
 import { useOrder } from '../../hooks/queries'
 import { ORDERS_TEXT } from '../../model'
@@ -25,8 +27,8 @@ export function OrderConfirmationPage({ orderId }: OrderConfirmationPageProps) {
 
   // Clear cart when order is confirmed (for both card and counter payments)
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[Order Confirmation] Order confirmation page mounted - clearing cart, orderId:', orderId)
+    if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+      log('ui', 'Order confirmation page mounted - clearing cart', { orderId: maskId(orderId || '') }, { feature: 'orders' })
     }
     clearCart()
   }, [clearCart, orderId])

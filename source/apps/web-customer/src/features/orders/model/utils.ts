@@ -5,6 +5,8 @@
 import type { Order as ApiOrder } from '@/types/order'
 import type { Order, OrderItem } from './types'
 import type { CartItem } from '@/types/cart'
+import { log } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 
 /**
  * Convert CartItem to OrderItem for order display
@@ -51,8 +53,8 @@ function cartItemToOrderItem(cartItem: CartItem | any): OrderItem {
     price: linePrice,
   }
   
-  if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-    console.log('[Orders] Mapped CartItem to OrderItem:', result.name, 'qty:', result.quantity, 'price:', result.price)
+  if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+    log('data', 'Mapped CartItem to OrderItem', { itemName: result.name, qty: result.quantity, price: result.price }, { feature: 'orders' })
   }
   
   return result
@@ -64,8 +66,8 @@ function cartItemToOrderItem(cartItem: CartItem | any): OrderItem {
 export function toFeatureOrder(api: ApiOrder): Order {
   const mappedItems = (api.items || []).map(item => cartItemToOrderItem(item))
   
-  if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-    console.log('[Orders] Converting API Order to Feature Order:', api.id, '- Items mapped:', mappedItems.length)
+  if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+    log('data', 'Converting API Order to Feature Order', { orderId: maskId(api.id), itemsCount: mappedItems.length }, { feature: 'orders' })
   }
   
   return {

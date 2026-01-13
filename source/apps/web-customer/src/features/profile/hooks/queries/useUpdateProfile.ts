@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
-import { AuthService } from '@/api/services/auth.service'
+import { AuthDataFactory } from '@/features/auth/data'
 
 export function useUpdateProfile() {
   return useMutation({
-    mutationFn: (data: { name: string }) => AuthService.updateProfile(data),
+    mutationFn: (data: { name: string }) => AuthDataFactory.getStrategy().updateProfile(data),
   })
 }

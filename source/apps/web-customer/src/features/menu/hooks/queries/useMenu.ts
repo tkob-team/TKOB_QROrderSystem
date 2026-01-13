@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { MenuDataFactory } from '../../data'
 import { MenuItem, ApiResponse } from '@/types'
+import { log, logError } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 
 interface UseMenuItemReturn {
   item: MenuItem | null
@@ -19,19 +21,24 @@ export function useMenuItem(itemId: string): UseMenuItemReturn {
   const [error, setError] = useState<string | null>(null)
 
   const fetchItem = async () => {
+    const startTime = Date.now()
     try {
       setIsLoading(true)
       setError(null)
+      log('data', 'Menu item fetch attempt', { itemId: maskId(itemId) }, { feature: 'menu' });
       const strategy = MenuDataFactory.getStrategy()
       const response: ApiResponse<MenuItem> = await strategy.getMenuItem(itemId)
 
       if (response.success && response.data) {
         setItem(response.data)
+        log('data', 'Menu item fetch success', { itemId: maskId(itemId), durationMs: Date.now() - startTime }, { feature: 'menu' });
       } else {
         setError(response.message || 'Failed to fetch item')
+        logError('data', 'Menu item fetch failed', { message: response.message }, { feature: 'menu' });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
+      logError('data', 'Menu item fetch error', err, { feature: 'menu' });
     } finally {
       setIsLoading(false)
     }
@@ -73,31 +80,30 @@ export function useMenu(tenantId?: string): UseMenuReturn {
   const [error, setError] = useState<string | null>(null)
 
   const fetchMenu = async () => {
+    const startTime = Date.now()
     try {
       if (!tenantId) {
         // Wait until tenant context is available (session load)
         setIsLoading(false)
         return
       }
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[features/menu useMenu] fetching menu')
-      }
-
+      
       setIsLoading(true)
       setError(null)
+      log('data', 'Menu fetch attempt', { tenantId: maskId(tenantId || '') }, { feature: 'menu', dedupe: true, dedupeTtlMs: 10000 });
       const strategy = MenuDataFactory.getStrategy()
       const response = await strategy.getPublicMenu()
 
       if (response.success && response.data) {
         setItems(response.data.items)
         setCategories(response.data.categories)
+        log('data', 'Menu fetch success', { itemCount: response.data.items.length, categoryCount: response.data.categories.length, durationMs: Date.now() - startTime }, { feature: 'menu' });
       } else {
         setError(response.message || 'Failed to fetch menu')
+        logError('data', 'Menu fetch failed', { message: response.message }, { feature: 'menu' });
       }
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[features/menu useMenu] fetchMenu error', err)
-      }
+      logError('data', 'Menu fetch error', err, { feature: 'menu' });
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsLoading(false)

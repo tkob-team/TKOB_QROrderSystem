@@ -4,7 +4,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { USE_MOCK_API } from '@/lib/constants';
+import { USE_MOCK_API } from '@/shared/config';
+import { log, logError } from '@/shared/logging/logger';
+import { maskId } from '@/shared/logging/helpers';
 import { TableDataFactory } from '../data';
 import type { SessionInfo } from '../data';
 import { setStoredSession } from '../utils/sessionStorage';
@@ -19,16 +21,12 @@ export function useQRHandler({ qrToken }: UseQRHandlerProps) {
   useEffect(() => {
     // Validate token exists
     if (!qrToken) {
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.error('[QR] Missing QR token parameter');
-      }
+      logError('ui', '[QR] Missing QR token parameter', null, { feature: 'tables', route: '/t/[qrToken]' });
       window.location.href = '/invalid-qr?reason=missing-token';
       return;
     }
 
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[QR] Processing QR token:', qrToken);
-    }
+    log('data', '[QR] Processing QR token', { hasToken: true }, { feature: 'tables', route: '/t/[qrToken]' });
 
     // MOCK mode: Handle QR validation client-side
     if (USE_MOCK_API) {
@@ -40,9 +38,7 @@ export function useQRHandler({ qrToken }: UseQRHandlerProps) {
     // Backend will validate, create session, set cookie, and redirect to /menu
     const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/t/${qrToken}`;
     
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[QR] Redirecting to backend (REAL mode):', backendUrl);
-    }
+    log('data', '[QR] Redirecting to backend (REAL mode)', { backendUrl }, { feature: 'tables', route: '/t/[qrToken]' });
     
     // Use window.location.href to allow backend 302 redirect
     // This ensures cookie is properly set before final navigation
@@ -58,14 +54,10 @@ async function handleMockQR(token: string, router: ReturnType<typeof useRouter>)
     const strategy = TableDataFactory.getStrategy();
     const result = await strategy.validateQRToken(token);
 
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[QR] MOCK validation result:', result);
-    }
+    log('data', '[QR] MOCK validation result', { success: result.success }, { feature: 'tables', route: '/t/[qrToken]' });
 
     if (!result.success) {
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.error('[QR] MOCK validation failed:', result.message);
-      }
+      logError('data', '[QR] MOCK validation failed', { message: result.message }, { feature: 'tables', route: '/t/[qrToken]' });
       router.push('/invalid-qr?reason=invalid-token');
       return;
     }
@@ -81,23 +73,17 @@ async function handleMockQR(token: string, router: ReturnType<typeof useRouter>)
       createdAt: new Date().toISOString(),
     };
 
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[QR] MOCK session created:', session);
-    }
+    log('data', '[QR] MOCK session created', { sessionId: maskId(session.sessionId), tableId: maskId(session.tableId) }, { feature: 'tables', route: '/t/[qrToken]' });
 
     // Persist session to localStorage so useSession can retrieve it
     setStoredSession(session);
 
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[QR] MOCK session stored; navigating to /');
-    }
+    log('ui', '[QR] MOCK session stored; navigating to /', null, { feature: 'tables', route: '/t/[qrToken]' });
 
     // Navigate to landing (app entry point after session created)
     router.push('/');
   } catch (err) {
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.error('[QR] MOCK QR handling error:', err);
-    }
+    logError('data', '[QR] MOCK QR handling error', err, { feature: 'tables', route: '/t/[qrToken]' });
     router.push('/invalid-qr?reason=error');
   }
 }

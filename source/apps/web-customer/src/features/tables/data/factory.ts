@@ -1,23 +1,38 @@
-// Tables feature data factory - selector for mock vs real strategy
+// Tables feature data factory - selector for mock vs real adapter
 
-import { USE_MOCK_API } from '@/lib/constants';
-import type { ITableStrategy } from './types';
-import { MockTableStrategy } from './strategies/MockTableStrategy';
-import { RealTableStrategy } from './strategies/RealTableStrategy';
+import { USE_MOCK_API } from '@/shared/config';
+import { log } from '@/shared/logging/logger';
+import type { ITablesAdapter } from './adapter.interface';
+import { MockTablesAdapter } from './mocks/tables.adapter';
+import { TablesAdapter } from './api/tables.adapter';
 
 /**
- * Feature-owned factory for table data strategies
+ * Feature-owned factory for table data adapters
  * Selects between mock and real implementations based on API_MODE
  * 
  * This lives in the feature to make data access transparent to consumers.
  * All table data operations flow through this factory.
  */
-export class TableDataFactory {
-  private static instance: ITableStrategy;
+const USE_LOGGING = process.env.NEXT_PUBLIC_USE_LOGGING === 'true';
 
-  static getStrategy(): ITableStrategy {
+export class TableDataFactory {
+  private static instance: ITablesAdapter;
+
+  static getStrategy(): ITablesAdapter {
     if (!this.instance) {
-      this.instance = USE_MOCK_API ? new MockTableStrategy() : new RealTableStrategy();
+      if (USE_LOGGING) {
+        log(
+          'data',
+          'Adapter mode selected',
+          {
+            mode: USE_MOCK_API ? 'MOCK' : 'REAL',
+            strategy: USE_MOCK_API ? 'MockTablesAdapter' : 'TablesAdapter',
+          },
+          { feature: 'tables' },
+        );
+      }
+
+      this.instance = USE_MOCK_API ? new MockTablesAdapter() : new TablesAdapter();
     }
     return this.instance;
   }

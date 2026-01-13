@@ -1,5 +1,6 @@
 // Session storage utility for client-side session persistence (MOCK mode)
 
+import { logError } from '@/shared/logging/logger';
 import type { SessionInfo } from '../data';
 
 const SESSION_STORAGE_KEY = 'tkob_table_session';
@@ -14,7 +15,7 @@ export function getStoredSession(): SessionInfo | null {
     const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
     return stored ? JSON.parse(stored) : null;
   } catch (err) {
-    console.warn('[sessionStorage] Failed to read session from localStorage:', err);
+    logError('data', '[sessionStorage] Failed to read session from localStorage', err, { feature: 'tables' });
     return null;
   }
 }
@@ -28,7 +29,7 @@ export function setStoredSession(session: SessionInfo): void {
   try {
     window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
   } catch (err) {
-    console.warn('[sessionStorage] Failed to store session in localStorage:', err);
+    logError('data', '[sessionStorage] Failed to store session in localStorage', err, { feature: 'tables' });
   }
 }
 
@@ -41,6 +42,6 @@ export function clearStoredSession(): void {
   try {
     window.localStorage.removeItem(SESSION_STORAGE_KEY);
   } catch (err) {
-    console.warn('[sessionStorage] Failed to clear session from localStorage:', err);
+    logError('data', '[sessionStorage] Failed to clear session from localStorage', err, { feature: 'tables' });
   }
 }

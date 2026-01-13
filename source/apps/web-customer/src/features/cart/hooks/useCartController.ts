@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useCart } from '@/hooks/useCart'
+import { useCart } from '@/shared/hooks/useCart'
 import { TAX_RATE, SERVICE_CHARGE_RATE, type CartTotals } from '../model'
 
 export function useCartController() {

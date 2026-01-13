@@ -1,5 +1,5 @@
 import { MenuPage } from '@/features/menu'
-import { FeatureErrorBoundary } from '@/components/error'
+import { FeatureErrorBoundary } from '@/shared/components/error'
 
 export default function Menu() {
   return (

@@ -12,6 +12,25 @@
       }
     ],
     "@typescript-eslint/no-explicit-any": "warn",
-    "react-hooks/exhaustive-deps": "warn"
+    "react-hooks/exhaustive-deps": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@/components", "@/components/*"],
+            "message": "⛔ Use '@/shared/components' instead of '@/components'. See docs/reports/WEB_CUSTOMER_P3_5_GUARDRAILS.md"
+          },
+          {
+            "group": ["@/hooks", "@/hooks/*"],
+            "message": "⛔ Use '@/shared/hooks' for utilities or '@/features/*/hooks' for feature hooks. See docs/reports/WEB_CUSTOMER_P3_5_GUARDRAILS.md"
+          },
+          {
+            "group": ["@/lib/constants", "@/lib/utils"],
+            "message": "⛔ Use '@/shared/config' or '@/shared/utils' instead of '@/lib/constants' or '@/lib/utils'. See docs/reports/WEB_CUSTOMER_P3_5_GUARDRAILS.md"
+          }
+        ]
+      }
+    ]
   }
 }

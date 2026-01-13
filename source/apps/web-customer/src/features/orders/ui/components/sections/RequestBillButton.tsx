@@ -1,6 +1,8 @@
 import { ReceiptText, CheckCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { log, logError } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 
 interface RequestBillButtonProps {
   orderId?: string
@@ -25,7 +27,7 @@ const setBillRequestedInStorage = (orderId: string) => {
   try {
     localStorage.setItem(getBillRequestedKey(orderId), 'true')
   } catch (err) {
-    console.warn('[RequestBill] Failed to store bill request state:', err)
+    logError('data', 'Failed to store bill request state', err, { feature: 'orders' });
   }
 }
 
@@ -43,9 +45,7 @@ export function RequestBillButton({
   useEffect(() => {
     if (orderId && isBillRequestedInStorage(orderId)) {
       setIsRequested(true)
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.log('[RequestBill] Bill already requested for order:', orderId)
-      }
+      log('ui', 'Bill request state loaded', { orderId: maskId(orderId), wasRequested: true }, { feature: 'orders' });
     }
   }, [orderId])
 
@@ -67,9 +67,7 @@ export function RequestBillButton({
     setShowConfirm(false)
     setIsLoading(true)
     
-    if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-      console.log('[RequestBill] Requesting bill for order:', orderId)
-    }
+    log('ui', 'Bill request initiated', { orderId: maskId(orderId) }, { feature: 'orders' });
     
     try {
       // TODO: Hook up to API once available
@@ -82,13 +80,11 @@ export function RequestBillButton({
       setBillRequestedInStorage(orderId)
       toast.success('Bill requested. A server will assist you shortly.')
       
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.log('[RequestBill] Bill request successful for order:', orderId)
-      }
+      log('ui', 'Bill request successful', { orderId: maskId(orderId) }, { feature: 'orders' });
       
       onRequested?.()
     } catch (error) {
-      console.error('[RequestBill] Failed to request bill:', error)
+      logError('ui', 'Bill request failed', error, { feature: 'orders' });
       toast.error('Failed to request bill. Please try again.')
     } finally {
       setIsLoading(false)

@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { MenuService } from '@/api/services/menu.service'
+import { MenuDataFactory } from '@/features/menu/data'
 import type { MenuItem } from '@/types'
 
 export function useItemDetailQuery(itemId: string) {
   return useQuery({
     queryKey: ['menu-item', itemId],
     queryFn: async () => {
-      const response = await MenuService.getMenuItem(itemId)
+      const adapter = MenuDataFactory.getStrategy()
+      const response = await adapter.getMenuItem(itemId)
       return response.data as MenuItem
     },
   })
@@ -17,7 +18,8 @@ export function useMenuItemsQuery(tenantId: string | undefined) {
     queryKey: ['menu-items', tenantId],
     enabled: Boolean(tenantId),
     queryFn: async () => {
-      const response = await MenuService.getPublicMenu(tenantId!)
+      const adapter = MenuDataFactory.getStrategy()
+      const response = await adapter.getPublicMenu()
       return response.data?.items as MenuItem[]
     },
   })

@@ -1,7 +1,9 @@
 // Feature-owned useSession hook - Get current table session information
 
 import { useState, useEffect } from 'react';
-import { USE_MOCK_API } from '@/lib/constants';
+import { USE_MOCK_API } from '@/shared/config';
+import { log, logError } from '@/shared/logging/logger';
+import { maskId } from '@/shared/logging/helpers';
 import { TableDataFactory } from '../data';
 import type { SessionInfo } from '../data';
 import { getStoredSession } from '../utils/sessionStorage';
@@ -22,9 +24,7 @@ export function useSession() {
         if (USE_MOCK_API) {
           const storedSession = getStoredSession();
           if (storedSession) {
-            if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-              console.log('[useSession] MOCK session loaded from storage:', storedSession);
-            }
+            log('data', '[useSession] MOCK session loaded from storage', { sessionId: maskId(storedSession.sessionId), tableId: maskId(storedSession.tableId) }, { feature: 'tables' });
             if (mounted) {
               setSession(storedSession);
               setError(null);
@@ -38,9 +38,7 @@ export function useSession() {
         const strategy = TableDataFactory.getStrategy();
         const sessionData = await strategy.getCurrentSession();
         
-        if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-          console.log('[useSession] Session data received:', sessionData);
-        }
+        log('data', '[useSession] Session data received', { sessionId: sessionData?.sessionId ? maskId(sessionData.sessionId) : undefined, tableId: sessionData?.tableId ? maskId(sessionData.tableId) : undefined }, { feature: 'tables' });
         
         if (mounted) {
           setSession(sessionData);
@@ -48,9 +46,7 @@ export function useSession() {
         }
       } catch (err) {
         if (mounted) {
-          if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-            console.error('[useSession] Failed to get session:', err);
-          }
+          logError('data', '[useSession] Failed to get session', err, { feature: 'tables' });
           setSession(null);
           setError(err instanceof Error ? err : new Error('Failed to get session'));
         }

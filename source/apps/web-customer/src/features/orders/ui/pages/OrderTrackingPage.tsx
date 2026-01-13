@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { Clock, Flag, Loader2, ReceiptText } from 'lucide-react'
-import { useLanguage } from '@/hooks/useLanguage'
+import { useLanguage } from '@/shared/hooks/useLanguage'
+import { log } from '@/shared/logging/logger'
+import { maskId } from '@/shared/logging/helpers'
 import { ORDERS_TEXT } from '../../model'
 import { ReviewModal } from '../components/modals/ReviewModal'
 import { VerifyEmailRequiredModal } from '@/features/auth/ui/components/modals/VerifyEmailRequiredModal'
@@ -26,7 +28,9 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
   const handleSubmitReview = ({ rating, comment }: { rating: number; comment: string }) => {
     // Hook up to API once available
-    console.log('Submitting review', { rating, comment, orderId })
+    if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+      log('ui', 'Submitting review', { rating, commentLength: comment.length, orderId: maskId(orderId || '') }, { feature: 'orders' })
+    }
     setShowReviewModal(false)
   }
 

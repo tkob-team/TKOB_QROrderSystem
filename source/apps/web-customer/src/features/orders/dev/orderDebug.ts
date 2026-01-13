@@ -1,16 +1,26 @@
 /**
- * Order & Payment Debug Logging Utility
+ * Order & Payment Debug Logging Utility (DEPRECATED)
  * 
- * Structured logging for mock/dev environments only.
- * Helps diagnose key mismatches, state inconsistencies, and timing issues.
+ * This module now delegates to the shared logger with [debug-order] category.
+ * All logs respect NEXT_PUBLIC_USE_LOGGING env flag and use ID masking/redaction.
+ * 
+ * DEPRECATED FLAGS:
+ * - NEXT_PUBLIC_MOCK_DEBUG (still supported as alias)
+ * - NEXT_PUBLIC_DEBUG_CUSTOMER (still supported as alias)
+ * 
+ * NEW FLAG:
+ * - NEXT_PUBLIC_USE_LOGGING=true (primary gate)
  * 
  * Usage:
  *   debugOrder('create-order', { tableId, orderId, paymentStatus })
  *   debugOrder('payment-update', { orderId, paymentStatus, storageKey })
  *   debugOrder('order-read', { orderId, found: true, storageKey })
  * 
- * Logs are prefixed [Orders] for easy filtering in DevTools
+ * Note: Raw IDs are automatically masked. Use shared logger directly for production.
  */
+
+import { log as sharedLog, logError as sharedLogError } from '@/shared/logging/logger'
+import { redactPayload } from '@/shared/logging/redact'
 
 export interface OrderDebugPayload {
   // Core identifiers
@@ -31,17 +41,32 @@ export interface OrderDebugPayload {
 
 /**
  * Determine if logging is enabled
- * Only logs in mock dev environments, never in production
+ * Primary: NEXT_PUBLIC_USE_LOGGING
+ * Legacy fallback: NEXT_PUBLIC_MOCK_DEBUG or NEXT_PUBLIC_DEBUG_CUSTOMER
+ * Never logs in production regardless of flags
  */
 function isLoggingEnabled(): boolean {
   if (typeof process === 'undefined') {
     return false; // Browser-side check failed
   }
   
-  const isMockMode = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
-  const isNotProduction = process.env.NODE_ENV !== 'production';
+  // Never log in production
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
   
-  return isMockMode && isNotProduction;
+  // Primary flag
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    return true;
+  }
+  
+  // Legacy flags (deprecated but supported)
+  if (process.env.NEXT_PUBLIC_MOCK_DEBUG === 'true' || 
+      process.env.NEXT_PUBLIC_DEBUG_CUSTOMER === 'true') {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
@@ -50,6 +75,14 @@ function isLoggingEnabled(): boolean {
 function getTimestamp(): string {
   const now = new Date();
   return now.toISOString();
+}
+
+/**
+ * Mask ID values to prevent PII leaks
+ */
+function maskId(id: string | undefined): string {
+  if (!id) return '';
+  return id.length > 4 ? `***${id.slice(-4)}` : id;
 }
 
 /**
@@ -69,10 +102,16 @@ function formatPayload(payload: OrderDebugPayload): string {
 }
 
 /**
- * Main debug logging function
+ * Main debug logging function (DEPRECATED - delegates to shared logger)
  * 
  * @param event - Event name (e.g., 'create-order', 'payment-start', 'read-order-detail')
- * @param payload - Structured data to log
+ * @param payload - Structured data to log (IDs will be masked)
+ * 
+ * Now uses:
+ * - Shared logger with [data] category (orders feature)
+ * - Automatic ID masking (orderId, tableId, sessionId)
+ * - Payload redaction via redactPayload()
+ * - NEXT_PUBLIC_USE_LOGGING env gate
  * 
  * Example events:
  * - 'add-to-cart': When user adds item to cart
@@ -89,41 +128,40 @@ function formatPayload(payload: OrderDebugPayload): string {
  */
 export function debugOrder(event: string, payload: OrderDebugPayload): void {
   if (!isLoggingEnabled()) {
-    return; // Silently skip if not in mock dev mode
+    return; // Silently skip if logging disabled
   }
 
-  const timestamp = getTimestamp();
-  const formattedPayload = formatPayload(payload);
+  // Mask sensitive IDs before logging
+  const maskedPayload = {
+    ...payload,
+    orderId: payload.orderId ? maskId(payload.orderId) : undefined,
+    tableId: payload.tableId ? maskId(payload.tableId) : undefined,
+    sessionId: (payload as any).sessionId ? maskId((payload as any).sessionId) : undefined,
+  };
   
-  // Color-coded console output for different event types
-  let style = 'color: #666; font-weight: bold;';
-  
-  if (event.includes('error') || event.includes('mismatch') || event.includes('failed')) {
-    style = 'color: #ff6b6b; font-weight: bold;'; // Red for errors
-  } else if (event.includes('persisted') || event.includes('saved')) {
-    style = 'color: #51cf66; font-weight: bold;'; // Green for saves
-  } else if (event.includes('payment')) {
-    style = 'color: #ffd43b; font-weight: bold;'; // Yellow for payment
-  } else if (event.includes('read')) {
-    style = 'color: #74c0fc; font-weight: bold;'; // Blue for reads
-  }
+  // Apply full redaction rules (removes session objects, etc.)
+  const redactedPayload = redactPayload(maskedPayload);
 
-  // Log to console with timestamp
-  const prefix = `[Orders] ${event}`;
-  const message = `${timestamp} - ${formattedPayload}`;
+  // Determine if error event
+  const isError = event.includes('error') || event.includes('mismatch') || event.includes('failed');
   
-  if (typeof console !== 'undefined') {
-    console.log(`%c${prefix}`, style, message);
-    
-    // Also log to window for programmatic access if needed
-    if (typeof window !== 'undefined') {
-      (window as any).__orderDebugLogs = (window as any).__orderDebugLogs || [];
-      (window as any).__orderDebugLogs.push({
-        timestamp,
-        event,
-        payload,
-      });
-    }
+  // Delegate to shared logger with [data] category (orders feature)
+  // Event name is the message, payload is the data
+  if (isError) {
+    sharedLogError('data', event, redactedPayload, { feature: 'orders', dedupe: false });
+  } else {
+    sharedLog('data', event, redactedPayload, { feature: 'orders', dedupe: false });
+  }
+  
+  // Also log to window for programmatic access (legacy compatibility)
+  if (typeof window !== 'undefined') {
+    const timestamp = getTimestamp();
+    (window as any).__orderDebugLogs = (window as any).__orderDebugLogs || [];
+    (window as any).__orderDebugLogs.push({
+      timestamp,
+      event,
+      payload: maskedPayload, // Store masked version
+    });
   }
 }
 
@@ -206,12 +244,14 @@ export function exportOrderDebugLogs(filename: string = 'order-debug-logs.csv'):
 
 /**
  * Production safety check - verify logging is disabled in prod
+ * Note: isLoggingEnabled() now checks NODE_ENV first, so this should always pass
  */
 export function verifyProductionSafety(): boolean {
   if (process.env.NODE_ENV === 'production') {
     // Extra safety: never log in production
     if (isLoggingEnabled()) {
       console.error('[SECURITY] Debug logging enabled in production! This should never happen.');
+      console.error('Check: NEXT_PUBLIC_USE_LOGGING, NEXT_PUBLIC_MOCK_DEBUG, NEXT_PUBLIC_DEBUG_CUSTOMER');
       return false;
     }
   }

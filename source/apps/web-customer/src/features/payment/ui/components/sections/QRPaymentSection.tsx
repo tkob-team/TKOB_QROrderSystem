@@ -1,5 +1,6 @@
 import { Lock, QrCode, CheckCircle, Clock } from 'lucide-react'
 import type { PaymentStatus } from '../../../model'
+import { log } from '@/shared/logging/logger'
 
 interface QRPaymentSectionProps {
   paymentStatus: PaymentStatus
@@ -66,9 +67,7 @@ export function QRPaymentSection({ paymentStatus, onStartPayment }: QRPaymentSec
           {process.env.NEXT_PUBLIC_USE_MOCK_API === 'true' && onStartPayment && (
             <button
               onClick={() => {
-                if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-                  console.log('[QR Payment] Simulating payment success');
-                }
+                log('ui', 'Simulate payment button clicked', {}, { feature: 'payment' });
                 onStartPayment();
               }}
               className="px-6 py-2 rounded-full transition-all hover:shadow-sm active:scale-95"

@@ -1,6 +1,7 @@
 // Tables feature data layer barrel export
 
 export { TableDataFactory } from './factory';
+export type { ITablesAdapter } from './adapter.interface';
 export type { ITableStrategy, SessionInfo } from './types';
-export { MockTableStrategy } from './strategies/MockTableStrategy';
-export { RealTableStrategy } from './strategies/RealTableStrategy';
+export { MockTablesAdapter } from './mocks/tables.adapter';
+export { TablesAdapter } from './api/tables.adapter';

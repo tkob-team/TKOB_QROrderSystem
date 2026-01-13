@@ -2,8 +2,10 @@
 
 import { ApiResponse } from '@/types';
 import { delay, createSuccessResponse, createErrorResponse } from '../utils';
-import { updateOrderPaymentStatus as updatePaymentInStorage } from '@/features/orders/data/mock/orderStorage';
+import { updateOrderPaymentStatus as updatePaymentInStorage } from '@/features/orders/data/mocks/orderStorage';
 import { debugOrder } from '@/features/orders/dev/orderDebug';
+import { log } from '@/shared/logging/logger';
+import { maskId } from '@/shared/logging/helpers';
 
 export const paymentHandlers = {
   /**
@@ -24,8 +26,8 @@ export const paymentHandlers = {
         callsite: 'payment.handler.updateOrderPaymentStatus',
       });
       
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.warn('[Payment Handler] No sessionId provided for payment update');
+      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+        log('mock', 'No sessionId provided for payment update', { orderId: maskId(orderId) }, { feature: 'payment' });
       }
       return createErrorResponse('Session ID required for payment tracking');
     }
@@ -55,8 +57,19 @@ export const paymentHandlers = {
         callsite: 'payment.handler.updateOrderPaymentStatus',
       });
       
-      if (process.env.NEXT_PUBLIC_MOCK_DEBUG) {
-        console.log('[Payment Handler] Updated order payment status via canonical storage:', orderId, '-> Paid');
+      log(
+        'mock',
+        'Payment status updated',
+        {
+          orderId: maskId(orderId),
+          tableId: maskId(sessionId),
+          paymentStatus: 'Paid',
+        },
+        { feature: 'payment', dedupe: false },
+      );
+      
+      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+        log('mock', 'Updated order payment status via canonical storage', { orderId: maskId(orderId), status: 'Paid' }, { feature: 'payment' });
       }
       
       return createSuccessResponse(undefined, 'Payment status updated');
@@ -68,7 +81,9 @@ export const paymentHandlers = {
         callsite: 'payment.handler.updateOrderPaymentStatus',
       });
       
-      console.error('[Payment Handler] Failed to update payment status:', err);
+      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+        log('mock', 'Failed to update payment status', { orderId: maskId(orderId), error: String(err) }, { feature: 'payment' });
+      }
       return createErrorResponse('Failed to update payment status');
     }
   },
