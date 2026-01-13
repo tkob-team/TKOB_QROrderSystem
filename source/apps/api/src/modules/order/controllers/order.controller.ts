@@ -59,6 +59,47 @@ export class OrderController {
     return this.orderService.getTableOrders(tableId);
   }
 
+  @Get('tracking/:orderId')
+  @UseGuards(SessionGuard)
+  @Public()
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Get order tracking info (customer view)',
+    description: 'Real-time order status tracking for customers with timeline and ETA',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        orderId: { type: 'string' },
+        orderNumber: { type: 'string' },
+        tableNumber: { type: 'string' },
+        currentStatus: { type: 'string' },
+        currentStatusMessage: { type: 'string' },
+        timeline: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              status: { type: 'string' },
+              label: { type: 'string' },
+              timestamp: { type: 'string', format: 'date-time' },
+              completed: { type: 'boolean' },
+              description: { type: 'string' },
+            },
+          },
+        },
+        estimatedTimeRemaining: { type: 'number' },
+        elapsedMinutes: { type: 'number' },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async getOrderTracking(@Param('orderId') orderId: string) {
+    return this.orderService.getOrderTracking(orderId);
+  }
+
   // ==================== STAFF ENDPOINTS ====================
   @Get('admin/orders')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantOwnershipGuard)

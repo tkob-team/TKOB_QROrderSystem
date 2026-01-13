@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -11,13 +13,13 @@ import { CartService } from './cart.service';
 import { MenuItemsService } from '@/modules/menu/services/menu-item.service';
 import { OrderResponseDto } from '../dtos/order-response.dto';
 import { OrderStatus, PaymentMethod } from '@prisma/client';
-import { OrderGateway } from '@/modules/websocket/gateways/order.gateway';
 
 // Import PaymentStatus type and enum directly from Prisma client
 import type { PaymentStatus, Prisma } from '@prisma/client';
 import { OrderFiltersDto } from '../dtos/order-filters.dto';
 import { PaginatedResponseDto } from '@/common/dto/pagination.dto';
 import { UpdateOrderStatusDto } from '../dtos/update-order-status.dto';
+import { OrderGateway } from '../gateways/order.gateway';
 const PaymentStatusEnum = {
   PENDING: 'PENDING',
   PAID: 'PAID',
@@ -32,6 +34,7 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly cartService: CartService,
     private readonly menuItemsService: MenuItemsService,
+    @Inject(forwardRef(() => OrderGateway))
     private readonly orderGateway: OrderGateway,
   ) {}
 
@@ -114,13 +117,11 @@ export class OrderService {
 
     this.logger.log(`Order created: ${orderNumber} for table ${tableId}`);
 
-    // 6. Emit WebSocket event for real-time updates
-    const orderDetails = await this.getOrderById(order.id);
-    this.orderGateway.emitOrderCreated(tenantId, orderDetails);
-    this.logger.debug(`Emitted order:created event for order ${order.id}`);
+    // 7. Emit WebSocket event for new order (KDS notification)
+    const orderResponse = await this.getOrderById(order.id);
+    this.orderGateway.emitNewOrder(tenantId, orderResponse);
 
-    // 7. Return order details
-    return orderDetails;
+    return orderResponse;
   }
 
   /**
@@ -220,21 +221,51 @@ export class OrderService {
   ): Promise<OrderResponseDto> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                preparationTime: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!order) {
       throw new NotFoundException('Order not found');
     }
 
-    // Validate status transition
-    this.validateStatusTransition(order.status, dto.status as OrderStatus);
+    // Calculate estimated prep time when moving to PREPARING
+    let estimatedPrepTime: number | undefined;
+    if (dto.status === 'PREPARING') {
+      estimatedPrepTime = this.calculateEstimatedPrepTime(order.items);
+    }
 
-    // Update order
+    // Calculate actual prep time when moving to READY
+    let actualPrepTime: number | undefined;
+    if (dto.status === 'READY' && order.preparingAt) {
+      const prepTimeMs = new Date().getTime() - order.preparingAt.getTime();
+      actualPrepTime = Math.round(prepTimeMs / 1000 / 60); // Convert to minutes
+    }
+
+    // Update order with timestamps for KDS timer
     await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: orderId },
         data: {
           status: dto.status as OrderStatus,
+          ...(dto.status === 'RECEIVED' && { receivedAt: new Date() }),
+          ...(dto.status === 'PREPARING' && {
+            preparingAt: new Date(),
+            estimatedPrepTime,
+          }),
+          ...(dto.status === 'READY' && {
+            readyAt: new Date(),
+            actualPrepTime,
+          }),
           ...(dto.status === 'SERVED' && { servedAt: new Date() }),
           ...(dto.status === 'COMPLETED' && { completedAt: new Date() }),
         },
@@ -253,17 +284,94 @@ export class OrderService {
 
     this.logger.log(`Order ${order.orderNumber} status updated to ${dto.status} by ${staffId}`);
 
-    // Emit WebSocket event for status change
+    // Emit WebSocket event for real-time updates
     const updatedOrder = await this.getOrderById(orderId);
-    this.orderGateway.emitOrderStatusChanged(
-      order.tenantId,
-      orderId,
-      dto.status,
-      updatedOrder,
-    );
-    this.logger.debug(`Emitted order:status_changed event for order ${orderId}`);
+    this.orderGateway.emitOrderStatusChanged(order.tenantId, updatedOrder);
 
     return updatedOrder;
+  }
+
+  /**
+   * Calculate estimated preparation time from menu items
+   * Returns the maximum preparation time among all items
+   */
+  private calculateEstimatedPrepTime(items: any[]): number {
+    if (!items || items.length === 0) {
+      return 15; // Default 15 minutes
+    }
+
+    const prepTimes = items
+      .map((item) => {
+        // Get prep time from menuItem relation or default
+        if (item.menuItem?.preparationTime) {
+          return item.menuItem.preparationTime;
+        }
+        return 15; // Default if not specified
+      })
+      .filter((time) => time > 0);
+
+    // Return max prep time (items prepared in parallel)
+    return prepTimes.length > 0 ? Math.max(...prepTimes) : 15;
+  }
+
+  /**
+   * Get orders with timer warnings (for KDS priority)
+   */
+  async getOrdersWithTimerWarnings(tenantId: string): Promise<{
+    normal: OrderResponseDto[];
+    high: OrderResponseDto[];
+    urgent: OrderResponseDto[];
+  }> {
+    const preparingOrders = await this.prisma.order.findMany({
+      where: {
+        tenantId,
+        status: OrderStatus.PREPARING,
+      },
+      include: {
+        items: true,
+        table: {
+          select: {
+            tableNumber: true,
+          },
+        },
+      },
+      orderBy: { preparingAt: 'asc' },
+    });
+
+    const now = new Date();
+    const categorized = {
+      normal: [] as OrderResponseDto[],
+      high: [] as OrderResponseDto[],
+      urgent: [] as OrderResponseDto[],
+    };
+
+    for (const order of preparingOrders) {
+      const orderDto = this.toResponseDto(order);
+
+      if (!order.preparingAt) {
+        categorized.normal.push(orderDto);
+        continue;
+      }
+
+      const elapsedMinutes = Math.floor((now.getTime() - order.preparingAt.getTime()) / 1000 / 60);
+
+      const estimatedTime = order.estimatedPrepTime || 15;
+
+      // Priority logic:
+      // URGENT: > 150% của estimated time
+      // HIGH: > 100% của estimated time
+      // NORMAL: <= 100% của estimated time
+
+      if (elapsedMinutes > estimatedTime * 1.5) {
+        categorized.urgent.push(orderDto);
+      } else if (elapsedMinutes > estimatedTime) {
+        categorized.high.push(orderDto);
+      } else {
+        categorized.normal.push(orderDto);
+      }
+    }
+
+    return categorized;
   }
 
   /**
@@ -351,6 +459,144 @@ export class OrderService {
     }
   }
 
+  /**
+   * Get KDS statistics for today
+   */
+  async getKdsStatistics(tenantId: string): Promise<{
+    avgPrepTime: number;
+    todayCompleted: number;
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get orders completed today
+    const completedOrders = await this.prisma.order.findMany({
+      where: {
+        tenantId,
+        status: OrderStatus.COMPLETED,
+        completedAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      select: {
+        preparingAt: true,
+        readyAt: true,
+      },
+    });
+
+    // Calculate average preparation time
+    let totalPrepTime = 0;
+    let validPrepTimeCount = 0;
+
+    for (const order of completedOrders) {
+      if (order.preparingAt && order.readyAt) {
+        const prepTimeMs = order.readyAt.getTime() - order.preparingAt.getTime();
+        const prepTimeMinutes = prepTimeMs / 1000 / 60;
+        totalPrepTime += prepTimeMinutes;
+        validPrepTimeCount++;
+      }
+    }
+
+    const avgPrepTime = validPrepTimeCount > 0 ? Math.round(totalPrepTime / validPrepTimeCount) : 0;
+    const todayCompleted = completedOrders.length;
+
+    return {
+      avgPrepTime,
+      todayCompleted,
+    };
+  }
+
+  /**
+   * Get order tracking info for customer
+   */
+  async getOrderTracking(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        table: {
+          select: {
+            tableNumber: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Calculate elapsed time
+    const now = new Date();
+    const elapsedMs = now.getTime() - order.createdAt.getTime();
+    const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
+
+    // Calculate estimated time remaining
+    let estimatedTimeRemaining: number | undefined;
+    if (order.status === 'PREPARING' && order.preparingAt && order.estimatedPrepTime) {
+      const prepElapsedMs = now.getTime() - order.preparingAt.getTime();
+      const prepElapsedMinutes = Math.floor(prepElapsedMs / 1000 / 60);
+      estimatedTimeRemaining = Math.max(0, order.estimatedPrepTime - prepElapsedMinutes);
+    }
+
+    // Build timeline
+    const timeline = [
+      {
+        status: 'RECEIVED',
+        label: 'Order Received',
+        description: 'Your order has been received by the restaurant',
+        timestamp: order.receivedAt,
+        completed: !!order.receivedAt,
+      },
+      {
+        status: 'PREPARING',
+        label: 'Preparing',
+        description: 'Your order is being prepared by our kitchen',
+        timestamp: order.preparingAt,
+        completed: !!order.preparingAt,
+      },
+      {
+        status: 'READY',
+        label: 'Ready',
+        description: 'Your order is ready to be served',
+        timestamp: order.readyAt,
+        completed: !!order.readyAt,
+      },
+      {
+        status: 'SERVED',
+        label: 'Served',
+        description: 'Your order has been served. Enjoy your meal!',
+        timestamp: order.servedAt,
+        completed: !!order.servedAt,
+      },
+    ];
+
+    // Current status message
+    const statusMessages: Record<string, string> = {
+      PENDING: 'Waiting for confirmation',
+      RECEIVED: 'Order confirmed',
+      PREPARING: 'Being prepared',
+      READY: 'Ready to serve',
+      SERVED: 'Served - Enjoy!',
+      COMPLETED: 'Completed',
+      CANCELLED: 'Cancelled',
+    };
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      tableNumber: order.table.tableNumber,
+      currentStatus: order.status,
+      currentStatusMessage: statusMessages[order.status] || order.status,
+      timeline,
+      estimatedTimeRemaining,
+      elapsedMinutes,
+      createdAt: order.createdAt,
+    };
+  }
+
   // ==================== PRIVATE HELPERS ====================
 
   /**
@@ -413,34 +659,51 @@ export class OrderService {
   }
 
   /**
-   * Transform to response DTO
+   * Transform to response DTO with calculated fields
    */
   private toResponseDto(order: any): OrderResponseDto {
+    // Calculate elapsed prep time if order is PREPARING
+    let elapsedPrepTime: number | undefined;
+    if (order.status === 'PREPARING' && order.preparingAt) {
+      const now = new Date();
+      const elapsedMs = now.getTime() - order.preparingAt.getTime();
+      elapsedPrepTime = Math.floor(elapsedMs / 1000 / 60); // Convert to minutes
+    }
+
     return {
       id: order.id,
       orderNumber: order.orderNumber,
       tableId: order.tableId,
-      tableNumber: order.table.tableNumber,
+      tableNumber: order.table?.tableNumber || 'N/A',
       customerName: order.customerName,
       customerNotes: order.customerNotes,
       status: order.status,
+      priority: order.priority || 'NORMAL',
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
       subtotal: Number(order.subtotal),
       tax: Number(order.tax),
       total: Number(order.total),
-      items: order.items.map((item: any) => ({
+      items: (order.items || []).map((item: any) => ({
         id: item.id,
         name: item.name,
         price: Number(item.price),
         quantity: item.quantity,
-        modifiers: item.modifiers,
+        modifiers: item.modifiers || [],
         notes: item.notes,
         itemTotal: Number(item.itemTotal),
-        prepared: item.prepared,
+        prepared: item.prepared || false,
+        preparedAt: item.preparedAt,
       })),
+      estimatedPrepTime: order.estimatedPrepTime,
+      actualPrepTime: order.actualPrepTime,
+      elapsedPrepTime,
       createdAt: order.createdAt,
-      // stripePaymentIntentId: order.stripePaymentIntentId,
+      receivedAt: order.receivedAt,
+      preparingAt: order.preparingAt,
+      readyAt: order.readyAt,
+      servedAt: order.servedAt,
+      completedAt: order.completedAt,
     };
   }
 }
