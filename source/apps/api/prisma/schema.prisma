@@ -71,6 +71,12 @@ enum PaymentStatus {
   REFUNDED        // Payment refunded
 }
 
+enum OrderPriority {
+  NORMAL
+  HIGH    // Đã quá thời gian chuẩn
+  URGENT  // Đã quá thời gian ngưỡng
+}
+
 // 3. Model TENANT
 model Tenant {
   id     String       @id @default(uuid()) // PK là UUID
@@ -210,8 +216,8 @@ model MenuItem {
   @@unique([name, tenantId, categoryId], name: "menu_items_name_tenant_category_unique")
   @@index([tenantId, status, available])
   @@index([tenantId, categoryId])
-  @@index([tenantId, popularity]) // NEW: Index for popularity sorting
-  @@index([tenantId, chefRecommended]) // NEW: Index for chef recommendations
+  @@index([tenantId, popularity]) // Index for popularity sorting
+  @@index([tenantId, chefRecommended]) // Index for chef recommendations
   @@map("menu_items")
 }
 
@@ -376,9 +382,13 @@ model Order {
   
   // Order details
   status          OrderStatus   @default(PENDING)
+  priority        OrderPriority @default(NORMAL)
   subtotal        Decimal       @db.Decimal(10, 2)
   tax             Decimal       @default(0) @db.Decimal(10, 2)
   total           Decimal       @db.Decimal(10, 2)
+
+  estimatedPrepTime Int? @map("estimated_prep_time") // Estimated time in minutes
+  actualPrepTime    Int? @map("actual_prep_time")    // Actual time taken in minutes
   
   // Payment
   paymentMethod   PaymentMethod @default(BILL_TO_TABLE) @map("payment_method")
@@ -388,9 +398,13 @@ model Order {
   // // Stripe payment (if applicable)
   // stripePaymentIntentId String? @map("stripe_payment_intent_id")
   
-  // Metadata
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Metadata & Timestamps for KDS
+  receivedAt      DateTime?     @map("received_at")    // When status changed to RECEIVED
+  preparingAt     DateTime?     @map("preparing_at")  // When status changed to PREPARING
+  readyAt         DateTime?     @map("ready_at")      // When status changed to READY
   servedAt        DateTime?     @map("served_at")
   completedAt     DateTime?     @map("completed_at")
   
@@ -428,9 +442,9 @@ model OrderItem {
   // Special instructions
   notes           String?  @db.Text
   
-  // Kitchen status (for KDS)
-  prepared        Boolean  @default(false)
-  preparedAt      DateTime? @map("prepared_at")
+  // Kitchen status
+  prepared        Boolean  @default(false) // Đã chế biến xong chưa (for KDS)
+  preparedAt      DateTime? @map("prepared_at") // Thời điểm hoàn thành món này
   
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -441,6 +455,7 @@ model OrderItem {
   
   @@index([orderId])
   @@index([menuItemId])
+  @@index([orderId, prepared])
   @@map("order_items")
 }
 
