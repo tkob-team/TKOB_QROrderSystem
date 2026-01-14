@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useServiceOrders } from './queries';
 import { sortOrdersByStatus } from '../utils';
 import type { ServiceOrder, OrderStatus, ServiceTabCounts } from '../model/types';
+import { logger } from '@/shared/utils/logger';
 
 interface WaiterState {
   // Data
@@ -94,54 +95,138 @@ export function useWaiterController(): UseWaiterControllerReturn {
     return orders.filter((order) => order.status === status);
   }, [orders]);
 
-  const tabCounts: ServiceTabCounts = useMemo(() => ({
-    placed: getOrdersByStatus('placed').length,
-    confirmed: getOrdersByStatus('confirmed').length,
-    preparing: getOrdersByStatus('preparing').length,
-    ready: getOrdersByStatus('ready').length,
-    served: getOrdersByStatus('served').length,
-    completed: getOrdersByStatus('completed').length,
-  }), [getOrdersByStatus]);
+  const tabCounts: ServiceTabCounts = useMemo(() => {
+    const counts = {
+      placed: getOrdersByStatus('placed').length,
+      confirmed: getOrdersByStatus('confirmed').length,
+      preparing: getOrdersByStatus('preparing').length,
+      ready: getOrdersByStatus('ready').length,
+      served: getOrdersByStatus('served').length,
+      completed: getOrdersByStatus('completed').length,
+    };
 
-  const currentOrders = useMemo(() => 
-    sortOrdersByStatus(orders, activeTab), 
-    [orders, activeTab]
-  );
+    if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+      logger.info('[ui] TAB_COUNTS_COMPUTED', {
+        feature: 'waiter',
+        entity: 'tabCounts',
+        counts,
+      });
+    }
+
+    return counts;
+  }, [getOrdersByStatus]);
+
+  const currentOrders = useMemo(() => {
+    const sorted = sortOrdersByStatus(orders, activeTab);
+    
+    if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+      logger.info('[ui] TAB_ORDERS_APPLIED', {
+        feature: 'waiter',
+        entity: 'currentOrders',
+        activeTab,
+        inputCount: orders.length,
+        outputCount: sorted.length,
+        sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && sorted[0]
+          ? {
+              orderNumber: sorted[0].orderNumber,
+              table: sorted[0].table,
+              status: sorted[0].status,
+              itemsCount: sorted[0].items?.length || 0,
+              total: sorted[0].total,
+            }
+          : undefined,
+      });
+    }
+    
+    return sorted;
+  }, [orders, activeTab]);
 
   // Helper to update order and show toast
   const updateOrderStatus = useCallback((orderId: string, newStatus: OrderStatus, message: string) => {
+    // INVARIANT: Check if order exists before updating
+    const orderExists = orders.some(o => o.id === orderId);
+    if (!orderExists) {
+      logger.warn('[invariant] ORDER_NOT_FOUND_FOR_UPDATE', {
+        orderId,
+        attemptedStatus: newStatus,
+        availableOrderIds: orders.map(o => o.id),
+      });
+    }
+
     setOrders(prev => 
       prev.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
     );
     setToastMessage(message);
     setShowSuccessToast(true);
-  }, []);
+  }, [orders]);
 
   // Actions
   const actions: WaiterActions = {
     setActiveTab,
     
     acceptOrder: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] ACCEPT_ORDER_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              fromStatus: order.status,
+              toStatus: 'confirmed',
+            });
       updateOrderStatus(order.id, 'confirmed', `${order.orderNumber} accepted and sent to kitchen`);
     }, [updateOrderStatus]),
     
     rejectOrder: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] REJECT_ORDER_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              fromStatus: order.status,
+              toStatus: 'completed',
+            });
       updateOrderStatus(order.id, 'completed', `${order.orderNumber} rejected`);
     }, [updateOrderStatus]),
     
     cancelOrder: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] CANCEL_ORDER_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              fromStatus: order.status,
+              toStatus: 'completed',
+            });
       updateOrderStatus(order.id, 'completed', `${order.orderNumber} cancelled`);
     }, [updateOrderStatus]),
     
     markServed: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] MARK_SERVED_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              fromStatus: order.status,
+              toStatus: 'served',
+            });
       updateOrderStatus(order.id, 'served', `${order.orderNumber} marked as served`);
     }, [updateOrderStatus]),
     
     markCompleted: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] MARK_COMPLETED_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              fromStatus: order.status,
+              toStatus: 'completed',
+            });
       updateOrderStatus(order.id, 'completed', `${order.orderNumber} marked as completed`);
     }, [updateOrderStatus]),
     
     markPaid: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] MARK_PAID_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              previousPaymentStatus: order.paymentStatus,
+              newPaymentStatus: 'paid',
+            });
       setOrders(prev => 
         prev.map((o) => (o.id === order.id ? { ...o, paymentStatus: 'paid' } : o))
       );
@@ -150,6 +235,12 @@ export function useWaiterController(): UseWaiterControllerReturn {
     }, []),
     
     closeTable: useCallback((order: ServiceOrder) => {
+            logger.info('[waiter] CLOSE_TABLE_ACTION', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              table: order.table,
+              status: order.status,
+            });
       setToastMessage(`${order.table} closed successfully`);
       setShowSuccessToast(true);
     }, []),
@@ -170,6 +261,7 @@ export function useWaiterController(): UseWaiterControllerReturn {
     toggleAutoRefresh: useCallback(() => setAutoRefresh(prev => !prev), []),
     
     refresh: useCallback(() => {
+        logger.info('[waiter] REFRESH_ACTION', { trigger: 'manual' });
       refetch();
       setToastMessage('Orders refreshed');
       setShowSuccessToast(true);

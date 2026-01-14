@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { logger } from '@/shared/utils/logger';
 
 // Public routes that don't require authentication
 const publicRoutes = [
@@ -19,13 +20,13 @@ const authOnlyRoutes = ['/auth/login', '/auth/signup'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  console.log('[middleware] Request to:', pathname);
+  logger.log('[middleware] Request to:', pathname);
   
   // Get auth token from cookie or header (adjust based on your auth implementation)
   const authToken = request.cookies.get('authToken')?.value;
   const isAuthenticated = !!authToken;
   
-  console.log('[middleware] isAuthenticated:', isAuthenticated);
+  logger.log('[middleware] isAuthenticated:', isAuthenticated);
 
   // Allow public/marketing routes for everyone
   if (publicRoutes.some(route => pathname.startsWith(route))) {

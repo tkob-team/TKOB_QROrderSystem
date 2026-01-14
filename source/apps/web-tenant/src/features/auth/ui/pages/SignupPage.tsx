@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import { logger } from '@/shared/utils/logger';
 import { ROUTES } from '@/shared/config';
 import { fadeInUp, shake } from '@/shared/utils/animations';
 import { AuthPageHeader } from '../components/AuthPageHeader';
@@ -161,7 +162,7 @@ export function Signup({ onNavigate, initialEmail }: SignupProps) {
         toast.error(result.message || 'Signup failed');
       }
     } catch (error) {
-      console.error('[Signup] Signup error:', error);
+      logger.error('[auth] SIGNUP_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
       toast.error('Signup failed. Please try again.');
     }
   };

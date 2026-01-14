@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from 'next/navigation'
-import { AuthService } from '@/api/services/auth.service'
+import { AuthDataFactory } from '@/features/auth/data'
 import { useCurrentUser } from './queries/useCurrentUser'
 import type { ProfileState } from '../model'
 
@@ -21,7 +21,7 @@ export function useProfileController(): ProfileState & {
   const handleLogin = () => router.push('/login')
   
   const handleLogout = async () => {
-    await AuthService.logout()
+    await AuthDataFactory.getStrategy().logout()
     router.push('/')
   }
   

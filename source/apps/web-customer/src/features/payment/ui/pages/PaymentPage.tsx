@@ -1,17 +1,13 @@
-'use client'
+import { PaymentPageContent } from './PaymentPageContent'
 
-import { useRouter } from 'next/navigation'
-
+/**
+ * Payment page wrapper component.
+ * Re-exports PaymentPageContent for backward compatibility.
+ * 
+ * Note: The actual component logic is in PaymentPageContent.tsx
+ * which uses useSearchParams() and must be wrapped in Suspense
+ * by the page route.
+ */
 export function PaymentPage() {
-  const router = useRouter()
-
-  return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--gray-50)' }}>
-      <h1 className="text-2xl mb-4">Payment</h1>
-      <p>TODO: Migrate from CardPayment.tsx</p>
-      <button onClick={() => router.back()} className="mt-4 px-4 py-2 bg-gray-200 rounded">
-        Back
-      </button>
-    </div>
-  )
+  return <PaymentPageContent />
 }

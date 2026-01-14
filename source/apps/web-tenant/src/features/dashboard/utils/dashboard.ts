@@ -4,6 +4,7 @@
  */
 
 import type { OrderStatus, OrderStatusData, MockOrder } from '../model/types';
+import { logger } from '@/shared/utils/logger';
 
 /**
  * Count orders by status
@@ -42,6 +43,13 @@ export function getStatusBadgeVariant(status: string): 'success' | 'warning' | '
     case 'placed':
       return 'primary';
     default:
+      // INVARIANT: Unexpected order status value
+      if (typeof window !== 'undefined') {
+        logger.warn('[invariant] UNEXPECTED_ORDER_STATUS', {
+          receivedStatus: status,
+          validStatuses: ['placed', 'confirmed', 'preparing', 'ready', 'served', 'completed', 'cancelled'],
+        });
+      }
       return 'default';
   }
 }

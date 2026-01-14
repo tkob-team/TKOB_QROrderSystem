@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card } from '@/shared/components/Card';
+import { logger } from '@/shared/utils/logger';
+import { shouldLogBySignature } from '@/shared/logging/logDedupe';
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import type { RevenueChartPeriod } from '../../../model/types';
 
@@ -10,6 +12,27 @@ type Props = {
 };
 
 export function RevenueChartSection({ revenueChartPeriod, onPeriodChange, data }: Props) {
+  const lastSigRef = useRef<string>('');
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+      // Dedupe: only log when actual data content changes, not on harmless rerenders
+      const sig = `${revenueChartPeriod}|len:${data.length}|first:${data[0]?.time}|last:${data[data.length - 1]?.time}`;
+      if (!shouldLogBySignature(lastSigRef, sig)) {
+        return; // Same data, skip log
+      }
+
+      logger.info('[ui] CHART_SERIES_APPLIED', {
+        feature: 'analytics',
+        chartType: 'revenue',
+        period: revenueChartPeriod,
+        dataPoints: data.length,
+        sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && data[0]
+          ? data[0]
+          : undefined,
+      });
+    }
+  }, [data, revenueChartPeriod]);
   return (
     <Card className="p-6 shadow-sm">
       <div className="flex flex-col gap-6">
@@ -48,8 +71,8 @@ export function RevenueChartSection({ revenueChartPeriod, onPeriodChange, data }
             </button>
           </div>
         </div>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+        <div className="h-80" style={{ height: '320px' }}>
+          <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">

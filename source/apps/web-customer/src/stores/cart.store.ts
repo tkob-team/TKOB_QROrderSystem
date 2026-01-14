@@ -3,7 +3,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CartItem, MenuItem } from '@/types';
-import { generateId } from '@/lib/utils';
+import { generateId } from '@/shared/utils';
+import { log } from '@/shared/logging/logger';
+import { maskId } from '@/shared/logging/helpers';
 
 interface CartStore {
   items: CartItem[];
@@ -36,6 +38,11 @@ export const useCartStore = create<CartStore>()(
           quantity: data.quantity,
         };
         
+        log('ui', 'Item added to cart', {
+          itemId: maskId(cartItem.id),
+          quantity: data.quantity,
+        }, { feature: 'cart' });
+        
         set((state) => ({
           items: [...state.items, cartItem],
         }));
@@ -43,9 +50,12 @@ export const useCartStore = create<CartStore>()(
       
       updateQuantity: (id, quantity) => {
         if (quantity <= 0) {
+          log('ui', 'Item removed from cart', { itemId: maskId(id) }, { feature: 'cart' });
           get().removeItem(id);
           return;
         }
+        
+        log('ui', 'Cart quantity updated', { itemId: maskId(id), quantity }, { feature: 'cart' });
         
         set((state) => ({
           items: state.items.map((item) =>
@@ -55,6 +65,7 @@ export const useCartStore = create<CartStore>()(
       },
       
       removeItem: (id) => {
+        log('ui', 'Item removed from cart', { itemId: maskId(id) }, { feature: 'cart' });
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
         }));
@@ -69,6 +80,8 @@ export const useCartStore = create<CartStore>()(
       },
       
       clearCart: () => {
+        const itemCount = get().items.length;
+        log('ui', 'Cart cleared', { itemCount }, { feature: 'cart' });
         set({ items: [] });
       },
       

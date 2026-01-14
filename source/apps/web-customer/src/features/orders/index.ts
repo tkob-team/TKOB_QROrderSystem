@@ -1,7 +1,7 @@
 // Feature barrel export - only expose pages and controller hook
 
 // Pages
-export { OrderListPage, OrderDetailPage, OrderConfirmationPage, OrderTrackingPage } from './ui/pages'
+export { OrderListPage, OrderDetailPage, OrderConfirmationPage } from './ui/pages'
 
 // Public API (controller only - queries remain internal)
 export { useOrdersController } from './hooks'

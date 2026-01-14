@@ -12,6 +12,51 @@
       }
     ],
     "@typescript-eslint/no-explicit-any": "warn",
-    "react-hooks/exhaustive-deps": "warn"
-  }
+    "react-hooks/exhaustive-deps": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@/components", "@/components/*"],
+            "message": "⛔ Use '@/shared/components' instead of '@/components'. See docs/reports/WEB_CUSTOMER_P3_5_GUARDRAILS.md"
+          },
+          {
+            "group": ["@/hooks", "@/hooks/*"],
+            "message": "⛔ Use '@/shared/hooks' for utilities or '@/features/*/hooks' for feature hooks. See docs/reports/WEB_CUSTOMER_P3_5_GUARDRAILS.md"
+          },
+          {
+            "group": ["@/lib/constants", "@/lib/utils"],
+            "message": "⛔ Use '@/shared/config' or '@/shared/utils' instead of '@/lib/constants' or '@/lib/utils'. See docs/reports/WEB_CUSTOMER_P3_5_GUARDRAILS.md"
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/stores/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/api", "@/api/*"],
+                "message": "⛔ Zustand stores must not import from @/api. Use React Query in components instead. See docs/decisions/ZUSTAND_UI_STATE_ONLY.md"
+              },
+              {
+                "group": ["@/features/*/data", "@/features/*/data/*"],
+                "message": "⛔ Zustand stores must not import from feature data layers. Use React Query in components instead. See docs/decisions/ZUSTAND_UI_STATE_ONLY.md"
+              },
+              {
+                "group": ["@tanstack/react-query"],
+                "message": "⛔ Zustand stores must not use React Query. Keep queries in components/hooks. See docs/decisions/ZUSTAND_UI_STATE_ONLY.md"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

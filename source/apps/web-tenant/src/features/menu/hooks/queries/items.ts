@@ -4,6 +4,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/shared/utils/logger';
 import { menuAdapter } from '../../data';
 import type { CreateMenuItemDto, UpdateMenuItemDto } from '@/services/generated/models';
 
@@ -21,7 +22,18 @@ interface UseMenuItemsParams {
 export const useMenuItems = (params?: UseMenuItemsParams) => {
   return useQuery({
     queryKey: ['menu', 'items', params],
-    queryFn: () => menuAdapter.items.findAll(params),
+    queryFn: async () => {
+      logger.info('[menu] ITEMS_LIST_QUERY_ATTEMPT', { hasParams: !!params });
+      try {
+        const result = await menuAdapter.items.findAll(params);
+        const count = Array.isArray(result) ? result.length : result.data?.length || 0;
+        logger.info('[menu] ITEMS_LIST_QUERY_SUCCESS', { count });
+        return result;
+      } catch (error) {
+        logger.error('[menu] ITEMS_LIST_QUERY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
+        throw error;
+      }
+    },
   });
 };
 

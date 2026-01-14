@@ -32,8 +32,8 @@ export function RevenueSection({
             <p className="text-xs text-text-tertiary">Showing data for: {rangeFilter}</p>
           </div>
         </div>
-        <div className="w-full h-64 md:h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full h-64 md:h-[300px]" style={{ height: '300px' }}>
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e1e1dc" />
               <XAxis

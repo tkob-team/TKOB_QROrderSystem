@@ -1,13 +1,34 @@
 'use client';
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
+import { logger } from '@/shared/utils/logger';
+import { toAppError } from '@/shared/utils/toAppError';
+import { inspectRequestParams, inspectResponseShape, samplePayload } from '@/shared/utils/dataInspector';
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
+const logDataEnabled = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
+const logFullDataEnabled =
+  process.env.NEXT_PUBLIC_LOG_DATA === 'true' &&
+  process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
+
+// Request ID generation (timestamp + counter for uniqueness)
+let requestCounter = 0;
+const generateRequestId = (): string => {
+  const timestamp = Date.now();
+  const counter = ++requestCounter;
+  return `${timestamp}-${counter}`;
+};
+
+// Extended config type to include our tracking metadata
+interface TrackedRequestConfig extends InternalAxiosRequestConfig {
+  _requestId?: string;
+  _startTime?: number;
+}
 
 // Log API URL on initialization for debugging
 if (typeof window !== 'undefined') {
-  console.log('🔧 [axios] API Base URL:', baseURL);
-  console.log('🔧 [axios] Mock Mode:', useMockData ? 'ENABLED ✅' : 'DISABLED (Real API)');
+  logger.log('[axios] API Base URL:', baseURL);
+  logger.log('[axios] Mock Mode:', useMockData ? 'ENABLED' : 'DISABLED (Real API)');
 }
 
 export const api = axios.create({
@@ -38,17 +59,63 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: TrackedRequestConfig) => {
+  // Generate unique request ID and record start time
+  config._requestId = generateRequestId();
+  config._startTime = Date.now();
+
+  // Log REQUEST with requestId, method, url (no headers, no body)
+  // Strip query params from URL to prevent PII leakage (defense in depth)
+  const safeUrl = config.url?.split('?')[0];
+  logger.debug('[api] REQUEST', {
+    requestId: config._requestId,
+    method: config.method?.toUpperCase(),
+    url: safeUrl,
+  });
+
+  if (logDataEnabled) {
+    const safeParams = inspectRequestParams(config.params as Record<string, unknown>);
+    if (safeParams) {
+      logger.info('[data] REQUEST_PARAMS', {
+        requestId: config._requestId,
+        params: safeParams,
+      });
+    }
+  }
+
+  if (logFullDataEnabled && config.data !== undefined) {
+    logger.info('[data] REQUEST_BODY', {
+      requestId: config._requestId,
+      body: samplePayload(config.data),
+    });
+  }
+
+  // INVARIANT: Check for missing tenantId in tenant-scoped API calls
+  // Tenant-scoped routes are any non-auth routes (auth is the only public API)
+  if (config.url && !config.url.includes('/auth/') && !config.url.includes('/health')) {
+    // In real API mode, tenantId should come from JWT token claims (backend extracts it)
+    // But we can check if token exists for tenant-scoped routes
+    const token = typeof window !== 'undefined' 
+      ? (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'))
+      : null;
+    
+    if (!token && !useMockData) {
+      logger.warn('[invariant] MISSING_AUTH_TOKEN_FOR_TENANT_API', {
+        requestId: config._requestId,
+        url: config.url,
+        method: config.method?.toUpperCase(),
+      });
+    }
+  }
+
   // Skip real API calls when mock mode is enabled
   if (useMockData) {
-    console.log('🎭 [axios] Mock Mode - Skipping real API call:', config.method?.toUpperCase(), config.url);
+    logger.log('[axios] Mock Mode - Skipping real API call:', config.method?.toUpperCase(), config.url);
     // Return a rejected promise that will be caught by React Query
     // React Query will then use the mock data from query functions
-    return Promise.reject({
-      config,
-      isMockMode: true,
-      message: 'Mock mode enabled - using mock data instead of real API'
-    });
+    const mockError = new Error('Mock mode enabled - using mock data instead of real API');
+    (mockError as any).isMockMode = true;
+    return Promise.reject(mockError);
   }
 
   try {
@@ -59,20 +126,82 @@ api.interceptors.request.use((config) => {
     if (token) {
       config.headers = (config.headers || {}) as any;
       (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-      console.log(`🔑 [axios] Token attached to request: ${config.method?.toUpperCase()} ${config.url}`);
-    } else {
-      console.warn(`⚠️ [axios] No token found in localStorage or sessionStorage for: ${config.method?.toUpperCase()} ${config.url}`);
     }
   } catch (error) {
-    console.error('🔑 [axios] Error attaching token:', error);
+    logger.error('[axios] Error attaching token:', error);
   }
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful RESPONSE with requestId, method, url, status, durationMs
+    const config = response.config as TrackedRequestConfig;
+    const durationMs = config._startTime ? Date.now() - config._startTime : undefined;
+    // Strip query params from URL to prevent PII leakage (defense in depth)
+    const safeUrl = config.url?.split('?')[0];
+    
+    logger.debug('[api] RESPONSE', {
+      requestId: config._requestId,
+      method: config.method?.toUpperCase(),
+      url: safeUrl,
+      status: response.status,
+      durationMs,
+    });
+
+    if (logDataEnabled) {
+      const shapeSummary = inspectResponseShape(response.data);
+      logger.info('[data] RESPONSE_SHAPE', {
+        requestId: config._requestId,
+        ...shapeSummary,
+      });
+    }
+
+    if (logFullDataEnabled) {
+      logger.info('[data] RESPONSE_BODY', {
+        requestId: config._requestId,
+        body: samplePayload(response.data),
+      });
+    }
+
+    return response;
+  },
   (error) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    // Log ERROR with requestId, method, url, statusOrCode, durationMs, message
+    const config = error.config as TrackedRequestConfig;
+    if (config) {
+      const durationMs = config._startTime ? Date.now() - config._startTime : undefined;
+      const statusOrCode = error.response?.status || error.code || 'UNKNOWN';
+      const message = error.response?.data?.message || error.message || 'Request failed';
+      // Strip query params from URL to prevent PII leakage (defense in depth)
+      const safeUrl = config.url?.split('?')[0];
+
+      logger.error('[api] ERROR', {
+        requestId: config._requestId,
+        method: config.method?.toUpperCase(),
+        url: safeUrl,
+        statusOrCode,
+        durationMs,
+        message,
+      });
+
+      if (logDataEnabled && error.response?.data) {
+        const shapeSummary = inspectResponseShape(error.response.data);
+        logger.info('[data] RESPONSE_SHAPE', {
+          requestId: config._requestId,
+          ...shapeSummary,
+        });
+      }
+
+      if (logFullDataEnabled && error.response?.data) {
+        logger.info('[data] RESPONSE_BODY', {
+          requestId: config._requestId,
+          body: samplePayload(error.response.data),
+        });
+      }
+    }
+
+    const originalRequest = error.config as TrackedRequestConfig & { _retry?: boolean };
 
     // Handle 401 errors - try to refresh token
     if (error?.response?.status === 401 && typeof window !== 'undefined' && !originalRequest._retry) {
@@ -102,7 +231,7 @@ api.interceptors.response.use(
           ?.split('=')[1];
 
         if (!refreshToken) {
-          console.warn('⚠️ [axios] No refresh token found, clearing auth state');
+          logger.warn('[axios] No refresh token found, clearing auth state');
           localStorage.removeItem('authToken');
           sessionStorage.removeItem('authToken');
           document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
@@ -110,14 +239,14 @@ api.interceptors.response.use(
           processQueue(error, null);
           
           if (!window.location.pathname.includes('/login')) {
-            console.log('🔄 [axios] Redirecting to login page...');
+            logger.log('[axios] Redirecting to login page...');
             window.location.href = '/auth/login';
           }
           reject(error);
           return;
         }
 
-        console.log('🔄 [axios] Attempting to refresh token...');
+        logger.log('[axios] Attempting to refresh token...');
 
         // Make refresh request with minimal headers (no token needed)
         api.post('/api/v1/auth/refresh', { refreshToken }, {
@@ -127,7 +256,7 @@ api.interceptors.response.use(
         })
           .then((response) => {
             const { accessToken } = response.data;
-            console.log('✅ [axios] Token refreshed successfully');
+            logger.log('[axios] Token refreshed successfully');
 
             // Update token in storage (check which storage was used)
             if (localStorage.getItem('authToken')) {
@@ -144,7 +273,7 @@ api.interceptors.response.use(
             resolve(api(originalRequest));
           })
           .catch((refreshError) => {
-            console.error('❌ [axios] Token refresh failed:', refreshError);
+            logger.error('[axios] Token refresh failed:', refreshError);
             localStorage.removeItem('authToken');
             sessionStorage.removeItem('authToken');
             document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
@@ -152,7 +281,7 @@ api.interceptors.response.use(
             processQueue(refreshError, null);
 
             if (!window.location.pathname.includes('/login')) {
-              console.log('🔄 [axios] Refresh failed, redirecting to login page...');
+              logger.log('[axios] Refresh failed, redirecting to login page...');
               window.location.href = '/auth/login';
             }
             reject(refreshError);
@@ -161,24 +290,31 @@ api.interceptors.response.use(
     }
 
     if (error?.response?.status === 401 && typeof window !== 'undefined') {
-      console.warn('⚠️ [axios] 401 Unauthorized - Token may be invalid or expired');
+      logger.warn('[axios] 401 Unauthorized - Token may be invalid or expired');
       // Clear from both storages
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
       // Only redirect if not already on login page
       if (!window.location.pathname.includes('/login')) {
-        console.log('🔄 [axios] Redirecting to login page...');
+        logger.log('[axios] Redirecting to login page...');
         // window.location.href = '/login';
       }
     }
-    return Promise.reject(error);
+    // Ensure we reject with an Error instance, not a plain object or undefined
+    if (error instanceof Error) {
+      return Promise.reject(error);
+    }
+    
+    // Normalize any non-Error value to AppError
+    const appError = toAppError(error, 'axios-response-error');
+    return Promise.reject(appError);
   }
 );
 
 // Orval custom mutator function
 export const customInstance = async <T>(config: any): Promise<T> => {
   const startTime = Date.now();
-  console.log('🌐 [customInstance] Request:', {
+  logger.log('[customInstance] Request:', {
     method: config.method,
     url: config.url,
     fullURL: `${baseURL}${config.url}`,
@@ -189,7 +325,7 @@ export const customInstance = async <T>(config: any): Promise<T> => {
   
   return api(config).then(({ data }) => {
     const duration = Date.now() - startTime;
-    console.log('🌐 [customInstance] Response received:', {
+    logger.log('[customInstance] Response received:', {
       method: config.method,
       url: config.url,
       duration: `${duration}ms`,
@@ -202,10 +338,10 @@ export const customInstance = async <T>(config: any): Promise<T> => {
     // Backend wraps response in { success: true, data: {...} }
     // Unwrap it to return the actual data
     if (data && typeof data === 'object' && 'data' in data) {
-      console.log('🌐 [customInstance] Unwrapping data.data:', data.data);
+      logger.log('[customInstance] Unwrapping data.data');
       return data.data as T;
     }
-    console.log('🌐 [customInstance] Returning data as-is:', data);
+    logger.log('[customInstance] Returning data as-is');
     return data;
   }).catch((error) => {
     const duration = Date.now() - startTime;
@@ -231,7 +367,7 @@ export const customInstance = async <T>(config: any): Promise<T> => {
       status: error.response?.status || error.code || 'UNKNOWN',
       statusText: error.response?.statusText || '',
       errorMessage: errorData?.error?.message || errorData?.message || error.message || 'Unknown error',
-      hasToken: !!(config.headers?.Authorization),
+      // removed hasToken to avoid logging auth header presence
     };
     
     // Only log 5xx server errors at error level, handle 4xx as expected business errors
@@ -240,43 +376,42 @@ export const customInstance = async <T>(config: any): Promise<T> => {
     const isConflict = error.response?.status === 409;
     
     if (isServerError) {
-      console.error('🌐 [customInstance] Server Error:', JSON.stringify(errorInfo, null, 2));
-      console.error('🌐 [customInstance] Server Response - Status:', error.response.status);
-      console.error('🌐 [customInstance] Server Response - Data:', JSON.stringify(error.response.data, null, 2));
+      logger.error('[customInstance] Server Error (5xx):', errorInfo.method, errorInfo.url, 'Status:', errorInfo.status);
+      logger.error('[customInstance] Server Response Status:', error.response.status);
+      if (errorInfo.errorMessage) {
+        logger.error('[customInstance] Error Details:', errorInfo.errorMessage);
+      }
     } else if (isValidationError) {
       // 4xx errors are expected (validation, conflicts, not found, etc) - only log at debug/info level
-      console.debug('ℹ️ [customInstance] Client/Validation Error:', JSON.stringify(errorInfo, null, 2));
+      logger.debug('[customInstance] Client/Validation Error:', errorInfo.method, errorInfo.url, 'Status:', errorInfo.status);
       
       // For 400 errors, provide validation details
       if (error.response?.status === 400) {
-        console.debug('⚠️ [customInstance] Bad Request (400) - URL:', config.url);
-        console.debug('⚠️ [customInstance] Validation errors:', errorData?.message || errorData?.error);
+        logger.debug('[customInstance] Bad Request (400) - URL:', config.url);
+        if (errorData?.message || errorData?.error) {
+          logger.debug('[customInstance] Validation errors:', errorData?.message || errorData?.error);
+        }
       }
       
       // For 409 Conflict, suppress the error display since it's handled by the UI
       if (isConflict) {
-        console.debug('ℹ️ [customInstance] Conflict (409) - Action cannot be performed:', errorData?.error?.message || errorData?.message);
+        logger.debug('[customInstance] Conflict (409) - Action cannot be performed');
         // Mark the error as a handled business error so React won't display it
         (error as any).__isHandledBusinessError = true;
         (error as any).__userMessage = errorData?.error?.message || errorData?.message || 'Conflict: Action cannot be performed';
       }
     } else {
       // Network errors or unknown
-      console.error('🌐 [customInstance] Request Failed:', JSON.stringify(errorInfo, null, 2));
+      logger.error('[customInstance] Request Failed:', errorInfo.method, errorInfo.url, 'Status:', errorInfo.status);
     }
     
     // Log network/connection errors
     if (error.request && !error.response) {
-      console.error('🌐 [customInstance] Request Error (No Response)');
-      console.error('  ❌ Cannot connect to backend API server');
-      console.error('  Message:', error.message);
-      console.error('  Code:', error.code);
-      console.error('  Full URL:', `${baseURL}${config.url}`);
-      console.error('  Method:', config.method);
-      console.error('  💡 Make sure:');
-      console.error('     1. Backend server is running (pnpm start:dev in apps/api)');
-      console.error('     2. NEXT_PUBLIC_API_URL is correct:', baseURL);
-      console.error('     3. No firewall blocking the connection');
+      logger.error('[customInstance] Request Error (No Response) - Cannot connect to backend API server');
+      logger.error('[customInstance] Message:', error.message);
+      logger.error('[customInstance] Code:', error.code);
+      logger.error('[customInstance] API URL:', baseURL, 'Endpoint:', config.url);
+      logger.error('[customInstance] Request Method:', config.method);
     }
     
     throw error;

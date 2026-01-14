@@ -7,6 +7,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/context/AuthContext';
+import { logger } from '@/shared/utils/logger';
 import { useKdsOrders } from './queries/useKdsOrders';
 import { sortOrdersByStatus } from '../utils/sortOrders';
 import type { KdsOrder, KdsStatus, KdsSummaryCounts } from '../model/types';
@@ -75,6 +76,28 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
   const sortedPreparingOrders = sortOrdersByStatus.preparing(orders);
   const sortedReadyOrders = sortOrdersByStatus.ready(orders);
 
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    const overdueInPreparing = sortedPreparingOrders.filter(o => o.isOverdue).length;
+    
+    logger.info('[ui] COLUMN_SORTS_APPLIED', {
+      feature: 'kds',
+      entity: 'columns',
+      newCount: sortedNewOrders.length,
+      preparingCount: sortedPreparingOrders.length,
+      readyCount: sortedReadyOrders.length,
+      overdueInPreparing,
+      sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && sortedPreparingOrders[0]
+        ? {
+            id: sortedPreparingOrders[0].id,
+            table: sortedPreparingOrders[0].table,
+            status: sortedPreparingOrders[0].status,
+            isOverdue: sortedPreparingOrders[0].isOverdue,
+            elapsedMinutes: sortedPreparingOrders[0].time,
+          }
+        : undefined,
+    });
+  }
+
   // Calculate status summary
   const counts: KdsSummaryCounts = {
     pending: orders.filter((order) => order.status === 'pending').length,
@@ -82,6 +105,14 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
     ready: orders.filter((order) => order.status === 'ready').length,
     overdue: orders.filter((order) => order.isOverdue).length,
   };
+
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    logger.info('[ui] AGGREGATION_COMPUTED', {
+      feature: 'kds',
+      entity: 'counts',
+      counts,
+    });
+  }
 
   // ========== EVENT HANDLERS ==========
   const handleLogout = useCallback(() => {
@@ -93,10 +124,24 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
   const handleAction = useCallback((orderId: string, columnId: string) => {
     setLoadingOrderId(orderId);
     const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
+    if (!order) {
+      logger.warn('[kds] STATUS_UPDATE_ACTION_MISSING_ORDER', { orderId, columnId });
+      setLoadingOrderId(null);
+      return;
+    }
 
     const newStatus: KdsStatus =
       columnId === 'new' ? 'preparing' : columnId === 'preparing' ? 'ready' : 'served';
+    const previousStatus = order.status;
+    const itemCount = order.items?.length || 0;
+
+    logger.info('[kds] STATUS_UPDATE_ACTION_ATTEMPT', {
+      orderId,
+      fromStatus: previousStatus,
+      toStatus: newStatus,
+      itemCount,
+    });
+
     const newOrder: KdsOrder = {
       ...order,
       status: newStatus,
@@ -108,15 +153,31 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
 
     // Simulate API call
     setTimeout(() => {
+      const succeeded = Math.random() < 0.9;
       setLoadingOrderId(null);
-      if (Math.random() < 0.9) {
-        // Update order status
+
+      if (succeeded) {
         setOrdersLocal(orders.map((o) => (o.id === orderId ? newOrder : o)));
         setToastMessage(`Order ${orderId} marked as ${newStatus}`);
         setShowSuccessToast(true);
+
+        logger.info('[kds] STATUS_UPDATE_ACTION_SUCCESS', {
+          orderId,
+          fromStatus: previousStatus,
+          toStatus: newStatus,
+          itemCount,
+        });
       } else {
         setToastMessage(`Failed to mark order ${orderId} as ${newStatus}`);
         setShowErrorToast(true);
+
+        logger.error('[kds] STATUS_UPDATE_ACTION_ERROR', {
+          orderId,
+          fromStatus: previousStatus,
+          toStatus: newStatus,
+          itemCount,
+          message: 'Status update simulation failed',
+        });
       }
     }, 1000);
   }, [orders]);

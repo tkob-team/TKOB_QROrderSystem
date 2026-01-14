@@ -22,6 +22,8 @@ const envSchema = {
   NODE_ENV: process.env.NODE_ENV,
 } as const;
 
+import { logger } from '@/shared/utils/logger';
+
 // 2. Validation (dev-time warnings)
 function validateEnv() {
   // Only validate on server side during build/dev
@@ -34,8 +36,8 @@ function validateEnv() {
     }
     
     if (missing.length > 0 && envSchema.NODE_ENV === 'development') {
-      console.warn(`⚠️  Missing environment variables: ${missing.join(', ')}`);
-      console.warn(`   Using default values. Check your .env file.`);
+      logger.warn(`Missing environment variables: ${missing.join(', ')}`);
+      logger.warn('Using default values. Check your .env file.');
     }
   }
 }
@@ -63,9 +65,7 @@ export const env = {
   isTest: envSchema.NODE_ENV === 'test',
 } as const;
 
-// Debug log
-console.log('[ENV] NEXT_PUBLIC_USE_MOCK_DATA:', envSchema.NEXT_PUBLIC_USE_MOCK_DATA);
-console.log('[ENV] useMock:', env.useMock);
+// Debug logs removed to avoid printing env values by default.
 
 // Type exports for consumers
 export type Env = typeof env;

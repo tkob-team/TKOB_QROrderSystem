@@ -1,22 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateMenuCategoryDto,
   CreateMenuItemDto,
   UpdateMenuCategoryDto,
   UpdateMenuItemDto,
 } from '@/services/generated/models';
+import { logger } from '@/shared/utils/logger';
 import type { Category, MenuItem, MenuItemFormData } from '../model/types';
-import { menuAdapter } from '../data';
 import { useCategoryModalState } from './useCategoryModalState';
 import { useItemModalState } from './useItemModalState';
 import { usePhotoManager } from './usePhotoManager';
 import { useToasts } from './useToasts';
+import { useMenuCrudMutations } from './useMenuCrudMutations';
+import { useMenuDeleteState } from './useMenuDeleteState';
 
 export function useMenuMutationsController(selectedCategory: string) {
-  const queryClient = useQueryClient();
 
   const {
     isCategoryModalOpen,
@@ -46,8 +45,12 @@ export function useMenuMutationsController(selectedCategory: string) {
     closeItemModal,
   } = useItemModalState();
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
+  const {
+    isDeleteModalOpen,
+    itemToDelete,
+    handleDeleteClick: _handleDeleteClick,
+    closeDeleteModal,
+  } = useMenuDeleteState();
 
   const { showSuccessToast, setShowSuccessToast, toastMessage, setToastMessage } = useToasts(3000);
   const { getOperations: getPhotoOps, executeAll: executePhotoOps } = usePhotoManager();
@@ -62,107 +65,7 @@ export function useMenuMutationsController(selectedCategory: string) {
     setShowSuccessToast(true);
   };
 
-  // Categories
-  const createCategory = useMutation({
-    mutationFn: (data: any) => menuAdapter.categories.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'categories'] });
-      notify('Danh mục đã được tạo');
-    },
-    onError: () => notifyError('Có lỗi khi tạo danh mục'),
-  });
-
-  const updateCategory = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => menuAdapter.categories.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'categories'] });
-      notify('Danh mục đã được cập nhật');
-    },
-    onError: () => notifyError('Có lỗi khi cập nhật danh mục'),
-  });
-
-  const deleteCategory = useMutation({
-    mutationFn: (id: string) => menuAdapter.categories.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'categories'] });
-      notify('Danh mục đã được xóa');
-    },
-    onError: () => notifyError('Có lỗi khi xóa danh mục'),
-  });
-
-  // Items
-  const createItem = useMutation({
-    mutationFn: (data: any) => menuAdapter.items.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify('Món ăn đã được tạo');
-    },
-    onError: () => notifyError('Có lỗi khi tạo món ăn'),
-  });
-
-  const updateItem = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => menuAdapter.items.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify('Món ăn đã được cập nhật');
-    },
-    onError: () => notifyError('Có lỗi khi cập nhật món ăn'),
-  });
-
-  const deleteItem = useMutation({
-    mutationFn: (id: string) => menuAdapter.items.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify('Món ăn đã được xóa');
-    },
-    onError: () => notifyError('Có lỗi khi xóa món ăn'),
-  });
-
-  // Modifiers
-  const createModifier = useMutation({
-    mutationFn: (data: any) => menuAdapter.modifiers.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'modifiers'] });
-      notify('Modifier group created');
-    },
-    onError: () => notifyError('Failed to create modifier group'),
-  });
-
-  const updateModifier = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => menuAdapter.modifiers.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'modifiers'] });
-      notify('Modifier group updated');
-    },
-    onError: () => notifyError('Failed to update modifier group'),
-  });
-
-  const deleteModifier = useMutation({
-    mutationFn: (id: string) => menuAdapter.modifiers.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu', 'modifiers'] });
-      notify('Modifier group deleted');
-    },
-    onError: () => notifyError('Failed to delete modifier group'),
-  });
-
-  const menuMutations = {
-    categories: {
-      create: (data: any) => createCategory.mutateAsync(data),
-      update: (payload: { id: string; data: any }) => updateCategory.mutateAsync(payload),
-      delete: (id: string) => deleteCategory.mutateAsync(id),
-    },
-    items: {
-      create: (data: any) => createItem.mutateAsync(data),
-      update: (payload: { id: string; data: any }) => updateItem.mutateAsync(payload),
-      delete: (id: string) => deleteItem.mutateAsync(id),
-    },
-    modifiers: {
-      create: (data: any) => createModifier.mutateAsync(data),
-      update: (payload: { id: string; data: any }) => updateModifier.mutateAsync(payload),
-      delete: (id: string) => deleteModifier.mutateAsync(id),
-    },
-  };
+  const { menuMutations } = useMenuCrudMutations({ notify, notifyError });
 
   const handleOpenAddCategoryModal = () => openAddCategory();
   const handleEditCategory = (category: Category) => openEditCategory(category);
@@ -184,31 +87,39 @@ export function useMenuMutationsController(selectedCategory: string) {
 
     try {
       if (categoryModalMode === 'edit' && editingCategory) {
+        logger.info('[menu] UPDATE_CATEGORY_ATTEMPT', { categoryId: editingCategory.id });
         await menuMutations.categories.update({
           id: editingCategory.id,
           data: categoryData as UpdateMenuCategoryDto,
         });
+        logger.info('[menu] UPDATE_CATEGORY_SUCCESS', { categoryId: editingCategory.id });
       } else {
+        logger.info('[menu] CREATE_CATEGORY_ATTEMPT');
         await menuMutations.categories.create(categoryData);
+        logger.info('[menu] CREATE_CATEGORY_SUCCESS');
       }
 
       closeCategoryModal();
     } catch (error) {
-      console.error('Error saving category:', error);
+      logger.error('[menu] SAVE_CATEGORY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   };
 
   const handleToggleCategoryActive = async (category: Category) => {
+    logger.info('[menu] TOGGLE_CATEGORY_ATTEMPT', { categoryId: category.id, currentActive: category.active });
     await menuMutations.categories.update({
       id: category.id,
       data: { active: !category.active },
     });
+    logger.info('[menu] TOGGLE_CATEGORY_SUCCESS', { categoryId: category.id, newActive: !category.active });
     setToastMessage(`Danh mục "${category.name}" đã ${!category.active ? 'kích hoạt' : 'vô hiệu hóa'}`);
     setShowSuccessToast(true);
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
+    logger.info('[menu] DELETE_CATEGORY_ATTEMPT', { categoryId });
     await menuMutations.categories.delete(categoryId);
+    logger.info('[menu] DELETE_CATEGORY_SUCCESS', { categoryId });
   };
 
   const handleOpenAddItemModal = () => {
@@ -238,6 +149,7 @@ export function useMenuMutationsController(selectedCategory: string) {
 
     try {
       if (itemModalMode === 'add') {
+        logger.info('[menu] CREATE_ITEM_ATTEMPT', { categoryId: itemFormData.categoryId });
         const result = await menuMutations.items.create({
           name: itemFormData.name,
           categoryId: itemFormData.categoryId,
@@ -257,9 +169,11 @@ export function useMenuMutationsController(selectedCategory: string) {
           const ops = getPhotoOps(result.id, itemFormData as MenuItemFormData);
           await executePhotoOps(ops);
         }
+        logger.info('[menu] CREATE_ITEM_SUCCESS', { itemId: result?.id });
 
         setToastMessage(`Món "${itemFormData.name}" đã được tạo`);
       } else if (currentEditItemId) {
+        logger.info('[menu] UPDATE_ITEM_ATTEMPT', { itemId: currentEditItemId });
         const updatePromises: Promise<unknown>[] = [
           menuMutations.items.update({
             id: currentEditItemId,
@@ -283,6 +197,7 @@ export function useMenuMutationsController(selectedCategory: string) {
         updatePromises.push(...getPhotoOps(currentEditItemId, itemFormData as MenuItemFormData));
 
         await Promise.all(updatePromises);
+        logger.info('[menu] UPDATE_ITEM_SUCCESS', { itemId: currentEditItemId });
 
         setToastMessage(`Món "${itemFormData.name}" đã được cập nhật`);
       }
@@ -290,43 +205,40 @@ export function useMenuMutationsController(selectedCategory: string) {
       setShowSuccessToast(true);
       handleCloseItemModal();
     } catch (error) {
-      console.error('Error in handleSaveItem:', error);
+      logger.error('[menu] SAVE_ITEM_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   };
 
   const handleDeleteClick = (item: MenuItem) => {
-    setItemToDelete({ id: item.id, name: item.name });
-    setIsDeleteModalOpen(true);
+    _handleDeleteClick(item);
   };
 
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
 
     try {
+      logger.info('[menu] DELETE_ITEM_ATTEMPT', { itemId: itemToDelete.id });
       await menuMutations.items.delete(itemToDelete.id);
-      setIsDeleteModalOpen(false);
-      setItemToDelete(null);
+      logger.info('[menu] DELETE_ITEM_SUCCESS', { itemId: itemToDelete.id });
+      closeDeleteModal();
     } catch (error) {
-      console.error('Error in handleConfirmDelete:', error);
+      logger.error('[menu] DELETE_ITEM_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
-  };
-
-  const closeDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setItemToDelete(null);
   };
 
   const handleToggleAvailability = async (item: MenuItem) => {
     try {
       const newAvailable = !item.isAvailable;
+      logger.info('[menu] TOGGLE_AVAILABILITY_ATTEMPT', { itemId: item.id, currentAvailable: item.isAvailable });
       await menuMutations.items.update({
         id: item.id,
         data: ({ available: newAvailable }) as UpdateMenuItemDto,
       });
+      logger.info('[menu] TOGGLE_AVAILABILITY_SUCCESS', { itemId: item.id, newAvailable });
       setToastMessage(`"${item.name}" is now ${newAvailable ? 'available' : 'unavailable'}`);
       setShowSuccessToast(true);
     } catch (error) {
-      console.error('Error toggling availability:', error);
+      logger.error('[menu] TOGGLE_AVAILABILITY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
       setToastMessage('Failed to update availability');
       setShowSuccessToast(true);
     }

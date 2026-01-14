@@ -1,7 +1,7 @@
 'use client'
 
 import { User, Phone, Mail, LogIn, LogOut, History, Edit, Lock } from 'lucide-react'
-import { LanguageSwitcher } from '@/components'
+import { LanguageSwitcher } from '@/shared/components'
 import { Language } from '@/types'
 import { useState } from 'react'
 import { useProfileController } from '../../hooks'

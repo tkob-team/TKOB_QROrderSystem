@@ -10,7 +10,6 @@ import type { SettingsAdapter } from './adapter.interface';
 
 function createSettingsAdapter(): SettingsAdapter {
   const useMock = isMockEnabled('settings');
-  console.log('[SettingsFactory] Mock enabled:', useMock);
   return useMock ? mockSettingsAdapter : apiSettingsAdapter;
 }
 

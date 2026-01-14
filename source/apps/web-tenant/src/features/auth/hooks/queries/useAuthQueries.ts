@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authAdapter } from '@/features/auth/data/factory';
+import { logger } from '@/shared/utils/logger';
 import type {
   LoginDto,
   RegisterSubmitDto,
@@ -27,7 +28,7 @@ export const useLogin = () => {
       return authAdapter.login(loginData as LoginDto);
     },
     onSuccess: (data) => {
-      console.log('[useLogin] Login successful, storing tokens:', {
+      logger.info('[auth] LOGIN_TOKENS_STORED', {
         hasAccessToken: !!data.accessToken,
         hasRefreshToken: !!data.refreshToken,
         expiresIn: data.expiresIn,
@@ -51,20 +52,20 @@ export const useLogin = () => {
         // Clean up temporary flag
         sessionStorage.removeItem('__rememberMe');
         
-        console.log(`[useLogin] Tokens stored in ${rememberMe ? 'localStorage' : 'sessionStorage'} (Remember me: ${rememberMe})`);
+        logger.debug('[auth] LOGIN_STORAGE_METHOD', { storageType: rememberMe ? 'localStorage' : 'sessionStorage', rememberMe });
         
         // Always set cookies for middleware (server-side)
         const maxAge = data.expiresIn || 3600; // Default 1 hour
         document.cookie = `authToken=${data.accessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
         document.cookie = `refreshToken=${data.refreshToken}; path=/; max-age=${maxAge * 7}; SameSite=Lax`; // Refresh token lasts longer
         
-        console.log('[useLogin] Cookies set for middleware');
+        logger.debug('[auth] LOGIN_COOKIES_SET', { maxAge });
       }
       // Invalidate current user query
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
     onError: (error) => {
-      console.error('[useLogin] Login failed:', error);
+      logger.error('[auth] LOGIN_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
       // Clean up flag on error
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('__rememberMe');
@@ -133,14 +134,13 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: async (refreshToken: string) => {
       // Make sure we have the token before logout
-      console.log('[useLogout] Starting logout with refreshToken:', !!refreshToken);
-      console.log('[useLogout] authToken in localStorage:', !!localStorage.getItem('authToken'));
+      logger.debug('[auth] LOGOUT_ATTEMPT', { hasRefreshToken: !!refreshToken, hasAuthToken: !!localStorage.getItem('authToken') });
       
       try {
         await authAdapter.logout(refreshToken);
-        console.log('[useLogout] Logout successful, clearing local data');
+        logger.info('[auth] LOGOUT_SUCCESS');
       } catch (error) {
-        console.error('[useLogout] Logout failed:', error);
+        logger.error('[auth] LOGOUT_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
         throw error;
       }
     },
@@ -161,7 +161,7 @@ export const useLogout = () => {
     },
     onError: () => {
       // Even if logout fails on server, clear local data
-      console.warn('[useLogout] Server logout failed, clearing local data anyway');
+      logger.warn('[auth] LOGOUT_LOCAL_CLEAR_FALLBACK', { reason: 'server logout failed' });
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');

@@ -34,6 +34,7 @@ export type Order = {
 
 export type OrdersState = {
   currentOrder: Order | null
+  currentSessionOrders: Order[]
   orderHistory: Order[]
   selectedOrder: Order | null
   isLoggedIn: boolean

@@ -3,11 +3,13 @@
  * Orchestrates all tenant profile state, handlers, and queries
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useTenantProfileSettings } from './queries/useTenantProfileSettings';
 import { settingsAdapter } from '../data/factory';
+import { logger } from '@/shared/utils/logger';
 import { buildSlugPreview, copyHoursToAllDays, validateRestaurantName } from '../utils';
+import { samplePayload } from '@/shared/utils/dataInspector';
 import type { TenantProfileTab, DayKey, TenantFullProfileState } from '../model/types';
 
 const DEFAULT_STATE: TenantFullProfileState = {
@@ -47,8 +49,16 @@ const DEFAULT_STATE: TenantFullProfileState = {
 export function useTenantProfileController() {
   const { state: queriedState } = useTenantProfileSettings();
 
+  const useLogging = process.env.NEXT_PUBLIC_USE_LOGGING === 'true';
+  const logDataEnabled = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
+  const logFullDataEnabled =
+    process.env.NEXT_PUBLIC_LOG_DATA === 'true' &&
+    process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
+
   // Initialize from query or defaults
   const initialState = queriedState || DEFAULT_STATE;
+
+  const viewModelLoggedRef = useRef(false);
 
   // Profile state
   const [activeTab, setActiveTab] = useState<TenantProfileTab>(initialState.activeTab);
@@ -88,12 +98,26 @@ export function useTenantProfileController() {
     [urlSlug]
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSaveProfile = useCallback(async () => {
     const validation = validateRestaurantName(restaurantName);
     if (!validation.valid) {
       toast.error(validation.error!);
       return;
     }
+    if (useLogging) {
+      logger.info('[ui] FORM_SUBMIT_ATTEMPT', {
+        feature: 'settings',
+        section: 'tenant-profile',
+        payloadKeys: logDataEnabled
+          ? ['restaurantName', 'urlSlug', 'address', 'phone', 'email', 'description', 'defaultLanguage', 'theme', 'timezone']
+          : undefined,
+        sample: logFullDataEnabled
+          ? samplePayload({ restaurantName, urlSlug, address, phone, email, description, defaultLanguage, theme, timezone })
+          : undefined,
+      });
+    }
+    logger.info('[settings] SAVE_PROFILE_ATTEMPT');
     try {
       await settingsAdapter.saveTenantProfile({
         restaurantName,
@@ -108,10 +132,20 @@ export function useTenantProfileController() {
         logoPreview,
         coverUploaded,
       });
+      if (useLogging) {
+        logger.info('[ui] FORM_SUBMIT_SUCCESS', {
+          feature: 'settings',
+          section: 'tenant-profile',
+          payloadKeys: logDataEnabled
+            ? ['restaurantName', 'urlSlug', 'address', 'phone', 'email', 'description', 'defaultLanguage', 'theme', 'timezone']
+            : undefined,
+        });
+      }
+      logger.info('[settings] SAVE_PROFILE_SUCCESS');
       toast.success('Profile saved');
     } catch (error) {
       toast.error('Failed to save profile');
-      console.error(error);
+      logger.error('[settings] SAVE_PROFILE_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   }, [restaurantName, urlSlug, address, phone, email, description, defaultLanguage, theme, timezone, logoPreview, coverUploaded]);
 
@@ -121,27 +155,75 @@ export function useTenantProfileController() {
     toast.success('Copied hours to all days');
   }, [openingHours, sourceDay]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSaveHours = useCallback(async () => {
+    if (useLogging) {
+      logger.info('[ui] FORM_SUBMIT_ATTEMPT', {
+        feature: 'settings',
+        section: 'opening-hours',
+        payloadKeys: logDataEnabled ? ['openingHours'] : undefined,
+        sample: logFullDataEnabled ? samplePayload(openingHours) : undefined,
+      });
+    }
+    logger.info('[settings] SAVE_HOURS_ATTEMPT');
     try {
       await settingsAdapter.saveOpeningHours(openingHours);
+      if (useLogging) {
+        logger.info('[ui] FORM_SUBMIT_SUCCESS', {
+          feature: 'settings',
+          section: 'opening-hours',
+          payloadKeys: logDataEnabled ? ['openingHours'] : undefined,
+        });
+      }
+      logger.info('[settings] SAVE_HOURS_SUCCESS');
       toast.success('Opening hours saved');
     } catch (error) {
       toast.error('Failed to save opening hours');
-      console.error(error);
+      logger.error('[settings] SAVE_HOURS_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   }, [openingHours]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSavePayments = useCallback(async () => {
+    if (useLogging) {
+      logger.info('[ui] FORM_SUBMIT_ATTEMPT', {
+        feature: 'settings',
+        section: 'payments',
+        payloadKeys: logDataEnabled ? ['stripeEnabled', 'paypalEnabled', 'cashEnabled'] : undefined,
+        sample: logFullDataEnabled ? samplePayload({ stripeEnabled, paypalEnabled, cashEnabled }) : undefined,
+      });
+    }
+    logger.info('[settings] SAVE_PAYMENTS_ATTEMPT', { stripeEnabled, paypalEnabled, cashEnabled });
     try {
       await settingsAdapter.savePayments({ stripeEnabled, paypalEnabled, cashEnabled });
+      if (useLogging) {
+        logger.info('[ui] FORM_SUBMIT_SUCCESS', {
+          feature: 'settings',
+          section: 'payments',
+          payloadKeys: logDataEnabled ? ['stripeEnabled', 'paypalEnabled', 'cashEnabled'] : undefined,
+        });
+      }
+      logger.info('[settings] SAVE_PAYMENTS_SUCCESS');
       toast.success('Payment settings saved');
     } catch (error) {
       toast.error('Failed to save payment settings');
-      console.error(error);
+      logger.error('[settings] SAVE_PAYMENTS_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   }, [stripeEnabled, paypalEnabled, cashEnabled]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSaveNotifications = useCallback(async () => {
+    if (useLogging) {
+      logger.info('[ui] FORM_SUBMIT_ATTEMPT', {
+        feature: 'settings',
+        section: 'notifications',
+        payloadKeys: logDataEnabled ? ['emailNotifications', 'orderNotifications', 'lowStockAlerts', 'staffNotifications'] : undefined,
+        sample: logFullDataEnabled
+          ? samplePayload({ emailNotifications, orderNotifications, lowStockAlerts, staffNotifications })
+          : undefined,
+      });
+    }
+    logger.info('[settings] SAVE_NOTIFICATIONS_ATTEMPT');
     try {
       await settingsAdapter.saveNotifications({
         emailNotifications,
@@ -149,22 +231,60 @@ export function useTenantProfileController() {
         lowStockAlerts,
         staffNotifications,
       });
+      if (useLogging) {
+        logger.info('[ui] FORM_SUBMIT_SUCCESS', {
+          feature: 'settings',
+          section: 'notifications',
+          payloadKeys: logDataEnabled ? ['emailNotifications', 'orderNotifications', 'lowStockAlerts', 'staffNotifications'] : undefined,
+        });
+      }
+      logger.info('[settings] SAVE_NOTIFICATIONS_SUCCESS');
       toast.success('Notification settings saved');
     } catch (error) {
       toast.error('Failed to save notification settings');
-      console.error(error);
+      logger.error('[settings] SAVE_NOTIFICATIONS_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   }, [emailNotifications, orderNotifications, lowStockAlerts, staffNotifications]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSaveSecurity = useCallback(async () => {
+    if (useLogging) {
+      logger.info('[ui] FORM_SUBMIT_ATTEMPT', {
+        feature: 'settings',
+        section: 'security',
+        payloadKeys: logDataEnabled ? ['twoFactorEnabled', 'sessionTimeout'] : undefined,
+        sample: logFullDataEnabled ? samplePayload({ twoFactorEnabled, sessionTimeout }) : undefined,
+      });
+    }
+    logger.info('[settings] SAVE_SECURITY_ATTEMPT', { twoFactorEnabled, sessionTimeout });
     try {
       await settingsAdapter.saveTenantSecurity({ twoFactorEnabled, sessionTimeout });
+      if (useLogging) {
+        logger.info('[ui] FORM_SUBMIT_SUCCESS', {
+          feature: 'settings',
+          section: 'security',
+          payloadKeys: logDataEnabled ? ['twoFactorEnabled', 'sessionTimeout'] : undefined,
+        });
+      }
+      logger.info('[settings] SAVE_SECURITY_SUCCESS');
       toast.success('Security settings saved');
     } catch (error) {
       toast.error('Failed to save security settings');
-      console.error(error);
+      logger.error('[settings] SAVE_SECURITY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
     }
   }, [twoFactorEnabled, sessionTimeout]);
+
+  useEffect(() => {
+    if (!useLogging || viewModelLoggedRef.current) return;
+    const keys = Object.keys(initialState ?? {}).slice(0, 12);
+    logger.info('[ui] VIEWMODEL_APPLIED', {
+      feature: 'settings',
+      section: 'tenant-profile',
+      modelKeys: logDataEnabled ? keys : undefined,
+      sample: logFullDataEnabled ? samplePayload(initialState) : undefined,
+    });
+    viewModelLoggedRef.current = true;
+  }, [initialState, logDataEnabled, logFullDataEnabled, useLogging]);
 
   return {
     // State

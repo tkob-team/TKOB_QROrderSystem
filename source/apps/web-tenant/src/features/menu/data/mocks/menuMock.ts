@@ -3,7 +3,14 @@
  * Mock data for development/testing
  */
 
-import { mockCategories, mockMenuItems, mockModifierGroups } from '@/services/mocks/menu-data';
+import { logger } from '@/shared/utils/logger';
+import { samplePayload } from '@/shared/utils/dataInspector';
+
+const logFullDataEnabled =
+  process.env.NEXT_PUBLIC_LOG_DATA === 'true' &&
+  process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
+const menuAllowKeys = ['name', 'description', 'title', 'label', 'note'];
+import { mockCategories, mockMenuItems, mockModifierGroups } from './menu-data';
 
 /**
  * Menu Categories Mock
@@ -21,6 +28,13 @@ export const menuCategoriesMock = {
   },
   async create(data: any) {
     await new Promise(resolve => setTimeout(resolve, 400));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'category.create',
+        payload: samplePayload(data, { allowKeys: menuAllowKeys }),
+      });
+    }
     const maxDisplayOrder = mockCategories.reduce((max, cat) => Math.max(max, cat.displayOrder || 0), -1);
     const newCategory = { 
       id: Date.now().toString(), 
@@ -31,11 +45,25 @@ export const menuCategoriesMock = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'category.create',
+        data: samplePayload(newCategory, { allowKeys: menuAllowKeys }),
+      });
+    }
     mockCategories.push(newCategory);
     return newCategory;
   },
   async update(id: string, data: any) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'category.update',
+        payload: samplePayload({ id, ...data }, { allowKeys: menuAllowKeys }),
+      });
+    }
     const index = mockCategories.findIndex(c => c.id === id);
     if (index !== -1) {
       mockCategories[index] = { 
@@ -43,15 +71,36 @@ export const menuCategoriesMock = {
         ...data,
         updatedAt: new Date().toISOString(),
       };
+      if (logFullDataEnabled) {
+        logger.info('[mock] RESPONSE', {
+          feature: 'menu',
+          op: 'category.update',
+          data: samplePayload(mockCategories[index], { allowKeys: menuAllowKeys }),
+        });
+      }
       return mockCategories[index];
     }
     return { id, ...data };
   },
   async delete(id: string) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'category.delete',
+        payload: samplePayload({ id }),
+      });
+    }
     const index = mockCategories.findIndex(c => c.id === id);
     if (index !== -1) {
       mockCategories.splice(index, 1);
+    }
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'category.delete',
+        data: samplePayload({ success: true }),
+      });
     }
     return { success: true };
   },
@@ -102,6 +151,13 @@ export const menuItemsMock = {
   },
   async create(data: any) {
     await new Promise(resolve => setTimeout(resolve, 400));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'item.create',
+        payload: samplePayload(data, { allowKeys: menuAllowKeys }),
+      });
+    }
     const newItem = {
       id: Date.now().toString(),
       status: (data as any).status ?? 'DRAFT',
@@ -111,11 +167,25 @@ export const menuItemsMock = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'item.create',
+        data: samplePayload(newItem, { allowKeys: menuAllowKeys }),
+      });
+    }
     mockMenuItems.push(newItem);
     return newItem;
   },
   async update(id: string, data: any) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'item.update',
+        payload: samplePayload({ id, ...data }, { allowKeys: menuAllowKeys }),
+      });
+    }
     const index = mockMenuItems.findIndex(i => i.id === id);
     if (index !== -1) {
       mockMenuItems[index] = { 
@@ -125,25 +195,60 @@ export const menuItemsMock = {
         status: (data as any).status ?? (mockMenuItems[index] as any).status ?? 'DRAFT',
         updatedAt: new Date().toISOString(),
       };
+      if (logFullDataEnabled) {
+        logger.info('[mock] RESPONSE', {
+          feature: 'menu',
+          op: 'item.update',
+          data: samplePayload(mockMenuItems[index], { allowKeys: menuAllowKeys }),
+        });
+      }
       return mockMenuItems[index];
     }
     return { id, ...data };
   },
   async delete(id: string) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'item.delete',
+        payload: samplePayload({ id }),
+      });
+    }
     const item = mockMenuItems.find(i => i.id === id);
     if (item) {
       (item as any).status = 'ARCHIVED';
       item.updatedAt = new Date().toISOString();
     }
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'item.delete',
+        data: samplePayload({ success: true }),
+      });
+    }
     return { success: true };
   },
   async toggleAvailability(id: string, data: { isAvailable: boolean }) {
     await new Promise(resolve => setTimeout(resolve, 200));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'item.toggleAvailability',
+        payload: samplePayload({ id, ...data }, { allowKeys: menuAllowKeys }),
+      });
+    }
     const item = mockMenuItems.find(i => i.id === id);
     if (item) {
       item.available = data.isAvailable;
       (item as any).isAvailable = data.isAvailable;
+    }
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'item.toggleAvailability',
+        data: samplePayload({ success: true }),
+      });
     }
     return { success: true } as any;
   },
@@ -159,6 +264,13 @@ export const modifiersMock = {
   },
   async create(data: any) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'modifier.create',
+        payload: samplePayload(data, { allowKeys: menuAllowKeys }),
+      });
+    }
     const newGroup = {
       id: Date.now().toString(),
       active: true,
@@ -168,10 +280,25 @@ export const modifiersMock = {
       updatedAt: new Date().toISOString(),
     };
     (mockModifierGroups as any).push(newGroup);
+    logger.debug('[menu:mock] MODIFIER_CREATED', { count: mockModifierGroups.length });
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'modifier.create',
+        data: samplePayload(newGroup, { allowKeys: menuAllowKeys }),
+      });
+    }
     return newGroup;
   },
   async update(id: string, data: any) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'modifier.update',
+        payload: samplePayload({ id, ...data }, { allowKeys: menuAllowKeys }),
+      });
+    }
     const group = mockModifierGroups.find(m => m.id === id);
     if (group) {
       // Update fields but preserve options from data if provided
@@ -185,16 +312,37 @@ export const modifiersMock = {
         updated.options = data.options;
       }
       Object.assign(group, updated);
+      if (logFullDataEnabled) {
+        logger.info('[mock] RESPONSE', {
+          feature: 'menu',
+          op: 'modifier.update',
+          data: samplePayload(updated, { allowKeys: menuAllowKeys }),
+        });
+      }
       return updated;
     }
     return { id, ...data };
   },
   async delete(id: string) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'modifier.delete',
+        payload: samplePayload({ id }),
+      });
+    }
     const group = mockModifierGroups.find(m => m.id === id);
     if (group) {
       (group as any).active = false;
       group.updatedAt = new Date().toISOString();
+    }
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'modifier.delete',
+        data: samplePayload({ success: true }),
+      });
     }
     return { success: true };
   },
@@ -206,6 +354,13 @@ export const modifiersMock = {
 export const menuPhotosMock = {
   async upload(itemId: string, data: { file: File }) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'photo.upload',
+        payload: samplePayload({ itemId, filename: data.file.name, size: data.file.size, type: data.file.type }),
+      });
+    }
     const newPhoto = {
       id: `photo-${Date.now()}`,
       url: URL.createObjectURL(data.file),
@@ -223,6 +378,13 @@ export const menuPhotosMock = {
       item.photos.forEach(p => (p as any).isPrimary = false);
       item.photos.push(newPhoto as any);
     }
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'photo.upload',
+        data: samplePayload(newPhoto),
+      });
+    }
     return newPhoto;
   },
   async getPhotos(itemId: string) {
@@ -232,22 +394,57 @@ export const menuPhotosMock = {
   },
   async delete(itemId: string, photoId: string) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'photo.delete',
+        payload: samplePayload({ itemId, photoId }),
+      });
+    }
     const item = mockMenuItems.find(i => i.id === itemId);
     if (item?.photos) {
       item.photos = item.photos.filter(p => p.id !== photoId);
+    }
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'photo.delete',
+        data: samplePayload({ success: true }),
+      });
     }
     return { success: true };
   },
   async setPrimary(itemId: string, photoId: string) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'photo.setPrimary',
+        payload: samplePayload({ itemId, photoId }),
+      });
+    }
     const item = mockMenuItems.find(i => i.id === itemId);
     if (!item?.photos) throw new Error(`Item ${itemId} not found`);
     item.photos.forEach(p => (p as any).isPrimary = p.id === photoId);
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'photo.setPrimary',
+        data: samplePayload({ success: true }),
+      });
+    }
     return { success: true };
   },
   async bulkUpload(itemId: string, data: { files: File[] }) {
     await new Promise(resolve => setTimeout(resolve, 500 * data.files.length));
-    return data.files.map((file, i) => ({
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'photo.bulkUpload',
+        payload: samplePayload({ itemId, fileCount: data.files.length, files: data.files.map(f => ({ filename: f.name, size: f.size, type: f.type })) }),
+      });
+    }
+    const result = data.files.map((file, i) => ({
       id: `photo-${Date.now()}-${i}`,
       url: URL.createObjectURL(file),
       filename: file.name,
@@ -257,13 +454,35 @@ export const menuPhotosMock = {
       mimeType: file.type,
       createdAt: new Date().toISOString(),
     }));
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'photo.bulkUpload',
+        data: samplePayload(result),
+      });
+    }
+    return result;
   },
   async updateOrder(itemId: string, photoId: string, data: { displayOrder: number }) {
     await new Promise(resolve => setTimeout(resolve, 300));
+    if (logFullDataEnabled) {
+      logger.info('[mock] REQUEST', {
+        feature: 'menu',
+        op: 'photo.updateOrder',
+        payload: samplePayload({ itemId, photoId, displayOrder: data.displayOrder }),
+      });
+    }
     const item = mockMenuItems.find(i => i.id === itemId);
     if (!item?.photos) throw new Error(`Item ${itemId} not found`);
     const photo = item.photos.find(p => p.id === photoId);
     if (photo) (photo as any).displayOrder = data.displayOrder;
+    if (logFullDataEnabled) {
+      logger.info('[mock] RESPONSE', {
+        feature: 'menu',
+        op: 'photo.updateOrder',
+        data: samplePayload({ success: true }),
+      });
+    }
     return { success: true };
   },
 };

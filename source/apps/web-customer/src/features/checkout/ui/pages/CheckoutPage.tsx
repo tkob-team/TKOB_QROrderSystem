@@ -22,8 +22,8 @@ export function CheckoutPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-24">
+      {/* Content - Reserve bottom space for sticky CTA only (BottomNav hidden on checkout) */}
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         {/* Summary Strip */}
         <div className="bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
           <div className="flex items-center justify-between" style={{ fontSize: '14px' }}>
@@ -139,21 +139,42 @@ export function CheckoutPage() {
             </div>
           </div>
         </div>
+
+        {/* Empty Cart Message */}
+        {cartItems.length === 0 && (
+          <div className="mx-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--gray-100)' }}>
+            <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>Your cart is empty. Add items from the menu to continue.</p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {state.error && (
+          <div className="mx-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--red-50)' }}>
+            <p style={{ color: 'var(--red-600)', fontSize: '14px' }}>{state.error}</p>
+          </div>
+        )}
       </div>
 
-      {/* Sticky Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg" style={{ borderColor: 'var(--gray-200)' }}>
+      {/* Sticky Bottom CTA - Full width (BottomNav hidden) */}
+      <div className="fixed left-0 right-0 bg-white border-t p-4 shadow-lg" style={{ borderColor: 'var(--gray-200)', bottom: 'env(safe-area-inset-bottom)', zIndex: 29 }}>
         <div className="max-w-[480px] mx-auto">
           <button
             onClick={handleSubmit}
-            className="w-full py-3 px-6 rounded-full transition-all hover:shadow-md active:scale-95"
+            disabled={state.isSubmitting || cartItems.length === 0}
+            className="w-full py-3 px-6 rounded-full transition-all hover:shadow-md active:scale-95 disabled:opacity-60 disabled:hover:shadow-none disabled:active:scale-100"
             style={{
-              backgroundColor: 'var(--orange-500)',
+              backgroundColor: state.isSubmitting || cartItems.length === 0 ? 'var(--gray-300)' : 'var(--orange-500)',
               color: 'white',
               minHeight: '48px',
             }}
           >
-            {state.paymentMethod === 'card' ? 'Continue to payment' : 'Place order'}
+            {cartItems.length === 0
+              ? 'Cart is empty'
+              : state.isSubmitting
+              ? 'Creating order...'
+              : state.paymentMethod === 'card'
+              ? 'Continue to payment'
+              : 'Place order'}
           </button>
         </div>
       </div>

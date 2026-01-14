@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/shared/context/AuthContext';
-import { ROUTES } from '@/shared/config';
+import { logger } from '@/shared/utils/logger';
 
 interface RoleGuardProps {
   children: ReactNode;
@@ -18,6 +18,28 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // INVARIANT: Check for authenticated but missing user object
+  useEffect(() => {
+    if (isMounted && isAuthenticated && !user) {
+      logger.warn('[invariant] AUTHENTICATED_BUT_NO_USER', {
+        isAuthenticated,
+        hasUser: !!user,
+        isLoading,
+      });
+    }
+  }, [isMounted, isAuthenticated, user, isLoading]);
+
+  // Redirect not authenticated users to login
+  useEffect(() => {
+    if (isMounted && !isLoading && (!isAuthenticated || !user)) {
+      logger.log('[RoleGuard] User not authenticated, redirecting to login', {
+        isAuthenticated,
+        hasUser: !!user,
+      });
+      router.push('/auth/login');
+    }
+  }, [isMounted, isLoading, isAuthenticated, user, router]);
 
   if (!isMounted) {
     return null;
@@ -35,9 +57,9 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
     );
   }
 
-  // Not authenticated
+  // Not authenticated - already redirecting via useEffect
   if (!isAuthenticated || !user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   // Check if user's role is allowed

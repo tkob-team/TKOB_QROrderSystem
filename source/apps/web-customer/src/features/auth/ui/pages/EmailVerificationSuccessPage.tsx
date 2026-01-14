@@ -2,7 +2,7 @@
 
 import { CheckCircle } from 'lucide-react'
 import { useState } from 'react'
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
+import { LanguageSwitcher } from '@/shared/components/common/LanguageSwitcher'
 import type { Language } from '@/types'
 import { useAuthController } from '../../hooks'
 import { AUTH_TEXT } from '../../model'

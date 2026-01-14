@@ -1,5 +1,6 @@
 // Role-based routing and navigation utilities
 // Extracted from Admin-screens-v3 App.tsx patterns
+import { logger } from '@/shared/utils/logger';
 
 export type UserRole = 'admin' | 'waiter' | 'kds' | null;
 
@@ -31,17 +32,11 @@ export const ROLE_ALLOWED_ROUTES: RoleAllowedRoutes = {
  * @returns Home route path for the role
  */
 export function getHomeRouteForRole(role: UserRole): string {
-  console.log('[navigation.ts] getHomeRouteForRole called with role:', role);
-  console.log('[navigation.ts] ROLE_HOME_ROUTES:', JSON.stringify(ROLE_HOME_ROUTES));
-  
   if (role === null) {
-    console.log('[navigation.ts] Returning for null role:', ROLE_HOME_ROUTES.null);
     return ROLE_HOME_ROUTES.null;
   }
   
-  const route = ROLE_HOME_ROUTES[role];
-  console.log('[navigation.ts] Returning route for role', role, ':', route);
-  return route;
+  return ROLE_HOME_ROUTES[role];
 }
 
 /**

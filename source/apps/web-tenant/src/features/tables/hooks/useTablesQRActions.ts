@@ -13,6 +13,7 @@ import { useRef, useState } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { useRegenerateAllQR, useRegenerateQR } from './queries/useTables';
 import { tablesAdapter } from '@/features/tables/data';
+import { logger } from '@/shared/utils/logger';
 import type { Table, QRDownloadFormat } from '@/features/tables/model/types';
 
 interface ShowToastFn {
@@ -44,11 +45,9 @@ export function useTablesQRActions(
     if (!selectedTable) return;
 
     try {
-      console.log('🔄 [POST /tables/:id/qr/regenerate] Request:', {
-        id: selectedTable.id,
-      });
+      logger.debug('[tables] REGENERATE_QR_ATTEMPT', { tableId: selectedTable.id });
       await regenerateQRMutation.mutateAsync(selectedTable.id);
-      console.log('✅ [POST /tables/:id/qr/regenerate] Success');
+      logger.info('[tables] REGENERATE_QR_SUCCESS', { tableId: selectedTable.id });
 
       showToast('QR code regenerated successfully', 'success');
     } catch (error: any) {
@@ -56,7 +55,7 @@ export function useTablesQRActions(
         error?.response?.data?.error?.message ||
         error?.message ||
         'Failed to regenerate QR code';
-      console.error('❌ API Error:', error);
+      logger.error('[tables] REGENERATE_QR_ERROR', { message: errorMessage });
       showToast(errorMessage, 'error');
     }
   };
@@ -76,7 +75,7 @@ export function useTablesQRActions(
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      console.log(`✅ [GET /tables/:id/qr/download] Downloaded: ${format}`);
+      logger.debug('[tables] DOWNLOAD_QR_SUCCESS', { tableId: selectedTable.id, format });
 
       showToast(`QR code downloaded as ${format.toUpperCase()}`, 'success');
     } catch (error: any) {
@@ -84,7 +83,7 @@ export function useTablesQRActions(
         error?.response?.data?.error?.message ||
         error?.message ||
         'Failed to download QR code';
-      console.error('❌ API Error:', error);
+      logger.error('[tables] DOWNLOAD_QR_ERROR', { message: errorMessage });
       showToast(errorMessage, 'error');
     } finally {
       setIsDownloadingQR(false);
@@ -104,7 +103,7 @@ export function useTablesQRActions(
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      console.log('✅ [GET /tables/qr/download-all] Downloaded');
+      logger.debug('[tables] DOWNLOAD_ALL_QR_SUCCESS');
 
       showToast('All QR codes downloaded successfully', 'success');
     } catch (error: any) {
@@ -112,7 +111,7 @@ export function useTablesQRActions(
         error?.response?.data?.error?.message ||
         error?.message ||
         'Failed to download all QR codes';
-      console.error('❌ API Error:', error);
+      logger.error('[tables] DOWNLOAD_ALL_QR_ERROR', { message: errorMessage });
       showToast(errorMessage, 'error');
     } finally {
       setIsDownloadingAll(false);
@@ -130,7 +129,7 @@ export function useTablesQRActions(
         error?.response?.data?.error?.message ||
         error?.message ||
         'Failed to regenerate all QR codes';
-      console.error('❌ API Error:', error);
+      logger.error('[tables] BULK_REGENERATE_QR_ERROR', { message: errorMessage });
       showToast(errorMessage, 'error');
     } finally {
       setIsBulkRegenLoading(false);
@@ -146,8 +145,8 @@ export function useTablesQRActions(
         throw new Error('QR code not loaded');
       }
     },
-    onPrintError: (error) => {
-      console.error('Print error:', error);
+    onPrintError: (error: any) => {
+      logger.error('[tables] PRINT_QR_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
       const errorMsg =
         error && typeof error === 'object' && 'message' in (error as any)
           ? String((error as any).message)
@@ -183,7 +182,7 @@ export function useTablesQRActions(
       handlePrintQR();
       showToast('Print dialog opened', 'success');
     } catch (error: any) {
-      console.error('Print failed:', error);
+      logger.error('[tables] PRINT_QR_WRAPPER_ERROR', { message: error?.message || 'Unknown error' });
       showToast(
         'Print failed: ' + (error?.message || 'Please try again'),
         'error'

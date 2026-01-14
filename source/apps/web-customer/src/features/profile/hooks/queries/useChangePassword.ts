@@ -1,9 +1,9 @@
 import { useMutation } from '@tanstack/react-query'
-import { AuthService } from '@/api/services/auth.service'
+import { AuthDataFactory } from '@/features/auth/data'
 
 export function useChangePassword() {
   return useMutation({
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
-      AuthService.changePassword(data),
+      AuthDataFactory.getStrategy().changePassword(data),
   })
 }

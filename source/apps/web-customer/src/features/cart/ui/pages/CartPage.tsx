@@ -3,15 +3,15 @@
 import { ArrowLeft, ShoppingBag, ChevronDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { CartItemCard } from '@/components/cards/CartItemCard'
-import { EmptyState } from '@/components/common/EmptyState'
+import { CartItemCard } from '@/shared/components/cards/CartItemCard'
+import { EmptyState } from '@/shared/components/common/EmptyState'
 import { useCartController } from '../../hooks'
 import { CartConfirmModal } from '../components/modals/CartConfirmModal'
 
 export function CartPage() {
   const router = useRouter()
   const { items: cartItems, updateQuantity, removeItem, totals } = useCartController()
-  const [summaryExpanded, setSummaryExpanded] = useState(false)
+  const [summaryExpanded, setSummaryExpanded] = useState(true)
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 

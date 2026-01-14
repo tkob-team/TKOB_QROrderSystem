@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { logger } from '@/shared/utils/logger';
 import { useStaffMembers, useRoleOptions } from './queries/useStaff';
 import type { StaffRole, StaffMember, EditForm } from '../model/types';
 
@@ -66,32 +67,55 @@ export function useStaffController() {
 
   const handleSendInvite = () => {
     if (inviteEmail && selectedRole) {
-      const newMember: StaffMember = {
-        id: Date.now().toString(),
-        name: inviteEmail.split('@')[0],
-        email: inviteEmail,
-        role: selectedRole,
-        status: 'pending',
-        joinedDate: `Invited ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-      };
-      // TODO: Use mutation to add member to backend
-      console.log('Adding new member:', newMember);
-      showSuccessToast(`Invitation sent to ${inviteEmail}`);
-      setShowInviteModal(false);
+      logger.info('[staff] SEND_INVITE_ATTEMPT', { role: selectedRole });
+      try {
+        const newMember: StaffMember = {
+          id: Date.now().toString(),
+          name: inviteEmail.split('@')[0],
+          email: inviteEmail,
+          role: selectedRole,
+          status: 'pending',
+          joinedDate: `Invited ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+        };
+        // TODO: Use mutation to add member to backend
+        logger.debug('[staff] INVITE_SENT', { email: inviteEmail });
+        logger.info('[staff] SEND_INVITE_SUCCESS', { role: selectedRole });
+        showSuccessToast(`Invitation sent to ${inviteEmail}`);
+        setShowInviteModal(false);
+      } catch (error) {
+        logger.error('[staff] SEND_INVITE_ERROR', {
+          role: selectedRole,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+        showSuccessToast('Failed to send invitation');
+      }
     }
   };
 
   const handleEditMember = () => {
     if (selectedMember) {
-      // TODO: Use mutation to update member in backend
-      console.log('Updating member:', selectedMember.id, editForm);
-      showSuccessToast('Member updated successfully');
-      setShowEditModal(false);
+      logger.info('[staff] UPDATE_MEMBER_ATTEMPT', { memberId: selectedMember.id, role: editForm.role });
+      try {
+        // TODO: Use mutation to update member in backend
+        logger.debug('[staff] MEMBER_UPDATED', { memberId: selectedMember.id });
+        logger.info('[staff] UPDATE_MEMBER_SUCCESS', { memberId: selectedMember.id });
+        showSuccessToast('Member updated successfully');
+        setShowEditModal(false);
+      } catch (error) {
+        logger.error('[staff] UPDATE_MEMBER_ERROR', {
+          memberId: selectedMember.id,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+        showSuccessToast('Failed to update member');
+      }
     }
   };
 
   const handleResendInvite = () => {
     if (selectedMember) {
+      logger.info('[staff] RESEND_INVITE_ATTEMPT', { memberId: selectedMember.id });
+      // TODO: Use mutation to resend invite
+      logger.info('[staff] RESEND_INVITE_SUCCESS', { memberId: selectedMember.id });
       showSuccessToast(`Invite resent to ${selectedMember.email}`);
       setShowEditModal(false);
     }
@@ -100,7 +124,7 @@ export function useStaffController() {
   const handleRevokeInvite = () => {
     if (selectedMember && confirm(`Revoke invitation for ${selectedMember.email}?`)) {
       // TODO: Use mutation to revoke member in backend
-      console.log('Revoking member:', selectedMember.id);
+      logger.debug('[staff] INVITE_REVOKED', { memberId: selectedMember.id });
       showSuccessToast(`Invite revoked for ${selectedMember.email}`);
       setShowEditModal(false);
     }

@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tablesAdapter } from '@/features/tables/data';
+import { logger } from '@/shared/utils/logger';
 import type {
   CreateTableDto,
   UpdateTableDto,
@@ -21,13 +22,13 @@ export const useTablesList = (params?: TableControllerFindAllParams) => {
   return useQuery({
     queryKey: ['tables', 'list', queryParams],
     queryFn: async () => {
-      console.log('🔍 [useTablesList] Calling API with params:', queryParams);
+      logger.debug('[tables] LIST_QUERY_ATTEMPT', { hasParams: !!params });
       try {
         const result = await tablesAdapter.listTables(queryParams as TableControllerFindAllParams);
-        console.log('📦 [useTablesList] Backend returned filtered & sorted data:', result);
+        logger.debug('[tables] LIST_QUERY_SUCCESS', { count: result?.length || 0 });
         return result;
       } catch (error) {
-        console.error('❌ [useTablesList] Error:', error);
+        logger.error('[tables] LIST_QUERY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
         throw error;
       }
     },

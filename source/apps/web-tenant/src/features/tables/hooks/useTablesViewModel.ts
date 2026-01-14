@@ -9,6 +9,7 @@
  */
 
 import { useMemo } from 'react';
+import { logger } from '@/shared/utils/logger';
 import type { Table, TableSummary } from '@/features/tables/model/types';
 
 interface ApiTableResponse {
@@ -59,7 +60,7 @@ export function useTablesViewModel(
   // Map API response to Table interface
   const tables = useMemo(() => {
     if (!apiResponse) return [];
-    return apiResponse.map((t) => {
+    const mapped = apiResponse.map((t) => {
       // Extract numeric part and generate table name like "Table 1", "Table 2", etc.
       const tableNum = t.tableNumber?.replace(/[^0-9]/g, '') || t.displayOrder || '';
       const generatedName = tableNum ? `Table ${tableNum}` : `Table ${t.displayOrder}`;
@@ -77,18 +78,49 @@ export function useTablesViewModel(
         qrCodeUrl: t.qrCodeUrl,
       };
     });
+
+    if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+      logger.info('[ui] VIEWMODEL_APPLIED', {
+        feature: 'tables',
+        entity: 'tables',
+        count: mapped.length,
+        sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && mapped[0]
+          ? {
+              id: mapped[0].id,
+              name: mapped[0].name,
+              status: mapped[0].status,
+              location: mapped[0].location,
+              capacity: mapped[0].capacity,
+            }
+          : undefined,
+      });
+    }
+
+    return mapped;
   }, [apiResponse]);
 
   // Calculate summary stats
   const summary: TableSummary = useMemo(
-    () => ({
-      total: tables.length,
-      available: tables.filter((t) => t.status === 'available').length,
-      occupied: tables.filter((t) => t.status === 'occupied').length,
-      reserved: tables.filter((t) => t.status === 'reserved').length,
-      inactive: tables.filter((t) => t.status === 'inactive').length,
-      totalCapacity: tables.reduce((sum, t) => sum + t.capacity, 0),
-    }),
+    () => {
+      const computed = {
+        total: tables.length,
+        available: tables.filter((t) => t.status === 'available').length,
+        occupied: tables.filter((t) => t.status === 'occupied').length,
+        reserved: tables.filter((t) => t.status === 'reserved').length,
+        inactive: tables.filter((t) => t.status === 'inactive').length,
+        totalCapacity: tables.reduce((sum, t) => sum + t.capacity, 0),
+      };
+
+      if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+        logger.info('[ui] AGGREGATION_COMPUTED', {
+          feature: 'tables',
+          entity: 'summary',
+          stats: computed,
+        });
+      }
+
+      return computed;
+    },
     [tables]
   );
 

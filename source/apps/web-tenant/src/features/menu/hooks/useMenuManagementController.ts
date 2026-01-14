@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { logger } from '@/shared/utils/logger';
 import type { Category, MenuItem } from '../model/types';
 import type { ModifierGroup } from '../model/modifiers';
 import { mapMenuItemDtoToVM } from '../lib/mappers/itemMapper';
@@ -40,7 +41,26 @@ export function useMenuManagementController() {
       ? itemsData
       : ((itemsData as { data?: unknown[] } | undefined)?.data ?? []);
 
-    return normalizedItems.map((item) => mapMenuItemDtoToVM(item)) as MenuItem[];
+    const mapped = normalizedItems.map((item) => mapMenuItemDtoToVM(item)) as MenuItem[];
+
+    if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+      logger.info('[ui] VIEWMODEL_APPLIED', {
+        feature: 'menu',
+        entity: 'items',
+        count: mapped.length,
+        sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && mapped[0]
+          ? {
+              id: mapped[0].id,
+              name: mapped[0].name,
+              categoryId: mapped[0].categoryId,
+              status: mapped[0].status,
+              isAvailable: mapped[0].isAvailable,
+            }
+          : undefined,
+      });
+    }
+
+    return mapped;
   }, [itemsData]);
 
   const allMenuItems = useMemo(() => {
@@ -113,15 +133,43 @@ export function useMenuManagementController() {
   };
 
   const allFilteredAndSortedItems = getFilteredAndSortedItems();
+
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    logger.info('[ui] FILTER_APPLIED', {
+      feature: 'menu',
+      inputCount: menuItems.length,
+      outputCount: allFilteredAndSortedItems.length,
+      filters: process.env.NEXT_PUBLIC_LOG_DATA === 'true'
+        ? {
+            category: selectionState.selectedCategory,
+            status: filtersController.appliedFilters.status,
+            availability: filtersController.appliedFilters.availability,
+            searchQuery: filtersController.appliedFilters.searchQuery,
+            sortBy: filtersController.appliedFilters.sortBy,
+          }
+        : undefined,
+    });
+  }
+
   const filteredItemsCount = allFilteredAndSortedItems.length;
   const totalPages = Math.ceil(filteredItemsCount / selectionState.pageSize);
   const startIndex = (selectionState.currentPage - 1) * selectionState.pageSize;
   const endIndex = startIndex + selectionState.pageSize;
   const visibleMenuItems = allFilteredAndSortedItems.slice(startIndex, endIndex);
 
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    logger.info('[ui] PAGINATION_APPLIED', {
+      feature: 'menu',
+      page: selectionState.currentPage,
+      pageSize: selectionState.pageSize,
+      totalItems: allFilteredAndSortedItems.length,
+      visibleCount: visibleMenuItems.length,
+    });
+  }
+
   useEffect(() => {
     selectionState.setCurrentPage(1);
-  }, [filtersController.appliedFilters, selectionState]);
+  }, [filtersController.appliedFilters]);
 
   const handleSelectCategory = (categoryId: string) => {
     selectionState.setSelectedCategory(categoryId);

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card } from '@/shared/components/Card';
+import { logger } from '@/shared/utils/logger';
+import { shouldLogBySignature } from '@/shared/logging/logDedupe';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 type TopSellingItem = {
@@ -19,13 +21,40 @@ type Props = {
 const BAR_COLORS = ['#10B981', '#14B8A6', '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444'];
 
 export function TopSellingSection({ items, variant }: Props) {
+  const lastSigRef = useRef<string>('');
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+      // Dedupe: only log when actual items content changes, not on harmless rerenders
+      const totalRevenue = items.reduce((sum, item) => sum + item.revenue, 0);
+      const sig = `${variant}|len:${items.length}|rev:${totalRevenue}|first:${items[0]?.itemName}`;
+      if (!shouldLogBySignature(lastSigRef, sig)) {
+        return; // Same data, skip log
+      }
+
+      logger.info('[ui] CHART_SERIES_APPLIED', {
+        feature: 'analytics',
+        chartType: 'topSelling',
+        variant,
+        itemsCount: items.length,
+        sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && items[0]
+          ? {
+              rank: items[0].rank,
+              itemName: items[0].itemName,
+              orders: items[0].orders,
+              revenue: items[0].revenue,
+            }
+          : undefined,
+      });
+    }
+  }, [items, variant]);
   if (variant === 'chart') {
     return (
       <Card className="p-6 shadow-sm">
         <div className="flex flex-col gap-6">
           <h3 className="text-text-primary text-lg font-semibold">Popular Items</h3>
-          <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%" minHeight={384}>
+          <div className="h-96" style={{ height: '384px' }}>
+            <ResponsiveContainer width="100%" height={384}>
               <BarChart data={items} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis type="number" stroke="#9CA3AF" style={{ fontSize: '13px' }} />

@@ -3,6 +3,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { NetworkError } from '@/lib/errors';
 import { createErrorFromStatus } from '@/lib/errorMessages';
+import { logError } from '@/shared/logging/logger';
 
 /**
  * Axios API Client
@@ -43,7 +44,7 @@ function createAPIClient(): AxiosInstance {
     (error: AxiosError) => {
       // Handle 401 - Session expired or invalid
       if (error.response?.status === 401) {
-        console.error('[API] Session expired or invalid - redirecting to invalid-qr')
+        logError('data', 'Session expired or invalid - redirecting to invalid-qr', null, { feature: 'api' });
         if (typeof window !== 'undefined') {
           window.location.href = '/invalid-qr?reason=session-expired'
         }

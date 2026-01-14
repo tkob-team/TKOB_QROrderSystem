@@ -4,7 +4,11 @@
  * Orders Feature - Hooks Layer
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { logger } from '@/shared/utils/logger';
+import { inspectResponseShape, samplePayload } from '@/shared/utils/dataInspector';
+import { isMockEnabled } from '@/shared/config/featureFlags';
+import { ordersAdapter } from '../data';
 import { Order, OrderFilters } from '../model/types';
 import { INITIAL_ORDERS } from '../model/constants';
 
@@ -15,6 +19,67 @@ import { INITIAL_ORDERS } from '../model/constants';
  */
 export function useOrdersData() {
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const useLogging = process.env.NEXT_PUBLIC_USE_LOGGING === 'true';
+    const logData = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
+    const logDataFull = process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
+
+    const fetchOrders = async () => {
+      if (useLogging) {
+        logger.info('[data] FETCH_START', {
+          feature: 'orders',
+          entity: 'orders',
+          source: isMockEnabled('orders') ? 'mock' : 'api',
+        });
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await ordersAdapter.getOrders();
+        if (!active) return;
+        setOrders(data);
+
+        if (useLogging && logData) {
+          const shape = inspectResponseShape(data);
+          logger.info('[data] RESPONSE_SHAPE', {
+            feature: 'orders',
+            entity: 'orders',
+            shape,
+            sample: logDataFull && data[0] ? samplePayload(data[0]) : undefined,
+          });
+        }
+      } catch (err) {
+        if (!active) return;
+        const normalizedError = err instanceof Error ? err : new Error('Failed to fetch orders');
+        setError(normalizedError);
+
+        if (useLogging) {
+          logger.error('[data] FETCH_ERROR', {
+            feature: 'orders',
+            entity: 'orders',
+            source: isMockEnabled('orders') ? 'mock' : 'api',
+            message: normalizedError.message,
+          });
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOrders();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const updateOrder = useCallback((orderId: string, updates: Partial<Order>) => {
     setOrders(prev => prev.map(order => 
@@ -26,6 +91,8 @@ export function useOrdersData() {
     orders,
     setOrders,
     updateOrder,
+    isLoading,
+    error,
   };
 }
 
@@ -62,6 +129,23 @@ export function useOrderFilters(orders: Order[]) {
     return true;
   });
 
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    logger.info('[ui] FILTER_APPLIED', {
+      feature: 'orders',
+      entity: 'orders',
+      inputCount: orders.length,
+      outputCount: filteredOrders.length,
+      filters: process.env.NEXT_PUBLIC_LOG_DATA === 'true'
+        ? {
+            statusFilter: filters.statusFilter,
+            tableFilter: filters.tableFilter,
+            dateFilter: filters.dateFilter,
+            hasSearchQuery: !!filters.searchQuery,
+          }
+        : undefined,
+    });
+  }
+
   // Active filters for UI
   const activeFilters = [];
   if (filters.dateFilter !== 'all') {
@@ -75,6 +159,17 @@ export function useOrderFilters(orders: Order[]) {
   }
   if (filters.searchQuery) {
     activeFilters.push({ key: 'search', label: `"${filters.searchQuery}"` });
+  }
+
+  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+    logger.info('[ui] ACTIVE_FILTERS_COMPUTED', {
+      feature: 'orders',
+      entity: 'activeFilters',
+      count: activeFilters.length,
+      filters: process.env.NEXT_PUBLIC_LOG_DATA === 'true'
+        ? activeFilters
+        : undefined,
+    });
   }
 
   const updateFilter = useCallback((key: keyof OrderFilters, value: string) => {
