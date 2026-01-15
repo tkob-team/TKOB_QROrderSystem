@@ -100,6 +100,29 @@ export class OrderController {
     return this.orderService.getOrderTracking(orderId);
   }
 
+  @Post('orders/:orderId/cancel')
+  @UseGuards(SessionGuard)
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Cancel order (customer self-service)',
+    description: 'Customers can cancel their own order within 5 minutes if kitchen has not started',
+  })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  @ApiResponse({ status: 400, description: 'Cancellation window expired or order already preparing' })
+  async customerCancelOrder(
+    @Session() session: SessionData,
+    @Param('orderId') orderId: string,
+    @Body() body: { reason?: string },
+  ): Promise<OrderResponseDto> {
+    return this.orderService.customerCancelOrder(
+      orderId,
+      session.tableId,
+      body.reason || 'Customer requested cancellation',
+    );
+  }
+
   // ==================== STAFF ENDPOINTS ====================
   @Get('admin/orders')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantOwnershipGuard)

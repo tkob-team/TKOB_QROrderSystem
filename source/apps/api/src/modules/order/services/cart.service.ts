@@ -57,7 +57,7 @@ export class CartService {
   /**
    * Add item to cart or update quantity if exists with same modifiers
    */
-  async addToCard(
+  async addToCart(
     sessionId: string,
     tenantId: string,
     tableId: string,

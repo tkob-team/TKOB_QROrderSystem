@@ -70,6 +70,12 @@ export class OrderResponseDto {
   @ApiProperty()
   tax: number;
 
+  @ApiPropertyOptional({ description: 'Service charge amount' })
+  serviceCharge?: number;
+
+  @ApiPropertyOptional({ description: 'Tip amount' })
+  tip?: number;
+
   @ApiProperty()
   total: number;
 

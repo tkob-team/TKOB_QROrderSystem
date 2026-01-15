@@ -28,13 +28,13 @@ export class CartController {
   // Create
   @Post('items')
   @ApiCookieAuth('table_session_id')
-  @ApiOperation({ summary: 'Add item to card' })
+  @ApiOperation({ summary: 'Add item to cart' })
   @ApiResponse({ status: 201, type: CartResponseDto })
   async addToCart(
     @Session() session: SessionData,
     @Body() dto: AddToCartDto,
   ): Promise<CartResponseDto> {
-    return this.cartService.addToCard(session.sessionId, session.tenantId, dto);
+    return this.cartService.addToCart(session.sessionId, session.tenantId, session.tableId, dto);
   }
 
   // Read
@@ -43,8 +43,7 @@ export class CartController {
   @ApiOperation({ summary: 'Get cart for current session' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async getCart(@Session() session: SessionData): Promise<CartResponseDto> {
-    const cart = await this.cartService.getCart(session.sessionId);
-    return this.cartService['toResponseDto'](cart);
+    return this.cartService.getCartByTable(session.tenantId, session.tableId, session.sessionId);
   }
 
   // Update
@@ -57,7 +56,12 @@ export class CartController {
     @Param('itemId') itemId: string,
     @Body() dto: UpdateCartItemDto,
   ): Promise<CartResponseDto> {
-    return this.cartService.updateCartItem(session.sessionId, itemId, dto);
+    const cartId = await this.cartService.getOrCreateCart(
+      session.tenantId,
+      session.tableId,
+      session.sessionId,
+    );
+    return this.cartService.updateCartItem(cartId, itemId, dto);
   }
 
   // Delete
@@ -70,7 +74,12 @@ export class CartController {
     @Session() session: SessionData,
     @Param('itemId') itemId: string,
   ): Promise<CartResponseDto> {
-    return await this.cartService.removeCartItem(session.sessionId, itemId);
+    const cartId = await this.cartService.getOrCreateCart(
+      session.tenantId,
+      session.tableId,
+      session.sessionId,
+    );
+    return await this.cartService.removeCartItem(cartId, itemId);
   }
 
   @Delete()
@@ -79,6 +88,11 @@ export class CartController {
   @ApiOperation({ summary: 'Clear cart' })
   @ApiResponse({ status: 204 })
   async clearCart(@Session() session: SessionData): Promise<void> {
-    await this.cartService.clearCart(session.sessionId);
+    const cartId = await this.cartService.getOrCreateCart(
+      session.tenantId,
+      session.tableId,
+      session.sessionId,
+    );
+    await this.cartService.clearCart(cartId);
   }
 }

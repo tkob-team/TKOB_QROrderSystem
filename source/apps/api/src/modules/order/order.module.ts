@@ -1,24 +1,27 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MenuModule } from '../menu/menu.module';
+import { TenantModule } from '../tenant/tenant.module';
 import { CartController } from './controllers/cart.controller';
 import { CartService } from './services/cart.service';
 import { TableModule } from '../table/table.module';
 import { OrderService } from './services/order.service';
 import { OrderController } from './controllers/order.controller';
-import { OrderGateway } from './gateways/order.gateway';
 import { KdsController } from './controllers/kds.controller';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
-  imports: [MenuModule, TableModule],
+  imports: [
+    forwardRef(() => MenuModule),
+    TableModule,
+    TenantModule,
+    forwardRef(() => SubscriptionModule),
+  ],
   controllers: [CartController, OrderController, KdsController],
   providers: [
     // Services
     CartService,
     OrderService,
-
-    // WebSocket Gateway
-    OrderGateway,
   ],
-  exports: [CartService, OrderService, OrderGateway],
+  exports: [CartService, OrderService],
 })
 export class OrderModule {}
