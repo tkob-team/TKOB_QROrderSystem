@@ -7,6 +7,7 @@ import { CartItemCard } from '@/shared/components/cards/CartItemCard'
 import { EmptyState } from '@/shared/components/common/EmptyState'
 import { useCartController } from '../../hooks'
 import { CartConfirmModal } from '../components/modals/CartConfirmModal'
+import type { CartItemResponse } from '../../data/types'
 
 export function CartPage() {
   const router = useRouter()
@@ -19,8 +20,8 @@ export function CartPage() {
     router.back()
   }
 
-  const handleEditItem = (item: any) => {
-    router.push(`/menu/${item.menuItem.id}`)
+  const handleEditItem = (item: CartItemResponse) => {
+    router.push(`/menu/${item.menuItemId}`)
   }
 
   const handleRequestRemove = (itemId: string) => {

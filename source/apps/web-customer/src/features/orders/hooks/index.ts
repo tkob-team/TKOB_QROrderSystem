@@ -1,5 +1,7 @@
 /**
  * Orders Feature - Hooks Public API
- * Export ONLY the controller
+ * Export controllers and specialized hooks
  */
 export { useOrdersController } from './useOrdersController'
+export { useOrderTracking } from './useOrderTracking'
+export { useOrderRealtimeUpdates } from './useOrderRealtimeUpdates'

@@ -7,12 +7,18 @@ import { useQuery } from '@tanstack/react-query'
 import { OrdersDataFactory } from '@/features/orders/data'
 import { orderQueryKeys } from '@/features/orders/data/cache/orderQueryKeys'
 import { CardPaymentPage } from './CardPaymentPage'
+import { SepayPaymentPage } from './SepayPaymentPage'
+import { useCheckoutStore } from '@/stores/checkout.store'
 import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 
 /**
  * Payment page content component that uses useSearchParams().
  * Must be wrapped in Suspense boundary by parent component.
+ * 
+ * Routes to appropriate payment page based on paymentMethod:
+ * - SEPAY_QR: VietQR payment with polling
+ * - BILL_TO_TABLE: Legacy card payment simulation
  */
 export function PaymentPageContent() {
   const router = useRouter()
@@ -21,6 +27,11 @@ export function PaymentPageContent() {
 
   const orderId = searchParams.get('orderId') ?? ''
   const source = searchParams.get('source') ?? 'checkout' // 'order' or 'checkout'
+  
+  // Get payment method from URL or fallback to checkout store
+  const paymentMethodParam = searchParams.get('paymentMethod')
+  const checkoutPaymentMethod = useCheckoutStore((s) => s.paymentMethod)
+  const paymentMethod = paymentMethodParam || checkoutPaymentMethod
 
   // Load order by orderId using Orders strategy
   const { data: orderData, isLoading: orderLoading } = useQuery({
@@ -49,8 +60,8 @@ export function PaymentPageContent() {
   useEffect(() => {
     setMounted(true);
     
-    log('ui', 'Payment page mounted', { hasOrderId: !!orderId, orderId: maskId(orderId), source }, { feature: 'payment', dedupe: true, dedupeTtlMs: 10000 });
-  }, [orderId])
+    log('ui', 'Payment page mounted', { hasOrderId: !!orderId, orderId: maskId(orderId), source, paymentMethod }, { feature: 'payment', dedupe: true, dedupeTtlMs: 10000 });
+  }, [orderId, source, paymentMethod])
 
   const handlePaymentSuccess = () => {
     log('ui', 'Payment success navigation', { orderId: maskId(orderId), source, target: source === 'order' ? 'order-detail' : 'success-page' }, { feature: 'payment' });
@@ -213,6 +224,12 @@ export function PaymentPageContent() {
     );
   }
 
+  // Route to SePay payment for SEPAY_QR method
+  if (paymentMethod === 'SEPAY_QR') {
+    return <SepayPaymentPage />
+  }
+
+  // Default: Legacy card payment (BILL_TO_TABLE or fallback)
   return (
     <CardPaymentPage
       orderId={orderId}

@@ -95,11 +95,11 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     if (!item) return
 
     addItem({
-      menuItem: item,
-      selectedSize: selectedSize || undefined,
-      selectedToppings,
-      specialInstructions,
+      menuItemId: item.id,
       quantity,
+      // Convert size/toppings to modifiers format if needed
+      // For now, using notes field for special instructions
+      notes: specialInstructions || undefined,
     })
     toast.success(`${item.name} added to cart!`)
     router.back()
@@ -107,10 +107,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
 
   const quickAdd = (recommendedItem: MenuItem) => {
     addItem({
-      menuItem: recommendedItem,
-      selectedSize: recommendedItem.sizes ? recommendedItem.sizes[0].size : undefined,
-      selectedToppings: [],
-      specialInstructions: '',
+      menuItemId: recommendedItem.id,
       quantity: 1,
     })
     toast.success(`${recommendedItem.name} added to cart!`)

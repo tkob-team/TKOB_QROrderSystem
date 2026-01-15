@@ -2,17 +2,19 @@
  * Order Summary Section
  * 
  * Displays order details, items, and payment status
- * Two modes: Live (tracking) and History (detail)
+ * Two modes: Live (tracking with API) and History (detail)
  */
 
-import { Clock, AlertCircle } from 'lucide-react';
+import { Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Order } from '@/types/order';
 import { log } from '@/shared/logging/logger';
 import { maskId } from '@/shared/logging/helpers';
-import { getStatusMessage, isPaymentRequired, shouldShowEstimatedTime } from '../../../model/statusUtils';
+import { isPaymentRequired } from '../../../model/statusUtils';
 import { RequestBillButton } from './RequestBillButton';
+import { OrderTrackingTimeline } from '../OrderTrackingTimeline';
 import { OrderStatusTimeline } from '../OrderStatusTimeline';
+import { useOrderTracking } from '../../../hooks';
 
 interface OrderSummaryProps {
   order: Order;
@@ -30,11 +32,22 @@ export function OrderSummary({ order, isLive }: OrderSummaryProps) {
 }
 
 /**
- * Live Order View - Tracking Mode
+ * Live Order View - Tracking Mode with real API polling
  */
-function LiveOrderView({ order, router }: { order: Order; router: any }) {
+function LiveOrderView({ order, router }: { order: Order; router: ReturnType<typeof useRouter> }) {
   const needsPayment = isPaymentRequired(order.paymentStatus);
-  const showEstimatedTime = shouldShowEstimatedTime(order.status);
+  
+  // Use real tracking API with polling
+  const { tracking, isLoading: trackingLoading } = useOrderTracking({
+    orderId: order.id,
+    polling: true,
+    pollingInterval: 10000, // 10 seconds
+  });
+
+  // Use tracking data if available, fallback to order data
+  const currentStatus = tracking?.currentStatus || order.status;
+  const statusMessage = tracking?.currentStatusMessage || '';
+  const estimatedTime = tracking?.estimatedTimeRemaining;
 
   return (
     <>
@@ -49,15 +62,15 @@ function LiveOrderView({ order, router }: { order: Order; router: any }) {
           </div>
         </div>
         <h3 className="mb-2" style={{ color: 'var(--gray-900)' }}>
-          {order.status}
+          {currentStatus}
         </h3>
         <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-          {getStatusMessage(order.status)}
+          {statusMessage}
         </p>
-        {showEstimatedTime && (
+        {estimatedTime && estimatedTime > 0 && (
           <div className="flex items-center justify-center gap-2 mt-3" style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
             <Clock className="w-4 h-4" />
-            <span>Estimated time: 18 minutes</span>
+            <span>Estimated time: {estimatedTime} minutes</span>
           </div>
         )}
       </div>
@@ -106,15 +119,28 @@ function LiveOrderView({ order, router }: { order: Order; router: any }) {
         }}
       />
 
-      {/* Timeline */}
+      {/* Timeline - Use API data when available, fallback to simple timeline */}
       <div className="bg-white rounded-xl p-4 border" style={{ borderColor: 'var(--gray-200)' }}>
         <h3 className="mb-4" style={{ color: 'var(--gray-900)' }}>
           Order timeline
         </h3>
-        <OrderStatusTimeline currentStatus={order.status} />
+        {trackingLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--gray-400)' }} />
+          </div>
+        ) : tracking?.timeline ? (
+          <OrderTrackingTimeline
+            timeline={tracking.timeline}
+            currentStatus={tracking.currentStatus}
+            estimatedTimeRemaining={tracking.estimatedTimeRemaining}
+            elapsedMinutes={tracking.elapsedMinutes}
+          />
+        ) : (
+          <OrderStatusTimeline currentStatus={order.status} />
+        )}
         <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--blue-50)' }}>
           <p style={{ color: 'var(--blue-700)', fontSize: '13px' }}>
-            💡 This page updates automatically. No need to refresh.
+            💡 This page updates automatically every 10 seconds.
           </p>
         </div>
       </div>

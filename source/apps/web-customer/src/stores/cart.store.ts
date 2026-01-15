@@ -1,96 +1,237 @@
-// Cart store - manages shopping cart state
+// Cart store - manages shopping cart state with server sync
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { CartItem, MenuItem } from '@/types';
-import { generateId } from '@/shared/utils';
-import { log } from '@/shared/logging/logger';
+import { log, logError } from '@/shared/logging/logger';
 import { maskId } from '@/shared/logging/helpers';
+// eslint-disable-next-line no-restricted-imports -- Legacy pattern, TODO: migrate to React Query
+import { cartApi } from '@/features/cart/data/cart.service';
+// eslint-disable-next-line no-restricted-imports -- Legacy pattern, TODO: migrate to React Query
+import type { CartItemResponse, AddToCartRequest } from '@/features/cart/data/types';
 
-interface CartStore {
-  items: CartItem[];
-  addItem: (data: {
-    menuItem: MenuItem;
-    selectedSize?: string;
-    selectedToppings: string[];
-    specialInstructions?: string;
-    quantity: number;
-  }) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  removeItem: (id: string) => void;
-  updateItem: (id: string, data: Partial<CartItem>) => void;
-  clearCart: () => void;
+interface CartState {
+  // Data from server
+  items: CartItemResponse[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  itemCount: number;
+  
+  // UI state
+  isLoading: boolean;
+  isInitialized: boolean;
+  error: string | null;
+  
+  // Actions
+  fetchCart: () => Promise<void>;
+  addItem: (request: AddToCartRequest) => Promise<void>;
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
+  
+  // Helpers
   getItemCount: () => number;
+  resetError: () => void;
 }
 
-export const useCartStore = create<CartStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
-      
-      addItem: (data) => {
-        const cartItem: CartItem = {
-          id: generateId('cart'),
-          menuItem: data.menuItem,
-          selectedSize: data.selectedSize,
-          selectedToppings: data.selectedToppings,
-          specialInstructions: data.specialInstructions,
-          quantity: data.quantity,
-        };
-        
-        log('ui', 'Item added to cart', {
-          itemId: maskId(cartItem.id),
-          quantity: data.quantity,
-        }, { feature: 'cart' });
-        
-        set((state) => ({
-          items: [...state.items, cartItem],
-        }));
-      },
-      
-      updateQuantity: (id, quantity) => {
-        if (quantity <= 0) {
-          log('ui', 'Item removed from cart', { itemId: maskId(id) }, { feature: 'cart' });
-          get().removeItem(id);
-          return;
-        }
-        
-        log('ui', 'Cart quantity updated', { itemId: maskId(id), quantity }, { feature: 'cart' });
-        
-        set((state) => ({
-          items: state.items.map((item) =>
-            item.id === id ? { ...item, quantity } : item
-          ),
-        }));
-      },
-      
-      removeItem: (id) => {
-        log('ui', 'Item removed from cart', { itemId: maskId(id) }, { feature: 'cart' });
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
-        }));
-      },
-      
-      updateItem: (id, data) => {
-        set((state) => ({
-          items: state.items.map((item) =>
-            item.id === id ? { ...item, ...data } : item
-          ),
-        }));
-      },
-      
-      clearCart: () => {
-        const itemCount = get().items.length;
-        log('ui', 'Cart cleared', { itemCount }, { feature: 'cart' });
-        set({ items: [] });
-      },
-      
-      getItemCount: () => {
-        return get().items.reduce((sum, item) => sum + item.quantity, 0);
-      },
-    }),
-    {
-      name: 'cart-storage',
+export const useCartStore = create<CartState>()((set, get) => ({
+  // Initial state
+  items: [],
+  subtotal: 0,
+  tax: 0,
+  total: 0,
+  itemCount: 0,
+  isLoading: false,
+  isInitialized: false,
+  error: null,
+  
+  /**
+   * Fetch cart from server
+   * Called on page load to sync with server state
+   */
+  fetchCart: async () => {
+    // Skip if already loading
+    if (get().isLoading) return;
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      const cart = await cartApi.getCart();
+      set({
+        items: cart.items,
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        total: cart.total,
+        itemCount: cart.itemCount,
+        isLoading: false,
+        isInitialized: true,
+      });
+    } catch (error) {
+      logError('data', 'Failed to fetch cart', error, { feature: 'cart' });
+      set({ 
+        isLoading: false, 
+        isInitialized: true,
+        error: error instanceof Error ? error.message : 'Failed to load cart'
+      });
     }
-  )
-);
+  },
+  
+  /**
+   * Add item to cart via API
+   */
+  addItem: async (request: AddToCartRequest) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      log('ui', 'Adding item to cart', {
+        menuItemId: maskId(request.menuItemId),
+        quantity: request.quantity,
+      }, { feature: 'cart' });
+      
+      const cart = await cartApi.addItem(request);
+      
+      set({
+        items: cart.items,
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        total: cart.total,
+        itemCount: cart.itemCount,
+        isLoading: false,
+      });
+      
+      log('ui', 'Item added to cart', { 
+        itemCount: cart.itemCount 
+      }, { feature: 'cart' });
+      
+    } catch (error) {
+      logError('ui', 'Failed to add item to cart', error, { feature: 'cart' });
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to add item'
+      });
+      throw error; // Re-throw for UI to handle
+    }
+  },
+  
+  /**
+   * Update item quantity via API
+   */
+  updateQuantity: async (itemId: string, quantity: number) => {
+    // If quantity is 0 or less, remove the item
+    if (quantity <= 0) {
+      await get().removeItem(itemId);
+      return;
+    }
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      log('ui', 'Updating cart quantity', { 
+        itemId: maskId(itemId), 
+        quantity 
+      }, { feature: 'cart' });
+      
+      const cart = await cartApi.updateItem(itemId, { quantity });
+      
+      set({
+        items: cart.items,
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        total: cart.total,
+        itemCount: cart.itemCount,
+        isLoading: false,
+      });
+      
+    } catch (error) {
+      logError('ui', 'Failed to update cart quantity', error, { feature: 'cart' });
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to update quantity'
+      });
+      throw error;
+    }
+  },
+  
+  /**
+   * Remove item from cart via API
+   */
+  removeItem: async (itemId: string) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      log('ui', 'Removing item from cart', { 
+        itemId: maskId(itemId) 
+      }, { feature: 'cart' });
+      
+      const cart = await cartApi.removeItem(itemId);
+      
+      set({
+        items: cart.items,
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        total: cart.total,
+        itemCount: cart.itemCount,
+        isLoading: false,
+      });
+      
+      log('ui', 'Item removed from cart', { 
+        itemCount: cart.itemCount 
+      }, { feature: 'cart' });
+      
+    } catch (error) {
+      logError('ui', 'Failed to remove item from cart', error, { feature: 'cart' });
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to remove item'
+      });
+      throw error;
+    }
+  },
+  
+  /**
+   * Clear cart via API
+   */
+  clearCart: async () => {
+    const itemCount = get().items.length;
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      log('ui', 'Clearing cart', { itemCount }, { feature: 'cart' });
+      
+      await cartApi.clearCart();
+      
+      set({
+        items: [],
+        subtotal: 0,
+        tax: 0,
+        total: 0,
+        itemCount: 0,
+        isLoading: false,
+      });
+      
+      log('ui', 'Cart cleared', {}, { feature: 'cart' });
+      
+    } catch (error) {
+      logError('ui', 'Failed to clear cart', error, { feature: 'cart' });
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to clear cart'
+      });
+      throw error;
+    }
+  },
+  
+  /**
+   * Get total item count
+   */
+  getItemCount: () => {
+    return get().itemCount;
+  },
+  
+  /**
+   * Reset error state
+   */
+  resetError: () => {
+    set({ error: null });
+  },
+}));

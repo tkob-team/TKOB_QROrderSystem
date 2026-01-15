@@ -2,5 +2,14 @@
 
 /**
  * Checkout data access layer
- * Currently contains only calculation utilities (no external service calls)
+ * API service for checkout and payment operations
  */
+
+export { CheckoutApiService, checkoutApi } from './checkout/checkout.service';
+export type { 
+  CheckoutRequest, 
+  CheckoutResponse,
+  PaymentIntentRequest,
+  PaymentIntentResponse,
+  PaymentStatusResponse,
+} from './checkout/types';

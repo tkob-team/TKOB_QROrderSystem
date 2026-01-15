@@ -1,28 +1,37 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/shared/hooks/useCart'
-import { mockTable } from '@/lib/mockData'
-import { debugLog, debugError } from '@/lib/debug'
 import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { SERVICE_CHARGE_RATE, type CheckoutFormData, type CheckoutState } from '../model'
-import { OrdersDataFactory } from '@/features/orders/data'
 import { useSession } from '@/features/tables/hooks'
-import { useCheckoutStore } from '@/stores/checkout.store'
+import { useCheckoutStore, type PaymentMethod, type TipPercent } from '@/stores/checkout.store'
 import { useOrderStore } from '@/stores/order.store'
+import { checkoutApi } from '../data'
+import type { CheckoutRequest } from '../data'
 
 export function useCheckoutController() {
   const router = useRouter()
-  const { items: cartItems, subtotal, tax, serviceCharge, total, clearCart } = useCart()
+  const { 
+    items: cartItems, 
+    subtotal, 
+    tax, 
+    serviceCharge, 
+    total,
+    isLoading: isCartLoading,
+    clearCart 
+  } = useCart()
   const { session } = useSession()
   
   // Use Zustand store for checkout form state
   const customerName = useCheckoutStore((state) => state.customerName)
   const notes = useCheckoutStore((state) => state.notes)
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod)
+  const tipPercent = useCheckoutStore((state) => state.tipPercent)
   const setCustomerName = useCheckoutStore((state) => state.setCustomerName)
   const setNotes = useCheckoutStore((state) => state.setNotes)
   const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod)
+  const setTipPercent = useCheckoutStore((state) => state.setTipPercent)
   const resetCheckout = useCheckoutStore((state) => state.reset)
   
   // Use order store for active order tracking
@@ -32,10 +41,16 @@ export function useCheckoutController() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Calculate tip amount
+  const tipAmount = useMemo(() => subtotal * tipPercent, [subtotal, tipPercent])
+  
+  // Final total with tip
+  const finalTotal = useMemo(() => total + tipAmount, [total, tipAmount])
+
   const formData: CheckoutFormData = {
     name: customerName,
     notes,
-    paymentMethod,
+    paymentMethod: paymentMethod as any, // Type conversion for model compatibility
   }
 
   const state: CheckoutState = useMemo(
@@ -45,79 +60,85 @@ export function useCheckoutController() {
     [formData]
   )
 
-  const updateField = (field: keyof CheckoutFormData, value: any) => {
+  const updateField = (field: keyof CheckoutFormData | 'tipPercent', value: any) => {
     if (field === 'name') {
       setCustomerName(value)
     } else if (field === 'notes') {
       setNotes(value)
     } else if (field === 'paymentMethod') {
-      setPaymentMethod(value)
+      // Map old values to new enum
+      const methodMap: Record<string, PaymentMethod> = {
+        'card': 'SEPAY_QR',
+        'counter': 'BILL_TO_TABLE',
+        'SEPAY_QR': 'SEPAY_QR',
+        'BILL_TO_TABLE': 'BILL_TO_TABLE',
+      }
+      setPaymentMethod(methodMap[value] || 'BILL_TO_TABLE')
+    } else if (field === 'tipPercent') {
+      setTipPercent(value as TipPercent)
     }
   }
 
   const handleSubmit = async () => {
+    if (cartItems.length === 0) {
+      setError('Your cart is empty')
+      return
+    }
+
     const startTime = Date.now()
     setIsSubmitting(true)
     setError(null)
 
     try {
-      const tableId = session?.tableId ?? (mockTable as any)?.id ?? 'table-001'
+      log('data', 'Checkout started', { 
+        itemCount: cartItems.length, 
+        paymentMethod,
+        tipPercent: tipPercent * 100 + '%',
+      }, { feature: 'checkout' });
 
-      debugLog('Checkout', 'place_order', {
-        itemCount: cartItems.length,
-        total,
-        paymentMethod: paymentMethod,
-      })
-
-      log('data', 'Order creation attempt', { itemCount: cartItems.length, paymentMethod: paymentMethod, tableId: maskId(tableId) }, { feature: 'checkout', dedupe: true, dedupeTtlMs: 5000 });
-
-      const strategy = OrdersDataFactory.getStrategy()
-      const response = await strategy.createOrder({
-        tableId,
-        items: cartItems,
-        customerName: customerName,
-        notes: notes,
-        paymentMethod: paymentMethod,
-      })
-
-      if (!response.success || !response.data) {
-        setError(response.message || 'Failed to create order')
-        setIsSubmitting(false)
-        return
+      // 1. Create order via checkout API
+      const checkoutRequest: CheckoutRequest = {
+        customerName: customerName || undefined,
+        customerNotes: notes || undefined,
+        paymentMethod,
+        tipPercent: tipPercent > 0 ? tipPercent : undefined,
       }
 
-      const orderId = response.data.id
+      const order = await checkoutApi.checkout(checkoutRequest)
 
-      log('data', 'Order created', { orderId: maskId(orderId), paymentMethod: paymentMethod, durationMs: Date.now() - startTime }, { feature: 'checkout' });
+      log('data', 'Order created', { 
+        orderId: maskId(order.id),
+        orderNumber: order.orderNumber,
+        paymentMethod,
+        durationMs: Date.now() - startTime,
+      }, { feature: 'checkout' });
 
-      // Set active order in store for session tracking
-      setActiveOrder(orderId, 'checkout')
+      // 2. Set active order in store
+      setActiveOrder(order.id, 'checkout')
+      setPaymentStatus('PENDING', order.id)
+
+      // 3. Clear cart (server cart already cleared by backend)
+      await clearCart()
       
-      // Set initial payment status based on payment method
-      if (paymentMethod === 'card') {
-        setPaymentStatus('PENDING', orderId)
-      } else {
-        setPaymentStatus('PENDING', orderId) // Counter payment pending (pay at counter/table)
-      }
+      log('ui', 'Cart cleared after order', { 
+        orderId: maskId(order.id),
+      }, { feature: 'checkout' });
 
-      // Clear cart immediately after successful order creation
-      // This applies to both card and counter payments
-      clearCart()
-      
-      log('ui', 'Cart cleared', { afterOrderId: maskId(orderId), paymentMethod: paymentMethod }, { feature: 'checkout' });
-
-      // Reset checkout form after successful order
+      // 4. Reset checkout form
       resetCheckout()
 
-      if (paymentMethod === 'card') {
-        router.push(`/payment?orderId=${orderId}`)
+      // 5. Navigate based on payment method
+      if (paymentMethod === 'SEPAY_QR') {
+        // Go to payment page to show QR
+        router.push(`/payment?orderId=${order.id}`)
       } else {
-        router.push(`/payment/success?orderId=${orderId}`)
+        // BILL_TO_TABLE - go directly to order tracking
+        router.push(`/orders/${order.id}`)
       }
+
     } catch (err) {
-      debugError('Checkout', 'place_order_error', err)
-      logError('data', 'Order creation error', err, { feature: 'checkout' });
-      setError(err instanceof Error ? err.message : 'Failed to create order')
+      logError('data', 'Checkout failed', err, { feature: 'checkout' });
+      setError(err instanceof Error ? err.message : 'Failed to create order. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -132,16 +153,22 @@ export function useCheckoutController() {
     state: { ...state, isSubmitting, error },
     updateField,
 
-    // Cart info
+    // Cart info (from server)
     cartItems,
-    mockTable,
     subtotal,
     tax,
     serviceCharge,
-    total,
+    tipAmount,
+    tipPercent,
+    total: finalTotal, // Include tip in total
+    isCartLoading,
+
+    // Table info
+    tableNumber: session?.tableNumber || 'Unknown',
 
     // Actions
     handleSubmit,
     handleBack,
   }
 }
+

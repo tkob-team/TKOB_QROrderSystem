@@ -4,7 +4,7 @@ import { ArrowLeft, QrCode, Wallet } from 'lucide-react'
 import { useCheckoutController } from '../../hooks'
 
 export function CheckoutPage() {
-  const { state, updateField, cartItems, mockTable, total, handleSubmit, handleBack } =
+  const { state, updateField, cartItems, tableNumber, total, handleSubmit, handleBack } =
     useCheckoutController()
 
   return (
@@ -28,7 +28,7 @@ export function CheckoutPage() {
         <div className="bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
           <div className="flex items-center justify-between" style={{ fontSize: '14px' }}>
             <span style={{ color: 'var(--gray-600)' }}>
-              Table {mockTable.number} · {cartItems.length} items
+              Table {tableNumber} · {cartItems.length} items
             </span>
             <span style={{ color: 'var(--gray-900)' }}>
               ${total.toFixed(2)}

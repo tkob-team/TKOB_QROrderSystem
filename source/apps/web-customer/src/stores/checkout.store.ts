@@ -4,13 +4,21 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { log } from '@/shared/logging/logger'
 
+// Payment method types matching backend enum
+export type PaymentMethod = 'BILL_TO_TABLE' | 'SEPAY_QR';
+
+// Tip percentage options
+export type TipPercent = 0 | 0.05 | 0.10 | 0.15;
+
 interface CheckoutStore {
   customerName: string
   notes: string
-  paymentMethod: 'card' | 'counter'
+  paymentMethod: PaymentMethod
+  tipPercent: TipPercent
   setCustomerName: (name: string) => void
   setNotes: (notes: string) => void
-  setPaymentMethod: (method: 'card' | 'counter') => void
+  setPaymentMethod: (method: PaymentMethod) => void
+  setTipPercent: (percent: TipPercent) => void
   reset: () => void
 }
 
@@ -19,7 +27,8 @@ export const useCheckoutStore = create<CheckoutStore>()(
     (set) => ({
       customerName: '',
       notes: '',
-      paymentMethod: 'counter',
+      paymentMethod: 'BILL_TO_TABLE', // Default: pay at table
+      tipPercent: 0, // Default: no tip
 
       setCustomerName: (name) => {
         log('ui', 'Checkout name updated', { hasName: name.length > 0 }, { feature: 'checkout', dedupe: true, dedupeTtlMs: 3000 })
@@ -36,17 +45,24 @@ export const useCheckoutStore = create<CheckoutStore>()(
         set({ paymentMethod: method })
       },
 
+      setTipPercent: (percent) => {
+        log('ui', 'Tip percent selected', { tipPercent: percent * 100 + '%' }, { feature: 'checkout' })
+        set({ tipPercent: percent })
+      },
+
       reset: () => {
         log('ui', 'Checkout form reset', {}, { feature: 'checkout' })
         set({
           customerName: '',
           notes: '',
-          paymentMethod: 'counter',
+          paymentMethod: 'BILL_TO_TABLE',
+          tipPercent: 0,
         })
       },
     }),
     {
-      name: 'wc_checkout_draft_v1',
+      name: 'wc_checkout_draft_v2', // Bump version for new fields
     }
   )
 )
+
