@@ -10,5 +10,6 @@ export { TenantLocalizationSection, type TenantLocalizationSectionProps } from '
 export { TenantAppearanceSection, type TenantAppearanceSectionProps } from './TenantAppearanceSection';
 export { TenantOpeningHoursSection, type TenantOpeningHoursSectionProps } from './TenantOpeningHoursSection';
 export { TenantPaymentsSection, type TenantPaymentsSectionProps } from './TenantPaymentsSection';
+export { TenantPromotionsSection } from './TenantPromotionsSection';
 export { TenantNotificationsSection, type TenantNotificationsSectionProps } from './TenantNotificationsSection';
 export { TenantSecuritySection, type TenantSecuritySectionProps } from './TenantSecuritySection';

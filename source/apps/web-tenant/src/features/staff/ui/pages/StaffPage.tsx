@@ -43,8 +43,8 @@ export function StaffPage() {
   const staffMembers = staff.queries.staffQuery.data ?? [];
   const roleOptions = staff.queries.rolesQuery.data ?? [];
 
-  const activeMembers = staffMembers.filter((m) => m.status === 'active');
-  const pendingMembers = staffMembers.filter((m) => m.status === 'pending');
+  const activeMembers = staffMembers.filter((m) => m.status === 'ACTIVE');
+  const pendingMembers = staffMembers.filter((m) => m.status === 'PENDING');
   const displayMembers = activeTab === 'active' ? activeMembers : pendingMembers;
 
   const stats = {

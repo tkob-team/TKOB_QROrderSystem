@@ -1,4 +1,4 @@
-import { Edit } from 'lucide-react';
+import { Edit, LucideIcon } from 'lucide-react';
 import { Card, Badge } from '@/shared/components';
 import type { StaffMember, RoleOption } from '../../../model/types';
 
@@ -15,7 +15,7 @@ export function StaffMemberCard({
   getInitials,
   onEditClick,
 }: StaffMemberCardProps) {
-  const RoleIcon = roleConfig.icon;
+  const RoleIcon = roleConfig.icon as LucideIcon;
 
   return (
     <Card
@@ -27,7 +27,7 @@ export function StaffMemberCard({
           <div
             className="w-16 h-16 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-xl font-bold"
           >
-            {getInitials(member.name)}
+            {getInitials(member.fullName)}
           </div>
 
           <button
@@ -42,7 +42,7 @@ export function StaffMemberCard({
         {/* Name and Email */}
         <div className="flex flex-col gap-1">
           <h4 className="text-text-primary text-lg font-bold">
-            {member.name}
+            {member.fullName}
           </h4>
           <p className="text-text-secondary text-sm">
             {member.email}
@@ -59,15 +59,15 @@ export function StaffMemberCard({
               {roleConfig.label}
             </span>
           </div>
-          <Badge variant={member.status === 'active' ? 'success' : 'warning'}>
-            {member.status === 'active' ? 'Active' : 'Pending'}
+          <Badge variant={member.status === 'ACTIVE' ? 'success' : 'warning'}>
+            {member.status === 'ACTIVE' ? 'Active' : member.status === 'PENDING' ? 'Pending' : member.status}
           </Badge>
         </div>
 
         {/* Join Date */}
         <div className="pt-3 border-t border-default">
           <p className="text-text-tertiary text-[13px]">
-            {member.status === 'active' ? 'Joined' : 'Invited'}: {member.joinedDate}
+            Joined: {new Date(member.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
       </div>

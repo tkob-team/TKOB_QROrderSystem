@@ -5,3 +5,5 @@ export {
   useOrderFilters,
   useOrderActions,
 } from './useOrdersPageController';
+
+export { useOrdersWebSocket } from './useOrdersWebSocket';

@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { logger } from '@/shared/utils/logger';
 import { useStaffMembers, useRoleOptions } from './queries/useStaff';
-import type { StaffRole, StaffMember, EditForm } from '../model/types';
+import type { StaffRole, StaffMember, EditForm, StaffStatus } from '../model/types';
 
 export function useStaffController() {
   // Tab and filter state
@@ -27,8 +27,8 @@ export function useStaffController() {
   const [editForm, setEditForm] = useState<EditForm>({
     name: '',
     email: '',
-    role: 'waiter' as StaffRole,
-    status: 'active' as 'active' | 'disabled',
+    role: 'STAFF' as StaffRole,
+    status: 'ACTIVE' as StaffStatus,
   });
   
   // Toast state
@@ -57,10 +57,10 @@ export function useStaffController() {
   const handleOpenEditModal = (member: StaffMember) => {
     setSelectedMember(member);
     setEditForm({
-      name: member.name,
+      name: member.fullName,
       email: member.email,
       role: member.role,
-      status: member.status === 'active' ? 'active' : 'disabled',
+      status: member.status,
     });
     setShowEditModal(true);
   };
@@ -69,15 +69,7 @@ export function useStaffController() {
     if (inviteEmail && selectedRole) {
       logger.info('[staff] SEND_INVITE_ATTEMPT', { role: selectedRole });
       try {
-        const newMember: StaffMember = {
-          id: Date.now().toString(),
-          name: inviteEmail.split('@')[0],
-          email: inviteEmail,
-          role: selectedRole,
-          status: 'pending',
-          joinedDate: `Invited ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-        };
-        // TODO: Use mutation to add member to backend
+        // TODO: Use actual inviteStaff mutation
         logger.debug('[staff] INVITE_SENT', { email: inviteEmail });
         logger.info('[staff] SEND_INVITE_SUCCESS', { role: selectedRole });
         showSuccessToast(`Invitation sent to ${inviteEmail}`);

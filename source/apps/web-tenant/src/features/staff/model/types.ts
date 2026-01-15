@@ -1,29 +1,47 @@
 // Staff Management Types
 
-export type StaffRole = 'admin' | 'kitchen' | 'waiter';
-export type StaffStatus = 'active' | 'pending';
+export type StaffRole = 'OWNER' | 'STAFF' | 'KITCHEN';
+export type StaffStatus = 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'LOCKED';
 
 export interface StaffMember {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
   role: StaffRole;
   status: StaffStatus;
-  joinedDate: string;
+  createdAt: string;
+}
+
+export interface PendingInvitation {
+  id: string;
+  email: string;
+  role: 'STAFF' | 'KITCHEN';
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface RoleOption {
   role: StaffRole;
-  icon: any; // Lucide icon component
+  icon: unknown; // Lucide icon component
   label: string;
   description: string;
   color: string;
   bg: string;
 }
 
-export interface EditForm {
+export interface InviteStaffInput {
+  email: string;
+  role: 'STAFF' | 'KITCHEN';
+}
+
+export interface UpdateStaffRoleInput {
+  role: 'STAFF' | 'KITCHEN';
+}
+
+// Legacy type alias for backward compatibility
+export type EditForm = {
   name: string;
   email: string;
   role: StaffRole;
-  status: 'active' | 'disabled';
+  status: StaffStatus;
 }

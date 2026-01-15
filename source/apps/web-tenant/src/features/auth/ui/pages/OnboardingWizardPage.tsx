@@ -12,6 +12,12 @@ import { Card, CardContent } from '@/shared/components/Card';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useAuthController } from '../../hooks';
 import { ROUTES } from '@/shared/config';
+import { logger } from '@/shared/utils/logger';
+import { 
+  tenantControllerUpdateProfile,
+  tenantControllerUpdateOpeningHours,
+  tenantControllerCompleteOnboarding
+} from '@/services/generated/tenants/tenants';
 import { fadeInUp } from '@/shared/utils/animations';
 import {
   OnboardingHeaderSection,
@@ -137,10 +143,40 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
     } else {
       setIsLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        devLogin('admin');
+        // Helper to map OpeningHoursDay to DaySchedule format
+        const mapToDaySchedule = (day: OpeningHoursDay) => ({
+          open: day.openTime,
+          close: day.closeTime,
+          closed: !day.enabled,
+        });
+
+        // Step 1: Update profile
+        await tenantControllerUpdateProfile({
+          name: formData.name,
+          slug: formData.slug || generateSlug(formData.name),
+          description: formData.description || undefined,
+          phone: formData.phone || undefined,
+          address: formData.address || undefined,
+          logoUrl: formData.logoUrl || undefined,
+        });
+
+        // Step 2: Update opening hours
+        await tenantControllerUpdateOpeningHours({
+          monday: mapToDaySchedule(formData.openingHours.monday),
+          tuesday: mapToDaySchedule(formData.openingHours.tuesday),
+          wednesday: mapToDaySchedule(formData.openingHours.wednesday),
+          thursday: mapToDaySchedule(formData.openingHours.thursday),
+          friday: mapToDaySchedule(formData.openingHours.friday),
+          saturday: mapToDaySchedule(formData.openingHours.saturday),
+          sunday: mapToDaySchedule(formData.openingHours.sunday),
+        });
+
+        // Step 3: Complete onboarding
+        await tenantControllerCompleteOnboarding();
+
         handleNavigate(ROUTES.dashboard);
       } catch (err) {
+        logger.error('Onboarding error:', err);
         setError('Failed to complete setup. Please try again.');
       } finally {
         setIsLoading(false);

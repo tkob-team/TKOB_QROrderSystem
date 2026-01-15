@@ -4,82 +4,102 @@
  * Orders Feature - Hooks Layer
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { logger } from '@/shared/utils/logger';
 import { inspectResponseShape, samplePayload } from '@/shared/utils/dataInspector';
 import { isMockEnabled } from '@/shared/config/featureFlags';
 import { ordersAdapter } from '../data';
+import type { OrderApiFilters, PaginatedOrders } from '../data/adapter.interface';
 import { Order, OrderFilters } from '../model/types';
-import { INITIAL_ORDERS } from '../model/constants';
 
 /**
  * useOrdersData
  * 
- * Manages orders state (mock data - replace with real API later)
+ * Manages orders state with real API support
  */
 export function useOrdersData() {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [apiFilters, setApiFilters] = useState<OrderApiFilters>({});
+  
+  // Ref to track if initial fetch happened
+  const hasFetched = useRef(false);
 
-  useEffect(() => {
-    let active = true;
+  const fetchOrders = useCallback(async (filters?: OrderApiFilters) => {
     const useLogging = process.env.NEXT_PUBLIC_USE_LOGGING === 'true';
     const logData = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
     const logDataFull = process.env.NEXT_PUBLIC_LOG_DATA_FULL === 'true';
 
-    const fetchOrders = async () => {
+    if (useLogging) {
+      logger.info('[data] FETCH_START', {
+        feature: 'orders',
+        entity: 'orders',
+        source: isMockEnabled('orders') ? 'mock' : 'api',
+        filters,
+      });
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result: PaginatedOrders = await ordersAdapter.getOrders(filters);
+      setOrders(result.data);
+      setPagination({
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      });
+
+      if (useLogging && logData) {
+        const shape = inspectResponseShape(result.data);
+        logger.info('[data] RESPONSE_SHAPE', {
+          feature: 'orders',
+          entity: 'orders',
+          shape,
+          total: result.total,
+          page: result.page,
+          sample: logDataFull && result.data[0] ? samplePayload(result.data[0]) : undefined,
+        });
+      }
+    } catch (err) {
+      const normalizedError = err instanceof Error ? err : new Error('Failed to fetch orders');
+      setError(normalizedError);
+
       if (useLogging) {
-        logger.info('[data] FETCH_START', {
+        logger.error('[data] FETCH_ERROR', {
           feature: 'orders',
           entity: 'orders',
           source: isMockEnabled('orders') ? 'mock' : 'api',
+          message: normalizedError.message,
         });
       }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await ordersAdapter.getOrders();
-        if (!active) return;
-        setOrders(data);
-
-        if (useLogging && logData) {
-          const shape = inspectResponseShape(data);
-          logger.info('[data] RESPONSE_SHAPE', {
-            feature: 'orders',
-            entity: 'orders',
-            shape,
-            sample: logDataFull && data[0] ? samplePayload(data[0]) : undefined,
-          });
-        }
-      } catch (err) {
-        if (!active) return;
-        const normalizedError = err instanceof Error ? err : new Error('Failed to fetch orders');
-        setError(normalizedError);
-
-        if (useLogging) {
-          logger.error('[data] FETCH_ERROR', {
-            feature: 'orders',
-            entity: 'orders',
-            source: isMockEnabled('orders') ? 'mock' : 'api',
-            message: normalizedError.message,
-          });
-        }
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchOrders();
-
-    return () => {
-      active = false;
-    };
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchOrders(apiFilters);
+    }
+  }, [fetchOrders, apiFilters]);
+
+  // Refetch when API filters change
+  const updateApiFilters = useCallback((newFilters: OrderApiFilters) => {
+    setApiFilters(newFilters);
+    fetchOrders(newFilters);
+  }, [fetchOrders]);
 
   const updateOrder = useCallback((orderId: string, updates: Partial<Order>) => {
     setOrders(prev => prev.map(order => 
@@ -87,12 +107,19 @@ export function useOrdersData() {
     ));
   }, []);
 
+  const refetch = useCallback(() => {
+    fetchOrders(apiFilters);
+  }, [fetchOrders, apiFilters]);
+
   return {
     orders,
     setOrders,
     updateOrder,
+    pagination,
     isLoading,
     error,
+    refetch,
+    updateApiFilters,
   };
 }
 
@@ -205,59 +232,89 @@ export function useOrderFilters(orders: Order[]) {
 /**
  * useOrderActions
  * 
- * Manages order status transitions + callbacks
+ * Manages order status transitions with real API calls
  */
 export function useOrderActions(
   updateOrder: (orderId: string, updates: Partial<Order>) => void,
-  onSuccess: (message: string) => void
+  onSuccess: (message: string) => void,
+  refetch?: () => void
 ) {
-  const getNowTime = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const acceptOrder = useCallback((order: Order) => {
+  const acceptOrder = useCallback(async (order: Order) => {
     if (order.orderStatus !== 'placed') return;
     
-    updateOrder(order.id, {
-      orderStatus: 'confirmed',
-      timeline: {
-        ...order.timeline,
-        confirmed: getNowTime(),
-      },
-    });
-    
-    onSuccess(`Order ${order.orderNumber} accepted and sent to kitchen`);
+    setIsUpdating(true);
+    try {
+      const updated = await ordersAdapter.updateOrderStatus(order.id, 'confirmed');
+      updateOrder(order.id, updated);
+      onSuccess(`Order ${order.orderNumber} accepted and sent to kitchen`);
+    } catch (err) {
+      logger.error('[orders] Failed to accept order', { orderId: order.id, error: err });
+      // Optionally show error toast
+    } finally {
+      setIsUpdating(false);
+    }
   }, [updateOrder, onSuccess]);
 
-  const rejectOrder = useCallback((order: Order) => {
+  const rejectOrder = useCallback(async (order: Order) => {
     if (order.orderStatus !== 'placed') return;
     
-    updateOrder(order.id, {
-      orderStatus: 'cancelled',
-      timeline: {
-        ...order.timeline,
-        cancelled: getNowTime(),
-      },
-    });
-    
-    onSuccess(`Order ${order.orderNumber} rejected`);
+    setIsUpdating(true);
+    try {
+      const updated = await ordersAdapter.cancelOrder(order.id, 'Rejected by staff');
+      updateOrder(order.id, updated);
+      onSuccess(`Order ${order.orderNumber} rejected`);
+    } catch (err) {
+      logger.error('[orders] Failed to reject order', { orderId: order.id, error: err });
+    } finally {
+      setIsUpdating(false);
+    }
   }, [updateOrder, onSuccess]);
 
-  const cancelOrder = useCallback((order: Order) => {
-    if (order.orderStatus !== 'confirmed') return;
+  const cancelOrder = useCallback(async (order: Order, reason?: string) => {
+    if (!['placed', 'confirmed'].includes(order.orderStatus)) return;
     
-    updateOrder(order.id, {
-      orderStatus: 'cancelled',
-      timeline: {
-        ...order.timeline,
-        cancelled: getNowTime(),
-      },
-    });
+    setIsUpdating(true);
+    try {
+      const updated = await ordersAdapter.cancelOrder(order.id, reason || 'Cancelled by staff');
+      updateOrder(order.id, updated);
+      onSuccess(`Order ${order.orderNumber} cancelled`);
+    } catch (err) {
+      logger.error('[orders] Failed to cancel order', { orderId: order.id, error: err });
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [updateOrder, onSuccess]);
+
+  const advanceStatus = useCallback(async (order: Order) => {
+    const statusFlow: Record<string, Order['orderStatus']> = {
+      confirmed: 'preparing',
+      preparing: 'ready',
+      ready: 'served',
+      served: 'completed',
+    };
     
-    onSuccess(`Order ${order.orderNumber} cancelled`);
+    const nextStatus = statusFlow[order.orderStatus];
+    if (!nextStatus) return;
+    
+    setIsUpdating(true);
+    try {
+      const updated = await ordersAdapter.updateOrderStatus(order.id, nextStatus);
+      updateOrder(order.id, updated);
+      onSuccess(`Order ${order.orderNumber} → ${nextStatus}`);
+    } catch (err) {
+      logger.error('[orders] Failed to advance status', { orderId: order.id, error: err });
+    } finally {
+      setIsUpdating(false);
+    }
   }, [updateOrder, onSuccess]);
 
   return {
     acceptOrder,
     rejectOrder,
     cancelOrder,
+    advanceStatus,
+    isUpdating,
   };
 }

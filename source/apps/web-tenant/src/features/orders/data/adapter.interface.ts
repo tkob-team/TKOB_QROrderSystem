@@ -3,11 +3,53 @@
  * Defines contract for orders data operations
  */
 
-import type { Order } from '../model/types';
+import type { Order, OrderStatus } from '../model/types';
+
+/**
+ * API filter params
+ */
+export interface OrderApiFilters {
+  status?: string
+  tableId?: string
+  search?: string
+  page?: number
+  limit?: number
+}
+
+/**
+ * Paginated response
+ */
+export interface PaginatedOrders {
+  data: Order[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
 
 export interface IOrdersAdapter {
-  getOrders(): Promise<Order[]>;
+  /**
+   * Get orders with optional filters and pagination
+   */
+  getOrders(filters?: OrderApiFilters): Promise<PaginatedOrders>;
+  
+  /**
+   * Get single order by ID
+   */
   getOrderById(id: string): Promise<Order | null>;
-  createOrder(data: Partial<Order>): Promise<Order>;
-  updateOrderStatus(id: string, status: string): Promise<Order>;
+  
+  /**
+   * Update order status
+   */
+  updateOrderStatus(id: string, status: OrderStatus, reason?: string): Promise<Order>;
+  
+  /**
+   * Cancel order with reason
+   */
+  cancelOrder(id: string, reason: string): Promise<Order>;
+  
+  /**
+   * Mark item as prepared (KDS)
+   */
+  markItemPrepared?(orderId: string, itemId: string): Promise<void>;
 }

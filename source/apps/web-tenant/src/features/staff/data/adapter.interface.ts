@@ -3,7 +3,15 @@
  * Abstract contract for staff data operations
  */
 
-import type { StaffMember, RoleOption } from '../model/types';
+import type { StaffMember, RoleOption, PendingInvitation, InviteStaffInput, UpdateStaffRoleInput } from '../model/types';
+
+export interface InviteStaffResponse {
+  id: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+  message: string;
+}
 
 export interface IStaffAdapter {
   /**
@@ -17,20 +25,32 @@ export interface IStaffAdapter {
   getRoleOptions(): Promise<RoleOption[]>;
 
   /**
-   * Add new staff member
-   * @todo implement
+   * Get pending invitations
    */
-  addStaffMember(staff: Omit<StaffMember, 'id'>): Promise<StaffMember>;
+  getPendingInvitations(): Promise<PendingInvitation[]>;
 
   /**
-   * Update existing staff member
-   * @todo implement
+   * Invite new staff member (sends email)
    */
-  updateStaffMember(id: string, updates: Partial<StaffMember>): Promise<StaffMember>;
+  inviteStaff(input: InviteStaffInput): Promise<InviteStaffResponse>;
 
   /**
-   * Delete staff member
-   * @todo implement
+   * Update existing staff member's role
    */
-  deleteStaffMember(id: string): Promise<void>;
+  updateStaffRole(staffId: string, input: UpdateStaffRoleInput): Promise<StaffMember>;
+
+  /**
+   * Remove staff member
+   */
+  removeStaff(staffId: string): Promise<void>;
+
+  /**
+   * Cancel pending invitation
+   */
+  cancelInvitation(invitationId: string): Promise<void>;
+
+  /**
+   * Resend invitation email
+   */
+  resendInvitation(invitationId: string): Promise<{ expiresAt: string }>;
 }

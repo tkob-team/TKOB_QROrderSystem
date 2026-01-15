@@ -37,7 +37,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
         }
       );
 
-      const { accessToken, refreshToken, expiresIn, user, tenant } = response.data;
+      // Backend wraps response in { success, data } via TransformInterceptor
+      const { accessToken, refreshToken, expiresIn, user, tenant } = response.data.data;
 
       // Store token in localStorage
       if (typeof window !== 'undefined') {
@@ -87,10 +88,12 @@ export class ApiAuthAdapter implements IAuthAdapter {
         }
       );
 
-      logger.debug('[auth] SIGNUP_SUBMIT_RESPONSE_RECEIVED', { hasRegistrationToken: !!submitResponse.data?.registrationToken });
+      // Backend wraps response in { success, data } via TransformInterceptor
+      const responseData = submitResponse.data?.data || submitResponse.data;
+      logger.debug('[auth] SIGNUP_SUBMIT_RESPONSE_RECEIVED', { hasRegistrationToken: !!responseData?.registrationToken });
 
       // Backend should return registrationToken, message, and expiresIn
-      const { registrationToken, message, expiresIn } = submitResponse.data;
+      const { registrationToken, message, expiresIn } = responseData;
 
       logger.info('[auth] SIGNUP_OTP_SENT');
 
@@ -274,11 +277,13 @@ export class ApiAuthAdapter implements IAuthAdapter {
         `${this.apiUrl}/api/v1/auth/check-slug/${slug}`
       );
 
-      logger.debug('[auth] CHECK_SLUG_RESULT', { available: response.data?.available });
+      // Backend wraps response in { success, data } via TransformInterceptor
+      const responseData = response.data?.data || response.data;
+      logger.debug('[auth] CHECK_SLUG_RESULT', { available: responseData?.available });
 
       return {
-        available: response.data?.available || false,
-        message: response.data?.message,
+        available: responseData?.available || false,
+        message: responseData?.message,
       };
     } catch (error: unknown) {
       const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);

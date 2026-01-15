@@ -77,7 +77,7 @@ export function EditStaffModal({
               type="email"
               value={editForm.email}
               onChange={(e) => onFormChange({ ...editForm, email: e.target.value })}
-              disabled={selectedMember.status === 'active'}
+              disabled={selectedMember.status === 'ACTIVE'}
               className="w-full px-4 py-3 h-12 border border-default bg-secondary text-text-primary disabled:bg-elevated disabled:cursor-not-allowed focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all text-[15px] rounded-lg"
             />
           </div>
@@ -101,7 +101,7 @@ export function EditStaffModal({
           </div>
 
           {/* Pending Actions */}
-          {selectedMember.status === 'pending' && (
+          {selectedMember.status === 'PENDING' && (
             <div className="flex flex-col gap-3 pt-4 border-t border-default">
               <button
                 onClick={onResendInvite}

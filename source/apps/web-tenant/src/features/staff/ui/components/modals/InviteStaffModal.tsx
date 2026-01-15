@@ -1,4 +1,4 @@
-import { X, Mail, Info } from 'lucide-react';
+import { X, Mail, Info, type LucideIcon } from 'lucide-react';
 import type { StaffRole, RoleOption } from '../../../model/types';
 
 interface InviteStaffModalProps {
@@ -78,7 +78,7 @@ export function InviteStaffModal({
             </label>
             <div className="grid grid-cols-1 gap-3">
               {roleOptions.map((option) => {
-                const OptionIcon = option.icon;
+                const OptionIcon = option.icon as LucideIcon;
                 const isSelected = selectedRole === option.role;
 
                 return (

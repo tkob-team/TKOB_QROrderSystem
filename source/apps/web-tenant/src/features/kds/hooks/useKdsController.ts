@@ -226,5 +226,6 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
     handleToggleUserMenu,
     setShowSuccessToast,
     setShowErrorToast,
+    setToastMessage,
   };
 }

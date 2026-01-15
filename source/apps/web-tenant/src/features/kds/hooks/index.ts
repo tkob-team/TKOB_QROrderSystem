@@ -5,3 +5,5 @@
  */
 
 export { useKdsController } from './useKdsController';
+export { useKdsWebSocket } from './useKdsWebSocket';
+export { useKdsAutoRefresh } from './useKdsAutoRefresh';

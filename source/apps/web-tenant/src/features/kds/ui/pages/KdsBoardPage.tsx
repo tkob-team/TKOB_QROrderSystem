@@ -1,8 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toast } from '@/shared/components/Toast';
+import { useAuth } from '@/shared/context/AuthContext';
 import { useKdsController } from '../../hooks';
+import { useKdsWebSocket } from '../../hooks/useKdsWebSocket';
+import { useKdsAutoRefresh } from '../../hooks/useKdsAutoRefresh';
 
 // Import UI components
 import { KdsHeaderSection as KdsHeaderBar } from '../components/sections/KdsHeaderSection';
@@ -23,12 +26,48 @@ export function KdsBoardPage({
   showKdsProfile = true,
   enableKitchenServe = false,
 }: KdsBoardPageProps) {
+  // ========== AUTH ==========
+  const { user } = useAuth();
+  
   // ========== CONTROLLER ==========
   const controller = useKdsController({ showKdsProfile, enableKitchenServe });
+
+  // ========== WEBSOCKET (Real-time updates) ==========
+  const { isConnected, newOrderCount } = useKdsWebSocket({
+    tenantId: user?.tenantId || '',
+    soundEnabled: controller.soundEnabled,
+    autoConnect: true,
+    onNewOrder: (order) => {
+      // Toast notification
+      controller.setToastMessage(`Đơn mới #${order.orderNumber} từ bàn ${order.tableName || order.tableId}`);
+      controller.setShowSuccessToast(true);
+      setTimeout(() => controller.setShowSuccessToast(false), 3000);
+    },
+  });
+
+  // ========== AUTO-REFRESH FALLBACK (when WebSocket disconnects) ==========
+  const { isPolling } = useKdsAutoRefresh({
+    enabled: controller.autoRefresh,
+    intervalMs: 15000, // 15 seconds fallback
+    wsConnected: isConnected,
+  });
+
+  // Visual indicator for WebSocket connection
+  useEffect(() => {
+    if (!isConnected) {
+      controller.setToastMessage('Mất kết nối WebSocket - đang kết nối lại...');
+      controller.setShowErrorToast(true);
+    }
+  }, [isConnected]);
 
   // ========== RENDER ==========
   return (
     <div className="min-h-screen bg-primary">
+      {/* WebSocket Connection Status */}
+      {!isConnected && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-red-500 z-50 animate-pulse" />
+      )}
+
       {/* Header */}
       <KdsHeaderBar
         currentTime={controller.currentTime}
@@ -45,6 +84,18 @@ export function KdsBoardPage({
 
       {/* Summary Pills */}
       <KdsSummaryPills counts={controller.counts} />
+
+      {/* New Order Badge - WebSocket notification count */}
+      {newOrderCount > 0 && (
+        <div className="fixed top-20 right-6 z-40">
+          <div className="animate-bounce bg-red-500 text-white rounded-full p-4 shadow-lg">
+            <div className="text-center">
+              <p className="text-2xl font-bold">{newOrderCount}</p>
+              <p className="text-xs">Đơn mới</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Board */}
       <main className="p-6">
