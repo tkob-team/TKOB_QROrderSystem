@@ -1,15 +1,5 @@
-import { useMutation } from '@tanstack/react-query'
+import { useAuthControllerResetPassword } from '@/services/generated/authentication/authentication'
 
 export function useResetPassword() {
-  return useMutation({
-    mutationFn: async (data: { token: string; password: string }) => {
-      // TODO: Replace with actual API call when endpoint is ready
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      return response.json()
-    },
-  })
+  return useAuthControllerResetPassword()
 }
