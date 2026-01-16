@@ -96,21 +96,24 @@ function ModifierGroupCard({ group, onEdit, onDelete }: ModifierGroupCardProps) 
 
         {group.options && group.options.length > 0 ? (
           <div className="space-y-2">
-            {group.options.map((option: ModifierOption) => (
-              <div
-                key={option.id}
-                className="flex items-center justify-between p-3 bg-elevated rounded-lg"
-              >
-                <span className="text-sm font-medium text-text-primary">{option.name}</span>
-                <span className="text-sm text-text-secondary">
-                  {option.priceDelta === 0
-                    ? 'Free'
-                    : option.priceDelta > 0
-                      ? `+$${option.priceDelta.toFixed(2)}`
-                      : `-$${Math.abs(option.priceDelta).toFixed(2)}`}
-                </span>
-              </div>
-            ))}
+            {group.options.map((option: ModifierOption) => {
+              const priceDelta = Number(option.priceDelta) || 0;
+              return (
+                <div
+                  key={option.id}
+                  className="flex items-center justify-between p-3 bg-elevated rounded-lg"
+                >
+                  <span className="text-sm font-medium text-text-primary">{option.name}</span>
+                  <span className="text-sm text-text-secondary">
+                    {priceDelta === 0
+                      ? 'Free'
+                      : priceDelta > 0
+                        ? `+$${priceDelta.toFixed(2)}`
+                        : `-$${Math.abs(priceDelta).toFixed(2)}`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-text-tertiary text-center py-4">No options added yet</p>

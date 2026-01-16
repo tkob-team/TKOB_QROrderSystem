@@ -20,7 +20,7 @@ export const promotionsApi = {
     active?: boolean;
     includeExpired?: boolean;
   }): Promise<PromotionListResponse> {
-    const response = await api.get('/admin/promotions', { params });
+    const response = await api.get('/api/v1/admin/promotions', { params });
     return response.data;
   },
 
@@ -28,7 +28,7 @@ export const promotionsApi = {
    * Get single promotion by ID
    */
   async getPromotion(id: string): Promise<Promotion> {
-    const response = await api.get(`/admin/promotions/${id}`);
+    const response = await api.get(`/api/v1/admin/promotions/${id}`);
     return response.data;
   },
 
@@ -36,7 +36,7 @@ export const promotionsApi = {
    * Create new promotion
    */
   async createPromotion(data: CreatePromotionInput): Promise<Promotion> {
-    const response = await api.post('/admin/promotions', data);
+    const response = await api.post('/api/v1/admin/promotions', data);
     return response.data;
   },
 
@@ -44,7 +44,7 @@ export const promotionsApi = {
    * Update promotion
    */
   async updatePromotion(id: string, data: UpdatePromotionInput): Promise<Promotion> {
-    const response = await api.put(`/admin/promotions/${id}`, data);
+    const response = await api.put(`/api/v1/admin/promotions/${id}`, data);
     return response.data;
   },
 
@@ -52,7 +52,7 @@ export const promotionsApi = {
    * Delete promotion (only if never used)
    */
   async deletePromotion(id: string): Promise<void> {
-    await api.delete(`/admin/promotions/${id}`);
+    await api.delete(`/api/v1/admin/promotions/${id}`);
   },
 
   /**

@@ -14,11 +14,11 @@ import { mapOrderFromApi, mapStatusToApi } from '../mappers'
  * All endpoints require JWT authentication
  */
 class OrdersApiAdapter implements IOrdersAdapter {
-  private baseUrl = '/admin'
+  private baseUrl = '/api/v1/admin/orders'
 
   /**
    * Get orders with optional filters and pagination
-   * GET /orders/admin/orders
+   * GET /api/v1/admin/orders
    */
   async getOrders(filters?: OrderApiFilters): Promise<PaginatedOrders> {
     const params = new URLSearchParams()
@@ -30,26 +30,30 @@ class OrdersApiAdapter implements IOrdersAdapter {
     if (filters?.limit) params.append('limit', filters.limit.toString())
 
     const response = await api.get<PaginatedOrdersResponse>(
-      `${this.baseUrl}/orders?${params.toString()}`
+      `${this.baseUrl}?${params.toString()}`
     )
     
+    // Axios interceptor already unwraps { success: true, data: {...} } to just the data
+    // So response.data is already the PaginatedOrdersResponse
+    const orders = Array.isArray(response.data.data) ? response.data.data : []
+    
     return {
-      data: response.data.data.map(mapOrderFromApi),
-      total: response.data.total,
-      page: response.data.page,
-      limit: response.data.limit,
-      totalPages: response.data.totalPages,
+      data: orders.map(mapOrderFromApi),
+      total: response.data.total || 0,
+      page: response.data.page || 1,
+      limit: response.data.limit || 20,
+      totalPages: response.data.totalPages || 0,
     }
   }
 
   /**
    * Get single order by ID
-   * GET /orders/admin/orders/:orderId
+   * GET /api/v1/admin/orders/:orderId
    */
   async getOrderById(orderId: string): Promise<Order | null> {
     try {
       const response = await api.get<OrderResponse>(
-        `${this.baseUrl}/orders/${orderId}`
+        `${this.baseUrl}/${orderId}`
       )
       return mapOrderFromApi(response.data)
     } catch {
@@ -59,7 +63,7 @@ class OrdersApiAdapter implements IOrdersAdapter {
 
   /**
    * Update order status
-   * PATCH /orders/admin/orders/:orderId/status
+   * PATCH /api/v1/admin/orders/:orderId/status
    */
   async updateOrderStatus(
     orderId: string,
@@ -67,7 +71,7 @@ class OrdersApiAdapter implements IOrdersAdapter {
     reason?: string
   ): Promise<Order> {
     const response = await api.patch<OrderResponse>(
-      `${this.baseUrl}/orders/${orderId}/status`,
+      `${this.baseUrl}/${orderId}/status`,
       { status: mapStatusToApi(status), reason }
     )
     return mapOrderFromApi(response.data)
@@ -75,11 +79,11 @@ class OrdersApiAdapter implements IOrdersAdapter {
 
   /**
    * Cancel order
-   * POST /orders/admin/orders/:orderId/cancel
+   * POST /api/v1/admin/orders/:orderId/cancel
    */
   async cancelOrder(orderId: string, reason: string): Promise<Order> {
     const response = await api.post<OrderResponse>(
-      `${this.baseUrl}/orders/${orderId}/cancel`,
+      `${this.baseUrl}/${orderId}/cancel`,
       { reason }
     )
     return mapOrderFromApi(response.data)
@@ -87,10 +91,10 @@ class OrdersApiAdapter implements IOrdersAdapter {
 
   /**
    * Mark item as prepared (KDS)
-   * PATCH /orders/admin/orders/:orderId/items/:itemId/prepared
+   * PATCH /api/v1/admin/orders/:orderId/items/:itemId/prepared
    */
   async markItemPrepared(orderId: string, itemId: string): Promise<void> {
-    await api.patch(`${this.baseUrl}/orders/${orderId}/items/${itemId}/prepared`)
+    await api.patch(`${this.baseUrl}/${orderId}/items/${itemId}/prepared`)
   }
 }
 

@@ -36,6 +36,12 @@ export function useMenuManagementController() {
   // Fetch all items (no filters) for total/active counts
   const { data: allItemsData } = useMenuItems({});
 
+  // Extract pagination metadata from backend response
+  const paginationMeta = useMemo(() => {
+    if (!itemsData || Array.isArray(itemsData)) return null;
+    return (itemsData as { meta?: { total: number; page: number; limit: number; totalPages: number } })?.meta ?? null;
+  }, [itemsData]);
+
   const menuItems = useMemo(() => {
     const normalizedItems = Array.isArray(itemsData)
       ? itemsData
@@ -48,6 +54,7 @@ export function useMenuManagementController() {
         feature: 'menu',
         entity: 'items',
         count: mapped.length,
+        paginationMeta,
         sample: process.env.NEXT_PUBLIC_LOG_DATA === 'true' && mapped[0]
           ? {
               id: mapped[0].id,
@@ -61,7 +68,7 @@ export function useMenuManagementController() {
     }
 
     return mapped;
-  }, [itemsData]);
+  }, [itemsData, paginationMeta]);
 
   const allMenuItems = useMemo(() => {
     const normalizedItems = Array.isArray(allItemsData)
@@ -78,94 +85,14 @@ export function useMenuManagementController() {
     return menuItems.filter((item) => item.categoryId === categoryId).length;
   };
 
-  const getFilteredAndSortedItems = () => {
-    return menuItems
-      .filter((item) => {
-        // Only show archived items if status filter shows "All Status"
-        const isShowingAll = filtersController.appliedFilters.status === 'All Status';
-        if (item.status === 'ARCHIVED' && !isShowingAll) return false;
-
-        if (selectionState.selectedCategory !== 'all' && item.categoryId !== selectionState.selectedCategory) return false;
-
-        if (filtersController.appliedFilters.searchQuery.trim()) {
-          const query = filtersController.appliedFilters.searchQuery.toLowerCase();
-          const matchName = item.name.toLowerCase().includes(query);
-          const matchDesc = item.description?.toLowerCase().includes(query);
-          if (!matchName && !matchDesc) return false;
-        }
-
-        if (filtersController.appliedFilters.status !== 'All Status') {
-          const statusMap: Record<string, string> = {
-            Draft: 'DRAFT',
-            Published: 'PUBLISHED',
-            Archived: 'ARCHIVED',
-          };
-          const targetStatus = statusMap[filtersController.appliedFilters.status];
-          if (item.status !== targetStatus) return false;
-        }
-
-        if (filtersController.appliedFilters.availability && filtersController.appliedFilters.availability !== 'all') {
-          const isAvailable = item.isAvailable === true;
-          const targetAvailable = filtersController.appliedFilters.availability === 'available';
-          if (isAvailable !== targetAvailable) return false;
-        }
-
-        if (filtersController.appliedFilters.chefRecommended && !item.chefRecommended) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        switch (filtersController.appliedFilters.sortBy) {
-          case 'Sort by: Newest':
-            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-          case 'Popularity':
-            return (b as unknown as { popularity?: number })?.popularity ?? 0 - ((a as unknown as { popularity?: number })?.popularity ?? 0);
-          case 'Price (Low)':
-            return (a.price || 0) - (b.price || 0);
-          case 'Price (High)':
-            return (b.price || 0) - (a.price || 0);
-          default:
-            return 0;
-        }
-      });
-  };
-
-  const allFilteredAndSortedItems = getFilteredAndSortedItems();
-
-  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
-    logger.info('[ui] FILTER_APPLIED', {
-      feature: 'menu',
-      inputCount: menuItems.length,
-      outputCount: allFilteredAndSortedItems.length,
-      filters: process.env.NEXT_PUBLIC_LOG_DATA === 'true'
-        ? {
-            category: selectionState.selectedCategory,
-            status: filtersController.appliedFilters.status,
-            availability: filtersController.appliedFilters.availability,
-            searchQuery: filtersController.appliedFilters.searchQuery,
-            sortBy: filtersController.appliedFilters.sortBy,
-          }
-        : undefined,
-    });
-  }
-
-  const filteredItemsCount = allFilteredAndSortedItems.length;
-  const totalPages = Math.ceil(filteredItemsCount / selectionState.pageSize);
+  // Use backend pagination metadata instead of client-side pagination
+  const filteredItemsCount = paginationMeta?.total ?? menuItems.length;
+  const totalPages = paginationMeta?.totalPages ?? Math.ceil(menuItems.length / selectionState.pageSize);
   const startIndex = (selectionState.currentPage - 1) * selectionState.pageSize;
   const endIndex = startIndex + selectionState.pageSize;
-  const visibleMenuItems = allFilteredAndSortedItems.slice(startIndex, endIndex);
-
-  if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
-    logger.info('[ui] PAGINATION_APPLIED', {
-      feature: 'menu',
-      page: selectionState.currentPage,
-      pageSize: selectionState.pageSize,
-      totalItems: allFilteredAndSortedItems.length,
-      visibleCount: visibleMenuItems.length,
-    });
-  }
+  
+  // Backend already filtered/sorted/paginated, use items directly
+  const visibleMenuItems = menuItems;
 
   useEffect(() => {
     selectionState.setCurrentPage(1);
