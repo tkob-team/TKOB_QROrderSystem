@@ -322,4 +322,60 @@ export const useMenuCategoryControllerDelete = <TError = unknown,
 
       return useMutation(mutationOptions);
     }
+    /**
+ * Update display order of multiple categories at once
+ * @summary Reorder menu categories
+ */
+export const menuCategoryControllerReorder = (
+    
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/menu/categories/reorder`, method: 'PATCH'
+    },
+      );
+    }
+  
+
+
+export const getMenuCategoryControllerReorderMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof menuCategoryControllerReorder>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof menuCategoryControllerReorder>>, TError,void, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof menuCategoryControllerReorder>>, void> = () => {
+          
+
+          return  menuCategoryControllerReorder()
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MenuCategoryControllerReorderMutationResult = NonNullable<Awaited<ReturnType<typeof menuCategoryControllerReorder>>>
+    
+    export type MenuCategoryControllerReorderMutationError = void
+
+    /**
+ * @summary Reorder menu categories
+ */
+export const useMenuCategoryControllerReorder = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof menuCategoryControllerReorder>>, TError,void, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof menuCategoryControllerReorder>>,
+        TError,
+        void,
+        TContext
+      > => {
+
+      const mutationOptions = getMenuCategoryControllerReorderMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
     

@@ -22,6 +22,7 @@ import type {
   CheckoutDto,
   OrderControllerGetOrderTracking200,
   OrderControllerGetOrdersParams,
+  OrderControllerRequestBill200,
   OrderResponseDto,
   PaginatedResponseDto,
   UpdateOrderStatusDto
@@ -263,6 +264,62 @@ export const useOrderControllerCustomerCancelOrder = <TError = void,
       > => {
 
       const mutationOptions = getOrderControllerCustomerCancelOrderMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Customer requests bill/check. Notifies staff to bring bill to table.
+ * @summary Request bill for order (customer)
+ */
+export const orderControllerRequestBill = (
+    orderId: string,
+ ) => {
+      
+      
+      return customInstance<OrderControllerRequestBill200>(
+      {url: `/api/v1/orders/${orderId}/request-bill`, method: 'POST'
+    },
+      );
+    }
+  
+
+
+export const getOrderControllerRequestBillMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerRequestBill>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof orderControllerRequestBill>>, TError,{orderId: string}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof orderControllerRequestBill>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  orderControllerRequestBill(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrderControllerRequestBillMutationResult = NonNullable<Awaited<ReturnType<typeof orderControllerRequestBill>>>
+    
+    export type OrderControllerRequestBillMutationError = void
+
+    /**
+ * @summary Request bill for order (customer)
+ */
+export const useOrderControllerRequestBill = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerRequestBill>>, TError,{orderId: string}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof orderControllerRequestBill>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getOrderControllerRequestBillMutationOptions(options);
 
       return useMutation(mutationOptions);
     }
