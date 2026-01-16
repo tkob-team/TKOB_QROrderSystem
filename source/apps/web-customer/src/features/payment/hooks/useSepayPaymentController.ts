@@ -78,44 +78,53 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     if (!pollingRef.current) return
     
     try {
-      const statusResponse = await checkoutApi.getPaymentStatus(paymentId)
+      // Use SePay polling endpoint which checks actual bank transactions
+      const pollResult = await checkoutApi.checkPaymentViaPoll(paymentId)
       
-      log('data', 'Payment status polled', {
+      log('data', 'Payment polled via SePay', {
         paymentId: maskId(paymentId),
-        status: statusResponse.status,
+        found: pollResult.found,
+        completed: pollResult.completed,
+        status: pollResult.status,
       }, { feature: 'payment' })
       
-      switch (statusResponse.status) {
-        case 'COMPLETED':
-          setStatus('success')
-          pollingRef.current = false
-          if (countdownRef.current) clearInterval(countdownRef.current)
-          break
-          
-        case 'FAILED':
+      // Check if payment was found and completed
+      if (pollResult.completed) {
+        setStatus('success')
+        pollingRef.current = false
+        if (countdownRef.current) clearInterval(countdownRef.current)
+        return
+      }
+      
+      // If not completed yet, continue polling
+      if (pollResult.found) {
+        // Payment exists but not completed yet
+        const currentStatus = pollResult.status || 'PENDING'
+        
+        if (currentStatus === 'FAILED') {
           setStatus('failed')
-          setError(statusResponse.failureReason || 'Payment failed')
+          setError(pollResult.message || 'Payment failed')
           pollingRef.current = false
-          break
-          
-        case 'PROCESSING':
+        } else if (currentStatus === 'PROCESSING') {
           setStatus('processing')
           // Continue polling
           if (pollingRef.current) {
             timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 3000)
           }
-          break
-          
-        case 'PENDING':
-        default:
-          // Continue polling
+        } else {
+          // Still pending, continue polling
           if (pollingRef.current) {
             timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 3000)
           }
-          break
+        }
+      } else {
+        // Payment not found - continue polling (might be created but not in DB yet)
+        if (pollingRef.current) {
+          timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 3000)
+        }
       }
     } catch (err) {
-      logError('data', 'Payment status poll failed', err, { feature: 'payment' })
+      logError('data', 'Payment poll failed', err, { feature: 'payment' })
       // Don't stop polling on transient errors
       if (pollingRef.current) {
         timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 5000)

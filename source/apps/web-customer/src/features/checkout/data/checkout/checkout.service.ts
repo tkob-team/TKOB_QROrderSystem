@@ -1,6 +1,26 @@
-// Checkout API Service - calls backend checkout and payment endpoints
+/**
+ * Checkout API Service
+ * Uses Orval-generated API functions for type-safe checkout & payment operations
+ * 
+ * Architecture (Refactored):
+ * - Uses generated functions from @/services/generated
+ * - Type-safe with auto-generated TypeScript types
+ * - Auto-sync with backend API changes
+ * 
+ * Handles order creation and payment flow
+ * All operations use session cookie for authentication
+ */
 
-import apiClient from '@/api/client';
+import {
+  orderControllerCheckout,
+} from '@/services/generated/orders/orders';
+
+import {
+  paymentControllerCreatePaymentIntent,
+  paymentControllerGetPaymentStatus,
+  paymentControllerCheckPaymentViaPoll,
+} from '@/services/generated/payments/payments';
+
 import { log, logError } from '@/shared/logging/logger';
 import { maskId } from '@/shared/logging/helpers';
 import type { 
@@ -13,9 +33,7 @@ import type {
 
 /**
  * Checkout API Service
- * 
- * Handles order creation and payment flow
- * All operations use session cookie for authentication
+ * Singleton wrapper around generated checkout & payment API functions
  */
 export class CheckoutApiService {
   private static instance: CheckoutApiService;
@@ -37,15 +55,15 @@ export class CheckoutApiService {
       hasTip: !!request.tipPercent,
     }, { feature: 'checkout' });
 
-    const response = await apiClient.post<{ success: boolean; data: CheckoutResponse }>('/checkout', request);
+    const order = await orderControllerCheckout(request as any);
     
     log('data', 'Order created', { 
-      orderId: maskId(response.data.data.id),
-      orderNumber: response.data.data.orderNumber,
-      total: response.data.data.total,
+      orderId: maskId(order.id),
+      orderNumber: order.orderNumber,
+      total: order.total,
     }, { feature: 'checkout' });
     
-    return response.data.data;
+    return order as any;
   }
 
   /**
@@ -57,15 +75,15 @@ export class CheckoutApiService {
       orderId: maskId(request.orderId),
     }, { feature: 'payment' });
 
-    const response = await apiClient.post<{ success: boolean; data: PaymentIntentResponse }>('/payment/intent', request);
+    const intent = await paymentControllerCreatePaymentIntent(request as any);
     
     log('data', 'Payment intent created', { 
-      paymentId: maskId(response.data.data.paymentId),
-      amount: response.data.data.amount,
-      expiresAt: response.data.data.expiresAt,
+      paymentId: maskId(intent.paymentId),
+      amount: intent.amount,
+      expiresAt: intent.expiresAt,
     }, { feature: 'payment' });
     
-    return response.data.data;
+    return intent as any;
   }
 
   /**
@@ -73,8 +91,35 @@ export class CheckoutApiService {
    * Use this to poll payment status until completed or expired
    */
   async getPaymentStatus(paymentId: string): Promise<PaymentStatusResponse> {
-    const response = await apiClient.get<{ success: boolean; data: PaymentStatusResponse }>(`/payment/${paymentId}`);
-    return response.data.data;
+    const status = await paymentControllerGetPaymentStatus(paymentId);
+    return status as any;
+  }
+
+  /**
+   * Check payment via SePay polling
+   * This calls SePay API to check if payment has been received
+   * Better than basic status check as it polls actual bank transactions
+   */
+  async checkPaymentViaPoll(paymentId: string): Promise<{
+    found: boolean;
+    completed: boolean;
+    status?: string;
+    message?: string;
+    transaction?: any;
+  }> {
+    log('data', 'Checking payment via SePay poll', { 
+      paymentId: maskId(paymentId),
+    }, { feature: 'payment' });
+
+    const result = await paymentControllerCheckPaymentViaPoll(paymentId);
+    
+    log('data', 'Payment poll result', { 
+      paymentId: maskId(paymentId),
+      completed: result.completed,
+      found: result.found,
+    }, { feature: 'payment' });
+    
+    return result as any;
   }
 
   /**
