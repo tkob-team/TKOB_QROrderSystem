@@ -3,7 +3,7 @@
  * Real API implementation for staff data
  */
 
-import axios from 'axios';
+import { api } from '@/services/axios';
 import type { IStaffAdapter, InviteStaffResponse } from '../adapter.interface';
 import type {
   StaffMember,
@@ -42,25 +42,14 @@ const ROLE_OPTIONS: RoleOption[] = [
 ];
 
 export class ApiStaffAdapter implements IStaffAdapter {
-  private api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
-    withCredentials: true,
-  });
-
-  constructor() {
-    // Add auth token to requests
-    this.api.interceptors.request.use((config) => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-  }
-
   async getStaffMembers(): Promise<StaffMember[]> {
-    const response = await this.api.get<{ staff: StaffMember[]; total: number }>('/admin/staff');
-    return response.data.staff;
+    try {
+      const response = await api.get<{ success: boolean; data: { staff: StaffMember[]; total: number } }>('/api/v1/admin/staff');
+      return response.data?.data?.staff || [];
+    } catch (error) {
+      console.error('[staff] Failed to fetch staff members:', error);
+      return [];
+    }
   }
 
   async getRoleOptions(): Promise<RoleOption[]> {
@@ -68,33 +57,39 @@ export class ApiStaffAdapter implements IStaffAdapter {
   }
 
   async getPendingInvitations(): Promise<PendingInvitation[]> {
-    const response = await this.api.get<{ invitations: PendingInvitation[]; total: number }>(
-      '/admin/staff/invitations'
-    );
-    return response.data.invitations;
+    try {
+      const response = await api.get<{ success: boolean; data: { invitations: PendingInvitation[]; total: number } }>(
+        '/api/v1/admin/staff/invitations'
+      );
+      console.log('[staff] getPendingInvitations response:', JSON.stringify(response.data, null, 2));
+      return response.data?.data?.invitations || [];
+    } catch (error) {
+      console.error('[staff] Failed to fetch pending invitations:', error);
+      return [];
+    }
   }
 
   async inviteStaff(input: InviteStaffInput): Promise<InviteStaffResponse> {
-    const response = await this.api.post<InviteStaffResponse>('/admin/staff/invite', input);
+    const response = await api.post<InviteStaffResponse>('/api/v1/admin/staff/invite', input);
     return response.data;
   }
 
   async updateStaffRole(staffId: string, input: UpdateStaffRoleInput): Promise<StaffMember> {
-    const response = await this.api.patch<StaffMember>(`/admin/staff/${staffId}/role`, input);
+    const response = await api.patch<StaffMember>(`/api/v1/admin/staff/${staffId}/role`, input);
     return response.data;
   }
 
   async removeStaff(staffId: string): Promise<void> {
-    await this.api.delete(`/admin/staff/${staffId}`);
+    await api.delete(`/api/v1/admin/staff/${staffId}`);
   }
 
   async cancelInvitation(invitationId: string): Promise<void> {
-    await this.api.delete(`/admin/staff/invitations/${invitationId}`);
+    await api.delete(`/api/v1/admin/staff/invitations/${invitationId}`);
   }
 
   async resendInvitation(invitationId: string): Promise<{ expiresAt: string }> {
-    const response = await this.api.post<{ message: string; expiresAt: string }>(
-      `/admin/staff/invitations/${invitationId}/resend`
+    const response = await api.post<{ message: string; expiresAt: string }>(
+      `/api/v1/admin/staff/invitations/${invitationId}/resend`
     );
     return { expiresAt: response.data.expiresAt };
   }

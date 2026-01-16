@@ -7,7 +7,14 @@
 
 import { useState } from 'react';
 import { logger } from '@/shared/utils/logger';
-import { useStaffMembers, useRoleOptions } from './queries/useStaff';
+import { useStaffMembers, useRoleOptions, usePendingInvitations } from './queries/useStaff';
+import { 
+  useStaffControllerInviteStaff,
+  useStaffControllerUpdateStaffRole,
+  useStaffControllerRemoveStaff,
+  useStaffControllerCancelInvitation,
+  useStaffControllerResendInvitation,
+} from '@/services/generated/staff-management/staff-management';
 import type { StaffRole, StaffMember, EditForm, StaffStatus } from '../model/types';
 
 export function useStaffController() {
@@ -38,8 +45,16 @@ export function useStaffController() {
   // Data queries
   const staffQuery = useStaffMembers();
   const rolesQuery = useRoleOptions();
+  const invitationsQuery = usePendingInvitations();
   
-  const isLoading = staffQuery.isLoading || rolesQuery.isLoading;
+  // Mutations
+  const inviteStaffMutation = useStaffControllerInviteStaff();
+  const updateStaffRoleMutation = useStaffControllerUpdateStaffRole();
+  const removeStaffMutation = useStaffControllerRemoveStaff();
+  const cancelInvitationMutation = useStaffControllerCancelInvitation();
+  const resendInvitationMutation = useStaffControllerResendInvitation();
+  
+  const isLoading = staffQuery.isLoading || rolesQuery.isLoading || invitationsQuery.isLoading;
 
   // Handlers
   const showSuccessToast = (message: string) => {
@@ -65,15 +80,22 @@ export function useStaffController() {
     setShowEditModal(true);
   };
 
-  const handleSendInvite = () => {
+  const handleSendInvite = async () => {
     if (inviteEmail && selectedRole) {
       logger.info('[staff] SEND_INVITE_ATTEMPT', { role: selectedRole });
       try {
-        // TODO: Use actual inviteStaff mutation
+        await inviteStaffMutation.mutateAsync({
+          data: {
+            email: inviteEmail,
+            role: selectedRole as any, // Role mapping handled by backend
+          },
+        });
         logger.debug('[staff] INVITE_SENT', { email: inviteEmail });
         logger.info('[staff] SEND_INVITE_SUCCESS', { role: selectedRole });
         showSuccessToast(`Invitation sent to ${inviteEmail}`);
         setShowInviteModal(false);
+        staffQuery.refetch();
+        invitationsQuery.refetch();
       } catch (error) {
         logger.error('[staff] SEND_INVITE_ERROR', {
           role: selectedRole,
@@ -84,15 +106,21 @@ export function useStaffController() {
     }
   };
 
-  const handleEditMember = () => {
+  const handleEditMember = async () => {
     if (selectedMember) {
       logger.info('[staff] UPDATE_MEMBER_ATTEMPT', { memberId: selectedMember.id, role: editForm.role });
       try {
-        // TODO: Use mutation to update member in backend
+        await updateStaffRoleMutation.mutateAsync({
+          staffId: selectedMember.id,
+          data: {
+            role: editForm.role as any, // Role mapping handled by backend
+          },
+        });
         logger.debug('[staff] MEMBER_UPDATED', { memberId: selectedMember.id });
         logger.info('[staff] UPDATE_MEMBER_SUCCESS', { memberId: selectedMember.id });
         showSuccessToast('Member updated successfully');
         setShowEditModal(false);
+        staffQuery.refetch();
       } catch (error) {
         logger.error('[staff] UPDATE_MEMBER_ERROR', {
           memberId: selectedMember.id,
@@ -103,22 +131,63 @@ export function useStaffController() {
     }
   };
 
-  const handleResendInvite = () => {
+  const handleResendInvite = async () => {
     if (selectedMember) {
       logger.info('[staff] RESEND_INVITE_ATTEMPT', { memberId: selectedMember.id });
-      // TODO: Use mutation to resend invite
-      logger.info('[staff] RESEND_INVITE_SUCCESS', { memberId: selectedMember.id });
-      showSuccessToast(`Invite resent to ${selectedMember.email}`);
-      setShowEditModal(false);
+      try {
+        await resendInvitationMutation.mutateAsync({
+          invitationId: selectedMember.id,
+        });
+        logger.info('[staff] RESEND_INVITE_SUCCESS', { memberId: selectedMember.id });
+        showSuccessToast(`Invite resent to ${selectedMember.email}`);
+        setShowEditModal(false);
+      } catch (error) {
+        logger.error('[staff] RESEND_INVITE_ERROR', {
+          memberId: selectedMember.id,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+        showSuccessToast('Failed to resend invitation');
+      }
     }
   };
 
-  const handleRevokeInvite = () => {
-    if (selectedMember && confirm(`Revoke invitation for ${selectedMember.email}?`)) {
-      // TODO: Use mutation to revoke member in backend
-      logger.debug('[staff] INVITE_REVOKED', { memberId: selectedMember.id });
-      showSuccessToast(`Invite revoked for ${selectedMember.email}`);
+  const handleRevokeInvite = async () => {
+    if (!selectedMember) return;
+    
+    const isPending = selectedMember.status === 'PENDING';
+    const confirmMessage = isPending
+      ? `Revoke invitation for ${selectedMember.email}?`
+      : `Remove ${selectedMember.fullName} from staff?`;
+    
+    if (!confirm(confirmMessage)) return;
+    
+    logger.info('[staff] REVOKE_ATTEMPT', { memberId: selectedMember.id, status: selectedMember.status });
+    
+    try {
+      if (isPending) {
+        // Cancel pending invitation
+        await cancelInvitationMutation.mutateAsync({
+          invitationId: selectedMember.id,
+        });
+        logger.info('[staff] INVITATION_CANCELLED', { memberId: selectedMember.id });
+        showSuccessToast(`Invitation revoked for ${selectedMember.email}`);
+      } else {
+        // Remove active staff member
+        await removeStaffMutation.mutateAsync({
+          staffId: selectedMember.id,
+        });
+        logger.info('[staff] STAFF_REMOVED', { memberId: selectedMember.id });
+        showSuccessToast(`${selectedMember.fullName} removed from staff`);
+      }
       setShowEditModal(false);
+      staffQuery.refetch();
+      invitationsQuery.refetch();
+    } catch (error) {
+      logger.error('[staff] REVOKE_ERROR', {
+        memberId: selectedMember.id,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+      showSuccessToast(isPending ? 'Failed to revoke invitation' : 'Failed to remove staff member');
     }
   };
 
@@ -153,6 +222,7 @@ export function useStaffController() {
     queries: {
       staffQuery,
       rolesQuery,
+      invitationsQuery,
     },
     isLoading,
   };

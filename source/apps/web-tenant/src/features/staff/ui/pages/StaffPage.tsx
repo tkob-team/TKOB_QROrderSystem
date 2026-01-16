@@ -42,13 +42,14 @@ export function StaffPage() {
 
   const staffMembers = staff.queries.staffQuery.data ?? [];
   const roleOptions = staff.queries.rolesQuery.data ?? [];
+  const pendingInvitations = staff.queries.invitationsQuery.data ?? [];
 
-  const activeMembers = staffMembers.filter((m) => m.status === 'ACTIVE');
-  const pendingMembers = staffMembers.filter((m) => m.status === 'PENDING');
+  const activeMembers = staffMembers; // All staff from /api/v1/admin/staff are ACTIVE
+  const pendingMembers = pendingInvitations; // Pending invitations from /api/v1/admin/staff/invitations
   const displayMembers = activeTab === 'active' ? activeMembers : pendingMembers;
 
   const stats = {
-    total: staffMembers.length,
+    total: activeMembers.length + pendingMembers.length,
     active: activeMembers.length,
     pending: pendingMembers.length,
   };
@@ -57,7 +58,8 @@ export function StaffPage() {
     return roleOptions.find((r) => r.role === role);
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map((n) => n[0])
