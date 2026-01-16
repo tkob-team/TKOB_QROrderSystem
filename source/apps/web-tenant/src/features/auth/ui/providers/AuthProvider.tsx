@@ -40,6 +40,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [hasToken, setHasToken] = useState<boolean>(false);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const router = useRouter();
 
   const controller = useAuthController({
@@ -47,19 +48,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   const { loginMutation, logoutMutation, currentUserQuery } = controller;
-  const isLoading = currentUserQuery.isLoading;
   const currentUserData = currentUserQuery.data;
   const refetch = currentUserQuery.refetch;
+  
+  // isLoading must be true until:
+  // 1. Token bootstrap is complete (isInitialized)
+  // 2. User query is not loading (currentUserQuery.isLoading)
+  // 3. If hasToken and data exists, user state must be synced
+  const isUserSynced = !hasToken || !currentUserData || !!user;
+  const isLoading = !isInitialized || currentUserQuery.isLoading || !isUserSynced;
 
   // Bootstrap token state on mount
   useEffect(() => {
     const foundToken = bootstrapAuthState();
     setHasToken(foundToken);
+    setIsInitialized(true);
   }, []);
 
   // Sync user state with React Query data
   useEffect(() => {
-    const mappedUser = mapBackendUserToDomainUser(currentUserData);
+    // getCurrentUser returns { user, tenant }, so extract user field
+    const mappedUser = mapBackendUserToDomainUser(currentUserData?.user);
 
     if (hasToken && mappedUser) {
       setUser(mappedUser);
@@ -67,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    if (hasToken && currentUserData && !mappedUser) {
+    if (hasToken && currentUserData?.user && !mappedUser) {
       // Already logged in but data incomplete; map helper logged invariant
       return;
     }

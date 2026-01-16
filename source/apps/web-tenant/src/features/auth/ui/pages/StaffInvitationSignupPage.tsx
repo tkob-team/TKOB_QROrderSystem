@@ -9,7 +9,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { logger } from '@/shared/utils/logger';
-import { ROUTES } from '@/shared/config';
+import { ROUTES, getHomeRouteForRole } from '@/shared/config';
+import type { UserRole } from '@/shared/config';
+import { 
+  useStaffControllerVerifyInviteToken,
+  staffControllerAcceptInvitation 
+} from '@/services/generated/staff-management/staff-management';
+import { useAuth } from '../hooks/useAuth';
 import { fadeInUp, shake, scaleIn } from '@/shared/utils/animations';
 import {
   StaffInvitationFormSection,
@@ -33,13 +39,19 @@ export function StaffInvitationSignup({ onNavigate }: StaffInvitationSignupProps
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
+  const { login } = useAuth();
   
-  // Mock invitation details (would come from API in production)
-  const [invitationDetails] = useState<InvitationDetails>({
-    email: 'mike@tkob.com',
-    role: 'Kitchen Staff',
-    restaurantName: 'TKOB Restaurant',
-    inviterName: 'Admin',
+  // Fetch invitation details from token
+  const { data: verifyData, isLoading: isVerifying, error: verifyError } = useStaffControllerVerifyInviteToken(
+    { token },
+    { query: { enabled: !!token } }
+  );
+  
+  const [invitationDetails, setInvitationDetails] = useState<InvitationDetails>({
+    email: '',
+    role: '',
+    restaurantName: '',
+    inviterName: '',
   });
 
   // State
@@ -89,6 +101,24 @@ export function StaffInvitationSignup({ onNavigate }: StaffInvitationSignupProps
     }
   }, [pageState]);
 
+  // Handle invitation verification
+  useEffect(() => {
+    if (verifyError) {
+      logger.error('[auth] INVITATION_TOKEN_INVALID', { error: verifyError });
+      setPageState('expired');
+    } else if (verifyData && verifyData.valid) {
+      setInvitationDetails({
+        email: verifyData.email || '',
+        role: verifyData.role || '',
+        restaurantName: verifyData.tenantName || 'Restaurant',
+        inviterName: 'Admin',
+      });
+      logger.info('[auth] INVITATION_TOKEN_VERIFIED', { email: verifyData.email });
+    } else if (verifyData && !verifyData.valid) {
+      setPageState('expired');
+    }
+  }, [verifyData, verifyError]);
+
   const handleNavigate = (path: string) => {
     if (onNavigate) {
       onNavigate(path);
@@ -119,8 +149,20 @@ export function StaffInvitationSignup({ onNavigate }: StaffInvitationSignupProps
     setIsLoading(true);
 
     try {
-      // TODO: API call to complete staff invitation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Accept invitation and create account
+      const response = await staffControllerAcceptInvitation({
+        token,
+        fullName: fullName.trim(),
+        password,
+      });
+      
+      logger.info('[auth] STAFF_INVITATION_ACCEPTED', { 
+        email: response.email,
+        userId: response.userId,
+        tenantId: response.tenantId 
+      });
+      
+      // Show success page - user needs to login separately
       setPageState('success');
     } catch (err) {
       logger.error('[auth] STAFF_INVITATION_SIGNUP_ERROR', { message: err instanceof Error ? err.message : 'Unknown error' });
@@ -136,7 +178,7 @@ export function StaffInvitationSignup({ onNavigate }: StaffInvitationSignupProps
       <StaffInvitationSuccessSection
         successRef={successRef}
         invitationDetails={invitationDetails}
-        onNavigateDashboard={() => handleNavigate(ROUTES.dashboard)}
+        onNavigateDashboard={() => handleNavigate(ROUTES.login)}
       />
     );
   }

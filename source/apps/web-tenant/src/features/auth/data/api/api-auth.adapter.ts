@@ -1,6 +1,8 @@
 // API Auth Adapter - Calls real backend API
 
-import axios from 'axios';
+import { customInstance } from '@/services/axios';
+// Import axios for AxiosError type only (not for HTTP calls)
+import type { AxiosError } from 'axios';
 import { logger } from '@/shared/utils/logger';
 import type { IAuthAdapter } from '../adapter.interface';
 import type {
@@ -24,21 +26,56 @@ export class ApiAuthAdapter implements IAuthAdapter {
     this.apiUrl = apiUrl;
   }
 
+  /**
+   * Type guard to check if error is an AxiosError
+   */
+  private isAxiosError(error: unknown): error is AxiosError {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'isAxiosError' in error &&
+      (error as any).isAxiosError === true
+    );
+  }
+
+  /**
+   * Helper method to handle and extract error information from axios errors
+   */
+  private handleError(error: unknown, context: string, defaultMessage: string): never {
+    const errorMessage = this.isAxiosError(error) 
+      ? error.response?.data?.message || error.message 
+      : String(error);
+    
+    logger.error(`[auth] ${context}_ERROR`, { 
+      code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+      message: errorMessage 
+    });
+
+    if (this.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data?.message || defaultMessage);
+    }
+
+    throw new Error('Network error. Please try again.');
+  }
+
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     logger.info('[auth] LOGIN_ATTEMPT');
 
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/api/v1/auth/login`,
-        {
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/login`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
           email: credentials.email,
           password: credentials.password,
           deviceInfo: credentials.deviceInfo,
-        }
-      );
+        },
+      });
 
-      // Backend wraps response in { success, data } via TransformInterceptor
-      const { accessToken, refreshToken, expiresIn, user, tenant } = response.data.data;
+      // customInstance already unwraps { success, data } to just return data
+      // So response is directly the auth data, not response.data.data
+      const { accessToken, refreshToken, expiresIn, user, tenant } = response;
 
       // Store token in localStorage
       if (typeof window !== 'undefined') {
@@ -61,14 +98,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
         tenant,
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] LOGIN_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
-
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data?.message || 'Login failed');
-      }
-
-      throw new Error('Network error. Please try again.');
+      this.handleError(error, 'LOGIN', 'Login failed');
     }
   }
 
@@ -77,19 +107,21 @@ export class ApiAuthAdapter implements IAuthAdapter {
 
     try {
       // Step 1: Submit registration data and get OTP
-      const submitResponse = await axios.post(
-        `${this.apiUrl}/api/v1/auth/register/submit`,
-        {
+      const submitResponse = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/register/submit`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
           email: data.email,
           password: data.password,
           fullName: data.fullName,
           tenantName: data.tenantName, // Send restaurant name as tenantName
           slug: data.slug,
-        }
-      );
+        },
+      });
 
-      // Backend wraps response in { success, data } via TransformInterceptor
-      const responseData = submitResponse.data?.data || submitResponse.data;
+      // customInstance already unwraps { success, data } to just return data
+      const responseData = response;
       logger.debug('[auth] SIGNUP_SUBMIT_RESPONSE_RECEIVED', { hasRegistrationToken: !!responseData?.registrationToken });
 
       // Backend should return registrationToken, message, and expiresIn
@@ -103,10 +135,10 @@ export class ApiAuthAdapter implements IAuthAdapter {
         expiresIn,
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] SIGNUP_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] SIGNUP_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
-      if (axios.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && error.response) {
         const errorData = error.response.data as any;
         const message = errorData?.error?.message || errorData?.message || 'Signup failed';
         
@@ -121,22 +153,24 @@ export class ApiAuthAdapter implements IAuthAdapter {
     logger.info('[auth] FORGOT_PASSWORD_ATTEMPT');
 
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/api/v1/auth/forgot-password`,
-        { email: data.email }
-      );
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/forgot-password`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { email: data.email },
+      });
 
       logger.info('[auth] FORGOT_PASSWORD_EMAIL_SENT');
 
       return {
         success: true,
-        message: response.data?.message || 'Reset link sent',
+        message: response?.message || 'Reset link sent',
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] FORGOT_PASSWORD_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] FORGOT_PASSWORD_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
-      if (axios.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && error.response) {
         return {
           success: false,
           message: error.response.data?.message || 'Request failed',
@@ -154,25 +188,27 @@ export class ApiAuthAdapter implements IAuthAdapter {
     logger.info('[auth] RESET_PASSWORD_ATTEMPT');
 
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/api/v1/auth/reset-password`,
-        {
-          token: data.token,
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/reset-password`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          resetToken: data.token, // Property is 'token' not 'resetToken'
           newPassword: data.newPassword,
-        }
-      );
+        },
+      });
 
       logger.info('[auth] RESET_PASSWORD_SUCCESS');
 
       return {
         success: true,
-        message: response.data?.message || 'Password reset successful',
+        message: response?.message || 'Password reset successful',
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] RESET_PASSWORD_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] RESET_PASSWORD_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
-      if (axios.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && error.response) {
         return {
           success: false,
           message: error.response.data?.message || 'Reset failed',
@@ -190,17 +226,18 @@ export class ApiAuthAdapter implements IAuthAdapter {
     logger.debug('[auth] VERIFY_OTP_ATTEMPT');
 
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/api/v1/auth/register/confirm`,
-        {
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/register/confirm`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
           registrationToken: data.registrationToken,
           otp: data.otp,
-        }
-      );
+        },
+      });
 
-      // Backend wraps response in { success: true, data: {...} }
-      const responseData = response.data?.data || response.data;
-      const { accessToken, refreshToken, expiresIn, user, tenant } = responseData;
+      // customInstance already unwraps { success: true, data: {...} } to just return data
+      const { accessToken, refreshToken, expiresIn, user, tenant } = response;
 
       logger.debug('[auth] VERIFY_OTP_RESPONSE_RECEIVED', { hasAccessToken: !!accessToken, hasUser: !!user });
 
@@ -225,14 +262,7 @@ export class ApiAuthAdapter implements IAuthAdapter {
         tenant,
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] VERIFY_OTP_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
-
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data?.message || 'Verification failed');
-      }
-
-      throw new Error('Network error. Please try again.');
+      this.handleError(error, 'VERIFY_OTP', 'Verification failed');
     }
   }
 
@@ -240,22 +270,24 @@ export class ApiAuthAdapter implements IAuthAdapter {
     logger.info('[auth] RESEND_OTP_ATTEMPT');
 
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/api/v1/auth/resend-otp`,
-        { email: data.email }
-      );
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/resend-otp`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { email: data.email },
+      });
 
       logger.info('[auth] RESEND_OTP_SUCCESS');
 
       return {
         success: true,
-        message: response.data?.message || 'OTP sent',
+        message: response?.message || 'OTP sent',
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] RESEND_OTP_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] RESEND_OTP_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
-      if (axios.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && error.response) {
         return {
           success: false,
           message: error.response.data?.message || 'Failed to send OTP',
@@ -272,24 +304,24 @@ export class ApiAuthAdapter implements IAuthAdapter {
   async checkSlugAvailability(slug: string): Promise<SlugAvailabilityResponse> {
     logger.debug('[auth] CHECK_SLUG_ATTEMPT', { slug });
 
-    try {
-      const response = await axios.get(
-        `${this.apiUrl}/api/v1/auth/check-slug/${slug}`
-      );
+    try{
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/check-slug/${slug}`,
+        method: 'GET',
+      });
 
-      // Backend wraps response in { success, data } via TransformInterceptor
-      const responseData = response.data?.data || response.data;
-      logger.debug('[auth] CHECK_SLUG_RESULT', { available: responseData?.available });
+      // customInstance already unwraps { success, data } to just return data
+      logger.debug('[auth] CHECK_SLUG_RESULT', { available: response?.available });
 
       return {
-        available: responseData?.available || false,
-        message: responseData?.message,
+        available: response?.available || false,
+        message: response?.message,
       };
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] CHECK_SLUG_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] CHECK_SLUG_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
 
-      if (axios.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && error.response) {
         return {
           available: false,
           message: error.response.data?.message || 'Check failed',
@@ -308,10 +340,12 @@ export class ApiAuthAdapter implements IAuthAdapter {
 
     try {
       if (refreshToken) {
-        await axios.post(
-          `${this.apiUrl}/api/v1/auth/logout`,
-          { refreshToken }
-        );
+        await customInstance<any>({
+          url: `${this.apiUrl}/api/v1/auth/logout`,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          data: { refreshToken },
+        });
       }
 
       // Clear local storage
@@ -321,8 +355,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
 
       logger.info('[auth] LOGOUT_SUCCESS');
     } catch (error: unknown) {
-      const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.warn('[auth] LOGOUT_ERROR', { code: axios.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.warn('[auth] LOGOUT_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
       // Still clear local storage even if API call fails
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
@@ -345,24 +379,104 @@ export class ApiAuthAdapter implements IAuthAdapter {
 
   /**
    * Refresh access token
-   * @todo Implement actual API call
    */
   async refreshToken(data: { refreshToken: string }): Promise<AuthResponse> {
-    // TODO: Implement refresh token API call
-    throw new Error('RefreshToken not yet implemented');
+    logger.info('[auth] REFRESH_TOKEN_ATTEMPT');
+
+    try {
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/refresh`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { refreshToken: data.refreshToken },
+      });
+
+      // customInstance already unwraps { success, data } to just return data
+      const { accessToken, refreshToken, expiresIn } = response;
+
+      // Update token in localStorage
+      if (typeof window !== 'undefined' && accessToken) {
+        localStorage.setItem('authToken', accessToken);
+      }
+
+      logger.info('[auth] REFRESH_TOKEN_SUCCESS');
+
+      return {
+        accessToken,
+        refreshToken,
+        expiresIn,
+        // User and tenant not returned in refresh response
+        user: undefined,
+        tenant: undefined,
+      };
+    } catch (error: unknown) {
+      this.handleError(error, 'REFRESH_TOKEN', 'Token refresh failed');
+    }
   }
 
   /**
    * Logout from all devices
-   * @todo Implement actual API call
    */
   async logoutAll(): Promise<void> {
-    // TODO: Implement logout all devices API call
-    throw new Error('LogoutAll not yet implemented');
+    logger.info('[auth] LOGOUT_ALL_ATTEMPT');
+
+    try {
+      await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/logout-all`,
+        method: 'POST',
+      });
+
+      // Clear local storage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+      }
+
+      logger.info('[auth] LOGOUT_ALL_SUCCESS');
+    } catch (error: unknown) {
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.warn('[auth] LOGOUT_ALL_ERROR', { 
+        code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+        message: errorMessage 
+      });
+
+      // Still clear local storage even if API call fails
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+      }
+
+      throw new Error('Failed to logout from all devices');
+    }
   }
 
   async getCurrentUser(): Promise<any> {
-    // TODO: Implement get current user API call
-    throw new Error('GetCurrentUser not yet implemented');
+    logger.info('[auth] GET_CURRENT_USER_ATTEMPT');
+
+    try {
+      const response = await customInstance<any>({
+        url: `${this.apiUrl}/api/v1/auth/me`,
+        method: 'GET',
+      });
+
+      // customInstance already unwraps { success, data } to just return data
+      const { user, tenant } = response;
+
+      logger.info('[auth] GET_CURRENT_USER_SUCCESS', { 
+        userId: user?.id, 
+        role: user?.role 
+      });
+
+      return {
+        user: user ? {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          role: this.mapRoleFromBackend(user.role),
+          tenantId: user.tenantId,
+        } : null,
+        tenant,
+      };
+    } catch (error: unknown) {
+      this.handleError(error, 'GET_CURRENT_USER', 'Failed to get user');
+    }
   }
 }

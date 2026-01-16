@@ -37,10 +37,29 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Root path "/" - redirect based on auth state
+  // Root path "/" - redirect based on auth state and role
   if (pathname === '/') {
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    if (isAuthenticated && authToken) {
+      try {
+        const tokenParts = authToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+          const userRole = payload.role as string;
+          
+          // Redirect based on role
+          if (userRole === 'OWNER') {
+            return NextResponse.redirect(new URL('/waiter', request.url));
+          } else if (userRole === 'STAFF') {
+            return NextResponse.redirect(new URL('/waiter', request.url));
+          } else if (userRole === 'KITCHEN') {
+            return NextResponse.redirect(new URL('/kds', request.url));
+          }
+        }
+      } catch (error) {
+        logger.log('[middleware] Failed to parse JWT for root redirect:', error);
+      }
+      // Fallback to /waiter for authenticated users
+      return NextResponse.redirect(new URL('/waiter', request.url));
     } else {
       // Redirect to landing page for non-authenticated users
       return NextResponse.redirect(new URL('/home', request.url));
@@ -50,7 +69,7 @@ export function middleware(request: NextRequest) {
   // Protected routes require authentication
   if (!isAuthenticated && (
     pathname.startsWith('/admin') || 
-    pathname.startsWith('/kds') || 
+    pathname.startsWith('/kds') ||
     pathname.startsWith('/waiter')
   )) {
     const loginUrl = new URL('/auth/login', request.url);
@@ -58,9 +77,72 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // TODO: Add role-based access control
-  // For now, we'll handle role checks in the AuthContext and components
-  // Future: Parse JWT token here and check role permissions
+  // Role-based access control
+  if (isAuthenticated && authToken) {
+    try {
+      // Parse JWT token to get user role (token format: header.payload.signature)
+      const tokenParts = authToken.split('.');
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        const userRole = payload.role as string;
+        
+        // Role-based route restrictions
+        // Note: /admin/kds and /admin/service-board are accessible by OWNER (for monitoring)
+        //       /kds standalone is only for KITCHEN staff
+        //       /waiter standalone is only for WAITER staff
+        
+        // /admin routes - Only OWNER can access
+        if (pathname.startsWith('/admin')) {
+          if (!['OWNER'].includes(userRole)) {
+            logger.log('[middleware] Access denied to admin routes for role:', userRole);
+            // Redirect STAFF to /waiter, KITCHEN to /kds
+            if (userRole === 'STAFF') {
+              return NextResponse.redirect(new URL('/waiter', request.url));
+            } else if (userRole === 'KITCHEN') {
+              return NextResponse.redirect(new URL('/kds', request.url));
+            }
+            return NextResponse.redirect(new URL('/auth/login', request.url));
+          }
+        }
+        
+        // /kds - Only KITCHEN and OWNER can access
+        if (pathname === '/kds' || pathname.startsWith('/kds/')) {
+          if (!['KITCHEN', 'OWNER'].includes(userRole)) {
+            logger.log('[middleware] Access denied to KDS for role:', userRole);
+            if (userRole === 'STAFF') {
+              return NextResponse.redirect(new URL('/waiter', request.url));
+            }
+            return NextResponse.redirect(new URL('/auth/login', request.url));
+          }
+        }
+        
+        // /staff - Only STAFF and OWNER can access  
+        if (pathname === '/staff' || pathname.startsWith('/staff/')) {
+          if (!['STAFF', 'OWNER'].includes(userRole)) {
+            logger.log('[middleware] Access denied to Staff for role:', userRole);
+            if (userRole === 'KITCHEN') {
+              return NextResponse.redirect(new URL('/kds', request.url));
+            }
+            return NextResponse.redirect(new URL('/auth/login', request.url));
+          }
+        }
+        
+        // /waiter - Only STAFF and OWNER can access
+        if (pathname === '/waiter' || pathname.startsWith('/waiter/')) {
+          if (!['STAFF', 'OWNER'].includes(userRole)) {
+            logger.log('[middleware] Access denied to Waiter for role:', userRole);
+            if (userRole === 'KITCHEN') {
+              return NextResponse.redirect(new URL('/kds', request.url));
+            }
+            return NextResponse.redirect(new URL('/auth/login', request.url));
+          }
+        }
+      }
+    } catch (error) {
+      logger.log('[middleware] Failed to parse JWT token:', error);
+      // If token parsing fails, allow request to proceed (will be caught by AuthContext)
+    }
+  }
 
   return NextResponse.next();
 }
