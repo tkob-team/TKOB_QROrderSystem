@@ -5,6 +5,7 @@ import { Session } from '@common/decorators/session.decorator';
 import { TableSessionService } from '../services/table-session.service';
 import { MenuItemsService } from '@modules/menu/services/menu-item.service';
 import { SessionGuard } from '../guards/session.guard';
+import { SkipTransform } from '@common/interceptors/transform.interceptor';
 
 @ApiTags('Tables - Public')
 @Controller()
@@ -21,6 +22,7 @@ export class PublicTableController {
    */
   @Get('t/:qrToken')
   @Public()
+  @SkipTransform()
   @ApiOperation({
     summary: 'Scan QR code (Haidilao style)',
     description: 'Customer scans QR code, creates session, sets cookie, and redirects to menu',

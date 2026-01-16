@@ -26,7 +26,8 @@ export class TableRepository extends BaseRepository<Table, Prisma.TableDelegate>
     // Base query for this tenant (no filters)
     const baseWhere: Prisma.TableWhereInput = {
       tenantId,
-      ...(options?.activeOnly !== undefined && { active: options.activeOnly }),
+      // Only filter by active when activeOnly is true
+      ...(options?.activeOnly === true && { active: true }),
     };
 
     // Filtered query (with status/location filters)

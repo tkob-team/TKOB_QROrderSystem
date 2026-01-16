@@ -80,7 +80,9 @@ export class TableService {
       sortOrder?: 'asc' | 'desc';
     },
   ): Promise<{ tables: Table[]; meta: { totalAll: number; totalFiltered: number } }> {
+    this.logger.debug(`[findAll] Query tables for tenantId: ${tenantId}, filters:`, filters);
     const { tables, totalAll, totalFiltered } = await this.repo.findByTenantId(tenantId, filters);
+    this.logger.debug(`[findAll] Found ${tables.length} tables (totalFiltered: ${totalFiltered}, totalAll: ${totalAll})`);
     return {
       tables,
       meta: { totalAll, totalFiltered },

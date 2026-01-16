@@ -41,6 +41,7 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole, TableStatus, Table } from '@prisma/client';
 import type { AuthenticatedUser } from 'src/common/interfaces/auth.interface';
+import { SkipTransform } from '@common/interceptors/transform.interceptor';
 
 @ApiTags('Tables')
 @Controller('admin/tables')
@@ -161,6 +162,7 @@ export class TableController {
   @Roles(UserRole.OWNER)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
+  @SkipTransform()
   @ApiOperation({ summary: 'Delete table (soft delete)' })
   @ApiResponse({ status: 204, description: 'Table deleted successfully' })
   @ApiResponse({ status: 409, description: 'Cannot delete table with active orders' })
