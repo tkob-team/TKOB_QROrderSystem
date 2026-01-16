@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "prebuild": "pnpm run orval",
+    "build": "pnpm run orval && next build",
     "start": "next start -p 3001",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "orval": "orval --config orval.config.ts"
+    "orval": "orval --config orval.config.ts",
+    "sync-spec": "curl http://localhost:3000/api-docs-json -o openapi-spec.json",
+    "codegen": "pnpm run sync-spec && pnpm run orval"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

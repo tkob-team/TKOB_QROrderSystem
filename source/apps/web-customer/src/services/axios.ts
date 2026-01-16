@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { log, logError } from '@/shared/logging/logger';
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_API === 'true';
 const logDataEnabled = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
 

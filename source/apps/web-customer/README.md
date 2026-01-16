@@ -82,6 +82,7 @@ web-customer/
 See `.env.example` for all required environment variables.
 
 Key variables:
+
 - `NEXT_PUBLIC_API_URL`: Backend API URL
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Stripe public key (for payments)
 
@@ -103,9 +104,10 @@ Key variables:
 - App Router helpers: `src/shared/hooks/useAppRouter.ts`
 
 Usage example:
+
 ```ts
-import { ROUTES } from '@/lib/routes';
-import { useAppRouter } from '@/shared/hooks/useAppRouter';
+import { ROUTES } from "@/lib/routes";
+import { useAppRouter } from "@/shared/hooks/useAppRouter";
 
 const { goMenu } = useAppRouter();
 goMenu(); // navigates to ROUTES.menu
