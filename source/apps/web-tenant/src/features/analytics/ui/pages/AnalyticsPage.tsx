@@ -18,10 +18,13 @@ export function AnalyticsPage() {
   const { timeRange, revenueChartPeriod } = analytics.state;
   const { setTimeRange, setRevenueChartPeriod } = analytics.handlers;
 
+  const overviewData = analytics.queries.overviewQuery.data;
   const ordersData = analytics.queries.ordersQuery.data ?? [];
   const peakHours = analytics.queries.peakHoursQuery.data ?? [];
   const topSellingItems = analytics.queries.topSellingQuery.data ?? [];
   const revenueChartData = analytics.queries.revenueQuery.data ?? [];
+  
+  const isLoadingOverview = analytics.queries.overviewQuery.isLoading;
 
   const handleExportPDF = () => {
     exportAnalyticsPDF({ timeRange, topSellingItems: topSellingItems as any[] });
@@ -43,7 +46,7 @@ export function AnalyticsPage() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-6">
         <div className="max-w-7xl mx-auto flex flex-col gap-8">
-          <KPICardsSection />
+          <KPICardsSection data={overviewData} isLoading={isLoadingOverview} />
 
           <RevenueChartSection
             revenueChartPeriod={revenueChartPeriod}
@@ -66,22 +69,10 @@ export function AnalyticsPage() {
               <div className="flex flex-col gap-3">
                 <span className="text-text-secondary text-sm">Most Ordered Item</span>
                 <span className="text-text-primary text-2xl font-semibold">
-                  Margherita Pizza
+                  {topSellingItems[0]?.itemName || 'N/A'}
                 </span>
                 <span className="text-success-text text-sm font-medium">
-                  145 orders
-                </span>
-              </div>
-            </Card>
-
-            <Card className="p-6 shadow-sm">
-              <div className="flex flex-col gap-3">
-                <span className="text-text-secondary text-sm">Busiest Day</span>
-                <span className="text-text-primary text-2xl font-semibold">
-                  Saturday
-                </span>
-                <span className="text-success-text text-sm font-medium">
-                  Avg 95 orders/day
+                  {topSellingItems[0]?.orders ? `${topSellingItems[0].orders} orders` : 'No data'}
                 </span>
               </div>
             </Card>
@@ -90,10 +81,26 @@ export function AnalyticsPage() {
               <div className="flex flex-col gap-3">
                 <span className="text-text-secondary text-sm">Peak Hour</span>
                 <span className="text-text-primary text-2xl font-semibold">
-                  7 PM
+                  {peakHours.length > 0 
+                    ? peakHours.reduce((max, h) => h.orders > max.orders ? h : max, peakHours[0]).hour 
+                    : 'N/A'}
                 </span>
                 <span className="text-success-text text-sm font-medium">
-                  Avg 65 orders/hour
+                  {peakHours.length > 0 
+                    ? `${Math.max(...peakHours.map(h => h.orders))} orders/hour` 
+                    : 'No data'}
+                </span>
+              </div>
+            </Card>
+
+            <Card className="p-6 shadow-sm">
+              <div className="flex flex-col gap-3">
+                <span className="text-text-secondary text-sm">Active Tables</span>
+                <span className="text-text-primary text-2xl font-semibold">
+                  {overviewData?.activeTables || 0}
+                </span>
+                <span className="text-success-text text-sm font-medium">
+                  Currently available
                 </span>
               </div>
             </Card>

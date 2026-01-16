@@ -9,9 +9,15 @@ import type {
   TopSellingItem,
   RevenueDataPoint,
   TimeRange,
+  KPIOverview,
 } from '../model/types';
 
 export interface IAnalyticsAdapter {
+  /**
+   * Get KPI overview data
+   */
+  getOverview(): Promise<KPIOverview>;
+
   /**
    * Get order trends over time
    */

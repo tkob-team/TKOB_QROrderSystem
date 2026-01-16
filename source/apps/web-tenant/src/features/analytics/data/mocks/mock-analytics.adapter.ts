@@ -10,9 +10,26 @@ import type {
   TopSellingItem,
   RevenueDataPoint,
   TimeRange,
+  KPIOverview,
 } from '../../model/types';
 
 export class MockAnalyticsAdapter implements IAnalyticsAdapter {
+  async getOverview(): Promise<KPIOverview> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return {
+      thisMonth: {
+        orders: 1248,
+        revenue: 28450,
+      },
+      avgOrderValue: 22.79,
+      growth: {
+        revenue: 15.2,
+        orders: 12.3,
+      },
+      activeTables: 24,
+    };
+  }
+
   private mockOrdersData: OrderDataPoint[] = [
     { date: 'Jan 1', orders: 45 },
     { date: 'Jan 2', orders: 52 },

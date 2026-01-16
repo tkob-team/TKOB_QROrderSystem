@@ -1,6 +1,7 @@
 /**
  * Analytics Hooks
- * Public barrel: controller only (queries are internal)
+ * Public barrel: controller and specific hooks
  */
 
 export * from './useAnalyticsController';
+export { useOverview } from './queries/useAnalytics';

@@ -8,6 +8,23 @@ import { logger } from '@/shared/utils/logger';
 import { analyticsAdapter } from '../../data/factory';
 import type { TimeRange } from '../../model/types';
 
+export function useOverview() {
+  return useQuery({
+    queryKey: ['analytics', 'overview'],
+    queryFn: async () => {
+      logger.info('[analytics] OVERVIEW_QUERY_ATTEMPT');
+      try {
+        const result = await analyticsAdapter.getOverview();
+        logger.info('[analytics] OVERVIEW_QUERY_SUCCESS', result);
+        return result;
+      } catch (error) {
+        logger.error('[analytics] OVERVIEW_QUERY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
+        throw error;
+      }
+    },
+  });
+}
+
 export function useOrdersData(range: TimeRange) {
   return useQuery({
     queryKey: ['analytics', 'orders', range],

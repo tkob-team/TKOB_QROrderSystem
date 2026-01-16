@@ -1,33 +1,48 @@
 import React from 'react';
 import { KPICard } from '@/shared/components/KPICard';
-import { ShoppingBag, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { ShoppingBag, DollarSign, TrendingUp, Table } from 'lucide-react';
+import type { KPIOverview } from '../../../model/types';
+import { formatCurrency } from '@/shared/utils/helpers';
 
-export function KPICardsSection() {
+interface KPICardsSectionProps {
+  data?: KPIOverview;
+  isLoading?: boolean;
+}
+
+export function KPICardsSection({ data, isLoading }: KPICardsSectionProps) {
+  const revenue = data?.thisMonth.revenue || 0;
+  const orders = data?.thisMonth.orders || 0;
+  const avgOrderValue = data?.avgOrderValue || 0;
+  const activeTables = data?.activeTables || 0;
+  
+  const revenueGrowth = data?.growth.revenue || 0;
+  const ordersGrowth = data?.growth.orders || 0;
+
   return (
     <div className="grid grid-cols-4 gap-6">
       <KPICard
-        title="Total Revenue"
-        value="$28,450"
+        title="Total Revenue (This Month)"
+        value={isLoading ? '-' : formatCurrency(revenue)}
         icon={DollarSign}
-        trend={{ value: 15, isPositive: true }}
+        trend={{ value: Math.abs(revenueGrowth), isPositive: revenueGrowth >= 0 }}
       />
       <KPICard
-        title="Total Orders"
-        value="1,248"
+        title="Total Orders (This Month)"
+        value={isLoading ? '-' : orders.toLocaleString()}
         icon={ShoppingBag}
-        trend={{ value: 12, isPositive: true }}
+        trend={{ value: Math.abs(ordersGrowth), isPositive: ordersGrowth >= 0 }}
       />
       <KPICard
         title="Avg Order Value"
-        value="$22.79"
+        value={isLoading ? '-' : formatCurrency(avgOrderValue)}
         icon={TrendingUp}
-        trend={{ value: 3, isPositive: true }}
+        trend={{ value: 0, isPositive: true }}
       />
       <KPICard
-        title="Avg Prep Time"
-        value="14 min"
-        icon={Clock}
-        trend={{ value: -2, isPositive: false }}
+        title="Active Tables"
+        value={isLoading ? '-' : activeTables.toString()}
+        icon={Table}
+        trend={undefined}
       />
     </div>
   );

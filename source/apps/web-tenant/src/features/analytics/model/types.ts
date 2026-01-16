@@ -2,6 +2,19 @@
  * Analytics Feature - Types
  */
 
+export interface KPIOverview {
+  thisMonth: {
+    orders: number;
+    revenue: number;
+  };
+  avgOrderValue: number;
+  growth: {
+    revenue: number;
+    orders: number;
+  };
+  activeTables: number;
+}
+
 export interface KPIData {
   totalOrders: number;
   totalRevenue: number;
