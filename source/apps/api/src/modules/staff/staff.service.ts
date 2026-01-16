@@ -431,13 +431,22 @@ export class StaffService {
 
     // Use email service to send
     const html = this.getInvitationTemplate(tenantName, role, inviteLink);
-    const from = this.configService.get('EMAIL_FROM', 'noreply@tkob.app');
 
-    // For now, log the invite link (in production, this would send actual email)
+    // Log the invite link for debugging
     this.logger.log(`📧 Staff Invitation Link for ${email}: ${inviteLink}`);
 
-    // TODO: Add actual email sending via EmailService when sendGenericEmail is implemented
-    // await this.emailService.sendGenericEmail(email, `You're invited to join ${tenantName}`, html);
+    // Send actual email via EmailService
+    try {
+      await this.emailService.sendGenericEmail(
+        email,
+        `You're invited to join ${tenantName} as ${role}`,
+        html,
+      );
+      this.logger.log(`✅ Staff invitation email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`❌ Failed to send staff invitation email to ${email}:`, error);
+      throw new Error('Failed to send invitation email');
+    }
   }
 
   /**

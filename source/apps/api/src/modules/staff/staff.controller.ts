@@ -39,6 +39,7 @@ import {
   VerifyInviteTokenDto,
   VerifyInviteTokenResponseDto,
 } from './dto/staff.dto';
+import { SkipTransform } from '@/common/interceptors/transform.interceptor';
 
 interface JwtUser {
   userId: string;
@@ -131,6 +132,7 @@ export class StaffController {
   @Roles(UserRole.OWNER)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
+  @SkipTransform()
   @ApiOperation({ summary: 'Cancel pending invitation' })
   @ApiParam({ name: 'invitationId', description: 'Invitation ID' })
   @ApiResponse({ status: 204, description: 'Invitation cancelled' })
