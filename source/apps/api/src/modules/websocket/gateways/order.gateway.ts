@@ -320,7 +320,30 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date(),
     });
   }
-
+  /**
+   * Emit bill request notification to staff
+   * Triggered when customer requests bill
+   */
+  emitBillRequested(
+    tenantId: string,
+    data: {
+      orderId: string;
+      orderNumber: string;
+      tableId: string;
+      tableNumber: string;
+      totalAmount: number;
+      requestedAt: Date;
+    },
+  ) {
+    const staffRoom = `tenant:${tenantId}:staff`;
+    this.server.to(staffRoom).emit('order:bill_requested', {
+      ...data,
+      timestamp: new Date(),
+    });
+    this.logger.log(
+      `Bill request notification sent to ${staffRoom} - Order #${data.orderNumber} at Table ${data.tableNumber}`,
+    );
+  }
   // ==================== UTILITY METHODS ====================
 
   /**
