@@ -103,7 +103,7 @@ export class SubscriptionPaymentService {
         
         // Regenerate QR URL with correct format (in case cached data has old format)
         const bankName = BANK_CODE_MAP[parsed.bankCode] || parsed.bankCode;
-        parsed.qrCodeUrl = `https://qr.sepay.vn/img?acc=${parsed.accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${parsed.amountVND}&des=${encodeURIComponent(parsed.transferContent)}`;
+        parsed.qrCodeUrl = `https://qr.sepay.vn/img?acc=${parsed.accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${parsed.amountVND}&des=${encodeURIComponent(parsed.transferContent)}&template=compact`;
         
         // Return the existing payment info with updated QR URL
         return parsed;
@@ -161,7 +161,7 @@ export class SubscriptionPaymentService {
     // 9. Generate SePay QR URL
     // Format: https://qr.sepay.vn/img?acc=ACCOUNT&bank=BANK_NAME&amount=AMOUNT&des=CONTENT
     const bankName = BANK_CODE_MAP[paymentIntent.bankCode] || paymentIntent.bankCode;
-    const qrCodeUrl = `https://qr.sepay.vn/img?acc=${paymentIntent.accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${amountVND}&des=${encodeURIComponent(paymentIntent.transferContent)}`;
+    const qrCodeUrl = `https://qr.sepay.vn/img?acc=${paymentIntent.accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${amountVND}&des=${encodeURIComponent(paymentIntent.transferContent)}&template=compact`;
 
     // 10. Cache upgrade request in Redis (for quick lookup by transfer content)
     const upgradeData: SubscriptionPaymentResponseDto = {

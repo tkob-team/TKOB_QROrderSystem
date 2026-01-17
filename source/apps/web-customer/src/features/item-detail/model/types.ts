@@ -6,6 +6,7 @@ export interface ItemDetailState {
   relatedItems: MenuItem[]
   selectedSize: string
   selectedToppings: string[]
+  selectedModifiers: Record<string, string[]>
   specialInstructions: string
   quantity: number
   reviewPage: number
@@ -20,6 +21,7 @@ export interface ItemDetailState {
 export interface ItemDetailActions {
   setSelectedSize: (size: string) => void
   toggleTopping: (toppingId: string) => void
+  toggleModifier: (groupId: string, optionId: string, maxChoices?: number) => void
   setSpecialInstructions: (value: string) => void
   setQuantity: (qty: number) => void
   incrementQuantity: () => void

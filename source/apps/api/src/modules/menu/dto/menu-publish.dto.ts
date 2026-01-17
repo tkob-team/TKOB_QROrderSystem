@@ -15,9 +15,10 @@ export enum SortOrderEnum {
 }
 
 export class PublicMenuFiltersDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Tenant ID (optional if session cookie provided)' })
+  @IsOptional()
   @IsString()
-  tenantId: string;
+  tenantId?: string;
 
   @ApiPropertyOptional({ description: 'Search by item name or description' })
   @IsOptional()

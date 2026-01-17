@@ -60,6 +60,13 @@ export class PaymentIntentResponseDto {
   bankCode: string;
 
   @ApiProperty({
+    description: 'SePay QR image URL for display',
+    example: 'https://qr.sepay.vn/img?acc=1234567890&bank=Vietcombank&amount=250000&des=DH123456',
+    required: false,
+  })
+  qrCodeUrl?: string;
+
+  @ApiProperty({
     description: 'Payment status',
     enum: PaymentStatus,
     example: PaymentStatus.PENDING,

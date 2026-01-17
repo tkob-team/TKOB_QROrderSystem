@@ -6,6 +6,7 @@ import {
   ExtrasSection,
   ItemHeroSection,
   ItemInfoSection,
+  ModifierGroupsSection,
   RelatedItemsSection,
   ReviewsSection,
   SizeSelectorSection,
@@ -55,7 +56,17 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
       <div className="flex-1 overflow-y-auto pb-24">
         <ItemInfoSection item={state.item} />
 
-        {state.item.sizes && state.item.sizes.length > 0 && (
+        {/* Backend modifier groups (new) */}
+        {state.item.modifierGroups && state.item.modifierGroups.length > 0 && (
+          <ModifierGroupsSection
+            modifierGroups={state.item.modifierGroups}
+            selectedModifiers={state.selectedModifiers}
+            onToggle={actions.toggleModifier}
+          />
+        )}
+
+        {/* Legacy: sizes (fallback for mock data) */}
+        {state.item.sizes && state.item.sizes.length > 0 && !state.item.modifierGroups && (
           <SizeSelectorSection
             sizes={state.item.sizes}
             selectedSize={state.selectedSize}
@@ -63,7 +74,8 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
           />
         )}
 
-        {state.item.toppings && state.item.toppings.length > 0 && (
+        {/* Legacy: toppings (fallback for mock data) */}
+        {state.item.toppings && state.item.toppings.length > 0 && !state.item.modifierGroups && (
           <ExtrasSection
             toppings={state.item.toppings}
             selectedToppings={state.selectedToppings}

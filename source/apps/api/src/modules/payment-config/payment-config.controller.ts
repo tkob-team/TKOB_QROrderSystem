@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { GetTenant } from '../../common/decorators/tenant.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@prisma/client';
 
 @ApiTags('Payment Config')
@@ -81,6 +82,40 @@ export class PaymentConfigController {
       message: hasValid
         ? 'Payment is ready to accept'
         : 'Please configure payment settings',
+    };
+  }
+
+  @Get('public/payment-methods')
+  @Public()
+  @ApiOperation({ 
+    summary: 'Get available payment methods for customer app',
+    description: 'Public endpoint to check which payment methods are enabled for a tenant'
+  })
+  @ApiQuery({ name: 'tenantId', required: true, type: String })
+  @ApiResponse({ 
+    status: 200, 
+    schema: {
+      properties: {
+        methods: { 
+          type: 'array', 
+          items: { type: 'string' },
+          example: ['BILL_TO_TABLE', 'SEPAY_QR']
+        },
+        sepayEnabled: { type: 'boolean' }
+      }
+    }
+  })
+  async getPublicPaymentMethods(@Query('tenantId') tenantId: string) {
+    const config = await this.paymentConfigService.getConfig(tenantId);
+    const methods = ['BILL_TO_TABLE']; // Cash payment always enabled
+    
+    if (config.sepayEnabled && config.sepayAccountNo && config.sepayBankCode) {
+      methods.push('SEPAY_QR');
+    }
+
+    return {
+      methods,
+      sepayEnabled: config.sepayEnabled,
     };
   }
 }

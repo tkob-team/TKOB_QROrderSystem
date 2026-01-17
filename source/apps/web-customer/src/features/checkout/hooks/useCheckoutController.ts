@@ -28,10 +28,12 @@ export function useCheckoutController() {
   const notes = useCheckoutStore((state) => state.notes)
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod)
   const tipPercent = useCheckoutStore((state) => state.tipPercent)
+  const customTipAmount = useCheckoutStore((state) => state.customTipAmount)
   const setCustomerName = useCheckoutStore((state) => state.setCustomerName)
   const setNotes = useCheckoutStore((state) => state.setNotes)
   const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod)
   const setTipPercent = useCheckoutStore((state) => state.setTipPercent)
+  const setCustomTipAmount = useCheckoutStore((state) => state.setCustomTipAmount)
   const resetCheckout = useCheckoutStore((state) => state.reset)
   
   // Use order store for active order tracking
@@ -41,8 +43,13 @@ export function useCheckoutController() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Calculate tip amount
-  const tipAmount = useMemo(() => subtotal * tipPercent, [subtotal, tipPercent])
+  // Calculate tip amount (percentage or custom dollar amount)
+  const tipAmount = useMemo(() => {
+    if (tipPercent === 'custom') {
+      return customTipAmount
+    }
+    return subtotal * (tipPercent as number)
+  }, [subtotal, tipPercent, customTipAmount])
   
   // Final total with tip
   const finalTotal = useMemo(() => total + tipAmount, [total, tipAmount])
@@ -60,7 +67,7 @@ export function useCheckoutController() {
     [formData]
   )
 
-  const updateField = (field: keyof CheckoutFormData | 'tipPercent', value: any) => {
+  const updateField = (field: keyof CheckoutFormData | 'tipPercent' | 'customTipAmount', value: any) => {
     if (field === 'name') {
       setCustomerName(value)
     } else if (field === 'notes') {
@@ -76,6 +83,8 @@ export function useCheckoutController() {
       setPaymentMethod(methodMap[value] || 'BILL_TO_TABLE')
     } else if (field === 'tipPercent') {
       setTipPercent(value as TipPercent)
+    } else if (field === 'customTipAmount') {
+      setCustomTipAmount(value as number)
     }
   }
 
@@ -93,7 +102,8 @@ export function useCheckoutController() {
       log('data', 'Checkout started', { 
         itemCount: cartItems.length, 
         paymentMethod,
-        tipPercent: tipPercent * 100 + '%',
+        tipPercent: tipPercent === 'custom' ? 'custom' : tipPercent * 100 + '%',
+        tipAmount: tipAmount.toFixed(2),
       }, { feature: 'checkout' });
 
       // 1. Create order via checkout API
@@ -101,7 +111,8 @@ export function useCheckoutController() {
         customerName: customerName || undefined,
         customerNotes: notes || undefined,
         paymentMethod,
-        tipPercent: tipPercent > 0 ? tipPercent : undefined,
+        // Send tip as percentage if using %, or as fixed amount if custom
+        tipPercent: (tipPercent !== 'custom' && tipPercent > 0) ? tipPercent : undefined,
       }
 
       const order = await checkoutApi.checkout(checkoutRequest)
@@ -129,8 +140,8 @@ export function useCheckoutController() {
 
       // 5. Navigate based on payment method
       if (paymentMethod === 'SEPAY_QR') {
-        // Go to payment page to show QR
-        router.push(`/payment?orderId=${order.id}`)
+        // Go to payment page to show QR with payment method parameter
+        router.push(`/payment?orderId=${order.id}&paymentMethod=${paymentMethod}`)
       } else {
         // BILL_TO_TABLE - go directly to order tracking
         router.push(`/orders/${order.id}`)

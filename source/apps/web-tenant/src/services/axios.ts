@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 
 export const api = axios.create({
   baseURL,
-  timeout: 15000,
+  timeout: 30000, // 30s for registration with seed data
   headers: {
     'Content-Type': 'application/json',
   },
@@ -203,8 +203,11 @@ api.interceptors.response.use(
 
     const originalRequest = error.config as TrackedRequestConfig & { _retry?: boolean };
 
-    // Handle 401 errors - try to refresh token
-    if (error?.response?.status === 401 && typeof window !== 'undefined' && !originalRequest._retry) {
+    // Skip refresh logic for the refresh endpoint itself to avoid infinite loop
+    const isRefreshRequest = originalRequest?.url?.includes('/auth/refresh');
+
+    // Handle 401 errors - try to refresh token (but not for refresh endpoint)
+    if (error?.response?.status === 401 && typeof window !== 'undefined' && !originalRequest._retry && !isRefreshRequest) {
       if (isRefreshing) {
         // Queue the request while we're refreshing
         return new Promise((resolve, reject) => {
@@ -232,15 +235,23 @@ api.interceptors.response.use(
 
         if (!refreshToken) {
           logger.warn('[axios] No refresh token found, clearing auth state');
+          isRefreshing = false;
           localStorage.removeItem('authToken');
           sessionStorage.removeItem('authToken');
+          // Clear cookies with all possible attributes to ensure removal
           document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
           document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           processQueue(error, null);
           
-          if (!window.location.pathname.includes('/login')) {
-            logger.log('[axios] Redirecting to login page...');
-            window.location.href = '/auth/login';
+          // Redirect to home (/) to allow user to login or signup
+          const isPublicPage = window.location.pathname.startsWith('/auth/') || 
+                               window.location.pathname === '/' ||
+                               window.location.pathname === '/home';
+          if (!isPublicPage) {
+            logger.log('[axios] No refresh token, redirecting to home...');
+            window.location.href = '/';
           }
           reject(error);
           return;
@@ -276,28 +287,57 @@ api.interceptors.response.use(
             logger.error('[axios] Token refresh failed:', refreshError);
             localStorage.removeItem('authToken');
             sessionStorage.removeItem('authToken');
+            // Clear cookies with all possible attributes to ensure removal
             document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
             document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+            document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
             processQueue(refreshError, null);
 
-            if (!window.location.pathname.includes('/login')) {
-              logger.log('[axios] Refresh failed, redirecting to login page...');
-              window.location.href = '/auth/login';
+            // Redirect to home (/) to allow user to login or signup
+            const isPublicPage = window.location.pathname.startsWith('/auth/') || 
+                                 window.location.pathname === '/' ||
+                                 window.location.pathname === '/home';
+            if (!isPublicPage) {
+              logger.warn('[axios] Refresh failed, redirecting to home...');
+              // Use replace to ensure redirect happens and prevent back navigation to broken state
+              window.location.replace('/');
+              return; // Stop execution after redirect
             }
             reject(refreshError);
+          })
+          .finally(() => {
+            isRefreshing = false;
           });
       });
     }
 
     if (error?.response?.status === 401 && typeof window !== 'undefined') {
-      logger.warn('[axios] 401 Unauthorized - Token may be invalid or expired');
+      logger.warn('[axios] 401 Unauthorized - Token may be invalid or expired, URL:', originalRequest?.url);
+      logger.warn('[axios] isRefreshRequest:', isRefreshRequest, 'originalRequest._retry:', originalRequest?._retry);
+      
       // Clear from both storages
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
-        logger.log('[axios] Redirecting to login page...');
-        // window.location.href = '/login';
+      // Clear cookies with all possible attributes to ensure removal
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      
+      logger.warn('[axios] Cleared all auth tokens and cookies');
+      
+      // Redirect to home for any 401 (refresh failed or other auth error)
+      const isPublicPage = window.location.pathname.startsWith('/auth/') || 
+                           window.location.pathname === '/' ||
+                           window.location.pathname === '/home';
+      
+      logger.warn('[axios] Current pathname:', window.location.pathname, 'isPublicPage:', isPublicPage);
+      
+      if (!isPublicPage) {
+        logger.warn('[axios] Redirecting to home NOW...');
+        window.location.replace('/');
+        return Promise.reject(error); // Return immediately after redirect
       }
     }
     // Ensure we reject with an Error instance, not a plain object or undefined

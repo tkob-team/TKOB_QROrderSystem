@@ -2,7 +2,8 @@
  * Checkout Feature - Type Definitions
  */
 
-export type PaymentMethod = 'card' | 'counter'
+// Payment method types matching backend enum
+export type PaymentMethod = 'BILL_TO_TABLE' | 'SEPAY_QR'
 
 export type CheckoutFormData = {
   name: string

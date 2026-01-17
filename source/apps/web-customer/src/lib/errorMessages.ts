@@ -1,5 +1,6 @@
 /**
  * User-friendly error message mapping
+ * Uses centralized English text constants
  */
 
 import {
@@ -12,24 +13,25 @@ import {
   NetworkError,
   BusinessError,
 } from './errors'
+import { ERROR_TEXT } from '@/constants/text'
 
 export const ERROR_MESSAGES = {
   // Network errors
-  NETWORK_ERROR: 'Mất kết nối. Vui lòng kiểm tra internet.',
-  TIMEOUT: 'Yêu cầu quá lâu. Vui lòng thử lại.',
+  NETWORK_ERROR: ERROR_TEXT.networkError,
+  TIMEOUT: ERROR_TEXT.serviceUnavailable,
   
   // API errors
-  NOT_FOUND: 'Không tìm thấy.',
-  UNAUTHORIZED: 'Vui lòng đăng nhập để tiếp tục.',
-  FORBIDDEN: 'Bạn không có quyền truy cập.',
-  SERVER_ERROR: 'Có lỗi xảy ra. Vui lòng thử lại.',
-  VALIDATION_ERROR: 'Dữ liệu không hợp lệ.',
+  NOT_FOUND: ERROR_TEXT.pageNotFound,
+  UNAUTHORIZED: ERROR_TEXT.accessDenied,
+  FORBIDDEN: ERROR_TEXT.accessDenied,
+  SERVER_ERROR: ERROR_TEXT.serverError,
+  VALIDATION_ERROR: ERROR_TEXT.validationError,
   
   // Business errors
-  ITEM_NOT_AVAILABLE: 'Món ăn không còn.',
-  INVALID_QR: 'Mã QR không hợp lệ.',
-  PAYMENT_FAILED: 'Thanh toán thất bại.',
-  ORDER_FAILED: 'Đặt hàng thất bại.',
+  ITEM_NOT_AVAILABLE: ERROR_TEXT.itemNotAvailable,
+  INVALID_QR: ERROR_TEXT.invalidQR,
+  PAYMENT_FAILED: ERROR_TEXT.paymentFailed,
+  ORDER_FAILED: ERROR_TEXT.orderFailed,
 } as const
 
 /**

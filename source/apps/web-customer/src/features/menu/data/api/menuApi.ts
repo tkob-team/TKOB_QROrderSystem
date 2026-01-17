@@ -75,7 +75,7 @@ function transformMenuItem(dto: any, categoryName: string = 'Unknown'): MenuItem
 export const menuApi: IMenuAdapter = {
   /**
    * Get public menu (customer-facing)
-   * Uses session cookie for authentication
+   * Uses session cookie (table_session_id) for tenant context
    */
   async getPublicMenu(): Promise<ApiResponse<{ items: MenuItem[]; categories: string[] }>> {
     const response = await publicMenuControllerGetPublicMenu();
@@ -95,14 +95,14 @@ export const menuApi: IMenuAdapter = {
 
   /**
    * Get single menu item by ID
+   * Uses public endpoint with session cookie authentication
    */
   async getMenuItem(id: string): Promise<ApiResponse<MenuItem>> {
-    const item = await menuItemsControllerFindOne(id);
-
-    return {
-      success: true,
-      data: transformMenuItem(item, 'Unknown'),
-    };
+    // Call public endpoint directly instead of generated function
+    // because generated function uses protected endpoint with JWT
+    const { MenuAdapter } = await import('./menu.adapter');
+    const adapter = new MenuAdapter();
+    return adapter.getMenuItem(id);
   },
 
   /**

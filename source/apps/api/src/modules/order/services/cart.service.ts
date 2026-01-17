@@ -8,13 +8,20 @@ import {
 import { PrismaService } from '@/database/prisma.service';
 import { $Enums } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import {
+  TenantService,
+  TenantPricingSettings,
+} from '@/modules/tenant/services/tenant.service';
 
 @Injectable()
 export class CartService {
   private readonly logger = new Logger(CartService.name);
   private readonly CART_EXPIRY_HOURS = 24;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantService: TenantService,
+  ) {}
 
   /**
    * Get or create cart for a table session
@@ -90,7 +97,9 @@ export class CartService {
     // 2. Validate modifiers
     const validatedModifiers = this.validateAndEnrichModifiers(menuItem, dto.modifiers || []);
 
-    // 3. Calculate unit price
+    // 3. Calculate unit price (all in USD cents)
+    // Note: Both menuItem.price and priceDelta MUST be in USD cents
+    // Use currency.util.ts convertUsdToVnd() when displaying VND
     const modifiersTotal = validatedModifiers.reduce((sum, m) => sum + m.priceDelta, 0);
     const unitPrice = Number(menuItem.price) + modifiersTotal;
 
@@ -146,6 +155,9 @@ export class CartService {
     tableId: string,
     sessionId?: string,
   ): Promise<CartResponseDto> {
+    // Lấy pricing settings từ tenant
+    const pricingSettings = await this.tenantService.getPricingSettings(tenantId);
+
     const cart = await this.prisma.cart.findFirst({
       where: {
         tenantId,
@@ -174,12 +186,17 @@ export class CartService {
         items: [],
         subtotal: 0,
         tax: 0,
+        taxRate: pricingSettings.tax.enabled ? pricingSettings.tax.rate : 0,
+        serviceCharge: 0,
+        serviceChargeRate: pricingSettings.serviceCharge.enabled
+          ? pricingSettings.serviceCharge.rate
+          : 0,
         total: 0,
         itemCount: 0,
       };
     }
 
-    return this.buildCartResponse(cart);
+    return this.buildCartResponse(cart, pricingSettings);
   }
 
   /**
@@ -299,13 +316,16 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    return this.buildCartResponse(cart);
+    // Lấy pricing settings từ tenant
+    const pricingSettings = await this.tenantService.getPricingSettings(cart.tenantId);
+
+    return this.buildCartResponse(cart, pricingSettings);
   }
 
   /**
    * Build cart response DTO from cart data
    */
-  private buildCartResponse(cart: any): CartResponseDto {
+  private buildCartResponse(cart: any, pricingSettings: TenantPricingSettings): CartResponseDto {
     const items = cart.items.map((item: any) => {
       const itemTotal = Number(item.unitPrice) * item.quantity;
       return {
@@ -321,15 +341,30 @@ export class CartService {
     });
 
     const subtotal = items.reduce((sum, item) => sum + item.itemTotal, 0);
-    const tax = 0; // Can add tax calculation later
-    const total = subtotal + tax;
+
+    // Calculate tax from tenant settings
+    const taxRate = pricingSettings.tax.enabled ? pricingSettings.tax.rate : 0;
+    const tax = pricingSettings.tax.enabled ? subtotal * (taxRate / 100) : 0;
+
+    // Calculate service charge from tenant settings
+    const serviceChargeRate = pricingSettings.serviceCharge.enabled
+      ? pricingSettings.serviceCharge.rate
+      : 0;
+    const serviceCharge = pricingSettings.serviceCharge.enabled
+      ? subtotal * (serviceChargeRate / 100)
+      : 0;
+
+    const total = subtotal + tax + serviceCharge;
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return {
       items,
-      subtotal: Math.round(subtotal),
-      tax: Math.round(tax),
-      total: Math.round(total),
+      subtotal: Number(subtotal.toFixed(2)),
+      tax: Number(tax.toFixed(2)),
+      taxRate,
+      serviceCharge: Number(serviceCharge.toFixed(2)),
+      serviceChargeRate,
+      total: Number(total.toFixed(2)),
       itemCount,
     };
   }

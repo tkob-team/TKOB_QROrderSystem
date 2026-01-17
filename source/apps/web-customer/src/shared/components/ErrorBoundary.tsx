@@ -1,12 +1,14 @@
 /**
  * Error Boundary Component
  * Catches React errors and displays fallback UI
+ * Uses centralized English text constants
  */
 
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { ERROR_TEXT, COMMON_TEXT } from '@/constants/text';
 
 interface Props {
   children: ReactNode;
@@ -56,17 +58,17 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             
             <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Đã có lỗi xảy ra
+              {ERROR_TEXT.somethingWentWrong}
             </h1>
             
             <p className="text-gray-500 mb-6">
-              Xin lỗi, đã có lỗi không mong muốn. Vui lòng thử lại hoặc quay về trang chủ.
+              {ERROR_TEXT.internalErrorDesc}
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mb-6 text-left">
                 <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-                  Chi tiết lỗi (dev only)
+                  Error details (dev only)
                 </summary>
                 <pre className="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-40">
                   {this.state.error.message}
@@ -80,17 +82,19 @@ export class ErrorBoundary extends Component<Props, State> {
               <button
                 onClick={this.handleRetry}
                 className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+                aria-label="Retry after error"
               >
                 <RefreshCw className="w-4 h-4" />
-                Thử lại
+                {COMMON_TEXT.retry}
               </button>
               
               <button
                 onClick={this.handleGoHome}
                 className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+                aria-label="Go to home page"
               >
                 <Home className="w-4 h-4" />
-                Trang chủ
+                {COMMON_TEXT.home}
               </button>
             </div>
           </div>

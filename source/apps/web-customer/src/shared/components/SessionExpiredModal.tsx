@@ -6,7 +6,8 @@
 'use client';
 
 import React from 'react';
-import { Clock, QrCode, X } from 'lucide-react';
+import { Clock, QrCode } from 'lucide-react';
+import { ERROR_TEXT } from '@/constants/text';
 
 interface SessionExpiredModalProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ interface SessionExpiredModalProps {
 export function SessionExpiredModal({
   isOpen,
   onScanAgain,
-  tenantName = 'Nhà hàng',
+  tenantName = 'Restaurant',
 }: SessionExpiredModalProps) {
   if (!isOpen) return null;
 
@@ -31,28 +32,29 @@ export function SessionExpiredModal({
 
         {/* Title */}
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          Phiên đã hết hạn
+          {ERROR_TEXT.sessionExpired}
         </h2>
 
         {/* Description */}
         <p className="text-gray-500 mb-6">
-          Phiên đặt món của bạn tại {tenantName} đã hết hạn. Vui lòng quét lại mã QR trên bàn để tiếp tục.
+          {ERROR_TEXT.sessionExpiredDesc.replace('{tenantName}', tenantName)}
         </p>
 
         {/* Actions */}
         <div className="space-y-3">
           <button
             onClick={onScanAgain}
-            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            aria-label={ERROR_TEXT.scanQRAgain}
           >
             <QrCode className="w-5 h-5" />
-            Quét lại mã QR
+            {ERROR_TEXT.scanQRAgain}
           </button>
         </div>
 
         {/* Help text */}
         <p className="mt-4 text-xs text-gray-400">
-          Nếu cần hỗ trợ, vui lòng liên hệ nhân viên phục vụ.
+          {ERROR_TEXT.contactSupport}
         </p>
       </div>
     </div>

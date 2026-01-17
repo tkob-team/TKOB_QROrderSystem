@@ -14,8 +14,12 @@ import { logError } from '@/shared/logging/logger';
  * - Handles 401 errors → Redirect to invalid-qr page
  */
 function createAPIClient(): AxiosInstance {
+  // Always append /api/v1 to base URL for consistency
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  const apiUrl = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`;
+  
   const client = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1',
+    baseURL: apiUrl,
     timeout: 10000,
     withCredentials: true,  // Enable cookies (table_session_id)
     headers: {

@@ -2,7 +2,6 @@
 
 import { CheckCircle } from 'lucide-react'
 import { useState } from 'react'
-import { LanguageSwitcher } from '@/shared/components/common/LanguageSwitcher'
 import type { Language } from '@/types'
 import { useAuthController } from '../../hooks'
 import { AUTH_TEXT } from '../../model'
@@ -16,7 +15,6 @@ export function EmailVerificationSuccessPage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
       <div className="sticky top-0 z-10 bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
         <div className="flex items-center justify-end">
-          <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />
         </div>
       </div>
 

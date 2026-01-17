@@ -22,6 +22,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
 
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [selectedToppings, setSelectedToppings] = useState<string[]>([])
+  const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string[]>>({}) // groupId -> optionIds[]
   const [specialInstructions, setSpecialInstructions] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [reviewPage, setReviewPage] = useState(1)
@@ -64,6 +65,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     if (!item) return 0
     let total = item.basePrice
 
+    // Legacy: sizes
     if (selectedSize && item.sizes) {
       const size = item.sizes.find((s) => s.size === selectedSize)
       if (size) {
@@ -71,6 +73,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
       }
     }
 
+    // Legacy: toppings
     if (item.toppings) {
       selectedToppings.forEach((toppingId) => {
         const topping = item.toppings!.find((t) => t.id === toppingId)
@@ -80,8 +83,21 @@ export function useItemDetailController(itemId: string): ItemDetailController {
       })
     }
 
+    // New: modifier groups
+    if (item.modifierGroups) {
+      item.modifierGroups.forEach(group => {
+        const selected = selectedModifiers[group.id] || []
+        selected.forEach(optionId => {
+          const option = group.options.find(o => o.id === optionId)
+          if (option) {
+            total += option.priceDelta
+          }
+        })
+      })
+    }
+
     return total * quantity
-  }, [item, selectedSize, selectedToppings, quantity])
+  }, [item, selectedSize, selectedToppings, selectedModifiers, quantity])
 
   const toggleTopping = (toppingId: string) => {
     setSelectedToppings((prev) =>
@@ -91,21 +107,108 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     )
   }
 
+  const toggleModifier = (groupId: string, optionId: string, maxChoices?: number) => {
+    setSelectedModifiers((prev) => {
+      const current = prev[groupId] || []
+      const isSelected = current.includes(optionId)
+      
+      if (isSelected) {
+        // Deselect
+        return {
+          ...prev,
+          [groupId]: current.filter(id => id !== optionId)
+        }
+      } else {
+        // Select - check maxChoices
+        if (maxChoices === 1) {
+          // Radio behavior - replace
+          return {
+            ...prev,
+            [groupId]: [optionId]
+          }
+        } else if (maxChoices && current.length >= maxChoices) {
+          // Max reached - don't add
+          toast.warning(`You can only select up to ${maxChoices} options`)
+          return prev
+        } else {
+          // Add
+          return {
+            ...prev,
+            [groupId]: [...current, optionId]
+          }
+        }
+      }
+    })
+  }
+
   const addToCart = () => {
     if (!item) return
+
+    // Validate required modifier groups
+    if (item.modifierGroups && item.modifierGroups.length > 0) {
+      const errors: string[] = []
+      
+      for (const group of item.modifierGroups) {
+        const selected = selectedModifiers[group.id] || []
+        
+        if (group.required && selected.length === 0) {
+          errors.push(`Please select ${group.name}`)
+        } else if (selected.length < group.minChoices) {
+          errors.push(`Please select at least ${group.minChoices} option(s) for ${group.name}`)
+        } else if (group.maxChoices && selected.length > group.maxChoices) {
+          errors.push(`You can only select up to ${group.maxChoices} option(s) for ${group.name}`)
+        }
+      }
+      
+      if (errors.length > 0) {
+        // Show first error prominently
+        toast.error(errors[0], {
+          duration: 4000,
+          description: errors.length > 1 ? `${errors.length - 1} more validation error(s)` : undefined
+        })
+        return
+      }
+    }
+
+    // Convert selected modifiers to API format
+    const modifiers = item.modifierGroups?.flatMap(group => 
+      (selectedModifiers[group.id] || []).map(optionId => ({
+        groupId: group.id,
+        optionId
+      }))
+    )
+
+    console.log('[DEBUG] Add to cart:', {
+      menuItemId: item.id,
+      quantity,
+      modifiers,
+      selectedModifiers,
+      modifierGroups: item.modifierGroups
+    })
 
     addItem({
       menuItemId: item.id,
       quantity,
-      // Convert size/toppings to modifiers format if needed
-      // For now, using notes field for special instructions
+      modifiers: modifiers && modifiers.length > 0 ? modifiers : undefined,
       notes: specialInstructions || undefined,
     })
+    
     toast.success(`${item.name} added to cart!`)
     router.back()
   }
 
   const quickAdd = (recommendedItem: MenuItem) => {
+    // Check if item has required modifiers - navigate to detail page
+    if (recommendedItem.modifierGroups && recommendedItem.modifierGroups.length > 0) {
+      const hasRequired = recommendedItem.modifierGroups.some(g => g.required)
+      if (hasRequired) {
+        toast.info(`Please select options for ${recommendedItem.name}`)
+        router.push(`/menu/${recommendedItem.id}`)
+        return
+      }
+    }
+    
+    // No required modifiers - can add directly
     addItem({
       menuItemId: recommendedItem.id,
       quantity: 1,
@@ -143,6 +246,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     relatedItems,
     selectedSize,
     selectedToppings,
+    selectedModifiers,
     specialInstructions,
     quantity,
     reviewPage,
@@ -158,6 +262,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     relatedItems,
     selectedSize,
     selectedToppings,
+    selectedModifiers,
     specialInstructions,
     quantity,
     reviewPage,
@@ -176,6 +281,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     actions: {
       setSelectedSize,
       toggleTopping,
+      toggleModifier,
       setSpecialInstructions,
       setQuantity,
       incrementQuantity,

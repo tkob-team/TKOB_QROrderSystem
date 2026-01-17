@@ -13,6 +13,9 @@ interface CartState {
   items: CartItemResponse[];
   subtotal: number;
   tax: number;
+  taxRate: number;
+  serviceCharge: number;
+  serviceChargeRate: number;
   total: number;
   itemCount: number;
   
@@ -38,6 +41,9 @@ export const useCartStore = create<CartState>()((set, get) => ({
   items: [],
   subtotal: 0,
   tax: 0,
+  taxRate: 0,
+  serviceCharge: 0,
+  serviceChargeRate: 0,
   total: 0,
   itemCount: 0,
   isLoading: false,
@@ -56,10 +62,24 @@ export const useCartStore = create<CartState>()((set, get) => ({
     
     try {
       const cart = await cartApi.getCart();
+      
+      // Debug log to check tax calculation
+      console.log('Cart API Response:', {
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        taxRate: cart.taxRate,
+        serviceCharge: cart.serviceCharge,
+        serviceChargeRate: cart.serviceChargeRate,
+        total: cart.total,
+      });
+      
       set({
         items: cart.items,
         subtotal: cart.subtotal,
         tax: cart.tax,
+        taxRate: cart.taxRate ?? 0,
+        serviceCharge: cart.serviceCharge ?? 0,
+        serviceChargeRate: cart.serviceChargeRate ?? 0,
         total: cart.total,
         itemCount: cart.itemCount,
         isLoading: false,
@@ -89,10 +109,21 @@ export const useCartStore = create<CartState>()((set, get) => ({
       
       const cart = await cartApi.addItem(request);
       
+      // Debug log
+      console.log('Cart after adding item:', {
+        subtotal: cart.subtotal,
+        tax: cart.tax,
+        taxRate: cart.taxRate,
+        total: cart.total,
+      });
+      
       set({
         items: cart.items,
         subtotal: cart.subtotal,
         tax: cart.tax,
+        taxRate: cart.taxRate ?? 0,
+        serviceCharge: cart.serviceCharge ?? 0,
+        serviceChargeRate: cart.serviceChargeRate ?? 0,
         total: cart.total,
         itemCount: cart.itemCount,
         isLoading: false,
@@ -136,6 +167,9 @@ export const useCartStore = create<CartState>()((set, get) => ({
         items: cart.items,
         subtotal: cart.subtotal,
         tax: cart.tax,
+        taxRate: cart.taxRate ?? 0,
+        serviceCharge: cart.serviceCharge ?? 0,
+        serviceChargeRate: cart.serviceChargeRate ?? 0,
         total: cart.total,
         itemCount: cart.itemCount,
         isLoading: false,
@@ -168,6 +202,9 @@ export const useCartStore = create<CartState>()((set, get) => ({
         items: cart.items,
         subtotal: cart.subtotal,
         tax: cart.tax,
+        taxRate: cart.taxRate ?? 0,
+        serviceCharge: cart.serviceCharge ?? 0,
+        serviceChargeRate: cart.serviceChargeRate ?? 0,
         total: cart.total,
         itemCount: cart.itemCount,
         isLoading: false,
@@ -204,6 +241,9 @@ export const useCartStore = create<CartState>()((set, get) => ({
         items: [],
         subtotal: 0,
         tax: 0,
+        taxRate: 0,
+        serviceCharge: 0,
+        serviceChargeRate: 0,
         total: 0,
         itemCount: 0,
         isLoading: false,

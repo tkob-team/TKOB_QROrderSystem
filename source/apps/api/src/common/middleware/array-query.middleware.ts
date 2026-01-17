@@ -9,19 +9,24 @@ import { Request, Response, NextFunction } from 'express';
 export class ArrayQueryMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     if (req.query) {
-      const transformedQuery: any = {};
+      const keysToTransform: string[] = [];
       
-      for (const [key, value] of Object.entries(req.query)) {
-        // Check if key ends with [] (array notation)
+      // Find keys that need transformation
+      for (const key of Object.keys(req.query)) {
         if (key.endsWith('[]')) {
-          const cleanKey = key.slice(0, -2); // Remove []
-          transformedQuery[cleanKey] = Array.isArray(value) ? value : [value];
-        } else {
-          transformedQuery[key] = value;
+          keysToTransform.push(key);
         }
       }
       
-      req.query = transformedQuery;
+      // Transform keys in-place
+      for (const key of keysToTransform) {
+        const cleanKey = key.slice(0, -2); // Remove []
+        const value = req.query[key];
+        if (value !== undefined) {
+          delete req.query[key];
+          req.query[cleanKey] = Array.isArray(value) ? value : [value];
+        }
+      }
     }
     
     next();

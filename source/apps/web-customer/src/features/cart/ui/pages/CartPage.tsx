@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { CartItemCard } from '@/shared/components/cards/CartItemCard'
 import { EmptyState } from '@/shared/components/common/EmptyState'
+import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { useCartController } from '../../hooks'
 import { CartConfirmModal } from '../components/modals/CartConfirmModal'
 import type { CartItemResponse } from '../../data/types'
+import { colors, shadows, transitions, typography } from '@/styles/design-tokens'
 
 export function CartPage() {
   const router = useRouter()
@@ -47,18 +49,44 @@ export function CartPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
+    <PageTransition>
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.background.secondary }}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
+      <div 
+        className="sticky top-0 z-10 bg-white border-b p-4" 
+        style={{ 
+          borderColor: colors.border.DEFAULT,
+          boxShadow: shadows.header,
+        }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--gray-100)]"
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{
+              transition: transitions.fast,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.neutral[100];
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            aria-label="Go back"
           >
-            <ArrowLeft className="w-5 h-5" style={{ color: 'var(--gray-900)' }} />
+            <ArrowLeft className="w-5 h-5" style={{ color: colors.text.primary }} />
           </button>
           <div className="flex-1">
-            <h2 style={{ color: 'var(--gray-900)' }}>Your order</h2>
+            <h2 
+              style={{ 
+                color: colors.text.primary,
+                fontFamily: typography.fontFamily.display,
+                fontSize: '1.25rem',
+                fontWeight: '600',
+              }}
+            >
+              Your order
+            </h2>
           </div>
         </div>
       </div>
@@ -91,35 +119,83 @@ export function CartPage() {
             </div>
 
             {/* Order Summary - Collapsible Accordion */}
-            <div className="mt-4 bg-white rounded-xl border" style={{ borderColor: 'var(--gray-200)' }}>
+            <div 
+              className="mt-4 bg-white rounded-xl border" 
+              style={{ 
+                borderColor: colors.border.light,
+                boxShadow: shadows.card,
+              }}
+            >
               <button
                 onClick={() => setSummaryExpanded(!summaryExpanded)}
                 className="w-full p-4 flex items-center justify-between"
+                style={{
+                  transition: transitions.default,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.neutral[50];
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+                aria-expanded={summaryExpanded}
+                aria-label="Toggle order summary"
               >
-                <h3 style={{ color: 'var(--gray-900)' }}>Order summary</h3>
+                <h3 
+                  style={{ 
+                    color: colors.text.primary,
+                    fontFamily: typography.fontFamily.display,
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                  }}
+                >
+                  Order summary
+                </h3>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`}
-                  style={{ color: 'var(--gray-600)' }}
+                  className={`w-5 h-5`}
+                  style={{ 
+                    color: colors.text.muted,
+                    transform: summaryExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: transitions.default,
+                  }}
                 />
               </button>
               
               {summaryExpanded && (
-                <div className="px-4 pb-4 space-y-2" style={{ fontSize: '14px' }}>
-                  <div className="flex justify-between" style={{ color: 'var(--gray-700)' }}>
+                <div 
+                  className="px-4 pb-4 space-y-2" 
+                  style={{ 
+                    fontSize: '14px',
+                    animation: 'slideDown 0.2s ease-out',
+                  }}
+                >
+                  <div className="flex justify-between" style={{ color: colors.text.secondary }}>
                     <span>Subtotal</span>
                     <span>${totals.subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between" style={{ color: 'var(--gray-700)' }}>
-                    <span>Tax (10%)</span>
-                    <span>${totals.tax.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between" style={{ color: 'var(--gray-700)' }}>
-                    <span>Service charge (5%)</span>
-                    <span>${totals.serviceCharge.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t pt-2 mt-2 flex justify-between" style={{ borderColor: 'var(--gray-200)', color: 'var(--gray-900)' }}>
+                  {totals.taxRate > 0 && (
+                    <div className="flex justify-between" style={{ color: colors.text.secondary }}>
+                      <span>Tax ({totals.taxRate}%)</span>
+                      <span>${totals.tax.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {totals.serviceChargeRate > 0 && (
+                    <div className="flex justify-between" style={{ color: colors.text.secondary }}>
+                      <span>Service charge ({totals.serviceChargeRate}%)</span>
+                      <span>${totals.serviceCharge.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div 
+                    className="border-t pt-2 mt-2 flex justify-between" 
+                    style={{ 
+                      borderColor: colors.border.DEFAULT,
+                      color: colors.text.primary,
+                      fontWeight: '600',
+                      fontFamily: typography.fontFamily.display,
+                    }}
+                  >
                     <span>Total</span>
-                    <span>${totals.total.toFixed(2)}</span>
+                    <span style={{ color: colors.primary[600] }}>${totals.total.toFixed(2)}</span>
                   </div>
                 </div>
               )}
@@ -129,12 +205,33 @@ export function CartPage() {
             <div className="mt-4">
               <button
                 onClick={handleCheckout}
-                className="w-full py-3 px-6 rounded-full transition-all hover:shadow-md active:scale-95"
+                className="w-full py-3 px-6 rounded-full"
                 style={{
-                  backgroundColor: 'var(--orange-500)',
+                  backgroundColor: colors.primary[600],
                   color: 'white',
                   minHeight: '48px',
+                  boxShadow: shadows.button,
+                  transition: transitions.fast,
+                  fontWeight: '600',
+                  fontFamily: typography.fontFamily.body,
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.primary[700];
+                  e.currentTarget.style.boxShadow = shadows.buttonHover;
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.primary[600];
+                  e.currentTarget.style.boxShadow = shadows.button;
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                aria-label="Proceed to checkout"
               >
                 Go to checkout
               </button>
@@ -145,5 +242,6 @@ export function CartPage() {
 
       <CartConfirmModal open={isConfirmOpen} onConfirm={handleConfirmRemove} onCancel={handleCancelRemove} />
     </div>
+    </PageTransition>
   )
 }

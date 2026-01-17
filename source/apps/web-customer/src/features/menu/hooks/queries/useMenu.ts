@@ -71,9 +71,9 @@ interface UseMenuReturn {
  * Feature hook to fetch public menu (session-based)
  * Uses feature-owned data layer (MenuDataFactory)
  * 
- * No token needed - uses HttpOnly cookie automatically
+ * No parameters needed - uses HttpOnly session cookie (table_session_id) automatically
  */
-export function useMenu(tenantId?: string): UseMenuReturn {
+export function useMenu(): UseMenuReturn {
   const [items, setItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -82,15 +82,9 @@ export function useMenu(tenantId?: string): UseMenuReturn {
   const fetchMenu = async () => {
     const startTime = Date.now()
     try {
-      if (!tenantId) {
-        // Wait until tenant context is available (session load)
-        setIsLoading(false)
-        return
-      }
-      
       setIsLoading(true)
       setError(null)
-      log('data', 'Fetching menu', { tenantId: maskId(tenantId || '') }, { feature: 'menu', dedupe: true, dedupeTtlMs: 10000 });
+      log('data', 'Fetching menu via session cookie', {}, { feature: 'menu', dedupe: true, dedupeTtlMs: 10000 });
       const strategy = MenuDataFactory.getStrategy()
       const response = await strategy.getPublicMenu()
 
@@ -112,7 +106,7 @@ export function useMenu(tenantId?: string): UseMenuReturn {
 
   useEffect(() => {
     fetchMenu()
-  }, [tenantId])
+  }, [])
 
   return {
     data: items,

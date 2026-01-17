@@ -30,7 +30,7 @@ export class KdsController {
   @Roles(UserRole.KITCHEN, UserRole.STAFF, UserRole.OWNER)
   @ApiOperation({
     summary: 'Get active orders for KDS (categorized by priority)',
-    description: 'Returns orders in PREPARING status, sorted by elapsed time and priority',
+    description: 'Returns orders in RECEIVED (pending acceptance) and PREPARING (cooking) status, sorted by elapsed time and priority',
   })
   @ApiResponse({
     status: 200,

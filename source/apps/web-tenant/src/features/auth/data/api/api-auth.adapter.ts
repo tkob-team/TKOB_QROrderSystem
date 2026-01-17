@@ -121,11 +121,10 @@ export class ApiAuthAdapter implements IAuthAdapter {
       });
 
       // customInstance already unwraps { success, data } to just return data
-      const responseData = response;
-      logger.debug('[auth] SIGNUP_SUBMIT_RESPONSE_RECEIVED', { hasRegistrationToken: !!responseData?.registrationToken });
+      logger.debug('[auth] SIGNUP_SUBMIT_RESPONSE_RECEIVED', { hasRegistrationToken: !!submitResponse?.registrationToken });
 
       // Backend should return registrationToken, message, and expiresIn
-      const { registrationToken, message, expiresIn } = responseData;
+      const { registrationToken, message, expiresIn } = submitResponse;
 
       logger.info('[auth] SIGNUP_OTP_SENT');
 

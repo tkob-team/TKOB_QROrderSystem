@@ -1,35 +1,18 @@
 'use client'
 
-import { ArrowLeft, Mail, ArrowRight, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { LanguageSwitcher } from '@/shared/components/common'
-import { Language } from '@/types/common'
+import { Mail, ArrowRight, Loader2 } from 'lucide-react'
 import { useAuthController } from '../../hooks'
 import { AUTH_TEXT } from '../../model'
 import { LoginFormSection } from '../components/forms/LoginFormSection'
+import { AppHeader } from '@/shared/components/layout/AppHeader'
 
 export function LoginPage() {
-  const [language, setLanguage] = useState<Language>('EN')
   const controller = useAuthController()
-  const t = AUTH_TEXT[language]
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={controller.navigateBack}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--gray-100)]"
-            >
-              <ArrowLeft className="w-5 h-5" style={{ color: 'var(--gray-900)' }} />
-            </button>
-            <h2 style={{ color: 'var(--gray-900)' }}>{t.loginTitle}</h2>
-          </div>
-          <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />
-        </div>
-      </div>
+      {/* Header with logo */}
+      <AppHeader />
 
       {/* Content */}
       <div className="flex-1 p-4 pb-8">
@@ -42,7 +25,7 @@ export function LoginPage() {
             <Mail className="w-8 h-8" style={{ color: 'var(--orange-500)' }} />
           </div>
           <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-            {t.loginSubtitle}
+            {AUTH_TEXT.loginSubtitle}
           </p>
         </div>
 
@@ -52,12 +35,12 @@ export function LoginPage() {
           onForgotPassword={controller.navigateToResetPassword}
           isLoading={controller.isLoginLoading}
           textLabels={{
-            emailLabel: t.emailLabel,
-            emailPlaceholder: t.emailPlaceholder,
-            passwordLabel: t.passwordLabel,
-            passwordPlaceholder: t.passwordPlaceholder,
-            forgotPassword: t.forgotPassword,
-            signInButton: t.signInButton,
+            emailLabel: AUTH_TEXT.emailLabel,
+            emailPlaceholder: AUTH_TEXT.emailPlaceholder,
+            passwordLabel: AUTH_TEXT.passwordLabel,
+            passwordPlaceholder: AUTH_TEXT.passwordPlaceholder,
+            forgotPassword: AUTH_TEXT.forgotPassword,
+            signInButton: AUTH_TEXT.signInButton,
           }}
         />
 
@@ -65,7 +48,7 @@ export function LoginPage() {
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px" style={{ backgroundColor: 'var(--gray-300)' }} />
           <span style={{ color: 'var(--gray-500)', fontSize: '13px' }}>
-            {t.orContinueWith}
+            {AUTH_TEXT.orContinueWith}
           </span>
           <div className="flex-1 h-px" style={{ backgroundColor: 'var(--gray-300)' }} />
         </div>
@@ -91,13 +74,13 @@ export function LoginPage() {
                 <path d="M4.58672 11.917C4.16916 10.675 4.16916 9.33008 4.58672 8.08805V5.51233H1.26366C-0.154858 8.33798 -0.154858 11.667 1.26366 14.4927L4.58672 11.917Z" fill="#FBBC04"/>
                 <path d="M10.2 3.95805C11.6253 3.936 13.0033 4.47247 14.036 5.45722L16.8932 2.60218C15.0827 0.904587 12.6787 -0.0287217 10.2 0.000552588C6.41895 0.000552588 2.96137 2.13168 1.26367 5.51234L4.58673 8.08806C5.37752 5.71672 7.59291 3.95805 10.2 3.95805Z" fill="#EA4335"/>
               </svg>
-              <span>{t.continueWithGoogle}</span>
+              <span>{AUTH_TEXT.continueWithGoogle}</span>
             </>
           )}
           {controller.isGoogleLoading && (
             <>
               <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--gray-700)' }} />
-              <span>{t.signingIn}</span>
+              <span>{AUTH_TEXT.signIn}</span>
             </>
           )}
         </button>
@@ -110,28 +93,28 @@ export function LoginPage() {
             className="group inline-flex items-center gap-2 px-4 py-2 transition-colors hover:text-[var(--gray-700)]"
             style={{ color: 'var(--gray-600)', fontSize: '14px' }}
           >
-            <span>{t.continueGuest}</span>
+            <span>{AUTH_TEXT.continueGuest}</span>
             <ArrowRight 
               className="w-4 h-4 transition-transform duration-200 ease-out group-hover:translate-x-1 group-active:translate-x-1" 
               style={{ color: 'var(--gray-600)' }}
             />
           </button>
           <p style={{ color: 'var(--gray-500)', fontSize: '12px', marginTop: '4px' }}>
-            {t.limitedFeatures}
+            {AUTH_TEXT.limitedFeatures}
           </p>
         </div>
 
         {/* Sign Up Link */}
         <div className="mt-6 text-center">
           <span style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-            {t.noAccount}{' '}
+            {AUTH_TEXT.noAccount}{' '}
           </span>
           <button
             onClick={controller.navigateToRegister}
             className="transition-colors"
             style={{ color: 'var(--orange-500)', fontSize: '14px' }}
           >
-            {t.signUp}
+            {AUTH_TEXT.signUp}
           </button>
         </div>
       </div>

@@ -87,7 +87,24 @@ export class MenuItemsService {
     if (!item) {
       throw new NotFoundException(ErrorMessages[ErrorCode.MENU_ITEM_NOT_FOUND]);
     }
-    return item;
+    
+    // Transform modifier groups to flat structure
+    const modifierGroups = (item.modifierGroups ?? []).map(
+      (mg: { modifierGroup: Record<string, any>; displayOrder: number }) => ({
+        ...mg.modifierGroup,
+        displayOrder: mg.displayOrder,
+      }),
+    );
+    
+    // Get primary photo
+    const primaryPhoto =
+      (item.photos ?? []).find((p: any) => p.isPrimary) || (item.photos ?? [])[0];
+    
+    return {
+      ...item,
+      modifierGroups,
+      primaryPhoto: primaryPhoto || null,
+    };
   }
 
   async update(menuItemId: string, dto: UpdateMenuItemDto) {
@@ -192,7 +209,7 @@ export class MenuItemsService {
 
       // Get primary photo
       const primaryPhoto =
-        (item.photo ?? []).find((p: any) => p.isPrimary) || (item.photo ?? [])[0];
+        (item.photos ?? []).find((p: any) => p.isPrimary) || (item.photos ?? [])[0];
 
       categoriesMap.get(categoryId)!.items.push({
         id: item.id,
@@ -201,7 +218,7 @@ export class MenuItemsService {
         price: item.price,
         imageUrl: item.imageUrl || primaryPhoto?.url,
         primaryPhoto: primaryPhoto || null,
-        photos: item.photo || [],
+        photos: item.photos || [],
         tags: item.tags,
         allergens: item.allergens,
         available: item.available,

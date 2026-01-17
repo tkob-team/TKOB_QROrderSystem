@@ -9,7 +9,7 @@ import { MenuSortByEnum, SortOrderEnum } from '../dto/menu-publish.dto';
 export interface MenuItemWithRelations extends MenuItem {
   category?: any;
   modifierGroups?: any[];
-  photo?: any[];
+  photos?: any[];
 }
 
 export interface PublicMenuFilters {
@@ -29,7 +29,7 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
   }
 
   async findByIdWithDetails(itemId: string): Promise<MenuItemWithRelations | null> {
-    return this.prisma.x.menuItem.findUnique({
+    const item = await this.prisma.x.menuItem.findUnique({
       where: { id: itemId },
       include: {
         category: true,
@@ -56,6 +56,24 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
         },
       },
     });
+
+    if (!item) return null;
+
+    // Convert Prisma Decimal to number for priceDelta
+    return {
+      ...item,
+      price: Number(item.price),
+      modifierGroups: item.modifierGroups?.map((mg) => ({
+        ...mg,
+        modifierGroup: {
+          ...mg.modifierGroup,
+          options: mg.modifierGroup.options.map((opt) => ({
+            ...opt,
+            priceDelta: Number(opt.priceDelta),
+          })),
+        },
+      })),
+    } as any;
   }
 
   async attachModifierGroups(itemId: string, modifierGroupIds: string[]) {
@@ -133,7 +151,7 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
       }
     }
 
-    return this.findPaginated(new PaginationDto(filters.page, limit), {
+    const result = await this.findPaginated(new PaginationDto(filters.page, limit), {
       where: {
         tenantId,
         ...(filters.categoryId && filters.categoryId !== 'all' && { categoryId: filters.categoryId }),
@@ -175,6 +193,25 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
       },
       orderBy,
     });
+
+    // Transform Decimal to number for all items
+    return {
+      ...result,
+      data: result.data.map((item: any) => ({
+        ...item,
+        price: Number(item.price),
+        modifierGroups: item.modifierGroups?.map((mg: any) => ({
+          ...mg,
+          modifierGroup: {
+            ...mg.modifierGroup,
+            options: mg.modifierGroup.options.map((opt: any) => ({
+              ...opt,
+              priceDelta: Number(opt.priceDelta),
+            })),
+          },
+        })),
+      })),
+    } as any;
   }
 
   async softDelete(menuItemId: string) {

@@ -2,6 +2,8 @@ import { Plus } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { OptimizedImage } from '@packages/ui';
 import { ChefRecommendationIndicator } from '@/shared/components/indicators/ChefRecommendationIndicator';
+import { formatUSD } from '@/shared/utils/currency';
+import { colors, shadows, transitions } from '@/styles/design-tokens';
 
 interface FoodCardProps {
   item: MenuItem;
@@ -19,8 +21,9 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
   const getBadgeStyles = () => {
     if (item.badge === 'Popular') {
       return {
-        backgroundColor: 'rgba(245, 158, 11, 0.95)', // Amber with slight transparency
+        backgroundColor: colors.accent[600],
         color: 'white',
+        boxShadow: shadows.sm,
       };
     }
     return {};
@@ -28,13 +31,31 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
 
   return (
     <div 
-      className={`bg-white rounded-xl overflow-hidden transition-all max-w-2xl mx-auto ${isAvailable ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed'}`}
+      className={`bg-white rounded-xl overflow-hidden max-w-2xl mx-auto ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
       style={{ 
         borderWidth: '1px', 
-        borderColor: 'var(--gray-200)',
+        borderColor: colors.border.light,
         opacity: isUnavailable ? 0.6 : 1,
+        boxShadow: shadows.card,
+        transition: transitions.default,
+        ...(isAvailable && {
+          ':hover': {
+            boxShadow: shadows.cardHover,
+            transform: 'translateY(-2px)',
+          }
+        })
       }} 
       onClick={() => isAvailable && onAdd(item)}
+      onMouseEnter={(e) => {
+        if (isAvailable) {
+          e.currentTarget.style.boxShadow = shadows.cardHover;
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = shadows.card;
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
     >
       <div className="flex md:flex-row gap-4 p-4">
         {/* Image */}
@@ -76,10 +97,11 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
             <div 
               className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full"
               style={{
-                backgroundColor: 'var(--gray-900)',
+                backgroundColor: colors.neutral[900],
                 color: 'white',
                 fontSize: '10px',
                 fontWeight: '600',
+                boxShadow: shadows.sm,
               }}
             >
               Sold out
@@ -93,7 +115,9 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
             <h3 
               className="text-base md:text-lg font-medium" 
               style={{ 
-                color: isUnavailable ? 'var(--gray-500)' : 'var(--gray-900)',
+                color: isUnavailable ? colors.text.muted : colors.text.primary,
+                fontFamily: "'Playfair Display SC', serif",
+                fontWeight: 600,
               }}
             >
               {item.name}
@@ -103,7 +127,7 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
           <p 
             className="line-clamp-2 text-sm mb-2" 
             style={{ 
-              color: isUnavailable ? 'var(--gray-400)' : 'var(--gray-600)', 
+              color: isUnavailable ? colors.text.light : colors.text.muted,
             }}
           >
             {isUnavailable ? 'Unavailable' : item.description}
@@ -117,8 +141,8 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
                   key={badge}
                   className="px-2 py-0.5 rounded-full text-xs"
                   style={{
-                    backgroundColor: 'var(--emerald-50)',
-                    color: 'var(--emerald-600)',
+                    backgroundColor: colors.success.light,
+                    color: colors.success.dark,
                   }}
                 >
                   {badge}
@@ -132,10 +156,11 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
             <span 
               className="text-base md:text-lg font-semibold"
               style={{ 
-                color: isUnavailable ? 'var(--gray-400)' : 'var(--gray-900)',
+                color: isUnavailable ? colors.text.light : colors.primary[600],
+                fontFamily: "'Playfair Display SC', serif",
               }} 
             >
-              ${item.basePrice.toFixed(2)}
+              {formatUSD(item.basePrice)}
             </span>
             <button
               onClick={(e) => {
@@ -145,12 +170,27 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
                 }
               }}
               disabled={!isAvailable}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isAvailable ? 'hover:shadow-md active:scale-95' : 'cursor-not-allowed'}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center ${isAvailable ? 'active:scale-95' : 'cursor-not-allowed'}`}
               style={{
-                backgroundColor: isAvailable ? 'var(--orange-500)' : 'var(--gray-300)',
+                backgroundColor: isAvailable ? colors.primary[600] : colors.neutral[300],
                 color: 'white',
                 opacity: isAvailable ? 1 : 0.5,
+                boxShadow: isAvailable ? shadows.button : 'none',
+                transition: transitions.fast,
               }}
+              onMouseEnter={(e) => {
+                if (isAvailable) {
+                  e.currentTarget.style.backgroundColor = colors.primary[700];
+                  e.currentTarget.style.boxShadow = shadows.buttonHover;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (isAvailable) {
+                  e.currentTarget.style.backgroundColor = colors.primary[600];
+                  e.currentTarget.style.boxShadow = shadows.button;
+                }
+              }}
+              aria-label={`Add ${item.name} to cart`}
             >
               <Plus className="w-5 h-5" />
             </button>

@@ -2,7 +2,7 @@
 
 import { ArrowRight, ClipboardList, LogIn, CreditCard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useLanguage } from '@/shared/hooks/useLanguage'
+import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { log } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { useOrdersController } from '../../hooks'
@@ -24,10 +24,7 @@ function formatRelativeTime(dateStr: string): string {
 
 export function OrderListPage() {
   const router = useRouter()
-  const { language, setLanguage } = useLanguage()
   const { state, openOrderDetails, handleLogin } = useOrdersController()
-
-  const t = ORDERS_TEXT[language]
 
   const handlePayNow = (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent order detail navigation
@@ -38,11 +35,12 @@ export function OrderListPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--gray-50)' }}>
+    <PageTransition>
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--gray-50)' }}>
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
         <div className="flex items-center justify-between">
-          <h2 style={{ color: 'var(--gray-900)' }}>{t.title}</h2>
+          <h2 style={{ color: 'var(--gray-900)' }}>{ORDERS_TEXT.title}</h2>
         </div>
       </div>
 
@@ -50,7 +48,7 @@ export function OrderListPage() {
         {/* Current Session Orders */}
         <div>
           <h3 className="mb-3" style={{ color: 'var(--gray-900)', fontSize: '16px' }}>
-            {t.currentSession}
+            {ORDERS_TEXT.currentSession}
           </h3>
           {state.currentSessionOrders.length > 0 ? (
             <div className="space-y-2">
@@ -126,30 +124,30 @@ export function OrderListPage() {
           ) : (
             <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
               <ClipboardList className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--gray-400)' }} />
-              <p style={{ color: 'var(--gray-900)' }}>{t.noActiveOrder}</p>
-              <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>{t.noActiveOrderDesc}</p>
+              <p style={{ color: 'var(--gray-900)' }}>{ORDERS_TEXT.noActiveOrder}</p>
+              <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>{ORDERS_TEXT.noActiveOrderDesc}</p>
             </div>
           )}
         </div>
 
         {/* Order History */}
         <div>
-          <h3 className="mb-3" style={{ color: 'var(--gray-900)', fontSize: '16px' }}>{t.orderHistory}</h3>
+          <h3 className="mb-3" style={{ color: 'var(--gray-900)', fontSize: '16px' }}>{ORDERS_TEXT.orderHistory}</h3>
           {!state.isLoggedIn ? (
             <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
               <LogIn className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--gray-400)' }} />
-              <p className="mb-4" style={{ color: 'var(--gray-900)' }}>{t.signInPrompt}</p>
+              <p className="mb-4" style={{ color: 'var(--gray-900)' }}>{ORDERS_TEXT.signInPrompt}</p>
               <button
                 onClick={handleLogin}
                 className="px-6 py-2 rounded-full"
                 style={{ backgroundColor: 'var(--orange-500)', color: 'white' }}
               >
-                {t.signInButton}
+                {ORDERS_TEXT.signInButton}
               </button>
             </div>
           ) : state.orderHistory.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
-              <p style={{ color: 'var(--gray-600)' }}>{t.noPastOrders}</p>
+              <p style={{ color: 'var(--gray-600)' }}>{ORDERS_TEXT.noPastOrders}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -200,5 +198,6 @@ export function OrderListPage() {
         </div>
       </div>
     </div>
+    </PageTransition>
   )
 }

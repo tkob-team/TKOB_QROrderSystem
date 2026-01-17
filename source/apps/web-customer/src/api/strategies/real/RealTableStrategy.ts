@@ -6,17 +6,18 @@ import { ITableStrategy, SessionInfo } from '../interfaces';
 
 export class RealTableStrategy implements ITableStrategy {
   async validateQRToken(token: string): Promise<ApiResponse<{ table: Table; restaurant: Restaurant }>> {
-    const response = await apiClient.post<{ success: boolean; data: ApiResponse<{ table: Table; restaurant: Restaurant }> }>('/api/table/validate-qr', { token });
+    const response = await apiClient.post<{ success: boolean; data: ApiResponse<{ table: Table; restaurant: Restaurant }> }>('/table/validate-qr', { token });
     return response.data.data;
   }
   
   async getCurrentSession(): Promise<SessionInfo> {
-    const response = await apiClient.get<{ success: boolean; data: SessionInfo }>('/api/v1/session');
+    // Remove /api/v1 prefix - apiClient already has baseURL with /api/v1
+    const response = await apiClient.get<{ success: boolean; data: SessionInfo }>('/session');
     return response.data.data;
   }
   
   async getTableInfo(tableId: string): Promise<ApiResponse<Table>> {
-    const response = await apiClient.get<{ success: boolean; data: ApiResponse<Table> }>(`/api/table/${tableId}`);
+    const response = await apiClient.get<{ success: boolean; data: ApiResponse<Table> }>(`/table/${tableId}`);
     return response.data.data;
   }
 }

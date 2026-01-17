@@ -60,6 +60,19 @@ export class OrderController {
     return this.orderService.getTableOrders(tableId);
   }
 
+  @Get('orders/:orderId')
+  @UseGuards(SessionGuard)
+  @Public()
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({ summary: 'Get order by ID (customer view)' })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  async getOrder(
+    @Session() session: SessionData,
+    @Param('orderId') orderId: string,
+  ): Promise<OrderResponseDto> {
+    return this.orderService.getOrderById(orderId);
+  }
+
   @Get('tracking/:orderId')
   @UseGuards(SessionGuard)
   @Public()

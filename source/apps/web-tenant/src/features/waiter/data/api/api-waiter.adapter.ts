@@ -33,11 +33,28 @@ function mapToServiceOrder(order: OrderResponseDto): ServiceOrder {
     id: order.id,
     orderNumber: order.orderNumber,
     table: order.tableNumber || 'Unknown',
-    items: order.items.map(item => ({
-      name: item.name,
-      quantity: item.quantity,
-      modifiers: item.modifiers?.map(m => m.name) || [],
-    })),
+    items: order.items.map(item => {
+      // Parse modifiers from JSON string to array
+      let modifiers: string[] = [];
+      if (item.modifiers) {
+        try {
+          const parsed = typeof item.modifiers === 'string' 
+            ? JSON.parse(item.modifiers) 
+            : item.modifiers;
+          modifiers = Array.isArray(parsed) 
+            ? parsed.map((m: any) => m.optionName || m.name || String(m)) 
+            : [];
+        } catch (e) {
+          console.warn('[waiter] Failed to parse modifiers for item:', item.name, e);
+        }
+      }
+      
+      return {
+        name: item.name,
+        quantity: item.quantity,
+        modifiers,
+      };
+    }),
     status: mapOrderStatus(order.status),
     paymentStatus: order.paymentStatus === 'PAID' ? 'paid' : 'unpaid',
     placedTime: placedTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),

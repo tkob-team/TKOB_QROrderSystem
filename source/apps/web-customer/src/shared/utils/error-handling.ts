@@ -1,7 +1,10 @@
 /**
  * Error Handling Utilities for Frontend
  * Provides user-friendly error messages and retry logic
+ * Uses centralized English text constants
  */
+
+import { ERROR_TEXT } from '@/constants/text'
 
 // Error types
 export enum ErrorType {
@@ -17,18 +20,18 @@ export enum ErrorType {
   UNKNOWN = 'UNKNOWN',
 }
 
-// User-friendly error messages in Vietnamese
+// User-friendly error messages in English
 const ERROR_MESSAGES: Record<ErrorType, string> = {
-  [ErrorType.NETWORK]: 'Không thể kết nối. Vui lòng kiểm tra kết nối mạng và thử lại.',
-  [ErrorType.TIMEOUT]: 'Yêu cầu quá thời gian. Vui lòng thử lại.',
-  [ErrorType.SESSION_EXPIRED]: 'Phiên đã hết hạn. Vui lòng quét lại mã QR.',
-  [ErrorType.PAYMENT_FAILED]: 'Thanh toán không thành công. Vui lòng thử lại hoặc chọn phương thức khác.',
-  [ErrorType.VALIDATION]: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra và thử lại.',
-  [ErrorType.NOT_FOUND]: 'Không tìm thấy thông tin yêu cầu.',
-  [ErrorType.UNAUTHORIZED]: 'Bạn chưa đăng nhập. Vui lòng đăng nhập lại.',
-  [ErrorType.FORBIDDEN]: 'Bạn không có quyền thực hiện thao tác này.',
-  [ErrorType.SERVER_ERROR]: 'Có lỗi từ máy chủ. Vui lòng thử lại sau.',
-  [ErrorType.UNKNOWN]: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
+  [ErrorType.NETWORK]: ERROR_TEXT.checkConnection,
+  [ErrorType.TIMEOUT]: ERROR_TEXT.serviceUnavailable,
+  [ErrorType.SESSION_EXPIRED]: ERROR_TEXT.sessionExpiredDesc,
+  [ErrorType.PAYMENT_FAILED]: ERROR_TEXT.paymentFailed,
+  [ErrorType.VALIDATION]: ERROR_TEXT.validationError,
+  [ErrorType.NOT_FOUND]: ERROR_TEXT.pageNotFoundDesc,
+  [ErrorType.UNAUTHORIZED]: ERROR_TEXT.accessDeniedDesc,
+  [ErrorType.FORBIDDEN]: ERROR_TEXT.accessDeniedDesc,
+  [ErrorType.SERVER_ERROR]: ERROR_TEXT.internalErrorDesc,
+  [ErrorType.UNKNOWN]: ERROR_TEXT.somethingWentWrong,
 };
 
 export interface AppError {

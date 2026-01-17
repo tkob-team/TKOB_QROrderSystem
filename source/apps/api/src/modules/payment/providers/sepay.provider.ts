@@ -508,7 +508,8 @@ export class SepayProvider implements IPaymentProvider {
     try {
       // Generate transfer content for subscription payment
       // Format: SUB{referenceId} to differentiate from order payments (DH{orderId})
-      const transferContent = `SUB${referenceId.substring(0, 8).toUpperCase()}`;
+      // Use full referenceId to ensure uniqueness for each payment attempt
+      const transferContent = `SUB${referenceId.toUpperCase()}`;
 
       // Generate VietQR content using platform config
       const qrContent = this.generateVietQRContent(amount, transferContent);

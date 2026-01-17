@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useAuthController } from '../../hooks'
 import type { RegisterForm } from '../../model'
+import { AppHeader } from '@/shared/components/layout/AppHeader'
 
 export function RegisterPage() {
   const controller = useAuthController()
@@ -17,7 +18,11 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
+      {/* Header with logo */}
+      <AppHeader />
+      
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <h1 className="text-2xl mb-6 text-center">Create Account</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,6 +72,7 @@ export function RegisterPage() {
           Already have an account?{' '}
           <button onClick={controller.navigateToLogin} className="text-orange-500">Sign In</button>
         </p>
+      </div>
       </div>
     </div>
   )

@@ -3,6 +3,8 @@
 import axios from 'axios';
 import { log, logError } from '@/shared/logging/logger';
 
+// Orval-generated code already includes /api/v1 prefix in URLs
+// So baseURL should be http://localhost:3000 WITHOUT /api/v1
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_API === 'true';
 const logDataEnabled = process.env.NEXT_PUBLIC_LOG_DATA === 'true';
@@ -15,7 +17,7 @@ if (typeof window !== 'undefined') {
 /**
  * Axios instance for API calls
  * - withCredentials: true → Browser sends HttpOnly cookies (table_session_id)
- * - baseURL: Configured from env
+ * - baseURL: Configured from env with /api/v1 prefix
  * - Session-based auth for customer app (no JWT token)
  */
 export const api = axios.create({
@@ -128,13 +130,16 @@ export const customInstance = async <T>(config: any): Promise<T> => {
     .catch((error) => {
       const duration = Date.now() - startTime;
       
-      logError('data', 'API call failed', error, {
-        feature: 'api',
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        duration: `${duration}ms`,
-        status: error.response?.status,
-      });
+      // Don't log canceled requests (component unmount, React StrictMode, etc.)
+      if (error.code !== 'ERR_CANCELED' && error.message !== 'canceled') {
+        logError('data', 'API call failed', error, {
+          feature: 'api',
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          duration: `${duration}ms`,
+          status: error.response?.status,
+        });
+      }
       
       throw error;
     });

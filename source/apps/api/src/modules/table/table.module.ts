@@ -33,6 +33,7 @@ import { SubscriptionModule } from '../subscription/subscription.module';
     TableService,
     TableSessionService,
     QrService,
+    SessionGuard, // Export guard for MenuModule
   ],
 })
 export class TableModule {}

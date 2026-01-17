@@ -36,7 +36,9 @@ export function useQRHandler({ qrToken }: UseQRHandlerProps) {
 
     // REAL mode: Redirect to backend endpoint
     // Backend will validate, create session, set cookie, and redirect to /menu
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/t/${qrToken}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const apiUrl = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`;
+    const backendUrl = `${apiUrl}/t/${qrToken}`;
     
     log('data', '[QR] Redirecting to backend (REAL mode)', { backendUrl }, { feature: 'tables', route: '/t/[qrToken]' });
     

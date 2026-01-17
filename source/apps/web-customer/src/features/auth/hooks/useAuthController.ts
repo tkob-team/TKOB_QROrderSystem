@@ -137,7 +137,7 @@ export function useAuthController() {
   const navigateToResetPassword = () => router.push('/reset-password')
   const navigateToMenu = () => router.push('/menu')
   const navigateToProfile = () => router.push('/profile')
-  const navigateBack = () => router.back()
+  const navigateBack = () => router.push('/scan-qr') // Go to scan-qr instead of router.back() to avoid redirect loops
 
   return {
     // State

@@ -28,6 +28,24 @@ import {
   OrderAlreadyHasPaymentException,
 } from '../exceptions/payment.exceptions';
 
+// Exchange rate: 1 USD = 25,000 VND
+const USD_TO_VND_RATE = 25000;
+
+// Bank code to bank name mapping for SePay QR
+const BANK_CODE_MAP: Record<string, string> = {
+  'VCB': 'Vietcombank',
+  'TCB': 'Techcombank',
+  'MB': 'MBBank',
+  'ACB': 'ACB',
+  'BIDV': 'BIDV',
+  'VTB': 'VietinBank',
+  'TPB': 'TPBank',
+  'VPB': 'VPBank',
+  'SHB': 'SHB',
+  'MSB': 'MSB',
+  'CTG': 'VietinBank',
+};
+
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
@@ -116,19 +134,45 @@ export class PaymentService {
 
       if (existingPayment) {
         this.logger.warn(
-          `[${tenantId}] Order ${order.orderNumber} already has ${existingPayment.status} payment: ${existingPayment.id}`,
+          `[${tenantId}] Order ${order.orderNumber} already has ${existingPayment.status} payment: ${existingPayment.id} - Returning existing payment (idempotent)`,
         );
-        throw new OrderAlreadyHasPaymentException(order.id, existingPayment.id);
+        
+        // Idempotent behavior: Return existing payment instead of error
+        return {
+          paymentId: existingPayment.id,
+          orderId: existingPayment.orderId,
+          amount: existingPayment.amount.toNumber(),
+          currency: existingPayment.currency,
+          qrContent: existingPayment.qrContent || '',
+          qrCodeUrl: this.generateSepayQrUrl(
+            existingPayment.accountNumber || '',
+            this.getBankName(existingPayment.bankCode || ''),
+            existingPayment.amount.toNumber(),
+            existingPayment.transferContent || '',
+          ),
+          deepLink: existingPayment.deepLink ?? undefined,
+          transferContent: existingPayment.transferContent || '',
+          accountNumber: existingPayment.accountNumber || '',
+          bankCode: existingPayment.bankCode || '',
+          status: existingPayment.status,
+          expiresAt: existingPayment.expiresAt,
+          createdAt: existingPayment.createdAt,
+        };
       }
 
-      // 3. Calculate amount (convert Decimal to number)
-      const amount = order.total.toNumber();
+      // 3. Calculate amount - convert USD to VND for SePay
+      const amountUSD = order.total.toNumber();
+      const amountVND = Math.round(amountUSD * USD_TO_VND_RATE);
 
-      if (amount <= 0) {
+      if (amountUSD <= 0) {
         throw new BadRequestException(
-          `Invalid order amount: ${amount}. Amount must be greater than 0.`,
+          `Invalid order amount: ${amountUSD}. Amount must be greater than 0.`,
         );
       }
+
+      this.logger.debug(
+        `[${tenantId}] Order ${order.orderNumber} - USD: $${amountUSD} -> VND: ${amountVND}`,
+      );
 
       // 4. Get tenant's SePay config for customer payments
       const tenantConfig = await this.paymentConfigService.getInternalConfig(tenantId);
@@ -147,12 +191,12 @@ export class PaymentService {
 
       // 5. Generate payment intent from SePay provider using tenant's bank account
       this.logger.debug(
-        `[${tenantId}] Calling SePay provider with tenant config - Bank: ${tenantConfig.sepayBankCode}`,
+        `[${tenantId}] Calling SePay provider with tenant config - Bank: ${tenantConfig.sepayBankCode} - Amount: ${amountVND} VND`,
       );
 
       const paymentIntent = await this.sepayProvider.createPaymentIntent(
         order.id,
-        amount,
+        amountVND, // Pass VND amount to SePay
         'VND',
         {
           orderNumber: order.orderNumber,
@@ -178,30 +222,39 @@ export class PaymentService {
           tenantId,
           method: PaymentMethod.SEPAY_QR,
           status: PaymentStatus.PENDING,
-          amount: new Decimal(amount),
+          amount: new Decimal(amountVND), // Store VND amount
           currency: 'VND',
           bankCode: paymentIntent.bankCode,
           accountNumber: paymentIntent.accountNumber,
           qrContent: paymentIntent.qrContent,
           deepLink: paymentIntent.deepLink,
           transferContent: paymentIntent.transferContent,
-          providerData: paymentIntent.providerData,
+          providerData: {
+            ...paymentIntent.providerData,
+            amountUSD,
+            amountVND,
+          },
           expiresAt,
         },
       });
 
+      // 7. Generate SePay QR URL for frontend display
+      const bankName = BANK_CODE_MAP[paymentIntent.bankCode] || paymentIntent.bankCode;
+      const qrCodeUrl = `https://qr.sepay.vn/img?acc=${paymentIntent.accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${amountVND}&des=${encodeURIComponent(paymentIntent.transferContent)}&template=compact`;
+
       this.logger.log(
-        `[${tenantId}] Payment created: ${payment.id} for order ${order.orderNumber} - Amount: ${amount} VND - Expires: ${expiresAt.toISOString()}`,
+        `[${tenantId}] Payment created: ${payment.id} for order ${order.orderNumber} - Amount: ${amountVND} VND (${amountUSD} USD) - Expires: ${expiresAt.toISOString()}`,
       );
 
-      // 7. Return response DTO
+      // 8. Return response DTO
       return {
         paymentId: payment.id,
         orderId: payment.orderId,
         amount: payment.amount.toNumber(),
         currency: payment.currency,
         qrContent: payment.qrContent!,
-        deepLink: payment.deepLink || undefined,
+        qrCodeUrl, // SePay QR image URL
+        deepLink: payment.deepLink ?? undefined,
         transferContent: payment.transferContent!,
         accountNumber: payment.accountNumber!,
         bankCode: payment.bankCode!,
@@ -880,5 +933,24 @@ export class PaymentService {
    */
   getSepayProvider(): SepayProvider {
     return this.sepayProvider;
+  }
+
+  /**
+   * Get bank name from code
+   */
+  private getBankName(bankCode: string): string {
+    return BANK_CODE_MAP[bankCode] || bankCode;
+  }
+
+  /**
+   * Generate SePay QR URL
+   */
+  private generateSepayQrUrl(
+    accountNumber: string,
+    bankName: string,
+    amount: number,
+    transferContent: string,
+  ): string {
+    return `https://qr.sepay.vn/img?acc=${accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${amount}&des=${encodeURIComponent(transferContent)}&template=compact`;
   }
 }

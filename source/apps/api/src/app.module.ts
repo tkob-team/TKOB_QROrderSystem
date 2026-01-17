@@ -12,6 +12,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { ArrayQueryMiddleware } from './common/middleware/array-query.middleware';
+import { SessionMiddleware } from './common/middleware/session.middleware';
 import { MenuModule } from './modules/menu/menu.module';
 import { TableModule } from './modules/table/table.module';
 import { OrderModule } from './modules/order/order.module';
@@ -106,11 +107,14 @@ export class AppModule implements NestModule, OnModuleInit {
   }
 
   configure(consumer: MiddlewareConsumer) {
-    // Apply ArrayQueryMiddleware first to transform status[] to status array
-    consumer.apply(ArrayQueryMiddleware).forRoutes({ path: '*path', method: RequestMethod.ALL });
+    // Apply SessionMiddleware FIRST to populate request.session from cookie before any other middleware
+    consumer.apply(SessionMiddleware).forRoutes('*');
+
+    // Apply ArrayQueryMiddleware to transform status[] to status array
+    consumer.apply(ArrayQueryMiddleware).forRoutes('*');
 
     // Apply RequestIdMiddleware globally
-    consumer.apply(RequestIdMiddleware).forRoutes({ path: '*path', method: RequestMethod.ALL });
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
 
     // Apply TenantContextMiddleware to tenant routes
     consumer
@@ -125,6 +129,6 @@ export class AppModule implements NestModule, OnModuleInit {
         { path: 'api/v1/auth/me', method: RequestMethod.GET },
         // ... thêm các route public khác nếu có
       )
-      .forRoutes({ path: '*path', method: RequestMethod.ALL });
+      .forRoutes('*');
   }
 }

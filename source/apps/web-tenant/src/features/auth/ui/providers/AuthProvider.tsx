@@ -65,6 +65,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsInitialized(true);
   }, []);
 
+  // Handle auth error - redirect to home when token is invalid
+  useEffect(() => {
+    if (currentUserQuery.isError && hasToken) {
+      logger.warn('[AuthContext] Auth validation failed, clearing tokens and redirecting to home');
+      clearAuthTokens();
+      clearRememberMeToken();
+      setHasToken(false);
+      setUser(null);
+      
+      // Redirect to home if not already on public pages
+      // This allows user to choose login or signup
+      if (typeof window !== 'undefined') {
+        const isPublicPage = window.location.pathname.startsWith('/auth/') || 
+                             window.location.pathname === '/' ||
+                             window.location.pathname === '/home';
+        if (!isPublicPage) {
+          logger.log('[AuthContext] Redirecting to home page...');
+          window.location.href = '/';
+        }
+      }
+    }
+  }, [currentUserQuery.isError, hasToken]);
+
   // Sync user state with React Query data
   useEffect(() => {
     // getCurrentUser returns { user, tenant }, so extract user field

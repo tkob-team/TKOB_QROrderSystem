@@ -3,15 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { Smartphone } from 'lucide-react'
 import { useEffect } from 'react'
-import { LanguageSwitcher } from '@/shared/components'
-import { useLanguage } from '@/shared/hooks/useLanguage'
 import { useSession } from '@/features/tables/hooks'
 import { log } from '@/shared/logging/logger'
 import { LANDING_TEXT } from '../../model/constants'
 
 export function LandingPage() {
   const router = useRouter()
-  const { language, setLanguage } = useLanguage()
   const { session, loading, error } = useSession()
 
   // Redirect if no session (not scanned QR)
@@ -28,7 +25,7 @@ export function LandingPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p style={{ color: 'var(--gray-600)' }}>{LANDING_TEXT[language].loading}</p>
+          <p style={{ color: 'var(--gray-600)' }}>{LANDING_TEXT.loading}</p>
         </div>
       </div>
     )
@@ -38,8 +35,6 @@ export function LandingPage() {
   if (!session) {
     return null
   }
-
-  const t = LANDING_TEXT[language]
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F9FAFB' }}>
@@ -51,7 +46,6 @@ export function LandingPage() {
           </div>
           <span style={{ color: '#111827' }}>{session?.restaurantName || 'The Golden Spoon'}</span>
         </div>
-        <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />
       </div>
 
       {/* Main Content */}
@@ -67,7 +61,7 @@ export function LandingPage() {
           {/* Welcome Card */}
           <div className="bg-white rounded-xl p-6 text-center" style={{ borderWidth: '1px', borderColor: '#E5E7EB', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
             <p className="mb-1" style={{ color: '#6B7280', fontSize: '14px' }}>
-              {t.welcome}
+              {LANDING_TEXT.welcome}
             </p>
             <h1 className="mb-6" style={{ color: '#111827', fontSize: '26px', lineHeight: '1.3' }}>
               {session?.restaurantName || 'The Golden Spoon'}
@@ -76,13 +70,10 @@ export function LandingPage() {
             {/* Table Info Card */}
             <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: '#FFF7ED', borderWidth: '1px', borderColor: '#FFEDD5' }}>
               <p className="mb-1" style={{ color: '#111827', fontSize: '15px' }}>
-                🪑 {t.tableInfo(session.tableNumber)}
-              </p>
-              <p className="mb-1" style={{ color: '#374151', fontSize: '14px' }}>
-                👥 {t.guestCount(session.guestCount)}
+                🪑 {LANDING_TEXT.tableInfo(session.tableNumber)}
               </p>
               <p style={{ color: '#6B7280', fontSize: '12px' }}>
-                📅 {t.validText}
+                📅 {LANDING_TEXT.validText}
               </p>
             </div>
 
@@ -97,13 +88,13 @@ export function LandingPage() {
                 minHeight: '48px',
               }}
             >
-              {t.ctaButton}
+              {LANDING_TEXT.ctaButton}
             </button>
           </div>
 
           {/* Helper Text */}
           <p className="mt-6 text-center" style={{ color: '#6B7280', fontSize: '13px', lineHeight: '1.5' }}>
-            {t.helperText}
+            {LANDING_TEXT.helperText}
           </p>
         </div>
       </div>

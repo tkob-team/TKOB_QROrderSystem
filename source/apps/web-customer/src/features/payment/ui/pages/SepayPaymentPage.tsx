@@ -13,6 +13,9 @@ export function SepayPaymentPage() {
     error,
     paymentIntent,
     timeRemaining,
+    pollingProgress,
+    pollingAttempt,
+    pollingMaxAttempts,
     retryPayment,
     goToOrderTracking,
     goBack,
@@ -39,18 +42,26 @@ export function SepayPaymentPage() {
           {/* Main Payment Card */}
           <div className="bg-white rounded-xl p-6 border text-center" style={{ borderColor: 'var(--gray-200)' }}>
             {/* Status Badge */}
-            <StatusBadge status={status} timeRemaining={timeRemaining} />
+            <StatusBadge 
+              status={status} 
+              timeRemaining={timeRemaining}
+              pollingAttempt={pollingAttempt}
+              pollingMaxAttempts={pollingMaxAttempts}
+            />
 
             {/* Payment Content based on status */}
             {status === 'loading' && <LoadingState />}
-            {status === 'waiting' && paymentIntent && (
+            {(status === 'waiting' || status === 'processing') && paymentIntent && (
               <QRCodeDisplay
-                qrContent={paymentIntent.qrContent}
+                qrCodeUrl={paymentIntent.qrCodeUrl}
                 amount={paymentIntent.amount}
                 timeRemaining={timeRemaining}
+                isPolling={status === 'processing'}
+                pollingProgress={pollingProgress}
+                pollingAttempt={pollingAttempt}
+                pollingMaxAttempts={pollingMaxAttempts}
               />
             )}
-            {status === 'processing' && <ProcessingState />}
             {status === 'success' && <SuccessState />}
             {status === 'failed' && <FailedState error={error} onRetry={retryPayment} />}
             {status === 'expired' && <ExpiredState onRetry={retryPayment} />}
@@ -82,7 +93,17 @@ export function SepayPaymentPage() {
 
 // === Sub-components ===
 
-function StatusBadge({ status, timeRemaining }: { status: SepayPaymentStatus; timeRemaining: number }) {
+function StatusBadge({ 
+  status, 
+  timeRemaining,
+  pollingAttempt,
+  pollingMaxAttempts,
+}: { 
+  status: SepayPaymentStatus
+  timeRemaining: number
+  pollingAttempt?: number
+  pollingMaxAttempts?: number
+}) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -108,7 +129,9 @@ function StatusBadge({ status, timeRemaining }: { status: SepayPaymentStatus; ti
       {status === 'processing' && (
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: 'var(--blue-100)', color: 'var(--blue-700)' }}>
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span style={{ fontSize: '14px' }}>Verifying payment...</span>
+          <span style={{ fontSize: '14px' }}>
+            Verifying payment... {pollingAttempt !== undefined && pollingMaxAttempts !== undefined && `(${pollingAttempt}/${pollingMaxAttempts})`}
+          </span>
         </div>
       )}
       {status === 'success' && (
@@ -160,13 +183,21 @@ function LoadingState() {
 }
 
 function QRCodeDisplay({
-  qrContent,
+  qrCodeUrl,
   amount,
   timeRemaining: _timeRemaining,
+  isPolling = false,
+  pollingProgress = 0,
+  pollingAttempt = 0,
+  pollingMaxAttempts = 60,
 }: {
-  qrContent: string
+  qrCodeUrl: string
   amount: number
   timeRemaining: number
+  isPolling?: boolean
+  pollingProgress?: number
+  pollingAttempt?: number
+  pollingMaxAttempts?: number
 }) {
   // Format amount with Vietnamese Dong
   const formatVND = (value: number) => {
@@ -180,37 +211,59 @@ function QRCodeDisplay({
   return (
     <>
       <h3 className="mb-2" style={{ color: 'var(--gray-900)' }}>
-        Scan to pay
+        {isPolling ? 'Verifying payment...' : 'Scan to pay'}
       </h3>
       <p className="mb-4" style={{ color: 'var(--orange-600)', fontSize: '24px', fontWeight: 700 }}>
         {formatVND(amount)}
       </p>
+
+      {/* Polling Progress Bar - above QR code */}
+      {isPolling && (
+        <div className="mb-4 px-4">
+          <div className="flex items-center justify-between mb-2">
+            <span style={{ color: 'var(--blue-700)', fontSize: '13px' }}>
+              Checking payment... ({pollingAttempt}/{pollingMaxAttempts})
+            </span>
+            <span style={{ color: 'var(--blue-600)', fontSize: '12px' }}>
+              ~{Math.ceil((pollingMaxAttempts - pollingAttempt) * 3 / 60)} min left
+            </span>
+          </div>
+          <div className="w-full rounded-full h-2" style={{ backgroundColor: 'var(--blue-100)' }}>
+            <div
+              className="h-2 rounded-full transition-all duration-300"
+              style={{ 
+                width: `${pollingProgress}%`,
+                backgroundColor: 'var(--blue-500)',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* QR Code */}
       <div className="flex justify-center mb-6">
         <div
           className="rounded-2xl border-2 flex items-center justify-center p-4 bg-white"
           style={{
-            borderColor: 'var(--orange-200)',
+            borderColor: isPolling ? 'var(--blue-300)' : 'var(--orange-200)',
             width: '280px',
             height: '280px',
           }}
         >
-          {/* Use native img for QR - backend returns image URL or we generate */}
-          {qrContent.startsWith('http') ? (
-            // If backend returns QR image URL
+          {/* Use qrCodeUrl from backend - SePay QR image URL */}
+          {qrCodeUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={qrContent}
+              src={qrCodeUrl}
               alt="VietQR Payment Code"
               className="w-full h-full object-contain"
             />
           ) : (
-            // If qrContent is data string, show placeholder with copy option
+            // Fallback placeholder if no URL
             <div className="flex flex-col items-center justify-center w-full h-full">
               <QrCode className="w-32 h-32 mb-2" style={{ color: 'var(--gray-400)' }} />
               <p style={{ color: 'var(--gray-500)', fontSize: '12px', textAlign: 'center' }}>
-                QR data ready
+                QR code loading...
               </p>
             </div>
           )}
@@ -218,38 +271,10 @@ function QRCodeDisplay({
       </div>
 
       <p style={{ color: 'var(--gray-600)', fontSize: '14px', lineHeight: '1.5' }}>
-        Open your banking app and scan the QR code above to complete payment.
-      </p>
-    </>
-  )
-}
-
-function ProcessingState() {
-  return (
-    <>
-      <h3 className="mb-6" style={{ color: 'var(--gray-900)' }}>
-        Verifying your payment...
-      </h3>
-      <div className="flex justify-center mb-6">
-        <div
-          className="rounded-2xl border-2 flex items-center justify-center"
-          style={{
-            borderColor: 'var(--blue-200)',
-            backgroundColor: 'var(--blue-50)',
-            width: '280px',
-            height: '280px',
-          }}
-        >
-          <div className="text-center">
-            <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: 'var(--blue-500)' }} />
-            <p style={{ color: 'var(--blue-700)', fontSize: '14px' }}>
-              Almost there...
-            </p>
-          </div>
-        </div>
-      </div>
-      <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-        We&apos;re confirming your payment with the bank.
+        {isPolling 
+          ? "We're checking your payment. You can still scan the QR if you haven't yet."
+          : 'Open your banking app and scan the QR code above to complete payment.'
+        }
       </p>
     </>
   )

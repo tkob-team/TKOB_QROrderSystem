@@ -151,18 +151,23 @@ function LiveOrderView({ order, router }: { order: Order; router: ReturnType<typ
           Your order
         </h3>
         <div className="space-y-3" style={{ fontSize: '14px' }}>
-          {order.items.map((item) => (
+          {order.items.map((item) => {
+            // Handle both CartItem (with menuItem) and OrderItemResponseDto (flat structure)
+            const itemName = (item as any).menuItem?.name || (item as any).name || 'Unknown Item';
+            const itemToppings = (item as any).menuItem?.toppings;
+            
+            return (
             <div key={item.id}>
               <div className="flex justify-between items-start gap-3">
                 <span style={{ color: 'var(--gray-700)' }}>
-                  {item.quantity} × {item.menuItem.name}
+                  {item.quantity} × {itemName}
                 </span>
               </div>
               {(item.selectedSize || item.selectedToppings?.length > 0) && (
                 <div style={{ color: 'var(--gray-500)', fontSize: '13px', marginTop: '4px' }}>
                   {item.selectedSize && `Size: ${item.selectedSize}`}
-                  {item.selectedToppings && item.selectedToppings.length > 0 && ` · Toppings: ${item.selectedToppings.map(id => {
-                    const topping = item.menuItem.toppings?.find(t => t.id === id);
+                  {item.selectedToppings && item.selectedToppings.length > 0 && itemToppings && ` · Toppings: ${item.selectedToppings.map(id => {
+                    const topping = itemToppings.find((t: any) => t.id === id);
                     return topping?.name;
                   }).filter(Boolean).join(', ')}`}
                 </div>
@@ -173,7 +178,8 @@ function LiveOrderView({ order, router }: { order: Order; router: ReturnType<typ
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
         <div className="border-t pt-3 mt-3 flex justify-between" style={{ borderColor: 'var(--gray-200)', color: 'var(--gray-900)' }}>
           <span>Total</span>
@@ -249,25 +255,30 @@ function HistoryOrderView({ order }: { order: Order }) {
           </h3>
           <div className="space-y-3">
             {order.items.map((item) => {
-              // Calculate item price
-              let itemPrice = item.menuItem.basePrice;
-              if (item.selectedSize && item.menuItem.sizes) {
-                const sizeOption = item.menuItem.sizes.find(s => s.size === item.selectedSize);
-                if (sizeOption) itemPrice = sizeOption.price;
+              // Handle both CartItem (with menuItem) and OrderItemResponseDto (flat structure)
+              const menuItem = (item as any).menuItem;
+              const itemName = menuItem?.name || (item as any).name || 'Unknown Item';
+              const itemPrice = (item as any).price || menuItem?.basePrice || 0;
+              
+              // Calculate total price - use itemTotal from API if available
+              let calculatedPrice = itemPrice;
+              if (item.selectedSize && menuItem?.sizes) {
+                const sizeOption = menuItem.sizes.find((s: any) => s.size === item.selectedSize);
+                if (sizeOption) calculatedPrice = sizeOption.price;
               }
-              if (item.selectedToppings?.length > 0 && item.menuItem.toppings) {
+              if (item.selectedToppings?.length > 0 && menuItem?.toppings) {
                 item.selectedToppings.forEach(toppingId => {
-                  const topping = item.menuItem.toppings?.find(t => t.id === toppingId);
-                  if (topping) itemPrice += topping.price;
+                  const topping = menuItem.toppings?.find((t: any) => t.id === toppingId);
+                  if (topping) calculatedPrice += topping.price;
                 });
               }
-              const totalPrice = itemPrice * item.quantity;
+              const totalPrice = (item as any).itemTotal || (calculatedPrice * item.quantity);
               
               return (
                 <div key={item.id} className="pb-3 border-b" style={{ borderColor: 'var(--gray-100)' }}>
                   <div className="flex items-center justify-between mb-1">
                     <span style={{ color: 'var(--gray-900)', fontWeight: '500' }}>
-                      {item.menuItem.name}
+                      {itemName}
                     </span>
                     <span style={{ color: 'var(--orange-500)', fontWeight: '500' }}>
                       ${totalPrice.toFixed(2)}
@@ -279,10 +290,10 @@ function HistoryOrderView({ order }: { order: Order }) {
                       {item.selectedSize && ` · Size: ${item.selectedSize}`}
                     </span>
                   </div>
-                  {item.selectedToppings && item.selectedToppings.length > 0 && (
+                  {item.selectedToppings && item.selectedToppings.length > 0 && menuItem?.toppings && (
                     <div style={{ color: 'var(--gray-500)', fontSize: '12px', marginTop: '4px' }}>
                       Toppings: {item.selectedToppings.map(id => {
-                        const topping = item.menuItem.toppings?.find(t => t.id === id);
+                        const topping = menuItem.toppings?.find((t: any) => t.id === id);
                         return topping?.name;
                       }).filter(Boolean).join(', ')}
                     </div>

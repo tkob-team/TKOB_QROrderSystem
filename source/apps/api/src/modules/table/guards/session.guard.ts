@@ -20,7 +20,12 @@ export class SessionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
-    // 1. Get session ID from cookie
+    // Check if SessionMiddleware already attached session data
+    if (request.session) {
+      return true;
+    }
+
+    // Fallback: Get session ID from cookie if middleware didn't run
     const sessionId = request.cookies?.table_session_id;
 
     if (!sessionId) {
@@ -28,10 +33,10 @@ export class SessionGuard implements CanActivate {
     }
 
     try {
-      // 2. Validate session
+      // Validate session
       const sessionData = await this.sessionService.validateSession(sessionId);
 
-      // 3. Attach session data to request
+      // Attach session data to request
       request.session = sessionData;
 
       return true;

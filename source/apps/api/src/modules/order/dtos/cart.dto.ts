@@ -108,13 +108,22 @@ export class CartResponseDto {
   @ApiProperty({ type: [CartItemResponseDto] })
   items: CartItemResponseDto[];
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Subtotal before tax and service charge' })
   subtotal: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Tax amount (based on tenant settings)' })
   tax: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Tax percentage rate' })
+  taxRate: number;
+
+  @ApiProperty({ description: 'Service charge amount (based on tenant settings)' })
+  serviceCharge: number;
+
+  @ApiProperty({ description: 'Service charge percentage rate' })
+  serviceChargeRate: number;
+
+  @ApiProperty({ description: 'Total = subtotal + tax + serviceCharge' })
   total: number;
 
   @ApiProperty()

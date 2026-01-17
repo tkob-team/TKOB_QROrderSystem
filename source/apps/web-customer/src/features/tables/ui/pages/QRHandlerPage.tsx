@@ -44,10 +44,10 @@ export function QRHandlerPage({ qrToken }: QRHandlerPageProps) {
         {/* Text Content */}
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-gray-900">
-            Đang xử lý mã QR...
+            Redicting to menu...
           </h2>
           <p className="text-sm text-gray-600">
-            Vui lòng đợi trong giây lát
+            Please wait a moment while we prepare your dining experience.
           </p>
         </div>
 

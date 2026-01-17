@@ -7,13 +7,16 @@ import { useEffect } from 'react'
  * Cart hook - provides cart data and actions
  * 
  * Now fetches cart from server on mount (syncs with backend)
- * All calculations (subtotal, tax, total) come from server
+ * All calculations (subtotal, tax, serviceCharge, total) come from server
  */
 export function useCart() {
   const {
     items,
     subtotal,
     tax,
+    taxRate,
+    serviceCharge,
+    serviceChargeRate,
     total,
     itemCount,
     isLoading,
@@ -34,17 +37,15 @@ export function useCart() {
     }
   }, [isInitialized, fetchCart])
 
-  // Service charge is calculated on server (included in total)
-  // For display purposes, we can derive it: total - subtotal - tax
-  const serviceCharge = total - subtotal - tax
-
   return {
     // Cart data (from server)
     items,
     itemCount,
     subtotal,
     tax,
+    taxRate,
     serviceCharge,
+    serviceChargeRate,
     total,
     
     // UI state

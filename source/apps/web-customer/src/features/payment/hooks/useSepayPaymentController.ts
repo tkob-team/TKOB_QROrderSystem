@@ -1,4 +1,5 @@
 // SePay Payment Controller - handles VietQR payment flow
+// Uses usePaymentPolling hook for consistent polling behavior (with maxAttempts limit)
 
 "use client"
 
@@ -7,7 +8,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { checkoutApi } from '@/features/checkout/data'
-import type { PaymentIntentResponse, PaymentStatusResponse } from '@/features/checkout/data'
+import { usePaymentPolling } from './usePaymentPolling'
+import type { PaymentIntentResponse } from '@/features/checkout/data'
 
 export type SepayPaymentStatus = 
   | 'loading'      // Creating payment intent
@@ -15,7 +17,7 @@ export type SepayPaymentStatus =
   | 'processing'   // Payment being verified
   | 'success'      // Payment completed
   | 'failed'       // Payment failed
-  | 'expired'      // Payment expired
+  | 'expired'      // Payment expired (timeout or QR expired)
 
 interface UseSepayPaymentResult {
   // State
@@ -23,6 +25,9 @@ interface UseSepayPaymentResult {
   error: string | null
   paymentIntent: PaymentIntentResponse | null
   timeRemaining: number // seconds until expiry
+  pollingProgress: number // 0-100% polling progress
+  pollingAttempt: number // current polling attempt
+  pollingMaxAttempts: number // max polling attempts
   
   // Actions
   createPaymentIntent: () => Promise<void>
@@ -41,18 +46,61 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntentResponse | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(0)
   
-  const pollingRef = useRef<boolean>(false)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
   const countdownRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Use the payment polling hook (same pattern as web-tenant)
+  // autoStart=true means polling starts automatically when paymentId becomes available
+  const {
+    status: pollingStatus,
+    attempt: pollingAttempt,
+    maxAttempts: pollingMaxAttempts,
+    progress: pollingProgress,
+    startPolling,
+    stopPolling,
+    reset: resetPolling,
+  } = usePaymentPolling({
+    paymentId: paymentIntent?.paymentId || null,
+    enabled: !!paymentIntent,
+    autoStart: true, // Auto-start when paymentId available
+    interval: 3000, // Poll every 3 seconds (safe for SePay rate limit)
+    maxAttempts: 60, // 3 minutes total (60 × 3s = 180s)
+    onSuccess: () => {
+      log('data', '[sepay] Payment confirmed via polling', {
+        paymentId: paymentIntent?.paymentId ? maskId(paymentIntent.paymentId) : null,
+      }, { feature: 'payment' })
+      setStatus('success')
+      if (countdownRef.current) clearInterval(countdownRef.current)
+    },
+    onTimeout: () => {
+      log('data', '[sepay] Payment polling timeout', {
+        paymentId: paymentIntent?.paymentId ? maskId(paymentIntent.paymentId) : null,
+      }, { feature: 'payment' })
+      setStatus('expired')
+      setError('Payment verification timed out. Please check your bank app or try again.')
+      if (countdownRef.current) clearInterval(countdownRef.current)
+    },
+    onError: (err) => {
+      logError('data', '[sepay] Payment polling error', err, { feature: 'payment' })
+      setStatus('failed')
+      setError(err.message || 'Payment verification failed')
+      if (countdownRef.current) clearInterval(countdownRef.current)
+    },
+  })
+
+  // Sync polling status to component status
+  useEffect(() => {
+    if (pollingStatus === 'polling' && status === 'waiting') {
+      setStatus('processing')
+    }
+  }, [pollingStatus, status])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      pollingRef.current = false
-      if (timerRef.current) clearTimeout(timerRef.current)
+      stopPolling()
       if (countdownRef.current) clearInterval(countdownRef.current)
     }
-  }, [])
+  }, [stopPolling])
 
   // Start countdown timer
   const startCountdown = useCallback((expiresAt: string) => {
@@ -64,73 +112,14 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
       
       if (remaining <= 0) {
         setStatus('expired')
-        pollingRef.current = false
+        stopPolling()
         if (countdownRef.current) clearInterval(countdownRef.current)
       }
     }
     
     updateRemaining()
     countdownRef.current = setInterval(updateRemaining, 1000)
-  }, [])
-
-  // Poll payment status
-  const pollPaymentStatus = useCallback(async (paymentId: string) => {
-    if (!pollingRef.current) return
-    
-    try {
-      // Use SePay polling endpoint which checks actual bank transactions
-      const pollResult = await checkoutApi.checkPaymentViaPoll(paymentId)
-      
-      log('data', 'Payment polled via SePay', {
-        paymentId: maskId(paymentId),
-        found: pollResult.found,
-        completed: pollResult.completed,
-        status: pollResult.status,
-      }, { feature: 'payment' })
-      
-      // Check if payment was found and completed
-      if (pollResult.completed) {
-        setStatus('success')
-        pollingRef.current = false
-        if (countdownRef.current) clearInterval(countdownRef.current)
-        return
-      }
-      
-      // If not completed yet, continue polling
-      if (pollResult.found) {
-        // Payment exists but not completed yet
-        const currentStatus = pollResult.status || 'PENDING'
-        
-        if (currentStatus === 'FAILED') {
-          setStatus('failed')
-          setError(pollResult.message || 'Payment failed')
-          pollingRef.current = false
-        } else if (currentStatus === 'PROCESSING') {
-          setStatus('processing')
-          // Continue polling
-          if (pollingRef.current) {
-            timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 3000)
-          }
-        } else {
-          // Still pending, continue polling
-          if (pollingRef.current) {
-            timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 3000)
-          }
-        }
-      } else {
-        // Payment not found - continue polling (might be created but not in DB yet)
-        if (pollingRef.current) {
-          timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 3000)
-        }
-      }
-    } catch (err) {
-      logError('data', 'Payment poll failed', err, { feature: 'payment' })
-      // Don't stop polling on transient errors
-      if (pollingRef.current) {
-        timerRef.current = setTimeout(() => pollPaymentStatus(paymentId), 5000)
-      }
-    }
-  }, [])
+  }, [stopPolling])
 
   // Create payment intent and start polling
   const createPaymentIntent = useCallback(async () => {
@@ -142,6 +131,7 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     
     setStatus('loading')
     setError(null)
+    resetPolling()
     
     try {
       log('data', 'Creating SePay payment intent', {
@@ -157,12 +147,8 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
       setPaymentIntent(intent)
       setStatus('waiting')
       
-      // Start countdown
+      // Start countdown based on expiresAt
       startCountdown(intent.expiresAt)
-      
-      // Start polling for payment status
-      pollingRef.current = true
-      timerRef.current = setTimeout(() => pollPaymentStatus(intent.paymentId), 3000)
       
       log('data', 'SePay payment intent created', {
         paymentId: maskId(intent.paymentId),
@@ -170,12 +156,14 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
         expiresAt: intent.expiresAt,
       }, { feature: 'payment' })
       
+      // Polling will auto-start via usePaymentPolling hook when paymentId becomes available
+      
     } catch (err) {
       logError('data', 'Failed to create payment intent', err, { feature: 'payment' })
       setError(err instanceof Error ? err.message : 'Failed to create payment')
       setStatus('failed')
     }
-  }, [orderId, startCountdown, pollPaymentStatus])
+  }, [orderId, startCountdown, resetPolling, startPolling])
 
   // Auto-create payment intent on mount
   useEffect(() => {
@@ -186,8 +174,8 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
 
   // Retry payment
   const retryPayment = useCallback(() => {
-    pollingRef.current = false
-    if (timerRef.current) clearTimeout(timerRef.current)
+    stopPolling()
+    resetPolling()
     if (countdownRef.current) clearInterval(countdownRef.current)
     
     setPaymentIntent(null)
@@ -196,7 +184,7 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     
     // Small delay then recreate
     setTimeout(() => createPaymentIntent(), 100)
-  }, [createPaymentIntent])
+  }, [createPaymentIntent, stopPolling, resetPolling])
 
   // Navigate to order tracking
   const goToOrderTracking = useCallback(() => {
@@ -207,15 +195,18 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
 
   // Go back
   const goBack = useCallback(() => {
-    pollingRef.current = false
+    stopPolling()
     router.back()
-  }, [router])
+  }, [router, stopPolling])
 
   return {
     status,
     error,
     paymentIntent,
     timeRemaining,
+    pollingProgress,
+    pollingAttempt,
+    pollingMaxAttempts,
     createPaymentIntent,
     retryPayment,
     goToOrderTracking,

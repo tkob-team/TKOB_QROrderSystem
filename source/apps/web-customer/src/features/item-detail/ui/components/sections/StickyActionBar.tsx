@@ -1,4 +1,5 @@
 import { Minus, Plus } from 'lucide-react'
+import { formatUSD } from '@/shared/utils/currency'
 
 interface StickyActionBarProps {
   quantity: number
@@ -41,7 +42,7 @@ export function StickyActionBar({ quantity, onDecrement, onIncrement, onAddToCar
           }}
         >
           <span>Add to cart</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{formatUSD(total)}</span>
         </button>
       </div>
     </div>

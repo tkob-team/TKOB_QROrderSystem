@@ -24,6 +24,9 @@ export interface CartResponse {
   items: CartItemResponse[];
   subtotal: number;
   tax: number;
+  taxRate: number;
+  serviceCharge: number;
+  serviceChargeRate: number;
   total: number;
   itemCount: number;
 }

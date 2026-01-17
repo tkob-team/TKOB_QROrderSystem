@@ -10,7 +10,7 @@ import {
   UseGuards,
   Headers,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 import { PaymentService } from '../services/payment.service';
 import { CurrencyService } from '../services/currency.service';
 import { CreatePaymentIntentDto } from '../dto/create-payment-intent.dto';
@@ -23,7 +23,10 @@ import {
   CheckPaymentResponseDto,
 } from '../dto/poll-transactions.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { SessionGuard } from '@/modules/table/guards/session.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Session } from '@/common/decorators/session.decorator';
+import { SessionData } from '@/modules/table/services/table-session.service';
 import { Public } from '@/common/decorators/public.decorator';
 
 @ApiTags('Payments')
@@ -55,8 +58,9 @@ export class PaymentController {
   }
 
   @Post('intent')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @UseGuards(SessionGuard)
+  @Public()
+  @ApiCookieAuth('table_session_id')
   @ApiOperation({ summary: 'Create payment intent for order' })
   @ApiResponse({
     status: 201,
@@ -66,10 +70,10 @@ export class PaymentController {
   @ApiResponse({ status: 400, description: 'Invalid order or order already paid' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async createPaymentIntent(
-    @CurrentUser() user: any,
+    @Session() session: SessionData,
     @Body() dto: CreatePaymentIntentDto,
   ): Promise<PaymentIntentResponseDto> {
-    return this.paymentService.createPaymentIntent(user.tenantId, dto);
+    return this.paymentService.createPaymentIntent(session.tenantId, dto);
   }
 
   @Get(':paymentId')

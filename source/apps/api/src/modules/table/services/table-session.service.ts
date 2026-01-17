@@ -64,10 +64,19 @@ export class TableSessionService {
       // throw new ConflictException('This table is currently in use by another customer');
 
       // Option B: Allow multiple customers (flexible mode) - RECOMMENDED
-      // Return existing session
+      // Return existing session and ensure table status is OCCUPIED
       this.logger.log(
         `Table ${table.tableNumber} already has active session, reusing existing session`,
       );
+
+      // Ensure table status is updated (in case it was manually changed)
+      if (table.status !== TableStatus.OCCUPIED) {
+        await this.tableRepo.update(tableId, {
+          status: TableStatus.OCCUPIED,
+          currentSessionId: existingSession.id,
+        });
+      }
+
       return {
         sessionId: existingSession.id,
         tableId: table.id,

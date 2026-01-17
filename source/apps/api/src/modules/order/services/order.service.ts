@@ -22,6 +22,7 @@ import { OrderFiltersDto } from '../dtos/order-filters.dto';
 import { PaginatedResponseDto } from '@/common/dto/pagination.dto';
 import { UpdateOrderStatusDto } from '../dtos/update-order-status.dto';
 import { OrderGateway } from '@/modules/websocket/gateways/order.gateway';
+import { PaymentConfigService } from '@/modules/payment-config/payment-config.service';
 const PaymentStatusEnum = {
   PENDING: 'PENDING',
   PAID: 'PAID',
@@ -39,6 +40,7 @@ export class OrderService {
     private readonly orderGateway: OrderGateway,
     private readonly tenantService: TenantService,
     private readonly subscriptionService: SubscriptionService,
+    private readonly paymentConfigService: PaymentConfigService,
   ) {}
 
   async checkout(
@@ -59,20 +61,30 @@ export class OrderService {
       });
     }
 
-    // 1. Get cart by table
+    // 1. Validate payment method with tenant configuration
+    if (dto.paymentMethod === 'SEPAY_QR') {
+      const hasValidConfig = await this.paymentConfigService.hasValidConfig(tenantId);
+      if (!hasValidConfig) {
+        throw new BadRequestException(
+          'SePay payment is not available. Please choose another payment method or contact restaurant staff.',
+        );
+      }
+    }
+
+    // 2. Get cart by table
     const cart = await this.cartService.getCartByTable(tenantId, tableId, sessionId);
 
     if (cart.items.length === 0) {
       throw new BadRequestException('Cart is empty');
     }
 
-    // 2. Get tenant pricing settings
+    // 3. Get tenant pricing settings
     const pricingSettings = await this.tenantService.getPricingSettings(tenantId);
 
-    // 3. Generate order number
+    // 4. Generate order number
     const orderNumber = await this.generateOrderNumber(tenantId);
 
-    // 4. Calculate service charge based on tenant settings
+    // 5. Calculate service charge based on tenant settings
     let serviceChargeAmount = new Decimal(0);
     if (pricingSettings.serviceCharge.enabled) {
       serviceChargeAmount = new Decimal(cart.subtotal)
@@ -80,21 +92,21 @@ export class OrderService {
         .div(100);
     }
 
-    // 5. Handle tip from checkout DTO
+    // 6. Handle tip from checkout DTO
     const tipAmount = new Decimal(dto.tip || 0);
 
-    // 6. Recalculate total with service charge and tip
+    // 7. Recalculate total with service charge and tip
     const subtotal = new Decimal(cart.subtotal);
     const taxAmount = new Decimal(cart.tax);
     const total = subtotal.add(taxAmount).add(serviceChargeAmount).add(tipAmount);
 
-    // 7. Determine initial status based on payment method
+    // 8. Determine initial status based on payment method
     const initialStatus =
       dto.paymentMethod === 'BILL_TO_TABLE' ? OrderStatus.RECEIVED : OrderStatus.PENDING;
 
     const initialPaymentStatus: PaymentStatus = PaymentStatusEnum.PENDING;
 
-    // 8. Create order with items in transaction
+    // 9. Create order with items in transaction
     const order = await this.prisma.$transaction(async (tx) => {
       // Create order
       const newOrder = await tx.order.create({
@@ -363,16 +375,20 @@ export class OrderService {
 
   /**
    * Get orders with timer warnings (for KDS priority)
+   * Returns RECEIVED and PREPARING orders for kitchen display
    */
   async getOrdersWithTimerWarnings(tenantId: string): Promise<{
     normal: OrderResponseDto[];
     high: OrderResponseDto[];
     urgent: OrderResponseDto[];
   }> {
-    const preparingOrders = await this.prisma.order.findMany({
+    // Get both RECEIVED (pending acceptance) and PREPARING (actively cooking) orders
+    const activeOrders = await this.prisma.order.findMany({
       where: {
         tenantId,
-        status: OrderStatus.PREPARING,
+        status: {
+          in: [OrderStatus.RECEIVED, OrderStatus.PREPARING],
+        },
       },
       include: {
         items: true,
@@ -382,7 +398,7 @@ export class OrderService {
           },
         },
       },
-      orderBy: { preparingAt: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
 
     const now = new Date();
@@ -392,9 +408,16 @@ export class OrderService {
       urgent: [] as OrderResponseDto[],
     };
 
-    for (const order of preparingOrders) {
+    for (const order of activeOrders) {
       const orderDto = this.toResponseDto(order);
 
+      // RECEIVED orders (not yet accepted) always go to normal priority
+      if (order.status === OrderStatus.RECEIVED) {
+        categorized.normal.push(orderDto);
+        continue;
+      }
+
+      // PREPARING orders - categorize by elapsed time vs estimated time
       if (!order.preparingAt) {
         categorized.normal.push(orderDto);
         continue;

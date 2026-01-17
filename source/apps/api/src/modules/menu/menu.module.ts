@@ -14,6 +14,9 @@ import { MenuPhotoController } from './controllers/menu-photo.controller';
 import { MenuPhotoService } from './services/menu-photo.service';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { MenuItemsPublicController } from './controllers/menu-item-public.controller';
+import { TableModule } from '../table/table.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -27,10 +30,12 @@ import { SubscriptionModule } from '../subscription/subscription.module';
 
     StorageModule,
     SubscriptionModule,
+    forwardRef(() => TableModule), // Prevent circular dependency
   ],
   controllers: [
     MenuCategoryController,
     MenuItemsController,
+    MenuItemsPublicController,
     ModifierGroupController,
     PublicMenuController,
     MenuPhotoController,

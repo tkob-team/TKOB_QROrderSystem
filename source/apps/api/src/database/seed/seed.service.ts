@@ -102,9 +102,9 @@ export class SeedService {
         minChoices: 1,
         maxChoices: 1,
         options: [
-          { name: 'Small', priceDelta: -20000, order: 0 },
-          { name: 'Medium', priceDelta: 0, order: 1 },
-          { name: 'Large', priceDelta: 25000, order: 2 },
+          { name: 'Small', priceDelta: 0, order: 0 },
+          { name: 'Medium', priceDelta: 0.50, order: 1 },
+          { name: 'Large', priceDelta: 1.00, order: 2 }, // $1.00
         ],
       },
       {
@@ -129,11 +129,11 @@ export class SeedService {
         minChoices: 0,
         maxChoices: 5,
         options: [
-          { name: 'Extra Cheese', priceDelta: 15000, order: 0 },
-          { name: 'Bacon', priceDelta: 20000, order: 1 },
-          { name: 'Mushrooms', priceDelta: 10000, order: 2 },
-          { name: 'Olives', priceDelta: 10000, order: 3 },
-          { name: 'Jalapeños', priceDelta: 12000, order: 4 },
+          { name: 'Extra Cheese', priceDelta: 0.60, order: 0 }, // $0.60
+          { name: 'Bacon', priceDelta: 0.80, order: 1 }, // $0.80
+          { name: 'Mushrooms', priceDelta: 0.40, order: 2 }, // $0.40
+          { name: 'Olives', priceDelta: 0.40, order: 3 }, // $0.40
+          { name: 'Jalapeños', priceDelta: 0.50, order: 4 }, // $0.50
         ],
       },
       {
@@ -144,9 +144,9 @@ export class SeedService {
         minChoices: 0,
         maxChoices: 3,
         options: [
-          { name: 'French Fries', priceDelta: 25000, order: 0 },
-          { name: 'Salad', priceDelta: 20000, order: 1 },
-          { name: 'Soup', priceDelta: 30000, order: 2 },
+          { name: 'French Fries', priceDelta: 1.00, order: 0 }, // $1.00
+          { name: 'Salad', priceDelta: 0.80, order: 1 }, // $0.80
+          { name: 'Soup', priceDelta: 1.20, order: 2 }, // $1.20
         ],
       },
     ];
@@ -202,7 +202,7 @@ export class SeedService {
         categoryId: appetizers.id,
         name: 'Spring Rolls',
         description: 'Crispy Vietnamese spring rolls with sweet chili sauce',
-        price: 45,
+        price: 4.50,
         preparationTime: 10,
         tags: ['vegetarian', 'popular'],
         allergens: ['gluten'],
@@ -213,7 +213,7 @@ export class SeedService {
         categoryId: appetizers.id,
         name: 'Chicken Wings',
         description: 'Buffalo style chicken wings with ranch dressing',
-        price: 65,
+        price: 6.50,
         preparationTime: 15,
         tags: ['spicy', 'popular'],
         allergens: ['dairy'],
@@ -224,7 +224,7 @@ export class SeedService {
         categoryId: appetizers.id,
         name: 'Calamari Rings',
         description: 'Deep fried squid rings with tartar sauce',
-        price: 75,
+        price: 7.50,
         preparationTime: 12,
         tags: ['seafood'],
         allergens: ['seafood', 'gluten'],
@@ -237,7 +237,7 @@ export class SeedService {
         categoryId: mains.id,
         name: 'Grilled Beef Steak',
         description: 'Premium beef steak with mushroom sauce',
-        price: 250,
+        price: 25.00,
         preparationTime: 25,
         tags: ['signature', 'popular'],
         allergens: [],
@@ -249,7 +249,7 @@ export class SeedService {
         categoryId: mains.id,
         name: 'Grilled Salmon',
         description: 'Fresh Atlantic salmon with lemon butter',
-        price: 220,
+        price: 22.00,
         preparationTime: 20,
         tags: ['healthy', 'seafood'],
         allergens: ['fish'],
@@ -261,7 +261,7 @@ export class SeedService {
         categoryId: mains.id,
         name: 'Chicken Teriyaki',
         description: 'Grilled chicken with Japanese teriyaki sauce',
-        price: 120,
+        price: 12.00,
         preparationTime: 18,
         tags: ['japanese', 'popular'],
         allergens: ['soy'],
@@ -274,7 +274,7 @@ export class SeedService {
         categoryId: pasta.id,
         name: 'Spaghetti Carbonara',
         description: 'Classic Italian pasta with bacon and cream sauce',
-        price: 95,
+        price: 9.50,
         preparationTime: 15,
         tags: ['italian', 'popular'],
         allergens: ['dairy', 'gluten', 'eggs'],
@@ -285,7 +285,7 @@ export class SeedService {
         categoryId: pasta.id,
         name: 'Pad Thai',
         description: 'Thai stir-fried noodles with shrimp',
-        price: 85,
+        price: 8.50,
         preparationTime: 12,
         tags: ['thai', 'seafood'],
         allergens: ['seafood', 'peanuts'],
@@ -296,7 +296,7 @@ export class SeedService {
         categoryId: pasta.id,
         name: 'Pho Bo',
         description: 'Vietnamese beef noodle soup',
-        price: 75,
+        price: 7.50,
         preparationTime: 20,
         tags: ['vietnamese', 'popular'],
         allergens: [],
@@ -309,7 +309,7 @@ export class SeedService {
         categoryId: desserts.id,
         name: 'Tiramisu',
         description: 'Classic Italian coffee-flavored dessert',
-        price: 55,
+        price: 5.50,
         preparationTime: 5,
         tags: ['italian', 'coffee'],
         allergens: ['dairy', 'eggs', 'gluten'],
@@ -320,7 +320,7 @@ export class SeedService {
         categoryId: desserts.id,
         name: 'Chocolate Lava Cake',
         description: 'Warm chocolate cake with molten center',
-        price: 65,
+        price: 6.50,
         preparationTime: 15,
         tags: ['chocolate', 'popular'],
         allergens: ['dairy', 'eggs', 'gluten'],
@@ -333,7 +333,7 @@ export class SeedService {
         categoryId: beverages.id,
         name: 'Fresh Orange Juice',
         description: 'Freshly squeezed orange juice',
-        price: 35,
+        price: 3.50,
         preparationTime: 3,
         tags: ['fresh', 'healthy'],
         allergens: [],
@@ -344,7 +344,7 @@ export class SeedService {
         categoryId: beverages.id,
         name: 'Iced Vietnamese Coffee',
         description: 'Strong Vietnamese coffee with condensed milk',
-        price: 40,
+        price: 1.00,
         preparationTime: 5,
         tags: ['vietnamese', 'coffee', 'popular'],
         allergens: ['dairy'],
@@ -357,7 +357,7 @@ export class SeedService {
         categoryId: special.id,
         name: "Chef's Special Pizza",
         description: 'Our signature pizza with premium toppings',
-        price: 180,
+        price: 18.00,
         preparationTime: 30,
         tags: ['signature', 'popular'],
         allergens: ['dairy', 'gluten'],
@@ -383,22 +383,28 @@ export class SeedService {
         },
       });
 
-      // Step 2: Upload photo if photoQuery exists
-      if (photoQuery) {
+      // Step 2: Prepare mock files from a static URL
+      if (photoQuery) { // Hoặc bỏ check này nếu bạn muốn luôn luôn seed ảnh này
         try {
-          // Search multiple photos
-          const photoUrls = await this.unsplash.searchMultiplePhotos(photoQuery, 3); // Get 3 photos
+          // 1. Link cố định
+          const sharedUrl = 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1c/2f/33/2d/healthy-bowl-frische.jpg?w=900&h=500&s=1';
 
+          // 2. Tải buffer MỘT LẦN (Download once, reuse everywhere)
+          const sharedBuffer = await this.downloadPhotoToBuffer(sharedUrl);
+          
           const mockFiles: Express.Multer.File[] = [];
-          for (const url of photoUrls) {
-            const buffer = await this.downloadPhotoToBuffer(url);
+          const numberOfFiles = 3; // Số lượng file bạn muốn nhân bản
+
+          // 3. Loop để tạo mảng object Multer
+          for (let i = 0; i < numberOfFiles; i++) {
             mockFiles.push({
               fieldname: 'files',
-              originalname: `${itemData.name}-${mockFiles.length}.jpg`,
+              // Quan trọng: Thêm index i vào tên để tránh bị trùng tên file khi lưu
+              originalname: `${itemData.name}-${i}.jpg`, 
               encoding: '7bit',
               mimetype: 'image/jpeg',
-              buffer,
-              size: buffer.length,
+              buffer: sharedBuffer, // <--- Xài chung buffer ở đây
+              size: sharedBuffer.length,
               stream: null as any,
               destination: '',
               filename: '',
@@ -517,36 +523,7 @@ export class SeedService {
     return created;
   }
 
-  /**
-   * OPTIONAL: Seed demo user (Staff account)
-   */
-  async seedDemoStaffUser(tenantId: string, ownerEmail: string): Promise<void> {
-    const staffEmail = ownerEmail.replace('@', '+staff@');
 
-    const existingStaff = await this.prisma.user.findFirst({
-      where: { email: staffEmail, tenantId },
-    });
-
-    if (existingStaff) {
-      this.logger.debug(`Staff user already exists: ${staffEmail}`);
-      return;
-    }
-
-    const passwordHash = await bcrypt.hash('Staff@123', 10);
-
-    await this.prisma.user.create({
-      data: {
-        email: staffEmail,
-        passwordHash,
-        fullName: 'Demo Staff',
-        role: 'STAFF',
-        status: 'ACTIVE',
-        tenantId,
-      },
-    });
-
-    this.logger.log(`✅ Created demo staff account: ${staffEmail} / Staff@123`);
-  }
 
   /**
    * Seed Subscription Plans (run once on startup)

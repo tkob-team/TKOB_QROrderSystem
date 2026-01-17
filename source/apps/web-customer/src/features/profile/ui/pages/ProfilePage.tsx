@@ -1,23 +1,18 @@
 'use client'
 
 import { User, Phone, Mail, LogIn, LogOut, History, Edit, Lock } from 'lucide-react'
-import { LanguageSwitcher } from '@/shared/components'
-import { Language } from '@/types'
-import { useState } from 'react'
 import { useProfileController } from '../../hooks'
 import { PROFILE_TEXT } from '../../model'
 
 export function ProfilePage() {
-  const [language, setLanguage] = useState<Language>('EN')
   const controller = useProfileController()
-  const t = PROFILE_TEXT[language]
 
   if (controller.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-          <p className="mt-2 text-gray-600">{t.loadingProfile}</p>
+          <p className="mt-2 text-gray-600">{PROFILE_TEXT.loadingProfile}</p>
         </div>
       </div>
     )
@@ -28,8 +23,7 @@ export function ProfilePage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
         <div className="flex items-center justify-between">
-          <h2 style={{ color: 'var(--gray-900)' }}>{t.title}</h2>
-          <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />
+          <h2 style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.title}</h2>
         </div>
       </div>
 
@@ -46,9 +40,9 @@ export function ProfilePage() {
                 >
                   <User className="w-8 h-8" style={{ color: 'var(--orange-500)' }} />
                 </div>
-                <h3 className="mb-2" style={{ color: 'var(--gray-900)' }}>{t.loginTitle}</h3>
+                <h3 className="mb-2" style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.loginTitle}</h3>
                 <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-                  {t.loginDesc}
+                  {PROFILE_TEXT.loginDesc}
                 </p>
               </div>
               
@@ -62,15 +56,15 @@ export function ProfilePage() {
                 }}
               >
                 <LogIn className="w-5 h-5" />
-                <span>{t.loginButton}</span>
+                <span>{PROFILE_TEXT.loginButton}</span>
               </button>
             </div>
 
             {/* Guest Info */}
             <div className="bg-white rounded-xl border p-4 mb-4" style={{ borderColor: 'var(--gray-200)' }}>
-              <h4 className="mb-2" style={{ color: 'var(--gray-900)' }}>{t.guestTitle}</h4>
+              <h4 className="mb-2" style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.guestTitle}</h4>
               <p style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-                {t.guestDesc}
+                {PROFILE_TEXT.guestDesc}
               </p>
             </div>
           </>
@@ -105,7 +99,7 @@ export function ProfilePage() {
             {/* Account Actions */}
             <div className="bg-white rounded-xl border overflow-hidden mb-4" style={{ borderColor: 'var(--gray-200)' }}>
               <h3 className="p-4 border-b" style={{ borderColor: 'var(--gray-200)', color: 'var(--gray-900)' }}>
-                {t.account}
+                {PROFILE_TEXT.account}
               </h3>
               
               <button 
@@ -114,7 +108,7 @@ export function ProfilePage() {
                 style={{ borderColor: 'var(--gray-200)' }}
               >
                 <Edit className="w-5 h-5" style={{ color: 'var(--gray-600)' }} />
-                <span style={{ color: 'var(--gray-900)' }}>{t.editProfile}</span>
+                <span style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.editProfile}</span>
               </button>
               
               <button 
@@ -123,7 +117,7 @@ export function ProfilePage() {
                 style={{ borderColor: 'var(--gray-200)' }}
               >
                 <Lock className="w-5 h-5" style={{ color: 'var(--gray-600)' }} />
-                <span style={{ color: 'var(--gray-900)' }}>{t.changePassword}</span>
+                <span style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.changePassword}</span>
               </button>
               
               <button 
@@ -132,7 +126,7 @@ export function ProfilePage() {
                 style={{ borderColor: 'var(--gray-200)' }}
               >
                 <History className="w-5 h-5" style={{ color: 'var(--gray-600)' }} />
-                <span style={{ color: 'var(--gray-900)' }}>{t.orderHistory}</span>
+                <span style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.orderHistory}</span>
               </button>
               
               <button 
@@ -140,36 +134,26 @@ export function ProfilePage() {
                 className="w-full p-4 flex items-center gap-3 transition-colors hover:bg-[var(--gray-50)] active:bg-[var(--gray-100)]"
               >
                 <LogOut className="w-5 h-5" style={{ color: 'var(--red-600)' }} />
-                <span style={{ color: 'var(--red-600)' }}>{t.signOut}</span>
+                <span style={{ color: 'var(--red-600)' }}>{PROFILE_TEXT.signOut}</span>
               </button>
             </div>
           </>
         )}
 
-        {/* Settings Section */}
-        <div className="bg-white rounded-xl border overflow-hidden mb-4" style={{ borderColor: 'var(--gray-200)' }}>
-          <div className="p-4 border-b" style={{ borderColor: 'var(--gray-200)' }}>
-            <div className="flex items-center justify-between">
-              <span style={{ color: 'var(--gray-900)' }}>{t.language}</span>
-              <LanguageSwitcher currentLanguage={language} onLanguageChange={setLanguage} />
-            </div>
-          </div>
-        </div>
-
         {/* Support Section */}
         <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: 'var(--gray-200)' }}>
           <h3 className="p-4 border-b" style={{ borderColor: 'var(--gray-200)', color: 'var(--gray-900)' }}>
-            {t.support}
+            {PROFILE_TEXT.support}
           </h3>
           
           <button className="w-full p-4 border-b flex items-center gap-3 transition-colors hover:bg-[var(--gray-50)] active:bg-[var(--gray-100)]" style={{ borderColor: 'var(--gray-200)' }}>
             <Phone className="w-5 h-5" style={{ color: 'var(--gray-600)' }} />
-            <span style={{ color: 'var(--gray-900)' }}>{t.contactUs}</span>
+            <span style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.contactUs}</span>
           </button>
           
           <button className="w-full p-4 flex items-center gap-3 transition-colors hover:bg-[var(--gray-50)] active:bg-[var(--gray-100)]">
             <Mail className="w-5 h-5" style={{ color: 'var(--gray-600)' }} />
-            <span style={{ color: 'var(--gray-900)' }}>{t.about}</span>
+            <span style={{ color: 'var(--gray-900)' }}>{PROFILE_TEXT.about}</span>
           </button>
         </div>
       </div>

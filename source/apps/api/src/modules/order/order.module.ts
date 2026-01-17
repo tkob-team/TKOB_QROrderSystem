@@ -8,6 +8,7 @@ import { OrderService } from './services/order.service';
 import { OrderController } from './controllers/order.controller';
 import { KdsController } from './controllers/kds.controller';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { PaymentConfigModule } from '../payment-config/payment-config.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SubscriptionModule } from '../subscription/subscription.module';
     TableModule,
     TenantModule,
     forwardRef(() => SubscriptionModule),
+    PaymentConfigModule,
   ],
   controllers: [CartController, OrderController, KdsController],
   providers: [

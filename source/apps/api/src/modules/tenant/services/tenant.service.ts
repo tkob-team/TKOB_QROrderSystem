@@ -26,7 +26,7 @@ const DEFAULT_PRICING_SETTINGS: TenantPricingSettings = {
   currency: 'USD',
   tax: {
     enabled: true,
-    rate: 10,
+    rate: 8, // Government-mandated tax rate (8% VAT)
     label: 'VAT',
     includedInPrice: false,
   },

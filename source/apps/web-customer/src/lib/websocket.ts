@@ -56,7 +56,10 @@ export function getSocket(options?: SocketConnectionOptions): Socket | null {
     return socketInstance;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  // WebSocket connects to base URL (not /api/v1 - socket.io uses root path)
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  // Remove /api/v1 suffix if present for socket connection
+  const wsUrl = baseUrl.replace(/\/api\/v1$/, '');
   
   if (!options) {
     // Return null if no options and no existing connection
@@ -65,8 +68,8 @@ export function getSocket(options?: SocketConnectionOptions): Socket | null {
 
   const { tenantId, tableId, role = 'customer' } = options;
 
-  // Create new connection
-  socketInstance = io(`${baseUrl}/orders`, {
+  // Create new connection (socket.io connects to namespace at root level)
+  socketInstance = io(`${wsUrl}/orders`, {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,

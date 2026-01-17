@@ -12,6 +12,7 @@ const publicRoutes = [
   '/home',
   '/about',
   '/help',
+  '/unauthorized',
 ];
 
 // Routes accessible only when not authenticated (will redirect to dashboard if logged in)
@@ -48,7 +49,7 @@ export function middleware(request: NextRequest) {
           
           // Redirect based on role
           if (userRole === 'OWNER') {
-            return NextResponse.redirect(new URL('/waiter', request.url));
+            return NextResponse.redirect(new URL('/admin/dashboard', request.url));
           } else if (userRole === 'STAFF') {
             return NextResponse.redirect(new URL('/waiter', request.url));
           } else if (userRole === 'KITCHEN') {
@@ -58,8 +59,8 @@ export function middleware(request: NextRequest) {
       } catch (error) {
         logger.log('[middleware] Failed to parse JWT for root redirect:', error);
       }
-      // Fallback to /waiter for authenticated users
-      return NextResponse.redirect(new URL('/waiter', request.url));
+      // Fallback to home if role parsing fails
+      return NextResponse.redirect(new URL('/home', request.url));
     } else {
       // Redirect to landing page for non-authenticated users
       return NextResponse.redirect(new URL('/home', request.url));
@@ -95,13 +96,9 @@ export function middleware(request: NextRequest) {
         if (pathname.startsWith('/admin')) {
           if (!['OWNER'].includes(userRole)) {
             logger.log('[middleware] Access denied to admin routes for role:', userRole);
-            // Redirect STAFF to /waiter, KITCHEN to /kds
-            if (userRole === 'STAFF') {
-              return NextResponse.redirect(new URL('/waiter', request.url));
-            } else if (userRole === 'KITCHEN') {
-              return NextResponse.redirect(new URL('/kds', request.url));
-            }
-            return NextResponse.redirect(new URL('/auth/login', request.url));
+            const unauthorizedUrl = new URL('/unauthorized', request.url);
+            unauthorizedUrl.searchParams.set('role', userRole);
+            return NextResponse.redirect(unauthorizedUrl);
           }
         }
         
@@ -109,10 +106,9 @@ export function middleware(request: NextRequest) {
         if (pathname === '/kds' || pathname.startsWith('/kds/')) {
           if (!['KITCHEN', 'OWNER'].includes(userRole)) {
             logger.log('[middleware] Access denied to KDS for role:', userRole);
-            if (userRole === 'STAFF') {
-              return NextResponse.redirect(new URL('/waiter', request.url));
-            }
-            return NextResponse.redirect(new URL('/auth/login', request.url));
+            const unauthorizedUrl = new URL('/unauthorized', request.url);
+            unauthorizedUrl.searchParams.set('role', userRole);
+            return NextResponse.redirect(unauthorizedUrl);
           }
         }
         
@@ -120,10 +116,9 @@ export function middleware(request: NextRequest) {
         if (pathname === '/staff' || pathname.startsWith('/staff/')) {
           if (!['STAFF', 'OWNER'].includes(userRole)) {
             logger.log('[middleware] Access denied to Staff for role:', userRole);
-            if (userRole === 'KITCHEN') {
-              return NextResponse.redirect(new URL('/kds', request.url));
-            }
-            return NextResponse.redirect(new URL('/auth/login', request.url));
+            const unauthorizedUrl = new URL('/unauthorized', request.url);
+            unauthorizedUrl.searchParams.set('role', userRole);
+            return NextResponse.redirect(unauthorizedUrl);
           }
         }
         
@@ -131,10 +126,9 @@ export function middleware(request: NextRequest) {
         if (pathname === '/waiter' || pathname.startsWith('/waiter/')) {
           if (!['STAFF', 'OWNER'].includes(userRole)) {
             logger.log('[middleware] Access denied to Waiter for role:', userRole);
-            if (userRole === 'KITCHEN') {
-              return NextResponse.redirect(new URL('/kds', request.url));
-            }
-            return NextResponse.redirect(new URL('/auth/login', request.url));
+            const unauthorizedUrl = new URL('/unauthorized', request.url);
+            unauthorizedUrl.searchParams.set('role', userRole);
+            return NextResponse.redirect(unauthorizedUrl);
           }
         }
       }

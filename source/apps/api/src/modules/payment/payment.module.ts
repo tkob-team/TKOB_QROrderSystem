@@ -6,6 +6,7 @@ import { PaymentController } from './controllers/payment.controller';
 import { SepayProvider } from './providers/sepay.provider';
 import { RedisModule } from '../redis/redis.module';
 import { PaymentConfigModule } from '../payment-config/payment-config.module';
+import { TableModule } from '../table/table.module';
 import paymentConfig from '@/config/payment.config';
 
 @Module({
@@ -13,6 +14,7 @@ import paymentConfig from '@/config/payment.config';
     ConfigModule.forFeature(paymentConfig),
     RedisModule,
     PaymentConfigModule,
+    TableModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService, SepayProvider, CurrencyService],

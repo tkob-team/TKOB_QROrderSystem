@@ -65,6 +65,7 @@ export interface PaymentIntentResponse {
   amountVND: number; // Amount in VND for SePay
   currency: string;
   qrContent: string; // VietQR content for QR code generation
+  qrCodeUrl: string; // URL to SePay QR image
   deepLink?: string; // Deep link to banking app
   transferContent: string; // Transfer description
   accountNumber: string;

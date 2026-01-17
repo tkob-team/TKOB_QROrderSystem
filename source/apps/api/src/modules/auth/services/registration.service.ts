@@ -153,16 +153,13 @@ export class RegistrationService {
       tenant = result.tenant;
 
       try {
-        // Seed demo data and create FREE subscription
-        await Promise.all([
-          this.seedService.seedTenantData(tenant.id),
-          this.seedService.createFreeSubscription(tenant.id),
-        ]);
-        await this.seedService.seedDemoStaffUser(tenant.id, user.email);
-        this.logger.log(`✅ Demo data and FREE subscription created for tenant: ${tenant.id}`);
+        // Always create FREE subscription
+        await this.seedService.createFreeSubscription(tenant.id);
+        this.logger.log(`✅ FREE subscription created for tenant: ${tenant.id}`);
+        // Note: Demo data will be seeded on first login (see auth.service.ts)
       } catch (seedError) {
         // Don't fail registration if seed fails
-        this.logger.error(`Failed to seed demo data for ${tenant.id}:`, seedError);
+        this.logger.error(`Failed to create subscription for ${tenant.id}:`, seedError);
       }
     } catch (error) {
       this.logger.error('Registration transaction failed', error.stack);

@@ -13,11 +13,13 @@ export function OptimizedImage({
   src, 
   alt, 
   className,
-  fallbackSrc = '/images/placeholder-food.jpg',
+  fallbackSrc = 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1c/2f/33/2d/healthy-bowl-frische.jpg?w=900&h=500&s=1',
   ...props 
 }: OptimizedImageProps) {
-  const [imgSrc, setImgSrc] = useState(src)
-  const [isError, setIsError] = useState(false)
+  // Use fallback if src is empty/null to avoid browser downloading whole page
+  const initialSrc = src && src.trim() ? src : fallbackSrc
+  const [imgSrc, setImgSrc] = useState(initialSrc)
+  const [isError, setIsError] = useState(!src || !src.trim())
 
   return (
     <img

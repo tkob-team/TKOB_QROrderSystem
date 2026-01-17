@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUrl, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreatePaymentIntentDto {
   @ApiProperty({
@@ -13,7 +13,7 @@ export class CreatePaymentIntentDto {
     description: 'Return URL after payment completion',
     example: 'https://app.restaurant.com/order/success',
   })
-  @IsUrl()
+  @IsString()
   returnUrl: string;
 
   @ApiProperty({
@@ -21,7 +21,7 @@ export class CreatePaymentIntentDto {
     example: 'https://app.restaurant.com/order/cancel',
     required: false,
   })
-  @IsUrl()
+  @IsString()
   @IsOptional()
   cancelUrl?: string;
 }
