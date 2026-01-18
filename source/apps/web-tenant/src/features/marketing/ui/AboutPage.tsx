@@ -7,6 +7,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Target, 
   Users, 
@@ -20,31 +21,30 @@ import {
 const values = [
   {
     icon: Target,
-    title: 'Customer First',
-    description: 'We build for restaurant owners, not for ourselves. Every feature is designed to solve real problems.',
+    title: 'Solve real problems',
+    description: 'We build features restaurants actually need, not what sounds impressive on a landing page.',
   },
   {
     icon: Lightbulb,
-    title: 'Innovation',
-    description: 'We constantly improve and adopt new technologies to give you the competitive edge.',
+    title: 'Keep it simple',
+    description: 'Good tools shouldn’t require training. We design for busy people who need things to just work.',
   },
   {
     icon: Users,
-    title: 'Collaboration',
-    description: 'We work closely with our customers to understand their needs and deliver value.',
+    title: 'Listen closely',
+    description: 'The best ideas come from the people using TKOB every shift. We pay attention and improve continuously.',
   },
   {
     icon: Heart,
-    title: 'Passion',
-    description: 'We love what we do and it shows in every line of code and every pixel of design.',
+    title: 'Care about service',
+    description: 'Hospitality matters. We respect the work restaurant teams do, and we want to support it—not complicate it.',
   },
 ];
 
 const team = [
-  { name: 'Team Lead', role: 'Project Manager', avatar: '👨‍💼' },
-  { name: 'Backend Dev', role: 'API & Database', avatar: '👨‍💻' },
-  { name: 'Frontend Dev', role: 'UI/UX & Web', avatar: '👩‍💻' },
-  { name: 'Designer', role: 'Visual Design', avatar: '🎨' },
+  { name: 'Le Tan Hiep', role: 'Full-Stack Engineer (Lead)', avatar: '/images/mate1.jpg' },
+  { name: 'Nguyen Phuc Hoang', role: 'Full-Stack Engineer', avatar: '/images/mate2.jpg' },
+  { name: 'Tong Duong Thai Hoa', role: 'Full-Stack Engineer', avatar: '/images/mate3.jpg' },
 ];
 
 export function AboutPage() {
@@ -54,17 +54,16 @@ export function AboutPage() {
       <section className="py-20 md:py-32 bg-gradient-to-br from-emerald-50 via-white to-teal-50">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
           <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-6">
-            About Us
+            About us
           </span>
           <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Building the Future of{' '}
+            A small team building{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
-              Restaurant Tech
+              practical tools
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600">
-            We&apos;re a team of passionate developers and designers on a mission to help restaurants 
-            thrive in the digital age.
+            We’re three full-stack engineers building TKOB to help restaurants run smoother service, one order at a time.
           </p>
         </div>
       </section>
@@ -75,23 +74,20 @@ export function AboutPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <span className="inline-block px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
-                Our Story
+                Our story
               </span>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                From University Project to Real Solution
+                We started because we saw the chaos
               </h2>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
-                  TKOB started as a university project for our Web Application Development course. 
-                  We saw how local restaurants struggled with order management, especially during peak hours.
+                  TKOB began as a university project. We watched local restaurants juggle handwritten orders, missed tickets, and stressed kitchen staff during rush hours.
                 </p>
                 <p>
-                  What began as a class assignment evolved into a full-fledged platform that addresses 
-                  real challenges faced by restaurant owners every day.
+                  So we built a simple flow: QR ordering, a kitchen display, and a service board—all connected in real time.
                 </p>
                 <p>
-                  Today, we&apos;re proud to offer a comprehensive solution that helps restaurants 
-                  streamline operations, reduce errors, and deliver better customer experiences.
+                  Today, TKOB helps restaurant teams coordinate better, reduce mistakes, and focus on hospitality instead of chasing down orders.
                 </p>
               </div>
               <div className="flex items-center gap-6 mt-8">
@@ -126,10 +122,10 @@ export function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4">
-              Our Values
+              Our values
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900">
-              What Drives Us
+              How we work
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -154,17 +150,23 @@ export function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
-              Our Team
+              Our team
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900">
-              Meet the Creators
+              The people behind TKOB
             </h2>
           </div>
-          <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {team.map((member, i) => (
               <div key={i} className="text-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                  {member.avatar}
+                <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden">
+                  <Image 
+                    src={member.avatar} 
+                    alt={member.name}
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <h3 className="font-heading font-semibold text-gray-900">{member.name}</h3>
                 <p className="text-sm text-gray-500">{member.role}</p>
@@ -177,25 +179,25 @@ export function AboutPage() {
       {/* CTA */}
       <section className="py-20 bg-gradient-to-br from-emerald-600 to-teal-600 text-white">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
-            Want to Learn More?
+          <h2 className="font-display text-3xl md:text-4xl font-bold">
+            Questions? Want to chat?
           </h2>
-          <p className="text-lg text-emerald-100 mb-8">
-            Get in touch with us or try TKOB for your restaurant.
+          <p className="text-lg text-emerald-100 mb-8 py-4">
+            Reach out anytime—we’re happy to help or just talk shop about restaurants.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/help"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-emerald-600 font-semibold rounded-lg hover:bg-emerald-50 transition-all"
             >
-              Contact Us
+              Get in touch
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
               href="/auth/login"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-700 text-white font-semibold rounded-lg hover:bg-emerald-800 transition-all border border-emerald-500"
             >
-              Try TKOB Free
+              Try TKOB free
             </Link>
           </div>
         </div>

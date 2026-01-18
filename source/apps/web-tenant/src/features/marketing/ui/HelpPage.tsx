@@ -20,58 +20,58 @@ import {
 
 const faqs = [
   {
-    question: 'How do I get started with TKOB?',
-    answer: 'Sign up for a free account, add your restaurant details, create your menu, and generate QR codes for your tables. You can be up and running in less than 30 minutes!',
+    question: 'How do I get started?',
+    answer: 'Create an account, add your restaurant details and menu, then print QR codes for your tables. Most teams are set up in under 30 minutes.',
   },
   {
     question: 'Is there a free trial?',
-    answer: 'Yes! All plans come with a 14-day free trial. No credit card required. You can explore all features before deciding.',
+    answer: 'Yes—try any plan free for 14 days. No credit card needed until you decide to continue.',
   },
   {
-    question: 'Can I use TKOB for multiple restaurant branches?',
-    answer: 'Absolutely! Our Enterprise plan supports multi-location management with centralized reporting and menu control.',
+    question: 'Can I use TKOB at multiple locations?',
+    answer: 'Absolutely. Our Enterprise plan is built for multi-location setups with centralized menus and reporting.',
   },
   {
-    question: 'How does QR ordering work?',
-    answer: 'Customers scan the QR code at their table using their phone camera. They can browse your menu, customize orders, and submit directly to your kitchen. No app download needed!',
+    question: 'How does QR ordering work for guests?',
+    answer: 'They scan the code with their phone camera, browse your menu, place their order—no app to download, no account to create.',
   },
   {
-    question: 'What devices are supported for KDS?',
-    answer: 'Our Kitchen Display System works on any device with a web browser - tablets, laptops, or dedicated screens. We recommend tablets for the best experience.',
+    question: 'What devices work with the Kitchen Display?',
+    answer: 'Any device with a browser: tablets, laptops, monitors. We recommend tablets for portability and touchscreen ease.',
   },
   {
-    question: 'How do I contact support?',
-    answer: 'You can reach us via email at support@tkob.io, through the contact form below, or via our in-app chat. Pro and Enterprise customers get priority support.',
+    question: 'How do I reach support if something goes wrong?',
+    answer: 'Email us at support@tkob.io, use the contact form below, or chat with us in-app. Pro and Enterprise customers get faster response times.',
   },
   {
-    question: 'Can I customize the menu design?',
-    answer: 'Yes! You can upload images, set categories, add modifiers, and customize the layout. Your digital menu reflects your brand.',
+    question: 'Can I customize my digital menu?',
+    answer: 'Yes. Upload photos, organize categories, add modifiers, set prices—your menu stays flexible and reflects your brand.',
   },
   {
-    question: 'Is my data secure?',
-    answer: 'Security is our priority. We use industry-standard encryption, secure data centers, and regular backups. Your data is safe with us.',
+    question: 'Is my restaurant data secure?',
+    answer: 'We use industry-standard encryption, secure servers, and regular backups. Your data is safe, private, and always yours.',
   },
 ];
 
 const supportChannels = [
   {
     icon: Mail,
-    title: 'Email Support',
-    description: 'Get help via email',
+    title: 'Email us',
+    description: 'We reply within a few hours',
     contact: 'support@tkob.io',
     href: 'mailto:support@tkob.io',
   },
   {
     icon: MessageCircle,
-    title: 'Live Chat',
-    description: 'Chat with our team',
-    contact: 'Available 9AM-6PM',
+    title: 'Live chat',
+    description: 'Quick help during business hours',
+    contact: 'Available 9AM–6PM',
     href: '#',
   },
   {
     icon: Phone,
-    title: 'Phone Support',
-    description: 'Call us directly',
+    title: 'Call us',
+    description: 'Prefer talking? We’re here',
     contact: '+84 123 456 789',
     href: 'tel:+84123456789',
   },
@@ -80,20 +80,20 @@ const supportChannels = [
 const resources = [
   {
     icon: Book,
-    title: 'Documentation',
-    description: 'Detailed guides and tutorials',
+    title: 'Docs',
+    description: 'Setup guides and feature walkthroughs',
     href: '#',
   },
   {
     icon: Video,
-    title: 'Video Tutorials',
-    description: 'Step-by-step video guides',
+    title: 'Video tutorials',
+    description: 'Watch how features work step-by-step',
     href: '#',
   },
   {
     icon: HelpCircle,
-    title: 'Knowledge Base',
-    description: 'Common questions answered',
+    title: 'Knowledge base',
+    description: 'Browse articles and troubleshooting tips',
     href: '#',
   },
 ];
@@ -110,7 +110,7 @@ export function HelpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
-    alert('Thank you for your message! We\'ll get back to you soon.');
+    alert('Thanks for reaching out! We’ll get back to you soon.');
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 
@@ -120,16 +120,16 @@ export function HelpPage() {
       <section className="py-20 md:py-32 bg-gradient-to-br from-emerald-50 via-white to-teal-50">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
           <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-6">
-            Help Center
+            Help & support
           </span>
           <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            How Can We{' '}
+            We’re here to{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
-              Help You?
+              help you succeed
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600">
-            Find answers to common questions or get in touch with our support team.
+            Whether you’re setting up or running into a snag—here are answers, guides, and ways to reach us.
           </p>
         </div>
       </section>
@@ -166,10 +166,10 @@ export function HelpPage() {
         <div className="max-w-4xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
             <span className="inline-block px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
-              FAQ
+              Common questions
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900">
-              Frequently Asked Questions
+              Quick answers
             </h2>
           </div>
 
@@ -208,10 +208,10 @@ export function HelpPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
             <span className="inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
-              Resources
+              Learn more
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900">
-              Learn More
+              Guides & resources
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -242,14 +242,13 @@ export function HelpPage() {
             {/* Left: Info */}
             <div>
               <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4">
-                Contact Us
+                Contact us
               </span>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                Get in Touch
+                Send us a message
               </h2>
               <p className="text-gray-600 mb-8 leading-relaxed">
-                Have a question that isn&apos;t answered above? We&apos;d love to hear from you. 
-                Fill out the form and we&apos;ll get back to you within 24 hours.
+                Still have questions? Drop us a line. We’ll respond within 24 hours (usually much faster).
               </p>
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-gray-600">
