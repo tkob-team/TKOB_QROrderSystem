@@ -113,6 +113,7 @@ model Tenant {
   staffInvitations StaffInvitation[] // Staff invitations
   promotions       Promotion[] // Promotion codes
   subscription     TenantSubscription? // Subscription relation
+  bills            Bill[] // Bill relation
 
   @@map("tenants") // Tên bảng trong DB là số nhiều 'tenants'
 }
@@ -382,6 +383,7 @@ model Table {
   sessions TableSession[] // One table can have many sessions (history)
   orders   Order[]
   carts    Cart[] // Cart relation
+  bills    Bill[] // Bill relation
 
   @@unique([tableNumber, tenantId], name: "table_number_tenant_unique")
   @@index([tenantId, status])
@@ -445,6 +447,10 @@ model Order {
   paymentMethod PaymentMethod @default(BILL_TO_TABLE) @map("payment_method")
   paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
   paidAt        DateTime?     @map("paid_at")
+
+  // Bill reference (when orders are grouped for payment)
+  billId String? @map("bill_id")
+  bill   Bill?   @relation(fields: [billId], references: [id], onDelete: SetNull)
 
   // // Stripe payment (if applicable)
   // stripePaymentIntentId String? @map("stripe_payment_intent_id")
@@ -605,7 +611,7 @@ model Payment {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  order  Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order  Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
@@ -747,4 +753,42 @@ model TenantSubscription {
   @@index([planId])
   @@index([status])
   @@map("tenant_subscriptions")
+}
+
+// Bill/Invoice for grouping multiple orders when closing table
+model Bill {
+  id         String @id @default(uuid())
+  billNumber String @unique @map("bill_number") // "BILL-20260118-0001"
+  tenantId   String @map("tenant_id")
+  tableId    String @map("table_id")
+  sessionId  String @map("session_id")
+
+  // Aggregated amounts from orders
+  subtotal      Decimal @db.Decimal(10, 2) // Sum of all orders' totals
+  discount      Decimal @default(0) @db.Decimal(10, 2) // Bill-level discount
+  tip           Decimal @default(0) @db.Decimal(10, 2) // Bill-level tip
+  serviceCharge Decimal @default(0) @map("service_charge") @db.Decimal(10, 2)
+  tax           Decimal @default(0) @db.Decimal(10, 2)
+  total         Decimal @db.Decimal(10, 2) // Final amount after discount/tip
+
+  // Payment
+  paymentMethod PaymentMethod @default(BILL_TO_TABLE) @map("payment_method")
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt        DateTime?     @map("paid_at")
+
+  // Metadata
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  table  Table   @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  orders Order[] // All orders included in this bill
+
+  @@index([tenantId])
+  @@index([tableId])
+  @@index([sessionId])
+  @@index([billNumber])
+  @@map("bills")
 }
