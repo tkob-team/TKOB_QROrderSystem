@@ -4,12 +4,8 @@ import React from 'react';
 import { useTenantProfileController } from '../../hooks';
 import {
   TenantBasicInfoSection,
-  TenantMediaSection,
-  TenantLocalizationSection,
-  TenantAppearanceSection,
   TenantOpeningHoursSection,
   TenantPaymentsSection,
-  TenantPromotionsSection,
 } from '../components/sections';
 import { SubscriptionSettingsPage } from './SubscriptionSettingsPage';
 import type { TenantProfileTab } from '../../model';
@@ -19,24 +15,23 @@ export function TenantProfilePage() {
   const controller = useTenantProfileController();
 
   const tabLabels: Record<TenantProfileTab, string> = {
-    profile: 'Hồ sơ',
-    hours: 'Giờ mở cửa',
-    payments: 'Thanh toán',
-    promotions: 'Mã giảm giá',
-    subscription: 'Gói dịch vụ',
+    profile: 'Profile',
+    hours: 'Opening Hours',
+    payments: 'Payments',
+    subscription: 'Subscription',
   };
 
   return (
     <div className="flex flex-col gap-6 px-6 pt-6 pb-5">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-text-primary">Cài đặt nhà hàng</h1>
-        <p className="text-text-secondary text-sm">Quản lý thông tin và cài đặt nhà hàng của bạn</p>
+        <h1 className="text-2xl font-semibold text-text-primary">Setting Tenant</h1>
+        <p className="text-text-secondary text-sm">Manage your restaurant information and settings</p>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-default">
         <div className="flex gap-2 overflow-x-auto">
-          {(['profile', 'hours', 'payments', 'promotions', 'subscription'] as TenantProfileTab[]).map((tab) => (
+          {(['profile', 'hours', 'payments', 'subscription'] as TenantProfileTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => controller.setActiveTab(tab)}
@@ -69,23 +64,6 @@ export function TenantProfilePage() {
             onDescriptionChange={controller.setDescription}
             onSave={controller.handleSaveProfile}
           />
-
-          <TenantMediaSection
-            slugPreview={controller.slugPreview}
-            coverUploaded={controller.coverUploaded}
-          />
-
-          <TenantLocalizationSection
-            defaultLanguage={controller.defaultLanguage}
-            timezone={controller.timezone}
-            onDefaultLanguageChange={controller.setDefaultLanguage}
-            onTimezoneChange={controller.setTimezone}
-          />
-
-          <TenantAppearanceSection
-            theme={controller.theme}
-            onThemeChange={controller.setTheme}
-          />
         </div>
       )}
 
@@ -104,11 +82,6 @@ export function TenantProfilePage() {
       {/* Payments Tab */}
       {controller.activeTab === 'payments' && (
         <TenantPaymentsSection />
-      )}
-
-      {/* Promotions Tab */}
-      {controller.activeTab === 'promotions' && (
-        <TenantPromotionsSection />
       )}
 
       {/* Subscription Tab */}

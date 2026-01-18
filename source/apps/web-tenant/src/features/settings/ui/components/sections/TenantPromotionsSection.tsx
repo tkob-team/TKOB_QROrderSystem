@@ -58,10 +58,10 @@ export function TenantPromotionsSection() {
 
   const handleDelete = async (promo: Promotion) => {
     if (promo.usageCount > 0) {
-      alert('Không thể xóa mã đã được sử dụng. Hãy tắt hoạt động thay vì xóa.');
+      alert('Cannot delete a code that has been used. Please deactivate it instead.');
       return;
     }
-    if (confirm(`Xóa mã "${promo.code}"?`)) {
+    if (confirm(`Delete code "${promo.code}"?`)) {
       deletePromo.mutate(promo.id);
     }
   };
@@ -91,8 +91,8 @@ export function TenantPromotionsSection() {
               <Gift className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Mã giảm giá</h2>
-              <p className="text-sm text-text-secondary">Tạo và quản lý voucher cho khách hàng</p>
+              <h2 className="text-lg font-semibold text-text-primary">Discount Codes</h2>
+              <p className="text-sm text-text-secondary">Create and manage vouchers for customers</p>
             </div>
           </div>
           <button
@@ -100,22 +100,22 @@ export function TenantPromotionsSection() {
             className="flex items-center gap-2 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg font-medium transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Tạo mã
+            Create Code
           </button>
         </div>
 
         {/* Mini Stats */}
         <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-default">
           <div>
-            <p className="text-sm text-text-secondary">Tổng mã</p>
+            <p className="text-sm text-text-secondary">Total Codes</p>
             <p className="text-xl font-bold text-text-primary">{stats.total}</p>
           </div>
           <div>
-            <p className="text-sm text-text-secondary">Đang hoạt động</p>
+            <p className="text-sm text-text-secondary">Active</p>
             <p className="text-xl font-bold text-green-600">{stats.active}</p>
           </div>
           <div>
-            <p className="text-sm text-text-secondary">Tổng lượt dùng</p>
+            <p className="text-sm text-text-secondary">Total Uses</p>
             <p className="text-xl font-bold text-blue-600">{stats.totalUsage}</p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export function TenantPromotionsSection() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
           <input
             type="text"
-            placeholder="Tìm mã giảm giá..."
+            placeholder="Search discount codes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-surface-secondary border border-default rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent"
@@ -137,22 +137,22 @@ export function TenantPromotionsSection() {
 
       {/* Loading */}
       {isLoading && (
-        <div className="text-center py-8 text-text-secondary">Đang tải...</div>
+        <div className="text-center py-8 text-text-secondary">Loading...</div>
       )}
 
       {/* Empty State */}
       {!isLoading && promotions.length === 0 && (
         <div className="text-center py-12 bg-surface-secondary rounded-xl border border-default">
           <Tag className="w-12 h-12 text-text-secondary mx-auto mb-3 opacity-50" />
-          <p className="text-text-secondary mb-2">Chưa có mã giảm giá nào</p>
+          <p className="text-text-secondary mb-2">No discount codes yet</p>
           <p className="text-sm text-text-secondary mb-4">
-            Tạo mã để thu hút khách hàng và tăng doanh số
+            Create codes to attract customers and boost sales
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="text-accent-500 hover:text-accent-600 font-medium"
           >
-            Tạo mã đầu tiên →
+            Create First Code →
           </button>
         </div>
       )}
@@ -267,11 +267,11 @@ export function TenantPromotionsSection() {
         <div className="flex items-start gap-3">
           <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-blue-900">Mẹo sử dụng mã giảm giá</p>
+            <p className="font-medium text-blue-900">How to use discount codes</p>
             <ul className="mt-1 text-blue-700 space-y-1">
-              <li>• Chia sẻ mã qua mạng xã hội, email hoặc in trên hóa đơn</li>
-              <li>• Đặt giới hạn lượt dùng để kiểm soát chi phí khuyến mãi</li>
-              <li>• Dùng mã theo mùa/sự kiện (TET2025, NOEL, SUMMER...)</li>
+              <li>• Share codes via social media, email, or print on receipts</li>
+              <li>• Set usage limits to control promotional costs</li>
+              <li>• Use seasonal/event codes (TET2025, NOEL, SUMMER...)</li>
             </ul>
           </div>
         </div>

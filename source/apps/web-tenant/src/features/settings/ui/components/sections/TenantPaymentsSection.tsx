@@ -43,11 +43,11 @@ export function TenantPaymentsSection() {
   const updateMutation = usePaymentConfigControllerUpdateConfig({
     mutation: {
       onSuccess: () => {
-        alert('Cập nhật cài đặt thanh toán thành công!');
+        alert('Payment settings updated successfully!');
         refetch();
       },
       onError: (error: any) => {
-        alert('Lỗi: ' + (error?.message || 'Không thể cập nhật'));
+        alert('Error: ' + (error?.message || 'Cannot update'));
       },
     },
   });
@@ -66,7 +66,7 @@ export function TenantPaymentsSection() {
   };
 
   if (isLoading) {
-    return <Card className="p-6"><p>Đang tải...</p></Card>;
+    return <Card className="p-6"><p>Loading...</p></Card>;
   }
 
   return (
@@ -76,8 +76,8 @@ export function TenantPaymentsSection() {
           <CreditCard className="w-6 h-6 text-emerald-600" />
         </div>
         <div>
-          <h3 className="text-text-primary font-semibold">Phương thức thanh toán</h3>
-          <p className="text-text-secondary text-sm">Cấu hình các phương thức thanh toán cho nhà hàng</p>
+          <h3 className="text-text-primary font-semibold">Payment Methods</h3>
+          <p className="text-text-secondary text-sm">Configure payment methods for your restaurant</p>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ export function TenantPaymentsSection() {
               </div>
               <div>
                 <p className="font-semibold text-text-primary">SePay QR Code</p>
-                <p className="text-sm text-text-secondary">Thanh toán qua mã QR ngân hàng</p>
+                <p className="text-sm text-text-secondary">Pay via bank QR code</p>
               </div>
             </div>
             <Switch
@@ -104,44 +104,44 @@ export function TenantPaymentsSection() {
             <div className="space-y-3 pt-3 border-t border-default">
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">
-                  Số tài khoản
+                  Account Number
                 </label>
                 <input
                   type="text"
                   value={sepayAccountNo}
                   onChange={(e) => setSepayAccountNo(e.target.value)}
                   className="w-full px-3 py-2 border border-default rounded-lg"
-                  placeholder="Nhập số tài khoản"
+                  placeholder="Enter account number"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">
-                  Tên tài khoản
+                  Account Name
                 </label>
                 <input
                   type="text"
                   value={sepayAccountName}
                   onChange={(e) => setSepayAccountName(e.target.value)}
                   className="w-full px-3 py-2 border border-default rounded-lg"
-                  placeholder="Nhập tên tài khoản"
+                  placeholder="Enter account name"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">
-                  Mã ngân hàng
+                  Bank Code
                 </label>
                 <input
                   type="text"
                   value={sepayBankCode}
                   onChange={(e) => setSepayBankCode(e.target.value)}
                   className="w-full px-3 py-2 border border-default rounded-lg"
-                  placeholder="VD: VCB, TCB, MB"
+                  placeholder="E.g: VCB, TCB, MB"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">
                   <Key className="w-4 h-4 inline mr-1" />
-                  API Key (tùy chọn)
+                  API Key (optional)
                 </label>
                 <div className="relative">
                   <input
@@ -149,7 +149,7 @@ export function TenantPaymentsSection() {
                     value={sepayApiKey}
                     onChange={(e) => setSepayApiKey(e.target.value)}
                     className="w-full px-3 py-2 border border-default rounded-lg pr-10"
-                    placeholder="Nhập API key nếu cần"
+                    placeholder="Enter API key if needed"
                   />
                   <button
                     type="button"
@@ -163,7 +163,7 @@ export function TenantPaymentsSection() {
               <div className="pt-3 border-t border-default">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-text-primary">
-                    Webhook (dùng sau này)
+                    Webhook (for future use)
                   </label>
                   <Switch
                     checked={webhookEnabled}
@@ -191,18 +191,18 @@ export function TenantPaymentsSection() {
               <Banknote className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="font-semibold text-text-primary">Tiền mặt</p>
-              <p className="text-sm text-text-secondary">Thanh toán bằng tiền mặt (luôn bật)</p>
+              <p className="font-semibold text-text-primary">Cash</p>
+              <p className="text-sm text-text-secondary">Payment by cash (always enabled)</p>
             </div>
           </div>
-          <Switch checked={true} disabled />
+          <Switch checked={true} disabled onChange={() => {}} />
         </div>
       </div>
 
       <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-default">
-        <Button variant="secondary" onClick={() => refetch()}>Hủy</Button>
+        <Button variant="secondary" onClick={() => refetch()}>Cancel</Button>
         <Button onClick={handleSave} disabled={updateMutation.isPending}>
-          {updateMutation.isPending ? 'Đang lưu...' : 'Lưu cài đặt'}
+          {updateMutation.isPending ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
     </Card>
