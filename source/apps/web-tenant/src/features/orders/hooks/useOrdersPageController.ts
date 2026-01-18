@@ -27,7 +27,11 @@ export function useOrdersData() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [apiFilters, setApiFilters] = useState<OrderApiFilters>({});
+  
+  // Default filter: exclude PAID orders (already closed tables)
+  const [apiFilters, setApiFilters] = useState<OrderApiFilters>({
+    status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED',
+  });
   
   // Ref to track if initial fetch happened
   const hasFetched = useRef(false);
@@ -132,13 +136,23 @@ export function useOrderFilters(orders: Order[]) {
   const [filters, setFilters] = useState<OrderFilters>({
     statusFilter: 'all',
     tableFilter: 'all',
-    dateFilter: 'today',
+    dateFilter: 'all',
     searchQuery: '',
   });
 
   const filteredOrders = orders.filter(order => {
-    // Date filter (simplified for demo)
-    if (filters.dateFilter !== 'all' && filters.dateFilter !== 'today') return false;
+    // Date filter
+    if (filters.dateFilter !== 'all') {
+      const orderDate = new Date(order.createdAt);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (filters.dateFilter === 'today') {
+        const orderDateOnly = new Date(orderDate);
+        orderDateOnly.setHours(0, 0, 0, 0);
+        if (orderDateOnly.getTime() !== today.getTime()) return false;
+      }
+    }
     
     // Status filter
     if (filters.statusFilter !== 'all' && order.orderStatus !== filters.statusFilter) return false;
