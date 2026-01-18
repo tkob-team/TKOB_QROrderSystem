@@ -49,6 +49,22 @@ export function KdsBoardPage({
       });
   }, []);
 
+  // ========== RE-INITIALIZE AUDIO WHEN SOUND IS ENABLED ==========
+  useEffect(() => {
+    if (controller.soundEnabled) {
+      // User just enabled sound - ensure audio context is ready
+      initializeAudio()
+        .then((success) => {
+          if (success) {
+            console.log('[kds] Audio re-initialized on sound enable');
+          }
+        })
+        .catch((err) => {
+          console.error('[kds] Audio re-initialization error:', err);
+        });
+    }
+  }, [controller.soundEnabled]);
+
   // ========== WEBSOCKET (Real-time updates) ==========
   const { status, isConnected, newOrderCount, resetNewOrderCount } = useKdsWebSocket({
     tenantId: user?.tenantId || '',
@@ -56,7 +72,7 @@ export function KdsBoardPage({
     autoConnect: true,
     onNewOrder: (order) => {
       // Toast notification
-      controller.setToastMessage(`Đơn mới #${order.orderNumber} từ bàn ${order.tableName || order.tableId}`);
+      controller.setToastMessage(`New order #${order.orderNumber} from table ${order.tableName || order.tableId}`);
       controller.setShowSuccessToast(true);
       setTimeout(() => controller.setShowSuccessToast(false), 3000);
     },
@@ -138,7 +154,7 @@ export function KdsBoardPage({
           <div className="animate-bounce bg-red-500 text-white rounded-full p-4 shadow-lg">
             <div className="text-center">
               <p className="text-2xl font-bold">{newOrderCount}</p>
-              <p className="text-xs">Đơn mới</p>
+              <p className="text-xs">New Orders</p>
             </div>
           </div>
         </div>

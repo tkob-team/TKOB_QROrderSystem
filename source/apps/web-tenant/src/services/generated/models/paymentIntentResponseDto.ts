@@ -5,6 +5,7 @@
  * API Documentation for QR Ordering Platform
  * OpenAPI spec version: 1.0
  */
+import type { PaymentIntentResponseDtoOrderId } from './paymentIntentResponseDtoOrderId';
 import type { PaymentIntentResponseDtoStatus } from './paymentIntentResponseDtoStatus';
 
 export interface PaymentIntentResponseDto {
@@ -22,10 +23,15 @@ export interface PaymentIntentResponseDto {
   deepLink?: string;
   /** Payment expiration time */
   expiresAt: string;
-  /** Order ID */
-  orderId: string;
+  /**
+   * Order ID (null for subscription payments)
+   * @nullable
+   */
+  orderId?: PaymentIntentResponseDtoOrderId;
   /** Payment ID */
   paymentId: string;
+  /** SePay QR image URL for display */
+  qrCodeUrl?: string;
   /** QR code content for VietQR */
   qrContent: string;
   /** Payment status */

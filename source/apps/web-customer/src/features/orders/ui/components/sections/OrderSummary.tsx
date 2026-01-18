@@ -121,10 +121,10 @@ function LiveOrderView({ order, router }: { order: Order; router: ReturnType<typ
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--blue-600)' }} />
             <div className="flex-1">
               <h4 className="mb-1" style={{ color: 'var(--blue-900)', fontSize: '15px' }}>
-                💵 Thanh toán tiền mặt
+                💵 Cash Payment
               </h4>
               <p style={{ color: 'var(--blue-700)', fontSize: '13px' }}>
-                Nhân viên sẽ thu tiền khi phục vụ đơn hàng. Tổng cộng: <strong>${order.total.toFixed(2)}</strong>
+                Staff will collect payment when serving your order. Total: <strong>${order.total.toFixed(2)}</strong>
               </p>
             </div>
           </div>

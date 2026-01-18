@@ -21,16 +21,16 @@ export function useDashboardController() {
   const page = useDashboardPage();
 
   // Extract state needed for queries
-  const { timePeriod } = page.state;
+  const { timePeriod, rangeFilter } = page.state;
   const { getChartPeriod } = page.mappers;
   const chartPeriod = getChartPeriod();
 
   // Data queries
   const orders = useDashboardOrders();
-  const revenue = useDashboardRevenueData(chartPeriod);
+  const revenue = useDashboardRevenueData(chartPeriod, rangeFilter);
   const topSelling = useDashboardTopSelling();
   const recentOrders = useDashboardRecentOrders();
-  const kpi = useDashboardKPI(timePeriod);
+  const kpi = useDashboardKPI(timePeriod, rangeFilter);
 
   // Aggregate loading state
   const isLoading =

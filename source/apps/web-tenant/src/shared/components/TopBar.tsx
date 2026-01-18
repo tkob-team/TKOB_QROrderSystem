@@ -49,7 +49,7 @@ export function TopBar({
         <Link 
           href="/home" 
           className="text-2xl md:text-3xl tracking-tight hover:opacity-80 transition-opacity"
-          style={{ fontFamily: 'var(--font-rouge-script), cursive' }}
+          style={{ fontFamily: 'var(--font-sour-gummy), cursive' }}
         >
           {restaurantName}
         </Link>
@@ -74,14 +74,6 @@ export function TopBar({
 
       {/* Right Section: Bell + User */}
       <div className="flex items-center gap-2 md:gap-3 ml-auto">
-        {/* Notification Bell */}
-        <button
-          className="relative p-2 rounded-lg hover:bg-emerald-700 transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-emerald-600"></span>
-        </button>
 
         {/* Divider */}
         <div className="w-px h-8 bg-white/20 mx-1"></div>

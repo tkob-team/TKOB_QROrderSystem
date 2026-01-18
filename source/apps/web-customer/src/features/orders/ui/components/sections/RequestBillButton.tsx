@@ -4,6 +4,17 @@ import { toast } from 'sonner'
 import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { useOrderControllerRequestBill } from '@/services/generated/orders/orders'
+import { isOrderPaid } from '../../../model/statusUtils'
+
+// Normalize status for comparison
+const normalizeStatus = (status: string): string => {
+  const mappings: Record<string, string> = {
+    'Ready': 'READY',
+    'Served': 'SERVED',
+    'Cancelled': 'CANCELLED',
+  }
+  return mappings[status] || status.toUpperCase()
+}
 
 interface RequestBillButtonProps {
   orderId?: string
@@ -56,11 +67,12 @@ export function RequestBillButton({
   // Determine if button should be shown
   const shouldShow = () => {
     if (!orderId) return false
-    if (orderStatus === 'Cancelled') return false
+    if (orderStatus && normalizeStatus(orderStatus) === 'CANCELLED') return false
     
     // Show if paid OR status is Ready/Served
-    const isPaid = paymentStatus === 'Paid'
-    const isReadyOrServed = orderStatus === 'Ready' || orderStatus === 'Served'
+    const isPaid = paymentStatus ? isOrderPaid(paymentStatus) : false
+    const normalizedOrderStatus = orderStatus ? normalizeStatus(orderStatus) : ''
+    const isReadyOrServed = normalizedOrderStatus === 'READY' || normalizedOrderStatus === 'SERVED'
     
     return isPaid || isReadyOrServed
   }
@@ -128,7 +140,7 @@ export function RequestBillButton({
 
   // Confirm Dialog
   if (showConfirm) {
-    const isPaid = paymentStatus === 'Paid'
+    const isPaid = paymentStatus ? isOrderPaid(paymentStatus) : false
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
         <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
@@ -169,7 +181,7 @@ export function RequestBillButton({
   }
 
   // Action Card (Default State)
-  const isPaid = paymentStatus === 'Paid'
+  const isPaid = paymentStatus ? isOrderPaid(paymentStatus) : false
   return (
     <div 
       className="rounded-2xl p-5 border-2 transition-all cursor-pointer hover:shadow-md"

@@ -99,6 +99,30 @@ export function inspectResponseShape(data: unknown): ShapeSummary {
     return { isArray: false, isEmpty: true };
   }
 
+  // Handle paginated response structure: { data: [...], meta: {...} }
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'data' in data &&
+    Array.isArray((data as Record<string, unknown>).data)
+  ) {
+    const paginatedData = data as Record<string, unknown>;
+    const dataArray = paginatedData.data as unknown[];
+    
+    // Get sample keys from first item (if exists)
+    const sampleKeys =
+      dataArray.length > 0 && typeof dataArray[0] === 'object' && dataArray[0] !== null
+        ? Object.keys(dataArray[0]).slice(0, MAX_SAMPLE_KEYS)
+        : [];
+
+    return {
+      isArray: true,
+      count: dataArray.length,
+      sampleKeys,
+      isEmpty: dataArray.length === 0,
+    };
+  }
+
   // Handle arrays
   if (Array.isArray(data)) {
     // Get sample keys from first item (if exists)

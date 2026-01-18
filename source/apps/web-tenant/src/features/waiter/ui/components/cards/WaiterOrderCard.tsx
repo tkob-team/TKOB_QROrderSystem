@@ -47,7 +47,7 @@ function PaymentMethodBadge({ method }: { method: ServiceOrder['paymentMethod'] 
   return (
     <Badge variant="warning" className="flex items-center gap-1">
       <Banknote className="w-3 h-3" />
-      <span className="text-[10px]">Tiền mặt</span>
+      <span className="text-[10px]">Cash</span>
     </Badge>
   );
 }
@@ -282,7 +282,7 @@ export function WaiterOrderCard({
                 }}
               >
                 <ORDER_ACTION_CONFIG.completed.unpaid.icon className="w-5 h-5" />
-                Nhận tiền mặt
+                Mark as Paid
               </button>
             )}
             
@@ -307,7 +307,7 @@ export function WaiterOrderCard({
             {order.paymentMethod === 'SEPAY_QR' && order.paymentStatus === 'unpaid' && (
               <div className="space-y-2">
                 <p className="text-xs text-center text-amber-600">
-                  ⚠️ Thanh toán QR chưa nhận được. Kiểm tra lại hoặc thu tiền mặt.
+                  ⚠️ QR payment not received. Verify or collect cash.
                 </p>
                 <button
                   onClick={() => onMarkPaid(order)}
@@ -320,7 +320,7 @@ export function WaiterOrderCard({
                   }}
                 >
                   <ORDER_ACTION_CONFIG.completed.unpaid.icon className="w-5 h-5" />
-                  Đánh dấu đã thanh toán
+                  Mark as Paid
                 </button>
               </div>
             )}

@@ -32,37 +32,37 @@ const features = [
   {
     icon: QrCode,
     title: 'QR Ordering',
-    description: 'Customers scan & order directly from their table. No waiting, no mistakes.',
+    description: 'Guests scan, browse, and order in seconds—no app install, fewer mistakes.',
     color: 'from-emerald-500 to-teal-500',
   },
   {
     icon: MonitorPlay,
-    title: 'Kitchen Display (KDS)',
-    description: 'Real-time order display for kitchen staff. Never miss an order again.',
+    title: 'Kitchen Display',
+    description: 'Orders show up instantly on a clear kitchen screen so the team can cook in order.',
     color: 'from-orange-500 to-amber-500',
   },
   {
     icon: ClipboardCheck,
     title: 'Service Board',
-    description: 'Waiters see ready orders instantly. Serve faster, serve better.',
+    description: 'A live board for staff to confirm, run, and close tickets without shouting across the room.',
     color: 'from-blue-500 to-indigo-500',
   },
   {
     icon: ChefHat,
     title: 'Menu Management',
-    description: 'Easy menu updates with modifiers, categories, and dynamic pricing.',
+    description: 'Update items, options, and prices anytime—your digital menu stays current.',
     color: 'from-purple-500 to-pink-500',
   },
   {
     icon: BarChart3,
     title: 'Analytics & Reports',
-    description: 'Track revenue, popular items, and trends with beautiful dashboards.',
+    description: 'See what sells, what slows you down, and where you can improve week over week.',
     color: 'from-rose-500 to-red-500',
   },
   {
     icon: Users,
     title: 'Staff Management',
-    description: 'Role-based access, performance tracking, and shift management.',
+    description: 'Simple roles and access so everyone sees only what they need during service.',
     color: 'from-cyan-500 to-sky-500',
   },
 ];
@@ -78,21 +78,21 @@ const stats = [
 // Testimonials
 const testimonials = [
   {
-    quote: "TKOB transformed our operations. Orders flow smoothly from table to kitchen. Our customers love the QR ordering!",
+    quote: "We cut order mistakes almost immediately. The kitchen sees everything clearly, and service feels calmer.",
     author: 'Minh Nguyen',
-    role: 'Owner, Pho Paradise',
+    role: 'Owner',
     avatar: '👨‍🍳',
   },
   {
-    quote: "The KDS system is a game-changer. Kitchen staff never miss an order, and service has never been faster.",
+    quote: "QR ordering helped during rush hours. Guests order faster, and our staff spends more time on hospitality.",
     author: 'Linh Tran',
-    role: 'Manager, Banh Mi House',
+    role: 'Manager',
     avatar: '👩‍💼',
   },
   {
-    quote: "Analytics give us insights we never had before. We optimized our menu and increased revenue by 25%.",
+    quote: "The KDS + service board keeps everyone aligned. It’s simple, fast, and doesn’t get in the way.",
     author: 'Duc Le',
-    role: 'Owner, Street Bites',
+    role: 'Kitchen Lead',
     avatar: '👨‍💻',
   },
 ];
@@ -223,7 +223,7 @@ export function LandingPage() {
             <div className="hero-content space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
                 <Zap className="w-4 h-4" />
-                Smart Restaurant Platform
+                All-in-one restaurant system
               </div>
               
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
@@ -234,8 +234,7 @@ export function LandingPage() {
               </h1>
               
               <p className="text-lg md:text-xl text-gray-600 max-w-xl">
-                From QR ordering to kitchen display, manage your entire restaurant operation in one powerful platform. 
-                Reduce wait times, eliminate errors, boost revenue.
+                QR ordering, payments, KDS, and a service board—everything you need to move orders from table to kitchen without the chaos.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -243,14 +242,14 @@ export function LandingPage() {
                   href="/auth/login"
                   className="group inline-flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all"
                 >
-                  Get Started Free
+                  Start free
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <a
-                  href="#demo"
+                  href="#pricing"
                   className="inline-flex items-center justify-center gap-2 px-6 py-4 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-200 shadow-sm transition-all"
                 >
-                  Watch Demo
+                  See how it works
                 </a>
               </div>
 
@@ -272,7 +271,7 @@ export function LandingPage() {
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
-                  <span className="text-gray-600">Trusted by 20+ restaurants</span>
+                  <span className="text-gray-600">Trusted by local restaurant teams</span>
                 </div>
               </div>
             </div>
@@ -291,9 +290,9 @@ export function LandingPage() {
                 <div className="p-6 bg-gray-50 min-h-[300px]">
                   <div className="grid grid-cols-3 gap-3 mb-6">
                     {[
-                      { label: 'Revenue', value: '$12,450', color: 'emerald' },
-                      { label: 'Orders', value: '156', color: 'blue' },
-                      { label: 'Active', value: '8 tables', color: 'amber' },
+                      { label: 'Today\'s revenue', value: '$12,450', color: 'emerald' },
+                      { label: 'Orders today', value: '156', color: 'blue' },
+                      { label: 'Open tables', value: '8 tables', color: 'amber' },
                     ].map((stat, i) => (
                       <div key={i} className="bg-white rounded-lg p-3 shadow-sm">
                         <p className="text-xs text-gray-500">{stat.label}</p>
@@ -304,7 +303,7 @@ export function LandingPage() {
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                      <span className="text-sm font-medium text-gray-700">Recent Orders</span>
+                      <span className="text-sm font-medium text-gray-700">Latest tickets</span>
                     </div>
                     {[1, 2, 3].map((_, i) => (
                       <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
@@ -350,10 +349,10 @@ export function LandingPage() {
               Features
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need to Run Your Restaurant
+              Everything you need, from scan to serve
             </h2>
             <p className="text-lg text-gray-600">
-              From front-of-house to back-of-house, we&apos;ve got you covered with powerful tools designed for modern restaurants.
+              Keep guests moving and staff in sync—orders, tickets, and kitchen workflow in one clean flow.
             </p>
           </div>
 
@@ -389,7 +388,7 @@ export function LandingPage() {
               Testimonials
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Loved by Restaurant Owners
+              Built with real restaurant teams
             </h2>
           </div>
 
@@ -430,10 +429,10 @@ export function LandingPage() {
               Pricing
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Simple, Transparent Pricing
+              Pricing that scales with you
             </h2>
             <p className="text-lg text-gray-600">
-              Start free, upgrade when you&apos;re ready. No hidden fees.
+              Start small, upgrade when you’re ready. No surprises—just the tools you need to run service well.
             </p>
           </div>
 
@@ -495,25 +494,25 @@ export function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 md:py-32 bg-gradient-to-br from-emerald-600 to-teal-600 text-white">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-            Ready to Transform Your Restaurant?
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold">
+            Ready to see TKOB in your restaurant?
           </h2>
-          <p className="text-lg md:text-xl text-emerald-100 mb-8">
-            Join 20+ restaurants already using TKOB to streamline operations and boost revenue.
+          <p className="text-lg md:text-xl text-emerald-100 mb-8 py-4">
+            Start with a free account or book a quick walkthrough—we’ll show you how it works.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth/login"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-emerald-600 font-semibold rounded-lg hover:bg-emerald-50 transition-all shadow-lg"
             >
-              Get Started Free
+              Start free
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a
-              href="#demo"
+              href="#pricing"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-700 text-white font-semibold rounded-lg hover:bg-emerald-800 transition-all border border-emerald-500"
             >
-              Schedule a Demo
+              Book a walkthrough
             </a>
           </div>
         </div>

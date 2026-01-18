@@ -174,7 +174,17 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
   }, [orders, queryClient]);
 
   const handleToggleSound = useCallback(() => {
-    setSoundEnabled((prev) => !prev);
+    setSoundEnabled((prev) => {
+      const newValue = !prev;
+      // Play test sound when enabling (to verify it works)
+      if (newValue) {
+        // Import and play test sound
+        import('@/lib/websocket').then(({ playNewOrderSound }) => {
+          playNewOrderSound();
+        });
+      }
+      return newValue;
+    });
   }, []);
 
   const handleToggleAutoRefresh = useCallback(() => {

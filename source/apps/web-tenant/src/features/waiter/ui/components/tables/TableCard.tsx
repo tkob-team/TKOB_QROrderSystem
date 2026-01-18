@@ -83,7 +83,7 @@ export function TableCard({ table, selected, onSelect }: TableCardProps) {
           {/* Pending orders indicator */}
           {pendingOrders > 0 && (
             <div className="mt-2 px-2 py-1 bg-amber-100 rounded text-xs text-amber-800 text-center">
-              {pendingOrders} món đang chờ phục vụ
+              {pendingOrders} items waiting
             </div>
           )}
         </div>
@@ -93,7 +93,7 @@ export function TableCard({ table, selected, onSelect }: TableCardProps) {
       {table.status === 'reserved' && (
         <div className="mt-3 pt-3 border-t border-gray-200">
           <div className="text-xs text-purple-600">
-            📅 Đã đặt trước
+            📅 Reserved
           </div>
         </div>
       )}

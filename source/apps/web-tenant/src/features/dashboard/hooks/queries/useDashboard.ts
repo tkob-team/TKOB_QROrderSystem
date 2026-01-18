@@ -6,7 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/shared/utils/logger';
 import { dashboardAdapter } from '../../data/factory';
-import type { TimePeriod, ChartPeriod } from '../../model/types';
+import type { TimePeriod, ChartPeriod, RangeOption } from '../../model/types';
 
 export function useDashboardOrders() {
   return useQuery({
@@ -25,14 +25,14 @@ export function useDashboardOrders() {
   });
 }
 
-export function useDashboardRevenueData(period: ChartPeriod) {
+export function useDashboardRevenueData(period: ChartPeriod, rangeFilter: RangeOption) {
   return useQuery({
-    queryKey: ['dashboard', 'revenue', period],
+    queryKey: ['dashboard', 'revenue', period, rangeFilter],
     queryFn: async () => {
-      logger.info('[dashboard] REVENUE_QUERY_ATTEMPT', { period });
+      logger.info('[dashboard] REVENUE_QUERY_ATTEMPT', { period, rangeFilter });
       try {
         const result = await dashboardAdapter.getRevenueData(period);
-        logger.info('[dashboard] REVENUE_QUERY_SUCCESS', { pointsCount: result?.length || 0, period });
+        logger.info('[dashboard] REVENUE_QUERY_SUCCESS', { pointsCount: result?.length || 0, period, rangeFilter });
         return result;
       } catch (error) {
         logger.error('[dashboard] REVENUE_QUERY_ERROR', { message: error instanceof Error ? error.message : 'Unknown error', period });
@@ -83,15 +83,16 @@ export function useDashboardRecentOrders() {
   });
 }
 
-export function useDashboardKPI(period: TimePeriod) {
+export function useDashboardKPI(period: TimePeriod, rangeFilter: RangeOption) {
   return useQuery({
-    queryKey: ['dashboard', 'kpi', period],
+    queryKey: ['dashboard', 'kpi', period, rangeFilter],
     queryFn: async () => {
-      logger.info('[dashboard] KPI_QUERY_ATTEMPT', { period });
+      logger.info('[dashboard] KPI_QUERY_ATTEMPT', { period, rangeFilter });
       try {
-        const result = await dashboardAdapter.getKPIData(period);
+        const result = await dashboardAdapter.getKPIData(period, rangeFilter);
         logger.info('[dashboard] KPI_QUERY_SUCCESS', { 
           period,
+          rangeFilter,
           hasOrders: !!result?.orders,
           hasRevenue: !!result?.revenue,
           hasAvgOrder: !!result?.avgOrder,

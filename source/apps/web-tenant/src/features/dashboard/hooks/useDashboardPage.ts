@@ -56,8 +56,10 @@ export function useDashboardPage(): UseDashboardPageReturn {
 
   // Map rangeFilter to chart period for revenue chart
   const getChartPeriod = useCallback((): ChartPeriod => {
-    if (rangeFilter === 'Today' || rangeFilter === 'Yesterday') {
+    if (rangeFilter === 'Today') {
       return 'today';
+    } else if (rangeFilter === 'Yesterday') {
+      return 'yesterday';
     } else if (rangeFilter === 'Last 7 days') {
       return 'week';
     } else {

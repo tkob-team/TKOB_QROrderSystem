@@ -148,7 +148,7 @@ export class TableSessionService {
 
   /**
    * Clear table (called by staff)
-   * Marks session as inactive and frees the table
+   * Marks session as inactive, frees the table, and marks completed orders as PAID
    */
   async clearTable(tableId: string, staffId: string): Promise<void> {
     // 1. Find active session
@@ -158,17 +158,44 @@ export class TableSessionService {
       throw new NotFoundException('No active session for this table');
     }
 
-    // 2. Clear session
-    await this.sessionRepo.clearSession(session.id, staffId);
+    // 2. Mark ALL unpaid orders for this table as PAID
+    // This includes orders in any status (PENDING, RECEIVED, PREPARING, READY, SERVED, COMPLETED)
+    await this.prisma.order.updateMany({
+      where: {
+        tableId,
+        paymentStatus: { not: 'COMPLETED' }, // Only update unpaid orders
+      },
+      data: {
+        status: 'PAID',
+        paymentStatus: 'COMPLETED',
+        paidAt: new Date(),
+      },
+    });
 
-    // 3. Update table status to AVAILABLE
+    // 3. Clear session and free table
+    await this.clearSessionOnly(tableId, session.id, staffId);
+
+    this.logger.log(
+      `Table ${tableId} cleared by staff ${staffId}, session ${session.id} deactivated, all unpaid orders marked as PAID`,
+    );
+  }
+
+  /**
+   * Clear session only (used after bill generation)
+   * Does NOT update orders (bill service already did that)
+   */
+  async clearSessionOnly(tableId: string, sessionId: string, staffId: string): Promise<void> {
+    // 1. Clear session
+    await this.sessionRepo.clearSession(sessionId, staffId);
+
+    // 2. Update table status to AVAILABLE
     await this.tableRepo.update(tableId, {
       status: TableStatus.AVAILABLE,
       currentSessionId: null,
     });
 
     this.logger.log(
-      `Table ${tableId} cleared by staff ${staffId}, session ${session.id} deactivated`,
+      `Table ${tableId} session ${sessionId} cleared by staff ${staffId}`,
     );
   }
 
@@ -178,6 +205,13 @@ export class TableSessionService {
   async isTableAvailable(tableId: string): Promise<boolean> {
     const activeSession = await this.sessionRepo.findActiveByTableId(tableId);
     return !activeSession;
+  }
+
+  /**
+   * Find active session for a table
+   */
+  async findActiveSession(tableId: string): Promise<TableSession | null> {
+    return this.sessionRepo.findActiveByTableId(tableId);
   }
 
   /**

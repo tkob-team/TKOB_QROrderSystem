@@ -43,7 +43,7 @@ export class MockDashboardAdapter implements IDashboardAdapter {
     return MOCK_RECENT_ORDERS;
   }
 
-  async getKPIData(period: TimePeriod) {
+  async getKPIData(period: TimePeriod, rangeFilter?: string) {
     await new Promise((resolve) => setTimeout(resolve, 300));
     return MOCK_KPI_DATA[period];
   }

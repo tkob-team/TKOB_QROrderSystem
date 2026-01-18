@@ -16,11 +16,11 @@ export function TableGridView() {
   const { state, actions } = useTableGridController();
 
   const statusFilters: Array<{ value: TableViewStatus | 'all'; label: string }> = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'occupied', label: 'Đang phục vụ' },
-    { value: 'available', label: 'Bàn trống' },
-    { value: 'needs-service', label: 'Cần phục vụ' },
-    { value: 'reserved', label: 'Đã đặt' },
+    { value: 'all', label: 'All' },
+    { value: 'occupied', label: 'Occupied' },
+    { value: 'available', label: 'Available' },
+    { value: 'needs-service', label: 'Needs Service' },
+    { value: 'reserved', label: 'Reserved' },
   ];
 
   // Stats summary
@@ -39,12 +39,12 @@ export function TableGridView() {
         <header className="px-4 lg:px-6 py-4 bg-white border-b border-gray-200">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Sơ đồ bàn</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Table Layout</h1>
               <p className="text-sm text-gray-500 mt-1">
-                {stats.occupied}/{stats.total} bàn đang phục vụ
+                {stats.occupied}/{stats.total} tables occupied
                 {stats.needsService > 0 && (
                   <span className="ml-2 text-amber-600 font-medium">
-                    • {stats.needsService} bàn cần phục vụ
+                    • {stats.needsService} tables need service
                   </span>
                 )}
               </p>
@@ -109,19 +109,19 @@ export function TableGridView() {
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-gray-50">
           {state.isLoading && (
             <div className="text-center py-12 text-gray-500">
-              Đang tải...
+              Loading...
             </div>
           )}
 
           {state.error && (
             <div className="text-center py-12 text-red-500">
-              Lỗi: {state.error.message}
+              Error: {state.error.message}
             </div>
           )}
 
           {!state.isLoading && !state.error && state.tables.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">Không có bàn nào</p>
+              <p className="text-gray-500">No tables</p>
             </div>
           )}
 

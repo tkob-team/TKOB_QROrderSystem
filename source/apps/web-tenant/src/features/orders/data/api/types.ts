@@ -65,6 +65,7 @@ export type OrderStatus =
   | 'READY'
   | 'SERVED'
   | 'COMPLETED'
+  | 'PAID'
   | 'CANCELLED'
 
 /**

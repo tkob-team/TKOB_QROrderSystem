@@ -10,7 +10,16 @@ import type { CartItemResponseDto } from './cartItemResponseDto';
 export interface CartResponseDto {
   itemCount: number;
   items: CartItemResponseDto[];
+  /** Service charge amount (based on tenant settings) */
+  serviceCharge: number;
+  /** Service charge percentage rate */
+  serviceChargeRate: number;
+  /** Subtotal before tax and service charge */
   subtotal: number;
+  /** Tax amount (based on tenant settings) */
   tax: number;
+  /** Tax percentage rate */
+  taxRate: number;
+  /** Total = subtotal + tax + serviceCharge */
   total: number;
 }

@@ -21,7 +21,17 @@ export interface Order {
   estimatedReadyMinutes?: number;
 }
 
+// NOTE: Backend API returns UPPERCASE status strings
+// RECEIVED = "Accepted" in UI display
 export type OrderStatus =
+  | 'PENDING'
+  | 'RECEIVED'
+  | 'PREPARING'
+  | 'READY'
+  | 'SERVED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  // Legacy Title Case values for backward compatibility
   | 'Pending'
   | 'Accepted'
   | 'Preparing'

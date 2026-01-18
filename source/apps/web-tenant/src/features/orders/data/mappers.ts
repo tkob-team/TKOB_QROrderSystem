@@ -17,6 +17,7 @@ function mapOrderStatus(apiStatus: ApiOrderStatus): OrderStatus {
     READY: 'ready',
     SERVED: 'served',
     COMPLETED: 'completed',
+    PAID: 'completed', // Orders that have been paid (after close table)
     CANCELLED: 'cancelled',
   }
   return statusMap[apiStatus] || 'placed'
@@ -40,11 +41,26 @@ function mapPaymentStatus(apiStatus: string): PaymentStatus {
  * Map API OrderItem to frontend OrderItem
  */
 function mapOrderItem(apiItem: OrderItemResponse): OrderItem {
+  // Parse modifiers - backend may return string, array, or null
+  let modifiers: string[] = [];
+  if (apiItem.modifiers) {
+    if (typeof apiItem.modifiers === 'string') {
+      try {
+        const parsed = JSON.parse(apiItem.modifiers);
+        modifiers = Array.isArray(parsed) ? parsed.map((m: any) => m.name || String(m)) : [];
+      } catch {
+        modifiers = [];
+      }
+    } else if (Array.isArray(apiItem.modifiers)) {
+      modifiers = apiItem.modifiers.map(m => m.name);
+    }
+  }
+  
   return {
     name: apiItem.name,
     quantity: apiItem.quantity,
     price: apiItem.price,
-    modifiers: apiItem.modifiers?.map(m => m.name) || [],
+    modifiers,
   }
 }
 

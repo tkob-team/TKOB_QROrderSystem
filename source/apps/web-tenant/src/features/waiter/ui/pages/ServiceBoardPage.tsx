@@ -15,6 +15,7 @@ import {
 import { ServiceTabsSection } from '../components/sections/ServiceTabsSection';
 import { ServiceEmptyStateSection } from '../components/sections/ServiceEmptyStateSection';
 import { WaiterOrderCard } from '../components/cards/WaiterOrderCard';
+import { TableOrdersGroup } from '../components/groups/TableOrdersGroup';
 
 interface ServiceBoardPageProps {
   userRole?: 'admin' | 'waiter' | 'kds';
@@ -77,11 +78,26 @@ export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps)
             )}
 
             {/* Orders Grid */}
-            {!state.isLoading && !state.error && state.currentOrders.length === 0 && (
+            {!state.isLoading && !state.error && state.currentOrders.length === 0 && state.ordersByTable.length === 0 && (
               <ServiceEmptyStateSection activeTab={state.activeTab} />
             )}
 
-            {!state.isLoading && !state.error && state.currentOrders.length > 0 && (
+            {/* Completed Tab - Show Grouped Orders by Table */}
+            {!state.isLoading && !state.error && state.activeTab === 'completed' && state.ordersByTable.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {state.ordersByTable.map((tableGroup) => (
+                  <TableOrdersGroup
+                    key={`${tableGroup.tableId}-${tableGroup.sessionId}`}
+                    tableGroup={tableGroup}
+                    onCloseTable={actions.closeTable}
+                    onMarkAsPaid={actions.markTableAsPaid}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Other Tabs - Show Individual Orders */}
+            {!state.isLoading && !state.error && state.activeTab !== 'completed' && state.currentOrders.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {state.currentOrders.map((order) => (
                   <WaiterOrderCard

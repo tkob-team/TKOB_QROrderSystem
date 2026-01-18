@@ -4,14 +4,14 @@
 /* ===================================
    CUSTOM FONTS - Using Next.js font loader
    Fonts are loaded in layout.tsx for better performance
-   CSS variables: --font-rouge-script, --font-poppins, --font-inter
+   CSS variables: --font-sour-gummy, --font-poppins, --font-inter
    =================================== */
 
 /* ===================================
    FONT FAMILY CSS VARIABLES
    =================================== */
 :root {
-  --font-display: var(--font-rouge-script), 'Rouge Script', cursive;
+  --font-display: var(--font-sour-gummy), 'Sour Gummy', sans-serif;
   --font-heading: var(--font-poppins), 'Poppins', system-ui, sans-serif;
   --font-body: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -21,8 +21,8 @@
    =================================== */
 @layer utilities {
   .font-display {
-    font-family: var(--font-rouge-script), 'Rouge Script', cursive !important;
-    font-weight: 400 !important; /* Rouge Script only has regular weight */
+    font-family: var(--font-sour-gummy), 'Sour Gummy', sans-serif !important;
+    font-weight: 400 !important; /* Sour Gummy only has regular weight */
   }
 }
 

@@ -49,23 +49,23 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
     const newErrors: Record<string, string> = {};
 
     if (!formData.code.trim()) {
-      newErrors.code = 'Vui lòng nhập mã giảm giá';
+      newErrors.code = 'Please enter discount code';
     } else if (!/^[A-Za-z0-9]{3,20}$/.test(formData.code)) {
-      newErrors.code = 'Mã phải từ 3-20 ký tự, chỉ chữ và số';
+      newErrors.code = 'Code must be 3-20 characters, letters and numbers only';
     }
 
     if (formData.type === 'PERCENTAGE') {
       if (formData.value <= 0 || formData.value > 100) {
-        newErrors.value = 'Phần trăm giảm phải từ 1-100%';
+        newErrors.value = 'Percentage must be between 1-100%';
       }
     } else {
       if (formData.value <= 0) {
-        newErrors.value = 'Số tiền giảm phải lớn hơn 0';
+        newErrors.value = 'Discount amount must be greater than 0';
       }
     }
 
     if (new Date(formData.expiresAt) <= new Date(formData.startsAt)) {
-      newErrors.expiresAt = 'Ngày kết thúc phải sau ngày bắt đầu';
+      newErrors.expiresAt = 'End date must be after start date';
     }
 
     setErrors(newErrors);
@@ -110,9 +110,9 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
       onClose();
     } catch (error: any) {
       if (error.response?.data?.message?.includes('already exists')) {
-        setErrors({ code: 'Mã này đã tồn tại' });
+        setErrors({ code: 'This code already exists' });
       } else {
-        setErrors({ submit: error.response?.data?.message || 'Có lỗi xảy ra' });
+        setErrors({ submit: error.response?.data?.message || 'An error occurred' });
       }
     }
   };
@@ -125,7 +125,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-bold">
-            {isEditing ? 'Chỉnh sửa mã giảm giá' : 'Tạo mã giảm giá mới'}
+            {isEditing ? 'Edit Discount Code' : 'Create New Discount Code'}
           </h2>
           <button
             onClick={onClose}
@@ -140,7 +140,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           {/* Code */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mã giảm giá *
+              Discount Code *
             </label>
             <div className="relative">
               <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -161,13 +161,13 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mô tả
+              Description
             </label>
             <input
               type="text"
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="VD: Giảm giá mùa hè"
+              placeholder="E.g.: Summer discount"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
             />
           </div>
@@ -176,7 +176,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Loại giảm giá *
+                Discount Type *
               </label>
               <select
                 value={formData.type}
@@ -184,14 +184,14 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
                 disabled={isEditing}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
               >
-                <option value="PERCENTAGE">Phần trăm (%)</option>
-                <option value="FIXED">Số tiền cố định</option>
+                <option value="PERCENTAGE">Percentage (%)</option>
+                <option value="FIXED">Fixed Amount</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Giá trị *
+                Value *
               </label>
               <div className="relative">
                 {formData.type === 'PERCENTAGE' ? (
@@ -219,7 +219,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Đơn tối thiểu (đ)
+                Min Order (đ)
               </label>
               <input
                 type="number"
@@ -227,7 +227,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
                 onChange={(e) => handleChange('minOrderValue', parseFloat(e.target.value) || 0)}
                 min={0}
                 step={10000}
-                placeholder="0 = không giới hạn"
+                placeholder="0 = no limit"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
               />
             </div>
@@ -235,7 +235,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
             {formData.type === 'PERCENTAGE' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Giảm tối đa (đ)
+                  Max Discount (đ)
                 </label>
                 <input
                   type="number"
@@ -243,7 +243,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
                   onChange={(e) => handleChange('maxDiscount', parseFloat(e.target.value) || 0)}
                   min={0}
                   step={10000}
-                  placeholder="0 = không giới hạn"
+                  placeholder="0 = no limit"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
                 />
               </div>
@@ -253,7 +253,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           {/* Usage Limit */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Giới hạn lượt sử dụng
+              Usage Limit
             </label>
             <div className="relative">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -262,7 +262,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
                 value={formData.usageLimit}
                 onChange={(e) => handleChange('usageLimit', parseInt(e.target.value) || 0)}
                 min={0}
-                placeholder="0 = không giới hạn"
+                placeholder="0 = no limit"
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl"
               />
             </div>
@@ -272,7 +272,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bắt đầu *
+                Start Date *
               </label>
               <input
                 type="datetime-local"
@@ -284,7 +284,7 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Kết thúc *
+                End Date *
               </label>
               <input
                 type="datetime-local"
@@ -301,8 +301,8 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           {/* Active Toggle */}
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
             <div>
-              <p className="font-medium text-gray-900">Kích hoạt ngay</p>
-              <p className="text-sm text-gray-500">Mã sẽ có hiệu lực ngay khi tạo</p>
+              <p className="font-medium text-gray-900">Activate Immediately</p>
+              <p className="text-sm text-gray-500">Code will be effective upon creation</p>
             </div>
             <button
               type="button"
@@ -323,11 +323,11 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-xl text-sm text-blue-700">
             <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium">Mẹo tạo mã hiệu quả:</p>
+              <p className="font-medium">Tips for effective codes:</p>
               <ul className="mt-1 list-disc list-inside text-blue-600">
-                <li>Mã ngắn gọn, dễ nhớ (VD: SALE20, TET2025)</li>
-                <li>Đặt giới hạn lượt để kiểm soát chi phí</li>
-                <li>Đặt đơn tối thiểu để tăng giá trị đơn hàng</li>
+                <li>Short, memorable code (e.g.: SALE20, TET2025)</li>
+                <li>Set usage limit to control costs</li>
+                <li>Set min order to increase order value</li>
               </ul>
             </div>
           </div>
@@ -346,14 +346,14 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
               onClick={onClose}
               className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? 'Đang xử lý...' : isEditing ? 'Lưu thay đổi' : 'Tạo mã'}
+              {isSubmitting ? 'Processing...' : isEditing ? 'Save Changes' : 'Create Code'}
             </button>
           </div>
         </form>

@@ -43,5 +43,5 @@ export interface IDashboardAdapter {
   /**
    * Get KPI data by time period
    */
-  getKPIData(period: TimePeriod): Promise<KPIData>;
+  getKPIData(period: TimePeriod, rangeFilter?: string): Promise<KPIData>;
 }

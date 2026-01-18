@@ -9,10 +9,15 @@ import { TableRepository } from './repositories/table.repository';
 import { TableSessionRepository } from './repositories/table-session.repository';
 import { SessionGuard } from './guards/session.guard';
 import { MenuModule } from '../menu/menu.module';
+import { OrderModule } from '../order/order.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
-  imports: [forwardRef(() => MenuModule), forwardRef(() => SubscriptionModule)],
+  imports: [
+    forwardRef(() => MenuModule), 
+    forwardRef(() => OrderModule),
+    forwardRef(() => SubscriptionModule),
+  ],
   controllers: [TableController, PublicTableController],
   providers: [
     // Services

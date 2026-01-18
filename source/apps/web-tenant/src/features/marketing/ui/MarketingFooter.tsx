@@ -11,16 +11,16 @@ const footerLinks = {
   product: [
     { href: '/home#features', label: 'Features' },
     { href: '/home#pricing', label: 'Pricing' },
-    { href: '/home#demo', label: 'Demo' },
+    { href: '/home#pricing', label: 'Demo' },
   ],
   company: [
-    { href: '/about', label: 'About Us' },
-    { href: '/help', label: 'Help Center' },
+    { href: '/about', label: 'Our story' },
+    { href: '/help', label: 'Support' },
     { href: '/help#contact', label: 'Contact' },
   ],
   legal: [
-    { href: '#', label: 'Privacy Policy' },
-    { href: '#', label: 'Terms of Service' },
+    { href: '#', label: 'Privacy' },
+    { href: '#', label: 'Terms' },
   ],
 };
 
@@ -40,7 +40,7 @@ export function MarketingFooter() {
               </span>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Smart restaurant management platform. Streamline orders, manage menus, and boost efficiency.
+              QR ordering, kitchen displays, and service boards—built for restaurants that want less chaos and smoother service.
             </p>
             <div className="flex flex-col gap-2 text-sm text-gray-400">
               <a href="mailto:contact@tkob.io" className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
@@ -113,10 +113,10 @@ export function MarketingFooter() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} TKOB Restaurant. All rights reserved.
+            © {new Date().getFullYear()} TKOB. All rights reserved.
           </p>
           <p className="text-sm text-gray-500">
-            Made with ❤️ in Vietnam
+            Built with care in Vietnam
           </p>
         </div>
       </div>

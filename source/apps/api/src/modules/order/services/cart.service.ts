@@ -31,26 +31,22 @@ export class CartService {
     tableId: string,
     sessionId?: string,
   ): Promise<string> {
-    // Try to find existing active cart
-    const existingCart = await this.prisma.cart.findFirst({
-      where: {
-        tenantId,
-        tableId,
-        sessionId,
-        expiresAt: { gte: new Date() },
-      },
-    });
-
-    if (existingCart) {
-      return existingCart.id;
-    }
-
-    // Create new cart
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.CART_EXPIRY_HOURS);
 
-    const cart = await this.prisma.cart.create({
-      data: {
+    // Use upsert to avoid race condition
+    const cart = await this.prisma.cart.upsert({
+      where: {
+        tableId_sessionId: {
+          tableId,
+          sessionId: sessionId ?? '',
+        },
+      },
+      update: {
+        // Extend expiration time if cart already exists
+        expiresAt,
+      },
+      create: {
         tenantId,
         tableId,
         sessionId,

@@ -9,6 +9,7 @@ export function useItemModalState() {
   const [itemModalMode, setItemModalMode] = useState<ModalMode>('add');
   const [currentEditItemId, setCurrentEditItemId] = useState<string | null>(null);
   const [itemFormData, setItemFormData] = useState<MenuItemFormData>(INITIAL_MENU_ITEM_FORM);
+  const [originalItem, setOriginalItem] = useState<MenuItem | null>(null);
 
   const openAddItem = (defaultCategoryId?: string) => {
     setItemModalMode('add');
@@ -22,6 +23,7 @@ export function useItemModalState() {
   const openEditItem = (item: MenuItem) => {
     setItemModalMode('edit');
     setCurrentEditItemId(item.id);
+    setOriginalItem(item);
     setItemFormData({
       name: item.name,
       categoryId: item.categoryId,
@@ -44,6 +46,7 @@ export function useItemModalState() {
   const closeItemModal = () => {
     setIsItemModalOpen(false);
     setCurrentEditItemId(null);
+    setOriginalItem(null);
     setItemFormData(INITIAL_MENU_ITEM_FORM);
   };
 
@@ -53,6 +56,7 @@ export function useItemModalState() {
     itemModalMode,
     currentEditItemId,
     itemFormData,
+    originalItem,
     // setters
     setItemFormData,
     // actions

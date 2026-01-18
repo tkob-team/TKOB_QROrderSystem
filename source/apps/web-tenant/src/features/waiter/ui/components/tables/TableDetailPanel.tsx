@@ -127,10 +127,10 @@ export function TableDetailPanel({
                       order.status === 'served' ? 'bg-blue-100 text-blue-700' :
                       'bg-gray-100 text-gray-600'
                     }`}>
-                      {order.status === 'ready' ? 'Sẵn sàng' :
-                       order.status === 'preparing' ? 'Đang làm' :
-                       order.status === 'served' ? 'Đã phục vụ' :
-                       order.status === 'completed' ? 'Hoàn thành' : order.status}
+                      {order.status === 'ready' ? 'Ready' :
+                       order.status === 'preparing' ? 'Preparing' :
+                       order.status === 'served' ? 'Served' :
+                       order.status === 'completed' ? 'Completed' : order.status}
                     </div>
                   </div>
                 </div>
@@ -148,14 +148,14 @@ export function TableDetailPanel({
           className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Tạo đơn mới
+          Create New Order
         </button>
 
         {/* Clear table button - only if occupied */}
         {isOccupied && (
           <button
             onClick={() => {
-              if (confirm(`Bạn có chắc muốn kết thúc phiên của ${table.name}? Tất cả đơn hàng phải đã thanh toán.`)) {
+              if (confirm(`Are you sure you want to end the session for ${table.name}? All orders must be paid.`)) {
                 onClearTable(table.id);
               }
             }}

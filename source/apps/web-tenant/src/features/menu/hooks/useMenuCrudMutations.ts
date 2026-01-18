@@ -77,6 +77,16 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
     onError: () => notifyError('Có lỗi khi xóa món ăn'),
   });
 
+  const mTogglePublish = useMutation({
+    mutationFn: ({ id, publish }: { id: string; publish: boolean }) =>
+      menuAdapter.items.togglePublish(id, { publish }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['menu', 'items'] });
+      notify(variables.publish ? 'Món ăn đã được xuất bản' : 'Món ăn đã chuyển về nháp');
+    },
+    onError: () => notifyError('Có lỗi khi thay đổi trạng thái xuất bản'),
+  });
+
   // Modifiers
   const mCreateModifier = useMutation({
     mutationFn: (data: unknown) => menuAdapter.modifiers.create(data as any),
@@ -117,6 +127,7 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
       create: (data: CreateMenuItemDto) => mCreateItem.mutateAsync(data),
       update: (payload: { id: string; data: UpdateMenuItemDto }) => mUpdateItem.mutateAsync(payload),
       delete: (id: string) => mDeleteItem.mutateAsync(id),
+      togglePublish: (payload: { id: string; publish: boolean }) => mTogglePublish.mutateAsync(payload),
     },
     modifiers: {
       create: (data: unknown) => mCreateModifier.mutateAsync(data),

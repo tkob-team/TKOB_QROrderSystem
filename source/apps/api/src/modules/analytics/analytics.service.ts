@@ -119,6 +119,8 @@ export class AnalyticsService {
     }[groupBy]
 
     // Use raw query for date grouping (PostgreSQL syntax)
+    // Note: Using < endDate (exclusive) to match standard date range semantics
+    // Frontend should send from=2026-01-18 to=2026-01-19 to get all orders on Jan 18
     const results = await this.prisma.$queryRaw<Array<{ period: string; total: any; count: any }>>(
       Prisma.sql`
         SELECT 
@@ -128,7 +130,7 @@ export class AnalyticsService {
         FROM orders
         WHERE tenant_id = ${tenantId}
           AND created_at >= ${startDate}
-          AND created_at <= ${endDate}
+          AND created_at < ${endDate}
           AND status NOT IN ('CANCELLED')
         GROUP BY TO_CHAR("created_at", ${Prisma.raw(`'${dateFormat}'`)})
         ORDER BY period ASC
@@ -154,9 +156,11 @@ export class AnalyticsService {
     const endDate = to || new Date()
     const startDate = from || new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000)
 
+    // Note: Using lt (exclusive) for endDate to match standard date range semantics
+    // Frontend should send from=2026-01-18 to=2026-01-19 to get all orders on Jan 18
     const whereClause: Prisma.OrderWhereInput = {
       tenantId,
-      createdAt: { gte: startDate, lte: endDate },
+      createdAt: { gte: startDate, lt: endDate },
     }
 
     const [
@@ -221,7 +225,7 @@ export class AnalyticsService {
       where: {
         order: {
           tenantId,
-          createdAt: { gte: startDate, lte: endDate },
+          createdAt: { gte: startDate, lt: endDate },
           status: { notIn: ['CANCELLED'] },
         },
       },
@@ -299,7 +303,7 @@ const results = await this.prisma.$queryRaw<Array<{ hour: any; count: any; total
       by: ['tableId'],
       where: {
         tenantId,
-        createdAt: { gte: startDate, lte: endDate },
+        createdAt: { gte: startDate, lt: endDate },
         status: { notIn: ['CANCELLED'] },
       },
       _count: { id: true },

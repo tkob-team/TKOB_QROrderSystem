@@ -55,11 +55,6 @@ export function UserMenu({ onNavigate, variant = 'light' }: UserMenuProps) {
     logout();
   };
 
-  const handleAccountSettings = () => {
-    setIsOpen(false);
-    onNavigate?.('account-settings');
-  };
-
   return (
     <div className="relative" ref={menuRef}>
       {/* User Button */}
@@ -100,18 +95,7 @@ export function UserMenu({ onNavigate, variant = 'light' }: UserMenuProps) {
 
           {/* Menu Items */}
           <div className="py-1">
-            <button
-              onClick={handleAccountSettings}
-              className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
-            >
-              <User className="w-4 h-4 text-gray-500" />
-              <span className="text-gray-700 text-sm">Account Settings</span>
-            </button>
-
-            <button className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3">
-              <HelpCircle className="w-4 h-4 text-gray-500" />
-              <span className="text-gray-700 text-sm">Help & Support</span>
-            </button>
+            {/* Account Settings and Help removed - no backend API support */}
           </div>
 
           <div className="border-t border-gray-100 my-1"></div>

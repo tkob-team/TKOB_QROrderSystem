@@ -27,6 +27,8 @@ export interface SubscriptionPaymentResponseDto {
   expiresAt: string;
   /** Payment ID */
   paymentId: string;
+  /** QR code image URL */
+  qrCodeUrl: string;
   /** VietQR code content */
   qrContent: string;
   /** Payment status */

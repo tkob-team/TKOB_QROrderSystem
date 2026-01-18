@@ -2,7 +2,7 @@
 
 export type OrderStatus = 'placed' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled';
 export type TimePeriod = 'Today' | 'This Week' | 'This Month';
-export type ChartPeriod = 'today' | 'week' | 'month';
+export type ChartPeriod = 'today' | 'yesterday' | 'week' | 'month';
 export type RangeOption = 'Today' | 'Yesterday' | 'Last 7 days' | 'Last 30 days';
 
 export interface MockOrder {

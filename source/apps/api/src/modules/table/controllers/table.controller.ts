@@ -25,6 +25,8 @@ import {
 import type { Response } from 'express';
 import { TableService } from '../services/table.service';
 import { TableSessionService } from '../services/table-session.service';
+import { BillService } from 'src/modules/order/services/bill.service';
+import { CloseTableDto, BillResponseDto } from 'src/modules/order/dtos/bill.dto';
 import { CreateTableDto } from '../dto/create-table.dto';
 import { UpdateTableDto } from '../dto/update-table.dto';
 import {
@@ -50,6 +52,7 @@ export class TableController {
   constructor(
     private readonly service: TableService,
     private readonly sessionService: TableSessionService,
+    private readonly billService: BillService,
   ) {}
 
   // ==================== CRUD ====================
@@ -293,8 +296,8 @@ export class TableController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Clear table (Haidilao style)',
-    description: 'Staff marks table as cleared. Deactivates active session and frees the table.',
+    summary: 'Clear table (Haidilao style) - Legacy',
+    description: '[DEPRECATED] Staff marks table as cleared. Use /close-session endpoint instead for proper bill generation.',
   })
   @ApiResponse({
     status: 200,
@@ -324,6 +327,42 @@ export class TableController {
       clearedAt: new Date(),
       clearedBy: user.userId,
     };
+  }
+
+  @Post(':id/close-session')
+  @Roles(UserRole.STAFF, UserRole.OWNER)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Close table session and generate bill',
+    description: 'Generate bill for all unpaid orders, mark them as paid (if cash), and clear the table session.',
+  })
+  @ApiResponse({ status: 201, type: BillResponseDto })
+  @ApiResponse({ status: 404, description: 'No active session or unpaid orders found' })
+  @ApiBody({ type: CloseTableDto })
+  async closeSessionAndGenerateBill(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') tableId: string,
+    @Body() dto: CloseTableDto,
+  ): Promise<BillResponseDto> {
+    // Get active session first
+    const activeSession = await this.sessionService.findActiveSession(tableId);
+    if (!activeSession) {
+      throw new Error('No active session for this table');
+    }
+
+    // Generate bill with all unpaid orders (this will mark orders as PAID)
+    const bill = await this.billService.closeTableAndGenerateBill(
+      user.tenantId,
+      tableId,
+      activeSession.id,
+      dto,
+    );
+
+    // Clear the table session only (don't update orders again)
+    await this.sessionService.clearSessionOnly(tableId, activeSession.id, user.userId);
+
+    return bill;
   }
 
   @Get('sessions/active')

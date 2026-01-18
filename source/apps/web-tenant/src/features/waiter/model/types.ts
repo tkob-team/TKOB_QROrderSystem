@@ -34,6 +34,8 @@ export interface ServiceOrder {
   id: string;
   orderNumber: string;
   table: string;
+  tableId: string; // UUID for API calls
+  sessionId?: string; // Session ID for grouping
   items: OrderItem[];
   status: OrderStatus;
   paymentStatus: PaymentStatus;
@@ -81,4 +83,27 @@ export interface ServiceTabCounts {
   ready: number;
   served: number;
   completed: number;
+}
+
+/**
+ * Grouped orders by table (for completed tab)
+ */
+export interface TableOrdersGroup {
+  tableId: string;
+  tableNumber: string;
+  sessionId: string;
+  orders: ServiceOrder[];
+  totalAmount: number;
+}
+
+/**
+ * Data for closing table and generating bill
+ */
+export interface CloseTableData {
+  tableId: string;
+  sessionId: string;
+  paymentMethod: PaymentMethod;
+  discount?: number;
+  tip?: number;
+  notes?: string;
 }

@@ -31,6 +31,8 @@ export interface OrderResponseDto {
   servedAt?: string;
   /** Service charge amount */
   serviceCharge?: number;
+  /** Session ID for grouping orders by table visit */
+  sessionId?: string;
   status: string;
   subtotal: number;
   tableId: string;

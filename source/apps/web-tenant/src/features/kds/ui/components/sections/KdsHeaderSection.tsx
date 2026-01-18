@@ -43,7 +43,7 @@ export function KdsHeaderSection({
   const connectionConfig = {
     connecting: {
       icon: Wifi,
-      label: 'Đang kết nối...',
+      label: 'Connecting...',
       color: 'text-yellow-500',
       bg: 'bg-yellow-500/10',
       border: 'border-yellow-500/20',
@@ -51,7 +51,7 @@ export function KdsHeaderSection({
     },
     connected: {
       icon: Wifi,
-      label: 'Kết nối',
+      label: 'Connected',
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20',
@@ -59,7 +59,7 @@ export function KdsHeaderSection({
     },
     disconnected: {
       icon: WifiOff,
-      label: 'Mất kết nối',
+      label: 'Disconnected',
       color: 'text-red-500',
       bg: 'bg-red-500/10',
       border: 'border-red-500/20',
@@ -67,7 +67,7 @@ export function KdsHeaderSection({
     },
     error: {
       icon: WifiOff,
-      label: 'Lỗi kết nối',
+      label: 'Connection Error',
       color: 'text-orange-500',
       bg: 'bg-orange-500/10',
       border: 'border-orange-500/20',
@@ -143,7 +143,7 @@ export function KdsHeaderSection({
             title={soundEnabled ? 'Sound enabled' : 'Sound disabled'}
           >
             {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-            <span className="hidden sm:inline">Sound</span>
+            <span className="hidden sm:inline">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
           </button>
 
           {/* Auto Refresh Toggle */}

@@ -23,7 +23,7 @@ import { customInstance } from '../../axios';
 
 
 /**
- * Public endpoint - can be accessed with or without authentication. If not authenticated, tenantId must be provided via query parameter.
+ * Public endpoint - can be accessed with JWT auth, session cookie, or tenantId query parameter. Priority: JWT user > Session cookie > Query param.
  * @summary Get published menu (for customers)
  */
 export const publicMenuControllerGetPublicMenu = (

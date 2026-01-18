@@ -11,8 +11,8 @@ import { Menu, X, UtensilsCrossed } from 'lucide-react';
 
 const navLinks = [
   { href: '/home', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/help', label: 'Help' },
+  { href: '/about', label: 'Our Story' },
+  { href: '/help', label: 'Support' },
 ];
 
 export function MarketingHeader() {
@@ -70,13 +70,13 @@ export function MarketingHeader() {
               href="/auth/login"
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 transition-colors"
             >
-              Login
+              Sign in
             </Link>
             <Link
               href="/auth/login"
               className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all"
             >
-              Get Started
+              Start free
             </Link>
           </div>
 
@@ -113,13 +113,13 @@ export function MarketingHeader() {
                   href="/auth/login"
                   className="py-3 text-center text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Login
+                  Sign in
                 </Link>
                 <Link
                   href="/auth/login"
                   className="py-3 text-center bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
                 >
-                  Get Started
+                  Start free
                 </Link>
               </div>
             </nav>

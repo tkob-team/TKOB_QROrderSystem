@@ -54,35 +54,35 @@ export const TABLE_STATUS_CONFIG: Record<TableViewStatus, {
   icon: string;
 }> = {
   available: {
-    label: 'Trống',
+    label: 'Available',
     bgColor: 'bg-green-50',
     textColor: 'text-green-700',
     borderColor: 'border-green-200',
     icon: '✓',
   },
   occupied: {
-    label: 'Đang phục vụ',
+    label: 'Occupied',
     bgColor: 'bg-blue-50',
     textColor: 'text-blue-700',
     borderColor: 'border-blue-200',
     icon: '👥',
   },
   'needs-service': {
-    label: 'Cần phục vụ',
+    label: 'Needs Service',
     bgColor: 'bg-amber-50',
     textColor: 'text-amber-700',
     borderColor: 'border-amber-300',
     icon: '🔔',
   },
   reserved: {
-    label: 'Đã đặt',
+    label: 'Reserved',
     bgColor: 'bg-purple-50',
     textColor: 'text-purple-700',
     borderColor: 'border-purple-200',
     icon: '📅',
   },
   inactive: {
-    label: 'Không hoạt động',
+    label: 'Inactive',
     bgColor: 'bg-gray-100',
     textColor: 'text-gray-500',
     borderColor: 'border-gray-200',

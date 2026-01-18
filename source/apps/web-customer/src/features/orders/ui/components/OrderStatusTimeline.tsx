@@ -5,11 +5,39 @@ interface OrderStatusTimelineProps {
   currentStatus: OrderStatus
 }
 
+// Status display labels for user-friendly UI
+const STATUS_LABELS: Record<string, string> = {
+  'PENDING': 'Pending',
+  'RECEIVED': 'Accepted',
+  'PREPARING': 'Preparing',
+  'READY': 'Ready',
+  'SERVED': 'Served',
+  'COMPLETED': 'Completed',
+}
+
+// Normalize status to UPPERCASE to match backend
+const normalizeStatus = (status: string): string => {
+  // Map Title Case to UPPERCASE for backward compatibility
+  const mappings: Record<string, string> = {
+    'Pending': 'PENDING',
+    'Accepted': 'RECEIVED',
+    'Preparing': 'PREPARING',
+    'Ready': 'READY',
+    'Served': 'SERVED',
+    'Completed': 'COMPLETED',
+    'Cancelled': 'CANCELLED',
+  }
+  return mappings[status] || status.toUpperCase()
+}
+
 export function OrderStatusTimeline({ currentStatus }: OrderStatusTimelineProps) {
-  const steps: OrderStatus[] = ['Pending', 'Accepted', 'Preparing', 'Ready', 'Served', 'Completed']
+  // Use UPPERCASE statuses to match backend API
+  const steps = ['PENDING', 'RECEIVED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED']
+
+  const normalizedStatus = normalizeStatus(currentStatus)
 
   const getCurrentStepIndex = () => {
-    return steps.indexOf(currentStatus)
+    return steps.indexOf(normalizedStatus)
   }
 
   const currentIndex = getCurrentStepIndex()
@@ -53,7 +81,7 @@ export function OrderStatusTimeline({ currentStatus }: OrderStatusTimelineProps)
                   fontSize: '15px',
                 }}
               >
-                {status}
+                {STATUS_LABELS[status] || status}
               </div>
               {isCurrent && (
                 <p style={{ color: 'var(--gray-600)', fontSize: '13px' }}>

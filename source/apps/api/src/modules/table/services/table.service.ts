@@ -326,6 +326,7 @@ export class TableService {
 
   /**
    * Bulk regenerate QR codes for all active tables
+   * Also resets all table statuses to AVAILABLE and clears sessions
    */
   async bulkRegenerateAllQr(tenantId: string): Promise<BulkRegenerateQrResponseDto> {
     // Get all active tables
@@ -339,7 +340,7 @@ export class TableService {
     let successCount = 0;
     let failureCount = 0;
 
-    // Regenerate QR for each table
+    // Regenerate QR for each table and reset status
     for (const table of tables) {
       try {
         // Invalidate old QR (mark as invalidated)
@@ -350,8 +351,14 @@ export class TableService {
         // Generate new QR token
         const { token, tokenHash } = this.qrService.generateToken(table.id, tenantId);
 
-        // Update table with new token
+        // Update table with new token and reset to AVAILABLE status
         await this.repo.updateQrToken(table.id, token, tokenHash);
+        
+        // Reset table status to AVAILABLE and clear session
+        await this.repo.update(table.id, {
+          status: TableStatus.AVAILABLE,
+          currentSessionId: null,
+        });
 
         affectedTables.push(table.tableNumber);
         successCount++;

@@ -5,12 +5,13 @@
  * API Documentation for QR Ordering Platform
  * OpenAPI spec version: 1.0
  */
+import type { CartModifierDto } from './cartModifierDto';
 
 export interface CartItemResponseDto {
   id: string;
   itemTotal: number;
   menuItemId: string;
-  modifiers: string[];
+  modifiers: CartModifierDto[];
   name: string;
   notes: string;
   price: number;

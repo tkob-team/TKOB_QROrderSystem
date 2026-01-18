@@ -10,7 +10,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useServiceOrders } from './queries';
 import { sortOrdersByStatus } from '../utils';
-import type { ServiceOrder, OrderStatus, ServiceTabCounts } from '../model/types';
+import type { 
+  ServiceOrder, 
+  OrderStatus, 
+  ServiceTabCounts,
+  TableOrdersGroup,
+  CloseTableData 
+} from '../model/types';
 import { logger } from '@/shared/utils/logger';
 import { orderControllerUpdateOrderStatus } from '@/services/generated/orders/orders';
 import { api as axiosInstance } from '@/services/axios';
@@ -31,6 +37,7 @@ interface WaiterState {
   // Derived
   currentOrders: ServiceOrder[];
   tabCounts: ServiceTabCounts;
+  ordersByTable: TableOrdersGroup[]; // Grouped orders for completed tab
   
   // Toast
   showSuccessToast: boolean;
@@ -48,7 +55,8 @@ interface WaiterActions {
   markServed: (order: ServiceOrder) => void;
   markCompleted: (order: ServiceOrder) => void;
   markPaid: (order: ServiceOrder) => void;
-  closeTable: (order: ServiceOrder) => void;
+  markTableAsPaid: (tableGroup: TableOrdersGroup) => Promise<void>; // Mark all orders in table as paid
+  closeTable: (data: CloseTableData) => Promise<void>; // Updated signature
   toggleOrderExpanded: (orderId: string) => void;
   
   // UI actions
@@ -150,6 +158,41 @@ export function useWaiterController(): UseWaiterControllerReturn {
     
     return sorted;
   }, [orders, activeTab]);
+
+  // Group orders by table (for completed tab)
+  const ordersByTable = useMemo(() => {
+    // Group all completed/served orders (both paid and unpaid)
+    // They will disappear only after Close Table action (when status changes or bill is generated)
+    const completedOrders = orders.filter(order => 
+      order.status === 'completed' || order.status === 'served'
+    );
+    
+    const grouped = new Map<string, TableOrdersGroup>();
+    
+    completedOrders.forEach(order => {
+      // Create unique key from tableId + sessionId
+      const key = `${order.tableId}-${order.sessionId || 'no-session'}`;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          tableId: order.tableId,
+          tableNumber: order.table,
+          sessionId: order.sessionId || '',
+          orders: [],
+          totalAmount: 0,
+        });
+      }
+      
+      const group = grouped.get(key)!;
+      group.orders.push(order);
+      group.totalAmount += order.total;
+    });
+    
+    // Convert to array and sort by table number
+    return Array.from(grouped.values()).sort((a, b) => 
+      a.tableNumber.localeCompare(b.tableNumber)
+    );
+  }, [orders]);
 
   // Logout handler
   const handleLogout = useCallback(() => {
@@ -369,45 +412,114 @@ export function useWaiterController(): UseWaiterControllerReturn {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
-    }, [refetch]),
-    
-    closeTable: useCallback(async (order: ServiceOrder) => {
+    }, [refetch]),    
+    markTableAsPaid: useCallback(async (tableGroup: TableOrdersGroup) => {
       try {
-        logger.info('[waiter] CLOSE_TABLE_ACTION_ATTEMPT', {
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          table: order.table,
-          status: order.status,
+        logger.info('[waiter] MARK_TABLE_PAID_ACTION_ATTEMPT', {
+          tableId: tableGroup.tableId,
+          tableNumber: tableGroup.tableNumber,
+          orderCount: tableGroup.orders.length,
+          orderIds: tableGroup.orders.map(o => o.id),
         });
         
-        // Extract tableId from order (assuming it exists)
-        // If order doesn't have tableId, we need to find it from the order data
-        const axiosInstance = (await import('@/services/axios')).default;
+        // Optimistic update - mark all orders in group as paid
+        const orderIds = new Set(tableGroup.orders.map(o => o.id));
+        setOrders(prev => 
+          prev.map((o) => orderIds.has(o.id) ? { ...o, paymentStatus: 'paid' } : o)
+        );
         
-        // Call API to clear table
-        // Note: We need the actual tableId, not just table number
-        // This might need adjustment based on your Order model
-        await axiosInstance.post(`/api/v1/admin/tables/${order.table}/clear`);
+        // Call API for each order in parallel
+        const axiosInstance = (await import('@/services/axios')).default;
+        await Promise.all(
+          tableGroup.orders.map(order => 
+            axiosInstance.patch(`/api/v1/admin/orders/${order.id}/mark-paid`)
+          )
+        );
+        
+        // Refetch to sync with backend
+        refetch();
+        
+        setToastMessage(`All orders for ${tableGroup.tableNumber} marked as paid`);
+        setShowSuccessToast(true);
+        
+        logger.info('[waiter] MARK_TABLE_PAID_ACTION_SUCCESS', {
+          tableId: tableGroup.tableId,
+          tableNumber: tableGroup.tableNumber,
+          orderCount: tableGroup.orders.length,
+        });
+      } catch (error) {
+        // Revert optimistic update
+        const orderIds = new Set(tableGroup.orders.map(o => o.id));
+        setOrders(prev => 
+          prev.map((o) => {
+            if (!orderIds.has(o.id)) return o;
+            const originalOrder = tableGroup.orders.find(ord => ord.id === o.id);
+            return originalOrder ? { ...o, paymentStatus: originalOrder.paymentStatus } : o;
+          })
+        );
+        
+        setToastMessage(`Failed to mark ${tableGroup.tableNumber} as paid`);
+        setShowSuccessToast(true);
+        
+        logger.error('[waiter] MARK_TABLE_PAID_ACTION_ERROR', {
+          tableId: tableGroup.tableId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }, [refetch]),    
+    closeTable: useCallback(async (tableGroupOrData: TableOrdersGroup | CloseTableData) => {
+      try {
+        // Handle both TableOrdersGroup (from grouped view) and CloseTableData (from modal)
+        const tableId = 'orders' in tableGroupOrData ? tableGroupOrData.tableId : tableGroupOrData.tableId;
+        const sessionId = 'orders' in tableGroupOrData ? tableGroupOrData.sessionId : tableGroupOrData.sessionId;
+        const discount = 'discount' in tableGroupOrData ? tableGroupOrData.discount || 0 : 0;
+        const tip = 'tip' in tableGroupOrData ? tableGroupOrData.tip || 0 : 0;
+        const notes = 'notes' in tableGroupOrData ? tableGroupOrData.notes : undefined;
+        const paymentMethod = 'paymentMethod' in tableGroupOrData ? tableGroupOrData.paymentMethod : 'BILL_TO_TABLE';
+
+        logger.info('[waiter] CLOSE_TABLE_ACTION_ATTEMPT', {
+          tableId,
+          sessionId,
+          discount,
+          tip,
+        });
+        
+        // Call correct endpoint to generate bill and close table
+        const response = await axiosInstance.post(
+          `/api/v1/admin/tables/${tableId}/close-session`,
+          {
+            paymentMethod,
+            discount,
+            tip,
+            notes,
+          }
+        );
+        
+        const bill = response.data?.data || response.data;
+        
+        logger.info('[waiter] BILL_GENERATED_SUCCESS', {
+          billId: bill.id,
+          billNumber: bill.billNumber,
+          total: bill.total,
+          ordersCount: bill.orders?.length || 0,
+        });
         
         // Refetch orders to sync with backend
         refetch();
         
-        setToastMessage(`${order.table} closed successfully`);
+        setToastMessage(`Bill ${bill.billNumber} generated - Table closed successfully`);
         setShowSuccessToast(true);
         
-        logger.info('[waiter] CLOSE_TABLE_ACTION_SUCCESS', {
-          orderId: order.id,
-          table: order.table,
-        });
       } catch (error) {
-        setToastMessage(`Failed to close ${order.table}`);
-        setShowSuccessToast(true);
-        
         logger.error('[waiter] CLOSE_TABLE_ACTION_ERROR', {
-          orderId: order.id,
-          table: order.table,
+          tableId: 'orders' in tableGroupOrData ? tableGroupOrData.tableId : tableGroupOrData.tableId,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
+        
+        setToastMessage('Failed to close table and generate bill');
+        setShowSuccessToast(true);
+        
+        throw error; // Re-throw to let modal handle it
       }
     }, [refetch]),
     
@@ -453,6 +565,7 @@ export function useWaiterController(): UseWaiterControllerReturn {
     soundEnabled,
     autoRefresh,
     currentOrders,
+    ordersByTable, // Grouped orders for completed tab
     tabCounts,
     showSuccessToast,
     toastMessage,

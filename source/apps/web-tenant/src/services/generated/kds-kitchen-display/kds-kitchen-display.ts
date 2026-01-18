@@ -23,7 +23,7 @@ import { customInstance } from '../../axios';
 
 
 /**
- * Returns orders in PREPARING status, sorted by elapsed time and priority
+ * Returns orders in RECEIVED (pending acceptance) and PREPARING (cooking) status, sorted by elapsed time and priority
  * @summary Get active orders for KDS (categorized by priority)
  */
 export const kdsControllerGetActiveOrders = (

@@ -793,35 +793,73 @@ export class OrderService {
       estimatedTimeRemaining = Math.max(0, order.estimatedPrepTime - prepElapsedMinutes);
     }
 
-    // Build timeline
+    // Backward-fill missing timestamps for completed orders
+    // This handles orders that were created via seed/test data without going through normal flow
+    let receivedAt = order.receivedAt;
+    let preparingAt = order.preparingAt;
+    let readyAt = order.readyAt;
+    let servedAt = order.servedAt;
+
+    // If order is COMPLETED/SERVED but missing timestamps, use createdAt as fallback
+    if (['COMPLETED', 'SERVED'].includes(order.status)) {
+      if (!receivedAt) receivedAt = order.createdAt;
+      if (!preparingAt) preparingAt = order.createdAt;
+      if (!readyAt) readyAt = order.createdAt;
+      if (!servedAt) servedAt = order.createdAt;
+    } else if (['READY'].includes(order.status)) {
+      if (!receivedAt) receivedAt = order.createdAt;
+      if (!preparingAt) preparingAt = order.createdAt;
+      if (!readyAt) readyAt = order.createdAt;
+    } else if (['PREPARING'].includes(order.status)) {
+      if (!receivedAt) receivedAt = order.createdAt;
+      if (!preparingAt) preparingAt = order.createdAt;
+    } else if (['RECEIVED'].includes(order.status)) {
+      if (!receivedAt) receivedAt = order.createdAt;
+    }
+
+    // Build timeline with fallback timestamps
     const timeline = [
       {
+        status: 'PENDING',
+        label: 'Pending',
+        description: 'Your order is waiting for confirmation',
+        timestamp: order.createdAt, // Order is created at PENDING
+        completed: true, // Always completed since order exists
+      },
+      {
         status: 'RECEIVED',
-        label: 'Order Received',
-        description: 'Your order has been received by the restaurant',
-        timestamp: order.receivedAt,
-        completed: !!order.receivedAt,
+        label: 'Accepted',
+        description: 'Your order has been accepted by the restaurant',
+        timestamp: receivedAt,
+        completed: !!receivedAt,
       },
       {
         status: 'PREPARING',
         label: 'Preparing',
         description: 'Your order is being prepared by our kitchen',
-        timestamp: order.preparingAt,
-        completed: !!order.preparingAt,
+        timestamp: preparingAt,
+        completed: !!preparingAt,
       },
       {
         status: 'READY',
         label: 'Ready',
         description: 'Your order is ready to be served',
-        timestamp: order.readyAt,
-        completed: !!order.readyAt,
+        timestamp: readyAt,
+        completed: !!readyAt,
       },
       {
         status: 'SERVED',
         label: 'Served',
         description: 'Your order has been served. Enjoy your meal!',
-        timestamp: order.servedAt,
-        completed: !!order.servedAt,
+        timestamp: servedAt,
+        completed: !!servedAt,
+      },
+      {
+        status: 'COMPLETED',
+        label: 'Completed',
+        description: 'Your order is complete. Thank you!',
+        timestamp: order.completedAt,
+        completed: !!order.completedAt,
       },
     ];
 
@@ -1168,6 +1206,7 @@ export class OrderService {
       id: order.id,
       orderNumber: order.orderNumber,
       tableId: order.tableId,
+      sessionId: order.sessionId || undefined,
       tableNumber: order.table?.tableNumber || 'N/A',
       customerName: order.customerName,
       customerNotes: order.customerNotes,
@@ -1180,17 +1219,33 @@ export class OrderService {
       serviceCharge: order.serviceCharge ? Number(order.serviceCharge) : 0,
       tip: order.tip ? Number(order.tip) : 0,
       total: Number(order.total),
-      items: (order.items || []).map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        price: Number(item.price),
-        quantity: item.quantity,
-        modifiers: item.modifiers || [],
-        notes: item.notes,
-        itemTotal: Number(item.itemTotal),
-        prepared: item.prepared || false,
-        preparedAt: item.preparedAt,
-      })),
+      items: (order.items || []).map((item: any) => {
+        // Parse modifiers if it's a JSON string, otherwise use as-is
+        let modifiers = [];
+        if (item.modifiers) {
+          if (typeof item.modifiers === 'string') {
+            try {
+              modifiers = JSON.parse(item.modifiers);
+            } catch {
+              modifiers = [];
+            }
+          } else if (Array.isArray(item.modifiers)) {
+            modifiers = item.modifiers;
+          }
+        }
+        
+        return {
+          id: item.id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: item.quantity,
+          modifiers,
+          notes: item.notes,
+          itemTotal: Number(item.itemTotal),
+          prepared: item.prepared || false,
+          preparedAt: item.preparedAt,
+        };
+      }),
       estimatedPrepTime: order.estimatedPrepTime,
       actualPrepTime: order.actualPrepTime,
       elapsedPrepTime,

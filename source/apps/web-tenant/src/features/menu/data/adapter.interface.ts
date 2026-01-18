@@ -30,6 +30,7 @@ export interface IMenuItemsAdapter {
   update(id: string, data: UpdateMenuItemDto): Promise<MenuItemResponseDto>;
   delete(id: string): Promise<{ success: boolean } | void>;
   toggleAvailability?(id: string, data: { isAvailable: boolean }): Promise<MenuItemResponseDto | { success: boolean }>;
+  togglePublish?(id: string, data: { publish: boolean }): Promise<MenuItemResponseDto>;
 }
 
 export interface IModifiersAdapter {

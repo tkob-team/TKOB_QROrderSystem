@@ -19,6 +19,8 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query'
 import type {
+  PaymentConfigControllerGetPublicPaymentMethods200,
+  PaymentConfigControllerGetPublicPaymentMethodsParams,
   PaymentConfigResponseDto,
   TestPaymentConfigDto,
   TestPaymentResultDto,
@@ -315,6 +317,69 @@ export const usePaymentConfigControllerGetStatus = <TData = Awaited<ReturnType<t
   ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
 
   const queryOptions = getPaymentConfigControllerGetStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * Public endpoint to check which payment methods are enabled for a tenant
+ * @summary Get available payment methods for customer app
+ */
+export const paymentConfigControllerGetPublicPaymentMethods = (
+    params: PaymentConfigControllerGetPublicPaymentMethodsParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PaymentConfigControllerGetPublicPaymentMethods200>(
+      {url: `/api/v1/admin/payment-config/public/payment-methods`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+export const getPaymentConfigControllerGetPublicPaymentMethodsQueryKey = (params: PaymentConfigControllerGetPublicPaymentMethodsParams,) => {
+    return [`/api/v1/admin/payment-config/public/payment-methods`, ...(params ? [params]: [])] as const;
+    }
+
+    
+export const getPaymentConfigControllerGetPublicPaymentMethodsQueryOptions = <TData = Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>, TError = unknown>(params: PaymentConfigControllerGetPublicPaymentMethodsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPaymentConfigControllerGetPublicPaymentMethodsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>> = ({ signal }) => paymentConfigControllerGetPublicPaymentMethods(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type PaymentConfigControllerGetPublicPaymentMethodsQueryResult = NonNullable<Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>>
+export type PaymentConfigControllerGetPublicPaymentMethodsQueryError = unknown
+
+/**
+ * @summary Get available payment methods for customer app
+ */
+export const usePaymentConfigControllerGetPublicPaymentMethods = <TData = Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>, TError = unknown>(
+ params: PaymentConfigControllerGetPublicPaymentMethodsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paymentConfigControllerGetPublicPaymentMethods>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getPaymentConfigControllerGetPublicPaymentMethodsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

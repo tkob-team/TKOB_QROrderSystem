@@ -5,25 +5,37 @@
  * API Documentation for QR Ordering Platform
  * OpenAPI spec version: 1.0
  */
-import type { MenuItemsControllerFindAllStatus } from './menuItemsControllerFindAllStatus';
-import type { MenuItemsControllerFindAllSortBy } from './menuItemsControllerFindAllSortBy';
 import type { MenuItemsControllerFindAllSortOrder } from './menuItemsControllerFindAllSortOrder';
 
 export type MenuItemsControllerFindAllParams = {
 page?: number;
 limit?: number;
 categoryId?: string;
-status?: MenuItemsControllerFindAllStatus;
+/**
+ * Filter by status (DRAFT, PUBLISHED, ARCHIVED, or Draft, Published, Archived)
+ */
+status?: string;
+/**
+ * Filter by availability status (true/false)
+ */
 available?: boolean;
+/**
+ * Alias for limit - items per page
+ */
+pageSize?: number;
+/**
+ * Filter string for availability (all/available/unavailable)
+ */
+availability?: string;
 search?: string;
 /**
  * Filter chef recommendations only
  */
 chefRecommended?: boolean;
 /**
- * Sort field
+ * Sort field - can be standard field name or display string
  */
-sortBy?: MenuItemsControllerFindAllSortBy;
+sortBy?: string;
 /**
  * Sort order
  */

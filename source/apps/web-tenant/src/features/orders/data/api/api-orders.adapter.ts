@@ -33,16 +33,25 @@ class OrdersApiAdapter implements IOrdersAdapter {
       `${this.baseUrl}?${params.toString()}`
     )
     
-    // Axios interceptor already unwraps { success: true, data: {...} } to just the data
-    // So response.data is already the PaginatedOrdersResponse
-    const orders = Array.isArray(response.data.data) ? response.data.data : []
+    // Backend response structure:
+    // { success: true, data: { data: Order[], meta: {...} } }
+    // response.data = { success, data: { data, meta } }
+    const rawResponse = response.data as any;
+    
+    // Unwrap the success wrapper first
+    const paginatedData = rawResponse?.data || rawResponse;
+    
+    // Now extract orders array and meta
+    const orders = Array.isArray(paginatedData?.data) ? paginatedData.data : 
+                   Array.isArray(paginatedData) ? paginatedData : [];
+    const meta = paginatedData?.meta || {};
     
     return {
       data: orders.map(mapOrderFromApi),
-      total: response.data.total || 0,
-      page: response.data.page || 1,
-      limit: response.data.limit || 20,
-      totalPages: response.data.totalPages || 0,
+      total: meta.totalItems || orders.length,
+      page: meta.currentPage || 1,
+      limit: meta.itemsPerPage || 20,
+      totalPages: meta.totalPages || Math.ceil(orders.length / 20),
     }
   }
 

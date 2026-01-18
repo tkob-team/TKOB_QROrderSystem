@@ -125,7 +125,7 @@ export function TopSellingSection({ items, variant }: Props) {
                     <td className="px-4 py-4 border-b border-default text-sm font-semibold text-text-primary">{item.itemName}</td>
                     <td className="px-4 py-4 border-b border-default text-sm text-text-secondary">{item.category}</td>
                     <td className="px-4 py-4 border-b border-default text-right text-sm font-semibold text-text-primary">{item.orders}</td>
-                    <td className="px-4 py-4 border-b border-default text-right text-sm font-semibold text-text-primary">${'{'}item.revenue.toLocaleString(){'}'}</td>
+                    <td className="px-4 py-4 border-b border-default text-right text-sm font-semibold text-text-primary">${item.revenue.toFixed(2)}</td>
                     <td className="px-4 py-4 border-b border-default text-right">
                       <span
                         className={`inline-flex items-center gap-1 text-sm font-semibold ${

@@ -19,7 +19,9 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query'
 import type {
+  BillResponseDto,
   BulkRegenerateQrResponseDto,
+  CloseTableDto,
   CreateTableDto,
   RegenerateQrResponseDto,
   TableControllerBulkUpdateStatus200,
@@ -747,8 +749,8 @@ export const useTableControllerBulkUpdateStatus = <TError = unknown,
       return useMutation(mutationOptions);
     }
     /**
- * Staff marks table as cleared. Deactivates active session and frees the table.
- * @summary Clear table (Haidilao style)
+ * [DEPRECATED] Staff marks table as cleared. Use /close-session endpoint instead for proper bill generation.
+ * @summary Clear table (Haidilao style) - Legacy
  */
 export const tableControllerClearTable = (
     id: string,
@@ -787,7 +789,7 @@ const {mutation: mutationOptions} = options ?? {};
     export type TableControllerClearTableMutationError = void
 
     /**
- * @summary Clear table (Haidilao style)
+ * @summary Clear table (Haidilao style) - Legacy
  */
 export const useTableControllerClearTable = <TError = void,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerClearTable>>, TError,{id: string}, TContext>, }
@@ -799,6 +801,65 @@ export const useTableControllerClearTable = <TError = void,
       > => {
 
       const mutationOptions = getTableControllerClearTableMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Generate bill for all unpaid orders, mark them as paid (if cash), and clear the table session.
+ * @summary Close table session and generate bill
+ */
+export const tableControllerCloseSessionAndGenerateBill = (
+    id: string,
+    closeTableDto: CloseTableDto,
+ ) => {
+      
+      
+      return customInstance<BillResponseDto>(
+      {url: `/api/v1/admin/tables/${id}/close-session`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: closeTableDto
+    },
+      );
+    }
+  
+
+
+export const getTableControllerCloseSessionAndGenerateBillMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerCloseSessionAndGenerateBill>>, TError,{id: string;data: CloseTableDto}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof tableControllerCloseSessionAndGenerateBill>>, TError,{id: string;data: CloseTableDto}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tableControllerCloseSessionAndGenerateBill>>, {id: string;data: CloseTableDto}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  tableControllerCloseSessionAndGenerateBill(id,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TableControllerCloseSessionAndGenerateBillMutationResult = NonNullable<Awaited<ReturnType<typeof tableControllerCloseSessionAndGenerateBill>>>
+    export type TableControllerCloseSessionAndGenerateBillMutationBody = CloseTableDto
+    export type TableControllerCloseSessionAndGenerateBillMutationError = void
+
+    /**
+ * @summary Close table session and generate bill
+ */
+export const useTableControllerCloseSessionAndGenerateBill = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tableControllerCloseSessionAndGenerateBill>>, TError,{id: string;data: CloseTableDto}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof tableControllerCloseSessionAndGenerateBill>>,
+        TError,
+        {id: string;data: CloseTableDto},
+        TContext
+      > => {
+
+      const mutationOptions = getTableControllerCloseSessionAndGenerateBillMutationOptions(options);
 
       return useMutation(mutationOptions);
     }

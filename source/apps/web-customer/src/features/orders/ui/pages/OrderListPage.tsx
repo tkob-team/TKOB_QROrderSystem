@@ -7,6 +7,7 @@ import { log } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { useOrdersController } from '../../hooks'
 import { ORDERS_TEXT } from '../../model'
+import { isPaymentRequired, isOrderPaid } from '../../model/statusUtils'
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -53,7 +54,7 @@ export function OrderListPage() {
           {state.currentSessionOrders.length > 0 ? (
             <div className="space-y-2">
               {state.currentSessionOrders.map((order) => {
-                const isUnpaid = order.paymentStatus === 'Unpaid' || order.paymentStatus === 'Failed'
+                const isUnpaid = isPaymentRequired(order.paymentStatus)
                 
                 return (
                   <div
@@ -152,7 +153,7 @@ export function OrderListPage() {
           ) : (
             <div className="space-y-3">
               {state.orderHistory.map((order) => {
-                const isPaid = order.paymentStatus === 'Paid'
+                const isPaid = isOrderPaid(order.paymentStatus)
                 
                 return (
                   <div

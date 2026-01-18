@@ -10,7 +10,7 @@ import type { PublicMenuControllerGetPublicMenuSortOrder } from './publicMenuCon
 
 export type PublicMenuControllerGetPublicMenuParams = {
 /**
- * Tenant ID (required if not authenticated)
+ * Tenant ID (required if not authenticated and no session)
  */
 tenantId?: string;
 /**

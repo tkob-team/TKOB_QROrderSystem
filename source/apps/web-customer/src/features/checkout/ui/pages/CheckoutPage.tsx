@@ -115,10 +115,10 @@ export function CheckoutPage() {
                     lineHeight: '1.4',
                   }}
                 >
-                  Bạn đã có đơn hàng <strong>{mergeableOrder.existingOrder.orderNumber}</strong> ({mergeableOrder.existingOrder.itemCount} món · ${mergeableOrder.existingOrder.total.toFixed(2)}) đang chờ thanh toán tiền mặt. 
+                  You have an existing order <strong>{mergeableOrder.existingOrder.orderNumber}</strong> ({mergeableOrder.existingOrder.itemCount} items · ${mergeableOrder.existingOrder.total.toFixed(2)}) pending cash payment. 
                   <br />
                   <span style={{ color: colors.primary[600] }}>
-                    Chọn "Pay at counter" để gộp các món mới vào đơn này.
+                    Choose "Pay at counter" to merge new items into this order.
                   </span>
                 </p>
               </div>

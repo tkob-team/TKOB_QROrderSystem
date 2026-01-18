@@ -22,12 +22,20 @@ import type {
   AuthControllerGetMe200,
   AuthControllerRefresh200,
   AuthResponseDto,
+  ForgotPasswordDto,
+  ForgotPasswordResponseDto,
   LoginDto,
   LogoutDto,
   RefreshTokenDto,
   RegisterConfirmDto,
   RegisterSubmitDto,
-  RegisterSubmitResponseDto
+  RegisterSubmitResponseDto,
+  ResendVerificationDto,
+  ResendVerificationResponseDto,
+  ResetPasswordDto,
+  ResetPasswordResponseDto,
+  VerifyEmailDto,
+  VerifyEmailResponseDto
 } from '.././models'
 import { customInstance } from '../../axios';
 
@@ -441,3 +449,236 @@ export const useAuthControllerGetMe = <TData = Awaited<ReturnType<typeof authCon
 
 
 
+/**
+ * Send password reset link to user email
+ * @summary Request password reset
+ */
+export const authControllerForgotPassword = (
+    forgotPasswordDto: ForgotPasswordDto,
+ ) => {
+      
+      
+      return customInstance<ForgotPasswordResponseDto>(
+      {url: `/api/v1/auth/forgot-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: forgotPasswordDto
+    },
+      );
+    }
+  
+
+
+export const getAuthControllerForgotPasswordMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerForgotPassword>>, TError,{data: ForgotPasswordDto}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authControllerForgotPassword>>, TError,{data: ForgotPasswordDto}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authControllerForgotPassword>>, {data: ForgotPasswordDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authControllerForgotPassword(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthControllerForgotPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authControllerForgotPassword>>>
+    export type AuthControllerForgotPasswordMutationBody = ForgotPasswordDto
+    export type AuthControllerForgotPasswordMutationError = void
+
+    /**
+ * @summary Request password reset
+ */
+export const useAuthControllerForgotPassword = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerForgotPassword>>, TError,{data: ForgotPasswordDto}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof authControllerForgotPassword>>,
+        TError,
+        {data: ForgotPasswordDto},
+        TContext
+      > => {
+
+      const mutationOptions = getAuthControllerForgotPasswordMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Change password using reset token from email
+ * @summary Reset password with token
+ */
+export const authControllerResetPassword = (
+    resetPasswordDto: ResetPasswordDto,
+ ) => {
+      
+      
+      return customInstance<ResetPasswordResponseDto>(
+      {url: `/api/v1/auth/reset-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resetPasswordDto
+    },
+      );
+    }
+  
+
+
+export const getAuthControllerResetPasswordMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerResetPassword>>, TError,{data: ResetPasswordDto}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authControllerResetPassword>>, TError,{data: ResetPasswordDto}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authControllerResetPassword>>, {data: ResetPasswordDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authControllerResetPassword(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthControllerResetPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authControllerResetPassword>>>
+    export type AuthControllerResetPasswordMutationBody = ResetPasswordDto
+    export type AuthControllerResetPasswordMutationError = void
+
+    /**
+ * @summary Reset password with token
+ */
+export const useAuthControllerResetPassword = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerResetPassword>>, TError,{data: ResetPasswordDto}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof authControllerResetPassword>>,
+        TError,
+        {data: ResetPasswordDto},
+        TContext
+      > => {
+
+      const mutationOptions = getAuthControllerResetPasswordMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Confirm email using verification token from email
+ * @summary Verify email address
+ */
+export const authControllerVerifyEmail = (
+    verifyEmailDto: VerifyEmailDto,
+ ) => {
+      
+      
+      return customInstance<VerifyEmailResponseDto>(
+      {url: `/api/v1/auth/verify-email`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: verifyEmailDto
+    },
+      );
+    }
+  
+
+
+export const getAuthControllerVerifyEmailMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerVerifyEmail>>, TError,{data: VerifyEmailDto}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authControllerVerifyEmail>>, TError,{data: VerifyEmailDto}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authControllerVerifyEmail>>, {data: VerifyEmailDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authControllerVerifyEmail(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthControllerVerifyEmailMutationResult = NonNullable<Awaited<ReturnType<typeof authControllerVerifyEmail>>>
+    export type AuthControllerVerifyEmailMutationBody = VerifyEmailDto
+    export type AuthControllerVerifyEmailMutationError = void
+
+    /**
+ * @summary Verify email address
+ */
+export const useAuthControllerVerifyEmail = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerVerifyEmail>>, TError,{data: VerifyEmailDto}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof authControllerVerifyEmail>>,
+        TError,
+        {data: VerifyEmailDto},
+        TContext
+      > => {
+
+      const mutationOptions = getAuthControllerVerifyEmailMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Send new verification link to user email
+ * @summary Resend verification email
+ */
+export const authControllerResendVerification = (
+    resendVerificationDto: ResendVerificationDto,
+ ) => {
+      
+      
+      return customInstance<ResendVerificationResponseDto>(
+      {url: `/api/v1/auth/resend-verification`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resendVerificationDto
+    },
+      );
+    }
+  
+
+
+export const getAuthControllerResendVerificationMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerResendVerification>>, TError,{data: ResendVerificationDto}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authControllerResendVerification>>, TError,{data: ResendVerificationDto}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authControllerResendVerification>>, {data: ResendVerificationDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authControllerResendVerification(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthControllerResendVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof authControllerResendVerification>>>
+    export type AuthControllerResendVerificationMutationBody = ResendVerificationDto
+    export type AuthControllerResendVerificationMutationError = void
+
+    /**
+ * @summary Resend verification email
+ */
+export const useAuthControllerResendVerification = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authControllerResendVerification>>, TError,{data: ResendVerificationDto}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof authControllerResendVerification>>,
+        TError,
+        {data: ResendVerificationDto},
+        TContext
+      > => {
+
+      const mutationOptions = getAuthControllerResendVerificationMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    

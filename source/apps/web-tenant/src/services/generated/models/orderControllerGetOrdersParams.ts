@@ -5,11 +5,25 @@
  * API Documentation for QR Ordering Platform
  * OpenAPI spec version: 1.0
  */
+import type { OrderControllerGetOrdersStatusItem } from './orderControllerGetOrdersStatusItem';
+import type { OrderControllerGetOrdersSortBy } from './orderControllerGetOrdersSortBy';
+import type { OrderControllerGetOrdersSortOrder } from './orderControllerGetOrdersSortOrder';
 
 export type OrderControllerGetOrdersParams = {
 page?: number;
 limit?: number;
-status?: string;
+/**
+ * Filter by order status (can be single value or array)
+ */
+status?: OrderControllerGetOrdersStatusItem[];
 tableId?: string;
 search?: string;
+/**
+ * Sort by field
+ */
+sortBy?: OrderControllerGetOrdersSortBy;
+/**
+ * Sort order
+ */
+sortOrder?: OrderControllerGetOrdersSortOrder;
 };

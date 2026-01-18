@@ -53,10 +53,10 @@ export function PromotionsPage() {
 
   const handleDelete = async (promo: Promotion) => {
     if (promo.usageCount > 0) {
-      alert('Không thể xóa mã đã được sử dụng. Hãy tắt hoạt động thay vì xóa.');
+      alert('Cannot delete a code that has been used. Please deactivate it instead.');
       return;
     }
-    if (confirm(`Xóa mã "${promo.code}"?`)) {
+    if (confirm(`Delete code "${promo.code}"?`)) {
       deletePromo.mutate(promo.id);
     }
   };
@@ -78,9 +78,9 @@ export function PromotionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mã giảm giá</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Discount Codes</h1>
           <p className="text-gray-500 mt-1">
-            Tạo và quản lý voucher cho khách hàng
+            Create and manage vouchers for customers
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export function PromotionsPage() {
           className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Tạo mã mới
+          Create New Code
         </button>
       </div>
 
@@ -99,7 +99,7 @@ export function PromotionsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm kiếm mã giảm giá..."
+            placeholder="Search discount codes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -110,23 +110,23 @@ export function PromotionsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="text-sm text-gray-500">Tổng mã</div>
+          <div className="text-sm text-gray-500">Total Codes</div>
           <div className="text-2xl font-bold text-gray-900">{promotions.length}</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="text-sm text-gray-500">Đang hoạt động</div>
+          <div className="text-sm text-gray-500">Active</div>
           <div className="text-2xl font-bold text-green-600">
             {promotions.filter((p) => isPromoValid(p)).length}
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="text-sm text-gray-500">Đã hết hạn</div>
+          <div className="text-sm text-gray-500">Expired</div>
           <div className="text-2xl font-bold text-gray-400">
             {promotions.filter((p) => new Date(p.expiresAt) < new Date()).length}
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="text-sm text-gray-500">Tổng lượt dùng</div>
+          <div className="text-sm text-gray-500">Total Uses</div>
           <div className="text-2xl font-bold text-blue-600">
             {promotions.reduce((sum, p) => sum + p.usageCount, 0)}
           </div>
@@ -135,12 +135,12 @@ export function PromotionsPage() {
 
       {/* Loading/Error States */}
       {isLoading && (
-        <div className="text-center py-12 text-gray-500">Đang tải...</div>
+        <div className="text-center py-12 text-gray-500">Loading...</div>
       )}
 
       {error && (
         <div className="text-center py-12 text-red-500">
-          Lỗi: {(error as Error).message}
+          Error: {(error as Error).message}
         </div>
       )}
 
@@ -151,14 +151,14 @@ export function PromotionsPage() {
             <div className="text-center py-12 bg-gray-50 rounded-xl">
               <Tag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">
-                {searchQuery ? 'Không tìm thấy mã giảm giá' : 'Chưa có mã giảm giá nào'}
+                {searchQuery ? 'No discount codes found' : 'No discount codes yet'}
               </p>
               {!searchQuery && (
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Tạo mã đầu tiên →
+                  Create First Code →
                 </button>
               )}
             </div>
@@ -187,7 +187,7 @@ export function PromotionsPage() {
                         <button
                           onClick={() => handleCopyCode(promo.code)}
                           className="p-1.5 hover:bg-gray-100 rounded transition-colors"
-                          title="Copy mã"
+                          title="Copy code"
                         >
                           {copiedCode === promo.code ? (
                             <Check className="w-4 h-4 text-green-500" />
@@ -200,22 +200,22 @@ export function PromotionsPage() {
                       {/* Status badges */}
                       {valid && (
                         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
-                          Hoạt động
+                          Active
                         </span>
                       )}
                       {expired && (
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded">
-                          Hết hạn
+                          Expired
                         </span>
                       )}
                       {usageExceeded && (
                         <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">
-                          Hết lượt
+                          No uses left
                         </span>
                       )}
                       {!promo.active && !expired && (
                         <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-medium rounded">
-                          Đã tắt
+                          Deactivated
                         </span>
                       )}
                     </div>
@@ -233,7 +233,7 @@ export function PromotionsPage() {
                     </span>
                     {promo.maxDiscount && promo.type === 'PERCENTAGE' && (
                       <span className="text-xs text-blue-500">
-                        (tối đa {promo.maxDiscount.toLocaleString()}đ)
+                        (max {promo.maxDiscount.toLocaleString()}đ)
                       </span>
                     )}
                   </div>
@@ -250,12 +250,12 @@ export function PromotionsPage() {
                       <Users className="w-4 h-4" />
                       <span>
                         {promo.usageCount}
-                        {promo.usageLimit ? `/${promo.usageLimit}` : ''} lượt
+                        {promo.usageLimit ? `/${promo.usageLimit}` : ''} uses
                       </span>
                     </div>
                     {promo.minOrderValue && (
                       <span className="text-xs">
-                        Đơn tối thiểu: {promo.minOrderValue.toLocaleString()}đ
+                        Min order: {promo.minOrderValue.toLocaleString()}đ
                       </span>
                     )}
                   </div>
@@ -269,7 +269,7 @@ export function PromotionsPage() {
                           ? 'text-green-600 hover:bg-green-50'
                           : 'text-gray-400 hover:bg-gray-100'
                       }`}
-                      title={promo.active ? 'Tắt hoạt động' : 'Bật hoạt động'}
+                      title={promo.active ? 'Deactivate' : 'Activate'}
                     >
                       {promo.active ? (
                         <ToggleRight className="w-6 h-6" />
@@ -281,7 +281,7 @@ export function PromotionsPage() {
                     <button
                       onClick={() => setEditingPromo(promo)}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Chỉnh sửa"
+                      title="Edit"
                     >
                       <Edit className="w-5 h-5 text-gray-500" />
                     </button>
@@ -290,7 +290,7 @@ export function PromotionsPage() {
                       onClick={() => handleDelete(promo)}
                       disabled={promo.usageCount > 0}
                       className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={promo.usageCount > 0 ? 'Không thể xóa mã đã sử dụng' : 'Xóa'}
+                      title={promo.usageCount > 0 ? 'Cannot delete used code' : 'Delete'}
                     >
                       <Trash2 className="w-5 h-5 text-red-500" />
                     </button>

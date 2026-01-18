@@ -39,6 +39,7 @@ export function useMenuMutationsController(selectedCategory: string) {
     itemModalMode,
     currentEditItemId,
     itemFormData,
+    originalItem,
     setItemFormData,
     openAddItem,
     openEditItem,
@@ -155,14 +156,12 @@ export function useMenuMutationsController(selectedCategory: string) {
           categoryId: itemFormData.categoryId,
           description: itemFormData.description || undefined,
           price: itemFormData.price,
-          status: itemFormData.status,
           preparationTime: itemFormData.preparationTime,
-          available: itemFormData.available,
           allergens: itemFormData.allergens,
           tags: itemFormData.dietary,
           chefRecommended: itemFormData.chefRecommended,
           displayOrder: itemFormData.displayOrder,
-          modifierGroupIds: itemFormData.modifierGroupIds,
+          modifierGroupIds: itemFormData.modifierGroupIds?.filter(id => id != null) || [],
         } as CreateMenuItemDto);
 
         if (result?.id) {
@@ -182,14 +181,13 @@ export function useMenuMutationsController(selectedCategory: string) {
               categoryId: itemFormData.categoryId,
               description: itemFormData.description || undefined,
               price: itemFormData.price,
-              status: itemFormData.status,
               preparationTime: itemFormData.preparationTime,
               available: itemFormData.available,
               allergens: itemFormData.allergens,
               tags: itemFormData.dietary,
               chefRecommended: itemFormData.chefRecommended,
               displayOrder: itemFormData.displayOrder,
-              modifierGroupIds: itemFormData.modifierGroupIds,
+              modifierGroupIds: itemFormData.modifierGroupIds?.filter(id => id != null) || [],
             }) as UpdateMenuItemDto,
           }),
         ];
@@ -197,6 +195,35 @@ export function useMenuMutationsController(selectedCategory: string) {
         updatePromises.push(...getPhotoOps(currentEditItemId, itemFormData as MenuItemFormData));
 
         await Promise.all(updatePromises);
+
+        // Check if status changed and call appropriate endpoint
+        if (originalItem && originalItem.status !== itemFormData.status) {
+          logger.info('[menu] STATUS_CHANGE_DETECTED', {
+            itemId: currentEditItemId,
+            from: originalItem.status,
+            to: itemFormData.status,
+          });
+
+          if (itemFormData.status === 'ARCHIVED') {
+            // Archive = soft delete
+            logger.info('[menu] ARCHIVE_ITEM_ATTEMPT', { itemId: currentEditItemId });
+            await menuMutations.items.delete(currentEditItemId);
+            logger.info('[menu] ARCHIVE_ITEM_SUCCESS', { itemId: currentEditItemId });
+          } else {
+            // Toggle publish/unpublish
+            const shouldPublish = itemFormData.status === 'PUBLISHED';
+            logger.info('[menu] TOGGLE_PUBLISH_ATTEMPT', {
+              itemId: currentEditItemId,
+              publish: shouldPublish,
+            });
+            await menuMutations.items.togglePublish({
+              id: currentEditItemId,
+              publish: shouldPublish,
+            });
+            logger.info('[menu] TOGGLE_PUBLISH_SUCCESS', { itemId: currentEditItemId });
+          }
+        }
+
         logger.info('[menu] UPDATE_ITEM_SUCCESS', { itemId: currentEditItemId });
 
         setToastMessage(`Món "${itemFormData.name}" đã được cập nhật`);

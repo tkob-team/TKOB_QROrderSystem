@@ -10,7 +10,7 @@ import { OrdersDataFactory } from '../../data'
 import { orderQueryKeys } from '../../data/cache/orderQueryKeys'
 import type { Order as ApiOrder } from '@/types/order'
 import { ORDERS_TEXT } from '../../model'
-import { isLiveOrder } from '../../model/statusUtils'
+import { isLiveOrder, isOrderPaid } from '../../model/statusUtils'
 import { usePaymentVerification } from '../../hooks/usePaymentVerification'
 import { OrderHeader } from '../components/sections/OrderHeader'
 import { PaymentBanner } from '../components/sections/PaymentBanner'
@@ -54,8 +54,8 @@ export function OrderDetailPage({ orderId: propOrderId }: OrderDetailPageProps) 
       return apiOrder
     },
     // Enable polling for live orders (PENDING, RECEIVED, PREPARING, READY)
-    refetchInterval: (data) => {
-      const order = data as ApiOrder | undefined
+    refetchInterval: (query) => {
+      const order = query.state.data as ApiOrder | undefined
       if (!order) return false
       
       // Poll every 2 seconds for real-time feel
@@ -91,7 +91,7 @@ export function OrderDetailPage({ orderId: propOrderId }: OrderDetailPageProps) 
         {/* Payment Success Banner */}
         <PaymentBanner 
           show={showPaymentBanner} 
-          isPaid={order?.paymentStatus === 'Paid'} 
+          isPaid={order ? isOrderPaid(order.paymentStatus) : false} 
         />
         
         {/* Loading State */}

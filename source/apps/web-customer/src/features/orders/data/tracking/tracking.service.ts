@@ -19,10 +19,11 @@ class OrderTrackingApiService {
    * GET /api/v1/orders/tracking/:orderId
    */
   async getOrderTracking(orderId: string): Promise<OrderTrackingResponse> {
-    const response = await apiClient.get<OrderTrackingResponse>(
+    // Backend returns wrapped response: { success: true, data: trackingData }
+    const response = await apiClient.get<{ success: boolean; data: OrderTrackingResponse }>(
       `${this.baseUrl}/tracking/${orderId}`
     )
-    return response.data
+    return response.data.data
   }
 }
 

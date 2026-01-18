@@ -37,7 +37,7 @@ export function RevenueSection({
             <LineChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e1e1dc" />
               <XAxis
-                dataKey={chartPeriod === 'today' ? 'time' : chartPeriod === 'week' ? 'day' : 'week'}
+                dataKey={chartPeriod === 'today' || chartPeriod === 'yesterday' ? 'time' : chartPeriod === 'week' ? 'day' : 'week'}
                 stroke="#87877f"
                 style={{ fontSize: '12px' }}
               />

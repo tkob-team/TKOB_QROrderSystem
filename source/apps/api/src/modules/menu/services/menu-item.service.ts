@@ -43,7 +43,9 @@ export class MenuItemsService {
 
     // Verify modifier groups exist (if provided)
     if (dto.modifierGroupIds && dto.modifierGroupIds.length > 0) {
-      for (const groupId of dto.modifierGroupIds) {
+      // Filter out null/undefined values to prevent Prisma errors
+      const validGroupIds = dto.modifierGroupIds.filter(id => id != null);
+      for (const groupId of validGroupIds) {
         const modifierGroup = await this.modifierGroupRepo.findById(groupId);
         if (!modifierGroup) {
           throw new NotFoundException(`Modifier group with ID ${groupId} not found`);
@@ -71,7 +73,11 @@ export class MenuItemsService {
 
     // Attach modifier groups
     if (dto.modifierGroupIds && dto.modifierGroupIds.length > 0) {
-      await this.menuItemRepo.attachModifierGroups(item.id, dto.modifierGroupIds);
+      // Filter out null/undefined values before attaching
+      const validGroupIds = dto.modifierGroupIds.filter(id => id != null);
+      if (validGroupIds.length > 0) {
+        await this.menuItemRepo.attachModifierGroups(item.id, validGroupIds);
+      }
     }
 
     // Return with details
@@ -116,7 +122,9 @@ export class MenuItemsService {
 
     // Verify modifier groups if changed
     if (dto.modifierGroupIds && dto.modifierGroupIds.length > 0) {
-      for (const groupId of dto.modifierGroupIds) {
+      // Filter out null/undefined values to prevent Prisma errors
+      const validGroupIds = dto.modifierGroupIds.filter(id => id != null);
+      for (const groupId of validGroupIds) {
         await this.modifierGroupRepo.findById(groupId);
       }
     }
@@ -140,7 +148,9 @@ export class MenuItemsService {
 
     // Update modifier groups if provided
     if (dto.modifierGroupIds !== undefined) {
-      await this.menuItemRepo.attachModifierGroups(menuItemId, dto.modifierGroupIds);
+      // Filter out null/undefined values before attaching
+      const validGroupIds = dto.modifierGroupIds.filter(id => id != null);
+      await this.menuItemRepo.attachModifierGroups(menuItemId, validGroupIds);
     }
 
     // Return updated item

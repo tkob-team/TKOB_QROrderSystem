@@ -20,8 +20,10 @@ import type {
 } from '@tanstack/react-query'
 import type {
   CheckoutDto,
+  MergeableOrderResponseDto,
   OrderControllerGetOrderTracking200,
   OrderControllerGetOrdersParams,
+  OrderControllerRequestBill200,
   OrderResponseDto,
   PaginatedResponseDto,
   UpdateOrderStatusDto
@@ -88,6 +90,124 @@ export const useOrderControllerCheckout = <TError = unknown,
       return useMutation(mutationOptions);
     }
     /**
+ * Returns info about existing BILL_TO_TABLE order that can accept new items
+ * @summary Check if there is an existing unpaid cash order to merge into
+ */
+export const orderControllerCheckMergeableOrder = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<MergeableOrderResponseDto>(
+      {url: `/api/v1/orders/mergeable`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+export const getOrderControllerCheckMergeableOrderQueryKey = () => {
+    return [`/api/v1/orders/mergeable`] as const;
+    }
+
+    
+export const getOrderControllerCheckMergeableOrderQueryOptions = <TData = Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOrderControllerCheckMergeableOrderQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>> = ({ signal }) => orderControllerCheckMergeableOrder(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type OrderControllerCheckMergeableOrderQueryResult = NonNullable<Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>>
+export type OrderControllerCheckMergeableOrderQueryError = unknown
+
+/**
+ * @summary Check if there is an existing unpaid cash order to merge into
+ */
+export const useOrderControllerCheckMergeableOrder = <TData = Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderControllerCheckMergeableOrder>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getOrderControllerCheckMergeableOrderQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * Add items from current cart to an existing unpaid BILL_TO_TABLE order. Use this when customer wants to order more items but keep everything on one bill.
+ * @summary Append cart items to an existing order
+ */
+export const orderControllerAppendItemsToOrder = (
+    orderId: string,
+ ) => {
+      
+      
+      return customInstance<OrderResponseDto>(
+      {url: `/api/v1/orders/${orderId}/append-items`, method: 'POST'
+    },
+      );
+    }
+  
+
+
+export const getOrderControllerAppendItemsToOrderMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerAppendItemsToOrder>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof orderControllerAppendItemsToOrder>>, TError,{orderId: string}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof orderControllerAppendItemsToOrder>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  orderControllerAppendItemsToOrder(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrderControllerAppendItemsToOrderMutationResult = NonNullable<Awaited<ReturnType<typeof orderControllerAppendItemsToOrder>>>
+    
+    export type OrderControllerAppendItemsToOrderMutationError = void
+
+    /**
+ * @summary Append cart items to an existing order
+ */
+export const useOrderControllerAppendItemsToOrder = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerAppendItemsToOrder>>, TError,{orderId: string}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof orderControllerAppendItemsToOrder>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getOrderControllerAppendItemsToOrderMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
  * @summary Get orders for current table (customer view)
  */
 export const orderControllerGetTableOrders = (
@@ -149,6 +269,67 @@ export const useOrderControllerGetTableOrders = <TData = Awaited<ReturnType<type
 
 
 /**
+ * @summary Get order by ID (customer view)
+ */
+export const orderControllerGetOrder = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<OrderResponseDto>(
+      {url: `/api/v1/orders/${orderId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+export const getOrderControllerGetOrderQueryKey = (orderId: string,) => {
+    return [`/api/v1/orders/${orderId}`] as const;
+    }
+
+    
+export const getOrderControllerGetOrderQueryOptions = <TData = Awaited<ReturnType<typeof orderControllerGetOrder>>, TError = unknown>(orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderControllerGetOrder>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOrderControllerGetOrderQueryKey(orderId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof orderControllerGetOrder>>> = ({ signal }) => orderControllerGetOrder(orderId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(orderId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof orderControllerGetOrder>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type OrderControllerGetOrderQueryResult = NonNullable<Awaited<ReturnType<typeof orderControllerGetOrder>>>
+export type OrderControllerGetOrderQueryError = unknown
+
+/**
+ * @summary Get order by ID (customer view)
+ */
+export const useOrderControllerGetOrder = <TData = Awaited<ReturnType<typeof orderControllerGetOrder>>, TError = unknown>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderControllerGetOrder>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+
+  const queryOptions = getOrderControllerGetOrderQueryOptions(orderId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
  * Real-time order status tracking for customers with timeline and ETA
  * @summary Get order tracking info (customer view)
  */
@@ -159,14 +340,14 @@ export const orderControllerGetOrderTracking = (
       
       
       return customInstance<OrderControllerGetOrderTracking200>(
-      {url: `/api/v1/tracking/${orderId}`, method: 'GET', signal
+      {url: `/api/v1/orders/tracking/${orderId}`, method: 'GET', signal
     },
       );
     }
   
 
 export const getOrderControllerGetOrderTrackingQueryKey = (orderId: string,) => {
-    return [`/api/v1/tracking/${orderId}`] as const;
+    return [`/api/v1/orders/tracking/${orderId}`] as const;
     }
 
     
@@ -263,6 +444,62 @@ export const useOrderControllerCustomerCancelOrder = <TError = void,
       > => {
 
       const mutationOptions = getOrderControllerCustomerCancelOrderMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * Customer requests bill/check. Notifies staff to bring bill to table.
+ * @summary Request bill for order (customer)
+ */
+export const orderControllerRequestBill = (
+    orderId: string,
+ ) => {
+      
+      
+      return customInstance<OrderControllerRequestBill200>(
+      {url: `/api/v1/orders/${orderId}/request-bill`, method: 'POST'
+    },
+      );
+    }
+  
+
+
+export const getOrderControllerRequestBillMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerRequestBill>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof orderControllerRequestBill>>, TError,{orderId: string}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof orderControllerRequestBill>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  orderControllerRequestBill(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrderControllerRequestBillMutationResult = NonNullable<Awaited<ReturnType<typeof orderControllerRequestBill>>>
+    
+    export type OrderControllerRequestBillMutationError = void
+
+    /**
+ * @summary Request bill for order (customer)
+ */
+export const useOrderControllerRequestBill = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerRequestBill>>, TError,{orderId: string}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof orderControllerRequestBill>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getOrderControllerRequestBillMutationOptions(options);
 
       return useMutation(mutationOptions);
     }
@@ -499,6 +736,61 @@ export const useOrderControllerCancelOrder = <TError = unknown,
       > => {
 
       const mutationOptions = getOrderControllerCancelOrderMutationOptions(options);
+
+      return useMutation(mutationOptions);
+    }
+    /**
+ * @summary Mark order as paid (waiter action for CASH/BILL_TO_TABLE)
+ */
+export const orderControllerMarkOrderAsPaid = (
+    orderId: string,
+ ) => {
+      
+      
+      return customInstance<OrderResponseDto>(
+      {url: `/api/v1/admin/orders/${orderId}/mark-paid`, method: 'PATCH'
+    },
+      );
+    }
+  
+
+
+export const getOrderControllerMarkOrderAsPaidMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerMarkOrderAsPaid>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof orderControllerMarkOrderAsPaid>>, TError,{orderId: string}, TContext> => {
+const {mutation: mutationOptions} = options ?? {};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof orderControllerMarkOrderAsPaid>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  orderControllerMarkOrderAsPaid(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrderControllerMarkOrderAsPaidMutationResult = NonNullable<Awaited<ReturnType<typeof orderControllerMarkOrderAsPaid>>>
+    
+    export type OrderControllerMarkOrderAsPaidMutationError = unknown
+
+    /**
+ * @summary Mark order as paid (waiter action for CASH/BILL_TO_TABLE)
+ */
+export const useOrderControllerMarkOrderAsPaid = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderControllerMarkOrderAsPaid>>, TError,{orderId: string}, TContext>, }
+): UseMutationResult<
+        Awaited<ReturnType<typeof orderControllerMarkOrderAsPaid>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getOrderControllerMarkOrderAsPaidMutationOptions(options);
 
       return useMutation(mutationOptions);
     }

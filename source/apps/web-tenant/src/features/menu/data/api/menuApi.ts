@@ -18,6 +18,7 @@ import {
   menuItemsControllerUpdate,
   menuItemsControllerDelete,
   menuItemsControllerToggleAvailability,
+  menuItemsControllerTogglePublish,
 } from '@/services/generated/menu-items/menu-items';
 
 import {
@@ -57,6 +58,8 @@ export const menuItemsApi = {
   update: menuItemsControllerUpdate,
   delete: menuItemsControllerDelete,
   toggleAvailability: menuItemsControllerToggleAvailability,
+  togglePublish: (id: string, data: { publish: boolean }) =>
+    menuItemsControllerTogglePublish(id, data),
 };
 
 /**

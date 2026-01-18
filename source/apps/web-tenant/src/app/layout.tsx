@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Poppins, Rouge_Script } from 'next/font/google';
+import { Inter, Poppins, Sour_Gummy } from 'next/font/google';
 import { Providers } from './providers';
 import { RouteChangeLogger } from '@/shared/dev/RouteChangeLogger';
 import { UnhandledErrorHandler } from '@/shared/dev/UnhandledErrorHandler';
@@ -19,10 +19,10 @@ const poppins = Poppins({
   display: 'swap',
 });
 
-const rougeScript = Rouge_Script({
+const sourGummy = Sour_Gummy({
   subsets: ['latin'],
   weight: '400',
-  variable: '--font-rouge-script',
+  variable: '--font-sour-gummy',
   display: 'swap',
 });
 
@@ -43,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable} ${rougeScript.variable}`}>
+    <html lang="en" className={`${inter.variable} ${poppins.variable} ${sourGummy.variable}`}>
       <body className={`${inter.className} antialiased`}>
         <Providers>
           <RouteChangeLogger />

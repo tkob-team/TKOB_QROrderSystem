@@ -39,8 +39,9 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
         limit: 100 // Backend max limit is 100
       });
       
-      // Backend returns PaginatedResponseDto with items array
-      const orders = (response as any)?.data?.items || [];
+      // Backend returns PaginatedResponseDto { data: T[], meta: {...} }
+      // customInstance already unwrapped the { success, data } wrapper
+      const orders = (response as any)?.data || [];
       
       // Map to MockOrder format
       const mockOrders: MockOrder[] = orders.map((order: any) => ({
@@ -74,30 +75,38 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
         groupBy,
       });
       
-      // Backend returns array of revenue data points
-      const revenueData = (response as any)?.data || [];
+      // Backend returns: { period: {from, to}, groupBy: string, data: [{period: string, revenue: number, orders: number}] }
+      // Axios interceptor already unwrapped { success, data } wrapper
+      const responseData = response || {};
+      const dataPoints = responseData.data || [];
       
       // Map to RevenueDataPoint format
-      const mappedData: RevenueDataPoint[] = revenueData.map((item: any) => {
+      const mappedData: RevenueDataPoint[] = dataPoints.map((item: any) => {
         const dataPoint: RevenueDataPoint = {
-          revenue: item.total || item.revenue || 0,
+          revenue: item.revenue || 0,
         };
         
-        // Add appropriate time key based on period
-        if (period === 'today') {
-          dataPoint.time = item.hour || item.time || '';
+        // Backend uses 'period' field for all groupBy types
+        // Map it to appropriate time key based on period
+        if (period === 'today' || period === 'yesterday') {
+          dataPoint.time = item.period || '';
         } else if (period === 'week') {
-          dataPoint.day = item.day || item.date || '';
+          dataPoint.day = item.period || '';
         } else {
-          dataPoint.week = item.week || item.date || '';
+          dataPoint.week = item.period || '';
         }
         
         return dataPoint;
       });
       
       logger.debug('[api-dashboard] GET_REVENUE_SUCCESS', { 
-        period, 
-        pointsCount: mappedData.length 
+        period,
+        from,
+        to,
+        groupBy,
+        pointsCount: mappedData.length,
+        rawDataPoints: dataPoints,
+        mappedData 
       });
       return mappedData;
     } catch (error) {
@@ -120,14 +129,17 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
         limit: 5, // Top 5 items
       });
       
-      const items = (response as any)?.data || [];
+      // Backend returns: { period: {from, to}, items: [{rank, menuItemId, name, totalQuantity, totalRevenue}] }
+      // Axios interceptor already unwrapped { success, data } wrapper
+      const responseData = response || {};
+      const items = responseData.items || [];
       
       // Map to TopSellingItem format
-      const topSelling: TopSellingItem[] = items.map((item: any, index: number) => ({
-        rank: index + 1,
-        name: item.name || item.itemName || 'Unknown',
-        orders: item.orderCount || item.orders || 0,
-        revenue: item.revenue || item.totalRevenue || 0,
+      const topSelling: TopSellingItem[] = items.map((item: any) => ({
+        rank: item.rank || 0,
+        name: item.name || 'Unknown',
+        orders: item.totalQuantity || 0,
+        revenue: item.totalRevenue || 0,
       }));
       
       logger.debug('[api-dashboard] GET_TOP_SELLING_SUCCESS', { count: topSelling.length });
@@ -151,12 +163,15 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
         limit: 10, // Top 10 for chart
       });
       
-      const items = (response as any)?.data || [];
+      // Backend returns: { period: {from, to}, items: [{rank, menuItemId, name, totalQuantity, totalRevenue}] }
+      // Axios interceptor already unwrapped { success, data } wrapper
+      const responseData = response || {};
+      const items = responseData.items || [];
       
       // Map to PopularItemData format
       const popularItems: PopularItemData[] = items.map((item: any) => ({
-        name: item.name || item.itemName || 'Unknown',
-        orders: item.orderCount || item.orders || 0,
+        name: item.name || 'Unknown',
+        orders: item.totalQuantity || 0,
       }));
       
       logger.debug('[api-dashboard] GET_POPULAR_ITEMS_SUCCESS', { count: popularItems.length });
@@ -182,14 +197,14 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
         // Add sortBy: 'createdAt', sortOrder: 'DESC' if backend supports
       });
       
-      const orders = (response as any)?.data?.items || [];
+      const orders = (response as any)?.data || [];
       
       // Map to RecentOrder format
       const recentOrders: RecentOrder[] = orders.map((order: any) => ({
         id: order.id,
         table: order.table?.displayName || order.tableId || 'Unknown',
         items: this.formatOrderItems(order.items || []),
-        total: this.formatCurrency(order.totalAmount || 0),
+        total: this.formatCurrency(order.total || 0), // Backend returns 'total' field, not 'totalAmount'
         status: this.mapOrderStatus(order.status),
         time: this.formatTime(order.createdAt),
       }));
@@ -207,34 +222,62 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
   /**
    * Get KPI data (orders, revenue, avg order, tables)
    */
-  async getKPIData(period: TimePeriod): Promise<KPIData> {
+  async getKPIData(period: TimePeriod, rangeFilter?: string): Promise<KPIData> {
     try {
-      logger.debug('[api-dashboard] GET_KPI_ATTEMPT', { period });
+      logger.debug('[api-dashboard] GET_KPI_ATTEMPT', { period, rangeFilter });
       
-      // Get date range for period
-      const { from, to } = this.getDateRangeForTimePeriod(period);
+      // Get date range based on rangeFilter for stats API (Yesterday needs different range than period)
+      const { from, to } = rangeFilter === 'Yesterday' 
+        ? this.getDateRangeForPeriod('yesterday')
+        : this.getDateRangeForTimePeriod(period);
       
       // Fetch overview data
       const overviewResponse = await analyticsControllerGetOverview();
-      const overview = (overviewResponse as any)?.data || {};
+      // Axios interceptor already unwrapped { success, data } wrapper
+      const overview = overviewResponse || {};
       
-      // Fetch order stats for trend
+      // Fetch order stats for trend (also used for Yesterday data)
       const statsResponse = await analyticsControllerGetOrderStats({ from, to });
-      const stats = (statsResponse as any)?.data || {};
+      // Axios interceptor already unwrapped { success, data } wrapper
+      const stats = statsResponse || {};
+      
+      // Extract data based on period and rangeFilter
+      // Note: TimePeriod type uses 'Today', 'This Week', 'This Month' (capitalized)
+      // Backend overview returns: { today: {orders, revenue}, thisMonth: {orders, revenue}, activeTables, avgOrderValue, growth }
+      // Backend stats returns: { period: {from, to}, totalOrders, byStatus, byPaymentMethod, avgPrepTime }
+      let ordersCount = 0;
+      let revenueAmount = 0;
+      
+      // Special case: Yesterday needs data from stats API since overview doesn't have yesterday field
+      if (rangeFilter === 'Yesterday') {
+        // Use order stats API which was called with yesterday's date range
+        ordersCount = stats.totalOrders || 0;
+        // Calculate revenue from byPaymentMethod array
+        const paymentMethods = stats.byPaymentMethod || [];
+        revenueAmount = paymentMethods.reduce((sum: number, method: any) => sum + (Number(method.revenue) || 0), 0);
+      } else if (period === 'Today') {
+        // Use today's data from overview
+        ordersCount = overview.today?.orders || 0;
+        revenueAmount = overview.today?.revenue || 0;
+      } else {
+        // 'This Week' or 'This Month' - use thisMonth data from overview
+        ordersCount = overview.thisMonth?.orders || 0;
+        revenueAmount = overview.thisMonth?.revenue || 0;
+      }
       
       // Build KPI data
       const kpi: KPIData = {
         orders: {
-          value: String(stats.totalOrders || overview.totalOrders || 0),
-          trend: this.calculateTrend(stats.previousPeriodOrders, stats.totalOrders),
+          value: String(ordersCount),
+          trend: overview.growth?.orders || 0,
         },
         revenue: {
-          value: this.formatCurrency(stats.totalRevenue || overview.totalRevenue || 0),
-          trend: this.calculateTrend(stats.previousPeriodRevenue, stats.totalRevenue),
+          value: this.formatCurrency(revenueAmount),
+          trend: overview.growth?.revenue || 0,
         },
         avgOrder: {
-          value: this.formatCurrency(stats.averageOrderValue || overview.averageOrderValue || 0),
-          trend: this.calculateTrend(stats.previousPeriodAvgOrder, stats.averageOrderValue),
+          value: this.formatCurrency(overview.avgOrderValue || 0),
+          trend: 0,
         },
         tables: {
           value: String(overview.activeTables || 0),
@@ -242,7 +285,14 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
         label: period,
       };
       
-      logger.debug('[api-dashboard] GET_KPI_SUCCESS', { period, kpi });
+      logger.debug('[api-dashboard] GET_KPI_SUCCESS', { 
+        period, 
+        ordersCount,
+        revenueAmount,
+        todayData: overview.today,
+        thisMonthData: overview.thisMonth,
+        kpi 
+      });
       return kpi;
     } catch (error) {
       logger.error('[api-dashboard] GET_KPI_ERROR', { 
@@ -269,58 +319,94 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
   }
 
   private getDateRangeForPeriod(period: ChartPeriod): { from: string; to: string; groupBy: AnalyticsControllerGetRevenueGroupBy } {
+    // Get current date in local timezone
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    // Calculate yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    
+    // Calculate tomorrow
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     
     if (period === 'today') {
+      // Today's data: from today to tomorrow (exclusive)
       return {
-        from: today.toISOString().split('T')[0],
-        to: today.toISOString().split('T')[0],
+        from: todayStr,
+        to: tomorrowStr,
+        groupBy: AnalyticsControllerGetRevenueGroupBy.day,
+      };
+    } else if (period === 'yesterday') {
+      // Yesterday's data: from yesterday to today (exclusive)
+      return {
+        from: yesterdayStr,
+        to: todayStr,
         groupBy: AnalyticsControllerGetRevenueGroupBy.day,
       };
     } else if (period === 'week') {
-      const weekAgo = new Date(today);
+      const weekAgo = new Date(now);
       weekAgo.setDate(weekAgo.getDate() - 7);
+      const weekAgoStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
       return {
-        from: weekAgo.toISOString().split('T')[0],
-        to: today.toISOString().split('T')[0],
+        from: weekAgoStr,
+        to: tomorrowStr,
         groupBy: AnalyticsControllerGetRevenueGroupBy.day,
       };
     } else {
       // month
-      const monthAgo = new Date(today);
+      const monthAgo = new Date(now);
       monthAgo.setDate(monthAgo.getDate() - 30);
+      const monthAgoStr = `${monthAgo.getFullYear()}-${String(monthAgo.getMonth() + 1).padStart(2, '0')}-${String(monthAgo.getDate()).padStart(2, '0')}`;
       return {
-        from: monthAgo.toISOString().split('T')[0],
-        to: today.toISOString().split('T')[0],
+        from: monthAgoStr,
+        to: tomorrowStr,
         groupBy: AnalyticsControllerGetRevenueGroupBy.week,
       };
     }
   }
 
   private getDateRangeForTimePeriod(period: TimePeriod): { from: string; to: string } {
+    // Get current date in local timezone  
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    // Calculate tomorrow
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     
     if (period === 'Today') {
+      // Today's orders: from today to tomorrow (exclusive)
       return {
-        from: today.toISOString().split('T')[0],
-        to: today.toISOString().split('T')[0],
+        from: todayStr,
+        to: tomorrowStr,
       };
     } else if (period === 'This Week') {
-      const weekAgo = new Date(today);
+      const weekAgo = new Date(now);
       weekAgo.setDate(weekAgo.getDate() - 7);
+      const weekAgoStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
       return {
-        from: weekAgo.toISOString().split('T')[0],
-        to: today.toISOString().split('T')[0],
+        from: weekAgoStr,
+        to: tomorrowStr,
       };
     } else {
       // This Month
-      const monthAgo = new Date(today);
+      const monthAgo = new Date(now);
       monthAgo.setDate(monthAgo.getDate() - 30);
+      const monthAgoStr = `${monthAgo.getFullYear()}-${String(monthAgo.getMonth() + 1).padStart(2, '0')}-${String(monthAgo.getDate()).padStart(2, '0')}`;
       return {
-        from: monthAgo.toISOString().split('T')[0],
-        to: today.toISOString().split('T')[0],
+        from: monthAgoStr,
+        to: tomorrowStr,
       };
     }
   }

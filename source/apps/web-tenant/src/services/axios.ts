@@ -357,7 +357,6 @@ export const customInstance = async <T>(config: any): Promise<T> => {
   logger.log('[customInstance] Request:', {
     method: config.method,
     url: config.url,
-    fullURL: `${baseURL}${config.url}`,
     baseURL: baseURL,
     params: config.params,
     hasData: !!config.data,

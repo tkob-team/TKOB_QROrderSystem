@@ -23,7 +23,7 @@ export function useMenuManagementController() {
 
   // Fetch filtered items for display
   const { data: itemsData, isLoading: itemsLoading } = useMenuItems({
-    categoryId: filtersController.appliedFilters.categoryId,
+    categoryId: selectionState.selectedCategory !== 'all' ? selectionState.selectedCategory : undefined,
     status: filtersController.appliedFilters.status !== 'All Status' ? filtersController.appliedFilters.status : undefined,
     availability: filtersController.appliedFilters.availability as 'available' | 'unavailable',
     chefRecommended: filtersController.appliedFilters.chefRecommended || undefined,
@@ -100,7 +100,7 @@ export function useMenuManagementController() {
 
   const handleSelectCategory = (categoryId: string) => {
     selectionState.setSelectedCategory(categoryId);
-    filtersController.setAppliedFilters({ ...filtersController.appliedFilters, categoryId });
+    // No longer sync to appliedFilters.categoryId - we use selectedCategory directly
   };
 
   // Calculate totals from all items (regardless of current filters)
