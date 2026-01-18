@@ -5,25 +5,28 @@ import { CartController } from './controllers/cart.controller';
 import { CartService } from './services/cart.service';
 import { TableModule } from '../table/table.module';
 import { OrderService } from './services/order.service';
+import { BillService } from './services/bill.service';
 import { OrderController } from './controllers/order.controller';
 import { KdsController } from './controllers/kds.controller';
+import { BillController } from './controllers/bill.controller';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { PaymentConfigModule } from '../payment-config/payment-config.module';
 
 @Module({
   imports: [
     forwardRef(() => MenuModule),
-    TableModule,
+    forwardRef(() => TableModule),
     TenantModule,
     forwardRef(() => SubscriptionModule),
     PaymentConfigModule,
   ],
-  controllers: [CartController, OrderController, KdsController],
+  controllers: [CartController, OrderController, KdsController, BillController],
   providers: [
     // Services
     CartService,
     OrderService,
+    BillService,
   ],
-  exports: [CartService, OrderService],
+  exports: [CartService, OrderService, BillService],
 })
 export class OrderModule {}

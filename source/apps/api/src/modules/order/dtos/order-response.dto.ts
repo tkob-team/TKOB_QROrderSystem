@@ -40,6 +40,9 @@ export class OrderResponseDto {
   @ApiProperty()
   tableId: string;
 
+  @ApiPropertyOptional({ description: 'Session ID for grouping orders by table visit' })
+  sessionId?: string;
+
   @ApiProperty()
   tableNumber: string;
 

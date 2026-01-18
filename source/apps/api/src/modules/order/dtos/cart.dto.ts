@@ -94,7 +94,7 @@ export class CartItemResponseDto {
   @ApiProperty()
   quantity: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: [CartModifierDto] })
   modifiers: CartModifierDto[];
 
   @ApiProperty()
