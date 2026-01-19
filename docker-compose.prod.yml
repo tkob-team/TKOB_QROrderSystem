@@ -1,0 +1,31 @@
+services:
+  api:
+    image: ghcr.io/nphoang-itus/TKOB_QROrderSystem:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./source/apps/api/.env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    # Persistence: Lưu dữ liệu Redis xuống đĩa để không mất khi restart
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+# Database chạy bằng RDS nên không khai báo service postgres ở đây nữa
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis_data:

@@ -1,0 +1,53 @@
+services:
+  # 1. Ứng dụng NestJS
+  api:
+    image: tkob-backend:latest
+    build:
+      context: .
+      dockerfile: source/apps/api/Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - source/apps/api/.env
+    environment:
+      - DATABASE_URL=postgresql://tkob_postgres:tkob_bathangkho%40123@postgres:5432/tkob_db?schema=public
+      - REDIS_HOST=redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+    # Run migrations từ đúng thư mục
+    command: sh -c "cd /app/source/apps/api && npx prisma migrate deploy && node dist/src/main.js"
+
+  # 2. Database PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tkob_postgres
+      POSTGRES_PASSWORD: tkob_bathangkho@123
+      POSTGRES_DB: tkob_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tkob_postgres -d tkob_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 3. Redis
+  redis:
+    image: redis:7-alpine
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
