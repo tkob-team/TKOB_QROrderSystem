@@ -242,6 +242,58 @@ export class AuthService {
     };
   }
 
+  // ==================== AVATAR UPLOAD ====================
+
+  /**
+   * Upload user avatar
+   * @param userId - User ID
+   * @param file - Multer file object
+   * @returns Avatar URL
+   */
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<string> {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, GIF');
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    // Generate unique filename
+    const ext = file.originalname.split('.').pop() || 'jpg';
+    const filename = `avatars/${userId}-${Date.now()}.${ext}`;
+
+    // Save file to uploads directory
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
+    
+    // Ensure directory exists
+    await fs.mkdir(uploadDir, { recursive: true });
+    
+    // Write file
+    const filePath = path.join(process.cwd(), 'uploads', filename);
+    await fs.writeFile(filePath, file.buffer);
+
+    // Build public URL
+    const apiPort = this.config.get('API_PORT', { infer: true });
+    const avatarUrl = `http://localhost:${apiPort}/uploads/${filename}`;
+
+    // Update user record
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+
+    this.logger.log(`Avatar uploaded for user: ${userId}`);
+
+    return avatarUrl;
+  }
+
   // ==================== HELPER METHODS ====================
 
   /**
@@ -289,6 +341,31 @@ export class AuthService {
     await this.logoutAll(userId);
 
     this.logger.log(`Password changed for user: ${userId}`);
+  }
+
+  /**
+   * Update user profile (fullName)
+   */
+  async updateProfile(userId: string, data: { fullName: string }): Promise<any> {
+    this.logger.debug(`Updating profile for user: ${userId}`);
+
+    // Update user
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName: data.fullName,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        tenantId: true,
+      },
+    });
+
+    this.logger.log(`Profile updated for user: ${userId}`);
+    return updatedUser;
   }
 
   // ==================== PASSWORD RESET ====================
@@ -384,6 +461,24 @@ export class AuthService {
       message: 'Password reset successful. You can now log in with your new password.',
       email,
     };
+  }
+
+  /**
+   * Verify reset password token (without resetting)
+   * Used by frontend to check if token is valid before showing reset form
+   * @param token - Reset token from URL
+   * @returns Validation status
+   */
+  async verifyResetToken(token: string): Promise<{ valid: boolean; email?: string }> {
+    const redisKey = `password-reset:${token}`;
+    const data = await this.redis.get(redisKey);
+
+    if (!data) {
+      return { valid: false };
+    }
+
+    const { email } = JSON.parse(data);
+    return { valid: true, email };
   }
 
   // ==================== EMAIL VERIFICATION ====================
