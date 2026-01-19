@@ -1,11 +1,15 @@
 'use client'
 
-import { User, Phone, Mail, LogIn, LogOut, History, Edit, Lock } from 'lucide-react'
+import { Edit, ChevronRight, User, Mail, LogOut, Lock, History, Phone, LogIn } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useProfileController } from '../../hooks'
+import { useAuthController } from '@/features/auth/hooks'
 import { PROFILE_TEXT } from '../../model'
 
 export function ProfilePage() {
+  const router = useRouter()
   const controller = useProfileController()
+  const { handleLogout, isLoggingOut } = useAuthController()
 
   if (controller.isLoading) {
     return (
@@ -130,11 +134,14 @@ export function ProfilePage() {
               </button>
               
               <button 
-                onClick={controller.handleLogout}
-                className="w-full p-4 flex items-center gap-3 transition-colors hover:bg-[var(--gray-50)] active:bg-[var(--gray-100)]"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="w-full p-4 flex items-center gap-3 transition-colors hover:bg-[var(--gray-50)] active:bg-[var(--gray-100)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <LogOut className="w-5 h-5" style={{ color: 'var(--red-600)' }} />
-                <span style={{ color: 'var(--red-600)' }}>{PROFILE_TEXT.signOut}</span>
+                <span style={{ color: 'var(--red-600)' }}>
+                  {isLoggingOut ? 'Logging out...' : PROFILE_TEXT.signOut}
+                </span>
               </button>
             </div>
           </>
