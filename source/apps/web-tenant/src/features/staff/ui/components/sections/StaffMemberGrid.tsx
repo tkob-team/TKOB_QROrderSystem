@@ -10,6 +10,7 @@ interface StaffMemberGridProps {
   getInitials: (name: string) => string;
   onEditMember: (member: StaffMember) => void;
   onInviteClick: () => void;
+  onToggleStatus?: (member: StaffMember) => void; // BUG-18: Toggle activate/deactivate
 }
 
 export function StaffMemberGrid({
@@ -19,6 +20,7 @@ export function StaffMemberGrid({
   getInitials,
   onEditMember,
   onInviteClick,
+  onToggleStatus,
 }: StaffMemberGridProps) {
   if (members.length === 0) {
     return (
@@ -66,9 +68,11 @@ export function StaffMemberGrid({
             roleConfig={roleConfig}
             getInitials={getInitials}
             onEditClick={onEditMember}
+            onToggleStatus={onToggleStatus}
           />
         );
       })}
     </div>
   );
 }
+

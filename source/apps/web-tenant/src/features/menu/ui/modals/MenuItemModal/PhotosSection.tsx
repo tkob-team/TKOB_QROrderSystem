@@ -112,8 +112,7 @@ export function PhotosSection({
 
         {mode === 'add' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex gap-2">
-            <span className="text-blue-600 text-lg">Tip</span>
-            <p className="text-sm text-blue-700">Photos will be uploaded after the item is created</p>
+            <p className="text-sm text-blue-700">Tip: Photos will be uploaded after the item is created</p>
           </div>
         )}
 

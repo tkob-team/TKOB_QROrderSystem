@@ -28,9 +28,10 @@ export function useOrdersData() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  // Default filter: exclude PAID orders (already closed tables)
+  // Default filter: exclude only CANCELLED orders
+  // Include PAID to show payment completed orders in Recent Orders section
   const [apiFilters, setApiFilters] = useState<OrderApiFilters>({
-    status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED',
+    status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED,PAID',
   });
   
   // Ref to track if initial fetch happened

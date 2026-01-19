@@ -20,6 +20,11 @@ export const SocketEvents = {
   PAYMENT_COMPLETED: 'payment:completed',
   ORDER_CANCELLED: 'order:cancelled',
   
+  // Table events
+  TABLE_STATUS_CHANGED: 'table.status_changed',
+  TABLE_SESSION_STARTED: 'table.session_started',
+  TABLE_SESSION_ENDED: 'table.session_ended',
+  
   // Client -> Server events (subscriptions)
   SUBSCRIBE_STAFF: 'subscribe:staff',
   SUBSCRIBE_CUSTOMER: 'subscribe:customer',

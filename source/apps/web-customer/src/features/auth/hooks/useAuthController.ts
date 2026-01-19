@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useLogin } from './queries/useLogin'
 import { useRegister } from './queries/useRegister'
+import { useLogout } from './queries/useLogout'
 import { useRequestPasswordReset } from './queries/useRequestPasswordReset'
 import { useResetPassword } from './queries/useResetPassword'
 import { useVerifyEmail } from './queries/useVerifyEmail'
@@ -13,9 +14,9 @@ import type { LoginForm, RegisterForm, ResetPasswordRequestForm, ResetPasswordFo
 
 export function useAuthController() {
   const router = useRouter()
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   
   const loginMutation = useLogin()
+  const logoutMutation = useLogout()
   const registerMutation = useRegister()
   const requestResetMutation = useRequestPasswordReset()
   const resetPasswordMutation = useResetPassword()
@@ -39,13 +40,7 @@ export function useAuthController() {
     })
   }
 
-  const handleGoogleSignIn = () => {
-    setIsGoogleLoading(true)
-    // TODO: Implement Google OAuth
-    setTimeout(() => {
-      router.push('/menu')
-    }, 1000)
-  }
+
 
   // Register actions
   const handleRegister = (data: RegisterForm) => {
@@ -93,8 +88,14 @@ export function useAuthController() {
           toast.success('Password reset successfully!')
           router.push('/reset-password/success')
         },
-        onError: () => {
-          toast.error('Failed to reset password')
+        onError: (error: any) => {
+          // Show specific error message
+          const message = error?.response?.data?.error?.message || error?.message || 'Failed to reset password'
+          if (message.includes('invalid') || message.includes('expired')) {
+            toast.error('Reset link is invalid or expired. Please request a new one.')
+          } else {
+            toast.error(message)
+          }
         },
       }
     )
@@ -131,6 +132,20 @@ export function useAuthController() {
     )
   }
 
+  // Logout action
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success('Logged out successfully')
+        // Clear any local storage if needed
+        router.push('/login')
+      },
+      onError: () => {
+        toast.error('Failed to logout')
+      },
+    })
+  }
+
   // Navigation helpers
   const navigateToLogin = () => router.push('/login')
   const navigateToRegister = () => router.push('/register')
@@ -147,11 +162,11 @@ export function useAuthController() {
     isResetPasswordLoading: resetPasswordMutation.isPending,
     isVerifyingEmail: verifyEmailMutation.isPending,
     isResendingVerification: resendVerificationMutation.isPending,
-    isGoogleLoading,
+    isLoggingOut: logoutMutation.isPending,
     
     // Actions
     handleLogin,
-    handleGoogleSignIn,
+    handleLogout,
     handleRegister,
     handleRequestPasswordReset,
     handleResetPassword,

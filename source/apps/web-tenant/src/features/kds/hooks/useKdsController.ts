@@ -173,17 +173,12 @@ export function useKdsController(options: UseKdsControllerOptions = {}) {
     }
   }, [orders, queryClient]);
 
+  // SOUND fix: Always enable sound by default, no toggle needed
   const handleToggleSound = useCallback(() => {
-    setSoundEnabled((prev) => {
-      const newValue = !prev;
-      // Play test sound when enabling (to verify it works)
-      if (newValue) {
-        // Import and play test sound
-        import('@/lib/websocket').then(({ playNewOrderSound }) => {
-          playNewOrderSound();
-        });
-      }
-      return newValue;
+    // Sound is always enabled - toggle disabled per user request
+    // If user clicks, just play test sound to confirm it's working
+    import('@/lib/websocket').then(({ playNewOrderSound }) => {
+      playNewOrderSound();
     });
   }, []);
 

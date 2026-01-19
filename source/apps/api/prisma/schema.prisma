@@ -120,10 +120,11 @@ model Tenant {
 
 // 4. Model USER
 model User {
-  id           String @id @default(uuid())
-  email        String @unique
-  passwordHash String @map("password_hash")
-  fullName     String @map("full_name")
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String  @map("password_hash")
+  fullName     String  @map("full_name")
+  avatarUrl    String? @map("avatar_url") // User profile avatar URL
 
   role   UserRole   @default(STAFF)
   status UserStatus @default(PENDING) // Pending cho đến khi verify email/admin duyệt
@@ -422,7 +423,7 @@ model TableSession {
 // Order (Main order entity)
 model Order {
   id          String  @id @default(uuid())
-  orderNumber String  @unique @map("order_number") // "ORD-20250102-0001"
+  orderNumber String  @map("order_number") // "ORD-20250102-0001"
   tenantId    String  @map("tenant_id")
   tableId     String  @map("table_id")
   sessionId   String? @map("session_id") // Link to TableSession

@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ROUTES } from '@/shared/config';
+import { logger } from '@/shared/utils/logger';
 import { fadeInUp, shake, scaleIn } from '@/shared/utils/animations';
 import { useAuthController } from '../../hooks';
 import {
@@ -53,6 +54,27 @@ export function ResetPassword({ onNavigate }: ResetPasswordProps) {
   const strengthColor = getStrengthColor(passedChecks);
   const strengthText = getStrengthText(passedChecks);
 
+  // BUG-05 & BUG-06: Proactively validate reset token on mount using API
+  useEffect(() => {
+    const validateToken = async () => {
+      if (!token || token.trim() === '') {
+        setPageState('invalid');
+        return;
+      }
+
+      // Call API to verify token is valid (not expired)
+      const result = await controller.verifyResetToken(token);
+      
+      if (!result.valid) {
+        logger.warn('[reset-password] TOKEN_INVALID_OR_EXPIRED', { token });
+        setPageState('invalid');
+      }
+      // If valid, keep pageState as 'form' (default)
+    };
+
+    validateToken();
+  }, [token, controller]);
+
   // Entrance animations
   useEffect(() => {
     const animate = async () => {
@@ -96,9 +118,20 @@ export function ResetPassword({ onNavigate }: ResetPasswordProps) {
     if (result.success) {
       setPageState('success');
     } else {
-      if (result.message?.includes('expired') || result.message?.includes('invalid')) {
+      // Enhanced error detection for expired/invalid tokens
+      const errorMsg = result.message?.toLowerCase() || '';
+      const isTokenError = 
+        errorMsg.includes('expired') || 
+        errorMsg.includes('invalid') ||
+        errorMsg.includes('token') ||
+        result.code === 'TOKEN_EXPIRED' ||
+        result.code === 'TOKEN_INVALID' ||
+        result.code === 'AUTH_INVALID_TOKEN';
+      
+      if (isTokenError) {
         setPageState('invalid');
       }
+      // If other error, controller.resetPasswordError will display it
     }
   };
 

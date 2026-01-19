@@ -1,7 +1,6 @@
 import {
   IsString,
   IsOptional,
-  IsPhoneNumber,
   MaxLength,
   MinLength,
   Matches,
@@ -22,9 +21,12 @@ export class UpdateProfileDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiProperty({ example: '+84901234567' })
+  @ApiProperty({ example: '+84901234567 or 0901234567' })
   @IsOptional()
-  @IsPhoneNumber('VN')
+  @IsString()
+  @Matches(/^\+?[0-9\s\-()]{10,20}$/, {
+    message: 'Phone must be a valid phone number (10-20 digits, optional +, spaces, dashes, parentheses)',
+  })
   phone?: string;
 
   @ApiProperty({ example: '123 Nguyen Hue, District 1, HCMC' })
@@ -39,9 +41,10 @@ export class UpdateProfileDto {
   logoUrl?: string;
 
   @ApiProperty({ example: 'pho-ngon-123' })
+  @IsOptional()
   @IsString()
   @Matches(/^[a-z0-9-]+$/, {
     message: 'Slug must contain only lowercase letters, numbers, and hyphens',
   })
-  slug: string;
+  slug?: string;
 }

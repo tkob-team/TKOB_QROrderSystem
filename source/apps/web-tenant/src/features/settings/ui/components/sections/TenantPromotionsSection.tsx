@@ -190,17 +190,17 @@ export function TenantPromotionsSection() {
                       </button>
                       {valid && (
                         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">
-                          Hoạt động
+                          Active
                         </span>
                       )}
                       {expired && (
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">
-                          Hết hạn
+                          Expired
                         </span>
                       )}
                       {!promo.active && !expired && (
                         <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">
-                          Đã tắt
+                          Inactive
                         </span>
                       )}
                     </div>

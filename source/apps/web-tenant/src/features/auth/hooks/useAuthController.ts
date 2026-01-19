@@ -56,9 +56,12 @@ export type UseAuthControllerReturn = {
   sendForgotPasswordLink: (email: string) => Promise<{ success: boolean; message?: string }>;
   isSendingResetLink: boolean;
   
-  resetPassword: (params: { token: string; newPassword: string }) => Promise<{ success: boolean; message?: string }>;
+  resetPassword: (params: { token: string; newPassword: string }) => Promise<{ success: boolean; message?: string; code?: string }>;
   isResettingPassword: boolean;
   resetPasswordError: string | null;
+  
+  verifyResetToken: (token: string) => Promise<{ valid: boolean; email?: string }>;
+  isVerifyingResetToken: boolean;
 };
 
 /**
@@ -84,6 +87,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
   const [isSendingResetLink, setIsSendingResetLink] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+  const [isVerifyingResetToken, setIsVerifyingResetToken] = useState(false);
   
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -231,6 +235,23 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
     }
   }, []);
 
+  // Orchestration: Verify reset token
+  const verifyResetToken = useCallback(async (token: string) => {
+    logger.info('[auth] VERIFY_RESET_TOKEN_ATTEMPT');
+    setIsVerifyingResetToken(true);
+    
+    try {
+      const result = await authAdapter.verifyResetToken(token);
+      logger.info('[auth] VERIFY_RESET_TOKEN_SUCCESS', { valid: result.valid });
+      return result;
+    } catch (error) {
+      logger.error('[auth] VERIFY_RESET_TOKEN_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
+      return { valid: false };
+    } finally {
+      setIsVerifyingResetToken(false);
+    }
+  }, []);
+
   return {
     // Raw mutations/queries (for advanced use)
     loginMutation,
@@ -267,5 +288,7 @@ export const useAuthController = (options?: { enabledCurrentUser?: boolean }): U
     resetPassword,
     isResettingPassword,
     resetPasswordError,
+    verifyResetToken,
+    isVerifyingResetToken,
   };
 };

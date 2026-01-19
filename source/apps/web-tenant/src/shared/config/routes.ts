@@ -15,8 +15,8 @@ export const ROUTES = {
   orders: '/admin/orders',
   analytics: '/admin/analytics',
   staff: '/admin/staff',
-  accountSettings: '/admin/account-settings',
-  tenantProfile: '/admin/tenant-profile',
+  profile: '/admin/profile',
+  settings: '/admin/settings',
   // KDS routes - Owner views in admin panel, Kitchen staff uses standalone
   kds: '/admin/kds',
   kdsStandalone: '/kds', // For kitchen staff only

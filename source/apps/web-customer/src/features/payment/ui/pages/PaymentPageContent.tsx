@@ -64,15 +64,11 @@ export function PaymentPageContent() {
   }, [orderId, source, paymentMethod])
 
   const handlePaymentSuccess = () => {
-    log('ui', 'Payment success navigation', { orderId: maskId(orderId), source, target: source === 'order' ? 'order-detail' : 'success-page' }, { feature: 'payment' });
+    log('ui', 'Payment success navigation', { orderId: maskId(orderId), source, target: 'orders-list' }, { feature: 'payment' });
     
-    // If paying from order detail/list, redirect back to order detail
-    if (source === 'order' && orderId) {
-      router.push(`/orders/${orderId}?paid=1`);
-    } else {
-      // If paying from checkout (new order), show order confirmation page
-      router.push(`/payment/success${orderId ? `?orderId=${orderId}` : ''}`);
-    }
+    // BUG-13 fix: After payment success, always go to orders list
+    // This allows user to see all their orders and continue ordering
+    router.push('/orders');
   }
 
   const handlePaymentFailure = () => {
@@ -81,7 +77,13 @@ export function PaymentPageContent() {
   }
 
   const handleBack = () => {
-    router.back()
+    // BUG-13 fix: Navigate to order detail instead of back()
+    // This allows user to track order and retry payment if needed
+    if (orderId) {
+      router.push(`/orders/${orderId}`)
+    } else {
+      router.push('/menu')
+    }
   }
 
   const handleBackToCheckout = () => {
@@ -204,6 +206,74 @@ export function PaymentPageContent() {
                 }}
               >
                 View My Orders
+              </button>
+              <button
+                onClick={handleBackToMenu}
+                className="w-full py-3 px-6 rounded-full border-2 transition-all hover:shadow-md active:scale-95"
+                style={{
+                  borderColor: 'var(--gray-300)',
+                  color: 'var(--gray-900)',
+                  minHeight: '48px',
+                  fontSize: '15px',
+                }}
+              >
+                Back to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // BUG-10: Prevent customer self-payment before order is ready
+  // Only allow payment for orders in READY, SERVED, or COMPLETED status
+  const allowedPaymentStatuses = ['READY', 'SERVED', 'COMPLETED', 'PAID'];
+  const orderStatus = orderData?.status?.toUpperCase() || '';
+  const isPaymentStatusAllowed = allowedPaymentStatuses.includes(orderStatus);
+  
+  if (mounted && orderData && !isPaymentStatusAllowed && paymentMethod === 'SEPAY_QR') {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white border-b p-4" style={{ borderColor: 'var(--gray-200)' }}>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBack}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--gray-100)]"
+            >
+              <ArrowLeft className="w-5 h-5" style={{ color: 'var(--gray-900)' }} />
+            </button>
+            <h2 style={{ color: 'var(--gray-900)' }}>Payment</h2>
+          </div>
+        </div>
+
+        {/* Order Not Ready Content */}
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
+          <div className="max-w-sm w-full text-center">
+            <div className="mb-4" style={{ color: 'var(--orange-500)', fontSize: '48px' }}>⏳</div>
+            <h3 style={{ color: 'var(--gray-900)', fontSize: '18px', marginBottom: '12px' }}>
+              Order Not Ready Yet
+            </h3>
+            <p style={{ color: 'var(--gray-600)', fontSize: '14px', marginBottom: '12px' }}>
+              Your order is still being prepared. You can pay once your order is ready to serve.
+            </p>
+            <p style={{ color: 'var(--orange-600)', fontSize: '14px', marginBottom: '24px', fontWeight: 500 }}>
+              Current status: {orderStatus || 'Processing'}
+            </p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push(`/orders/${orderId}`)}
+                className="w-full py-3 px-6 rounded-full transition-all hover:shadow-md active:scale-95"
+                style={{
+                  backgroundColor: 'var(--orange-500)',
+                  color: 'white',
+                  minHeight: '48px',
+                  fontSize: '15px',
+                }}
+              >
+                Track Order Status
               </button>
               <button
                 onClick={handleBackToMenu}

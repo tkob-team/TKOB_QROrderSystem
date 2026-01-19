@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { ROUTES } from '@/shared/config';
+import { useAuth } from '@/shared/context/AuthContext';
 
 export type AdminScreenId =
   | 'dashboard'
@@ -15,8 +16,8 @@ export type AdminScreenId =
   | 'orders'
   | 'analytics'
   | 'staff'
-  | 'tenant-profile'
-  | 'account-settings'
+  | 'settings'
+  | 'profile'
   | 'login'
   | 'kds'
   | 'service-board';
@@ -41,13 +42,18 @@ export interface AdminShellProps {
 }
 
 export function AdminShell({
-  restaurantName = 'TKOB Restaurant',
+  restaurantName,
   enableDevModeSwitch = false,
   children,
 }: AdminShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Use tenant name from auth context, fallback to prop or default
+  const displayName = user?.tenant?.name || restaurantName || 'TKOB Restaurant';
+  const userRole = user?.role === 'admin' ? 'Owner' : user?.role === 'kds' ? 'Kitchen' : 'Waiter';
 
   const activeItem: AdminNavItem = useMemo(() => {
     if (pathname.includes('/admin/dashboard')) return 'dashboard';
@@ -58,8 +64,8 @@ export function AdminShell({
     if (pathname.includes('/admin/service-board')) return 'service-board';
     if (pathname.includes('/admin/analytics')) return 'analytics';
     if (pathname.includes('/admin/staff')) return 'staff';
-    if (pathname.includes('/admin/tenant-profile')) return 'tenant-profile';
-    if (pathname.includes('/admin/account-settings')) return 'account-settings';
+    if (pathname.includes('/admin/settings')) return 'settings';
+    if (pathname.includes('/admin/profile')) return 'profile';
     return 'dashboard';
   }, [pathname]);
 
@@ -73,8 +79,8 @@ export function AdminShell({
       orders: ROUTES.orders,
       analytics: ROUTES.analytics,
       staff: ROUTES.staff,
-      'tenant-profile': ROUTES.tenantProfile,
-      'account-settings': ROUTES.accountSettings,
+      settings: ROUTES.settings,
+      profile: ROUTES.profile,
       login: ROUTES.login,
       kds: ROUTES.kds,
       'service-board': ROUTES.waiterServiceBoard,
@@ -94,7 +100,7 @@ export function AdminShell({
     <div className="flex flex-col h-screen bg-gray-50">
       {/* TopBar - Fixed at top (not position:fixed, just at top of flex) */}
       <TopBar
-        restaurantName={restaurantName}
+        restaurantName={displayName}
         onNavigate={handleNavigate}
         enableDevModeSwitch={enableDevModeSwitch}
         onMenuToggle={handleToggleSidebar}
@@ -108,6 +114,8 @@ export function AdminShell({
           onNavigate={handleNavigate}
           collapsed={sidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
+          tenantName={displayName}
+          userRole={userRole}
         />
 
         {/* Main Content Area */}
@@ -141,6 +149,8 @@ export function AdminShell({
           }}
           collapsed={false}
           onToggleCollapse={() => setSidebarCollapsed(true)}
+          tenantName={displayName}
+          userRole={userRole}
           isMobileView={true}
         />
       </aside>

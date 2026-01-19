@@ -54,6 +54,7 @@ export function useTablesController(): TablesControllerState {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showSubscriptionLimitModal, setShowSubscriptionLimitModal] = useState(false);
 
   // ============================================================================
   // API HOOKS
@@ -217,8 +218,17 @@ export function useTablesController(): TablesControllerState {
   // ============================================================================
 
   const handleApiError = (error: any, defaultMessage: string) => {
+    const errorCode = error?.response?.data?.error?.code;
     const errorMessage = error?.response?.data?.error?.message || error?.message || defaultMessage;
-    logger.error('[tables] API_ERROR', { message: errorMessage });
+    
+    logger.error('[tables] API_ERROR', { code: errorCode, message: errorMessage });
+    
+    // Check if it's a subscription limit error
+    if (errorCode === 'SUBSCRIPTION_LIMIT_EXCEEDED' || errorCode === 'AUTH_FORBIDDEN') {
+      setShowSubscriptionLimitModal(true);
+      return;
+    }
+    
     setToastMessage(errorMessage);
     setToastType('error');
     setShowSuccessToast(true);
@@ -433,6 +443,11 @@ export function useTablesController(): TablesControllerState {
       message: toastMessage,
       type: toastType,
       onClose: () => setShowSuccessToast(false),
+    },
+
+    subscription: {
+      showLimitModal: showSubscriptionLimitModal,
+      closeLimitModal: () => setShowSubscriptionLimitModal(false),
     },
 
     qrPrintRef: qrActions.qrPrintRef,

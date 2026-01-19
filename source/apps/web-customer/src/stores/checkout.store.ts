@@ -16,11 +16,18 @@ interface CheckoutStore {
   paymentMethod: PaymentMethod | null  // null = not selected yet
   tipPercent: TipPercent
   customTipAmount: number  // Custom tip dollar amount
+  // FEAT-14: Discount fields
+  discountCode: string
+  discountApplied: boolean
+  discountAmount: number
   setCustomerName: (name: string) => void
   setNotes: (notes: string) => void
   setPaymentMethod: (method: PaymentMethod) => void
   setTipPercent: (percent: TipPercent) => void
   setCustomTipAmount: (amount: number) => void
+  setDiscountCode: (code: string) => void
+  setDiscountApplied: (applied: boolean) => void
+  setDiscountAmount: (amount: number) => void
   reset: () => void
 }
 
@@ -58,6 +65,22 @@ export const useCheckoutStore = create<CheckoutStore>()(
         set({ customTipAmount: amount, tipPercent: 'custom' })
       },
 
+      // FEAT-14: Discount setters
+      setDiscountCode: (code) => {
+        log('ui', 'Discount code entered', { hasCode: code.length > 0 }, { feature: 'checkout' })
+        set({ discountCode: code })
+      },
+
+      setDiscountApplied: (applied) => {
+        log('ui', 'Discount applied status', { applied }, { feature: 'checkout' })
+        set({ discountApplied: applied })
+      },
+
+      setDiscountAmount: (amount) => {
+        log('ui', 'Discount amount set', { amount: '$' + amount.toFixed(2) }, { feature: 'checkout' })
+        set({ discountAmount: amount })
+      },
+
       reset: () => {
         log('ui', 'Checkout form reset', {}, { feature: 'checkout' })
         set({
@@ -66,6 +89,9 @@ export const useCheckoutStore = create<CheckoutStore>()(
           paymentMethod: null,
           tipPercent: 0,
           customTipAmount: 0,
+          discountCode: '',
+          discountApplied: false,
+          discountAmount: 0,
         })
       },
     }),

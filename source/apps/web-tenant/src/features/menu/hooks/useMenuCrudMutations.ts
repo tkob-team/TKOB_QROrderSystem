@@ -24,9 +24,9 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
     mutationFn: (data: CreateMenuCategoryDto) => menuAdapter.categories.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['menu', 'categories'] });
-      notify('Danh mục đã được tạo');
+      notify('Category created successfully');
     },
-    onError: () => notifyError('Có lỗi khi tạo danh mục'),
+    onError: () => notifyError('Failed to create category'),
   });
 
   const mUpdateCategory = useMutation({
@@ -34,18 +34,18 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
       menuAdapter.categories.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['menu', 'categories'] });
-      notify('Danh mục đã được cập nhật');
+      notify('Category updated successfully');
     },
-    onError: () => notifyError('Có lỗi khi cập nhật danh mục'),
+    onError: () => notifyError('Failed to update category'),
   });
 
   const mDeleteCategory = useMutation({
     mutationFn: (id: string) => menuAdapter.categories.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['menu', 'categories'] });
-      notify('Danh mục đã được xóa');
+      notify('Category deleted successfully');
     },
-    onError: () => notifyError('Có lỗi khi xóa danh mục'),
+    onError: () => notifyError('Failed to delete category'),
   });
 
   // Items
@@ -53,9 +53,9 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
     mutationFn: (data: CreateMenuItemDto) => menuAdapter.items.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify('Món ăn đã được tạo');
+      // Note: Success notification is handled by controller
     },
-    onError: () => notifyError('Có lỗi khi tạo món ăn'),
+    // No onError - let the error bubble up to controller's try-catch
   });
 
   const mUpdateItem = useMutation({
@@ -63,18 +63,17 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
       menuAdapter.items.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify('Món ăn đã được cập nhật');
+      // Note: Success notification is handled by controller
     },
-    onError: () => notifyError('Có lỗi khi cập nhật món ăn'),
   });
 
   const mDeleteItem = useMutation({
     mutationFn: (id: string) => menuAdapter.items.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify('Món ăn đã được xóa');
+      notify('Menu item deleted successfully');
     },
-    onError: () => notifyError('Có lỗi khi xóa món ăn'),
+    onError: () => notifyError('Failed to delete menu item'),
   });
 
   const mTogglePublish = useMutation({
@@ -82,9 +81,9 @@ export function useMenuCrudMutations({ notify, notifyError }: UseMenuCrudMutatio
       menuAdapter.items.togglePublish(id, { publish }),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['menu', 'items'] });
-      notify(variables.publish ? 'Món ăn đã được xuất bản' : 'Món ăn đã chuyển về nháp');
+      notify(variables.publish ? 'Menu item published' : 'Menu item unpublished');
     },
-    onError: () => notifyError('Có lỗi khi thay đổi trạng thái xuất bản'),
+    onError: () => notifyError('Failed to change publish status'),
   });
 
   // Modifiers

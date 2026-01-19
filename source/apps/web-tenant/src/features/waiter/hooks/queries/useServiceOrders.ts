@@ -1,6 +1,9 @@
 /**
  * Internal Query Hook - Service Orders
  * DO NOT export from feature root
+ * 
+ * Note: Real-time updates are handled by useWaiterWebSocket hook
+ * which invalidates this query on new order/status change events.
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -31,8 +34,9 @@ export function useServiceOrders() {
       
       return data;
     },
-    refetchInterval: 5000, // Poll every 5s for faster real-time updates
-    staleTime: 3000, // Consider data stale after 3s
+    // No polling - WebSocket handles real-time updates via useWaiterWebSocket
+    staleTime: 30000, // Consider data stale after 30s
     refetchOnWindowFocus: true,
   });
 }
+

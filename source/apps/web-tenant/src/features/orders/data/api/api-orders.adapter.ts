@@ -21,37 +21,50 @@ class OrdersApiAdapter implements IOrdersAdapter {
    * GET /api/v1/admin/orders
    */
   async getOrders(filters?: OrderApiFilters): Promise<PaginatedOrders> {
-    const params = new URLSearchParams()
-    
-    if (filters?.status) params.append('status', filters.status)
-    if (filters?.tableId) params.append('tableId', filters.tableId)
-    if (filters?.search) params.append('search', filters.search)
-    if (filters?.page) params.append('page', filters.page.toString())
-    if (filters?.limit) params.append('limit', filters.limit.toString())
+    try {
+      const params = new URLSearchParams()
+      
+      if (filters?.status) params.append('status', filters.status)
+      if (filters?.tableId) params.append('tableId', filters.tableId)
+      if (filters?.search) params.append('search', filters.search)
+      if (filters?.page) params.append('page', filters.page.toString())
+      if (filters?.limit) params.append('limit', filters.limit.toString())
 
-    const response = await api.get<PaginatedOrdersResponse>(
-      `${this.baseUrl}?${params.toString()}`
-    )
-    
-    // Backend response structure:
-    // { success: true, data: { data: Order[], meta: {...} } }
-    // response.data = { success, data: { data, meta } }
-    const rawResponse = response.data as any;
-    
-    // Unwrap the success wrapper first
-    const paginatedData = rawResponse?.data || rawResponse;
-    
-    // Now extract orders array and meta
-    const orders = Array.isArray(paginatedData?.data) ? paginatedData.data : 
-                   Array.isArray(paginatedData) ? paginatedData : [];
-    const meta = paginatedData?.meta || {};
-    
-    return {
-      data: orders.map(mapOrderFromApi),
-      total: meta.totalItems || orders.length,
-      page: meta.currentPage || 1,
-      limit: meta.itemsPerPage || 20,
-      totalPages: meta.totalPages || Math.ceil(orders.length / 20),
+      const response = await api.get<PaginatedOrdersResponse>(
+        `${this.baseUrl}?${params.toString()}`
+      )
+      
+      // Backend response structure:
+      // { success: true, data: { data: Order[], meta: {...} } }
+      // response.data = { success, data: { data, meta } }
+      const rawResponse = response.data as any;
+      
+      // Unwrap the success wrapper first
+      const paginatedData = rawResponse?.data || rawResponse;
+      
+      // Now extract orders array and meta
+      const orders = Array.isArray(paginatedData?.data) ? paginatedData.data : 
+                     Array.isArray(paginatedData) ? paginatedData : [];
+      const meta = paginatedData?.meta || {};
+      
+      return {
+        data: orders.map(mapOrderFromApi),
+        total: meta.totalItems || orders.length,
+        page: meta.currentPage || 1,
+        limit: meta.itemsPerPage || 20,
+        totalPages: meta.totalPages || Math.ceil(orders.length / 20),
+      }
+    } catch (error: any) {
+      // Log error for debugging
+      console.error('[OrdersAPI] Failed to fetch orders:', error?.response?.data || error?.message || error);
+      // Return empty result instead of throwing to prevent UI crash
+      return {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 0,
+      };
     }
   }
 

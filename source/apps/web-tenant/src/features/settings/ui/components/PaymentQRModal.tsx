@@ -60,7 +60,7 @@ export function PaymentQRModal({
     paymentId: payment.paymentId,
     enabled: isOpen,
     interval: 3000, // Poll every 3 seconds (safe for SePay rate limit)
-    maxAttempts: 20, // 1 minute total (20 × 3s = 60s)
+    maxAttempts: 60, // 1 minute total (20 × 3s = 60s)
     onSuccess: () => {
       logger.info('[payment-modal] Payment confirmed');
       onPaymentConfirmed();

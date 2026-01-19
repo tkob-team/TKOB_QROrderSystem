@@ -138,9 +138,15 @@ export function ForgotPassword({ onNavigate }: ForgotPasswordProps) {
             </div>
           ) : (
             <div ref={successRef} className="flex flex-col gap-8 items-center text-center py-4">
-              {/* Success Icon */}
-              <div className="w-20 h-20 bg-gradient-to-br from-success-500 to-success-600 rounded-full flex items-center justify-center shadow-lg">
-                <CheckCircle className="w-11 h-11 text-white" strokeWidth={2.5} />
+              {/* Success Icon - Pulse Effect */}
+              <div className="relative flex items-center justify-center w-24 h-24">
+                {/* Vòng lan tỏa phía sau */}
+                <div className="absolute inset-0 bg-green-200 rounded-full animate-ping opacity-75"></div>
+                
+                {/* Icon chính */}
+                <div className="relative w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-xl ring-4 ring-white">
+                  <CheckCircle className="w-10 h-10 text-white" strokeWidth={3} />
+                </div>
               </div>
               
               {/* Success Message */}
@@ -157,10 +163,10 @@ export function ForgotPassword({ onNavigate }: ForgotPasswordProps) {
               {/* Actions */}
               <div className="flex flex-col gap-3 w-full pt-2">
                 <Button 
-                  onClick={() => onNavigate?.(ROUTES.resetPassword)}
+                  onClick={() => onNavigate?.(ROUTES.login)}
                   fullWidth
                 >
-                  Go to reset password
+                  Back to Login
                 </Button>
                 
                 <Button 
@@ -173,15 +179,6 @@ export function ForgotPassword({ onNavigate }: ForgotPasswordProps) {
                 >
                   Send again
                 </Button>
-                
-                <div className="text-center pt-2">
-                  <button 
-                    onClick={() => onNavigate?.(ROUTES.login)}
-                    className="text-sm text-emerald-600 hover:text-emerald-700 transition-colors font-medium underline-offset-2 hover:underline"
-                  >
-                    Back to login
-                  </button>
-                </div>
               </div>
             </div>
           )}

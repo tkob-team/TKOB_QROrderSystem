@@ -23,6 +23,7 @@ import {
 } from '@/lib/websocket';
 import { logger } from '@/shared/utils/logger';
 import { getStoredAuthToken } from '@/features/auth/data/tokenStorage';
+import { playNotificationSound } from '@/shared/utils/soundNotifications';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
@@ -148,9 +149,9 @@ export function useKdsWebSocket({
         table: payload.order.tableName || payload.order.tableId,
       });
 
-      // Play sound notification
+      // Play sound notification (3 beeps for new KDS order)
       if (callbacksRef.current.soundEnabled) {
-        playNewOrderSound();
+        playNotificationSound('kds-new-order', 3);
       }
 
       // Increment badge count
@@ -172,6 +173,14 @@ export function useKdsWebSocket({
         orderNumber: payload.order.orderNumber,
         status: payload.order.status,
       });
+
+      // Play sound when order moves to RECEIVED (sent to kitchen by waiter)
+      // This is the "new order" event for KDS
+      if (payload.order.status === 'RECEIVED' && callbacksRef.current.soundEnabled) {
+        playNotificationSound('kds-new-order', 3);
+        setNewOrderCount((prev) => prev + 1);
+      }
+
 
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['kds', 'orders'] });

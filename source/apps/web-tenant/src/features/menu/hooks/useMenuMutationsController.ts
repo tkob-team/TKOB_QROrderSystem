@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type {
   CreateMenuCategoryDto,
   CreateMenuItemDto,
@@ -55,6 +56,7 @@ export function useMenuMutationsController(selectedCategory: string) {
 
   const { showSuccessToast, setShowSuccessToast, toastMessage, setToastMessage } = useToasts(3000);
   const { getOperations: getPhotoOps, executeAll: executePhotoOps } = usePhotoManager();
+  const [showSubscriptionLimitModal, setShowSubscriptionLimitModal] = useState(false);
 
   const notify = (msg: string) => {
     setToastMessage(msg);
@@ -113,7 +115,7 @@ export function useMenuMutationsController(selectedCategory: string) {
       data: { active: !category.active },
     });
     logger.info('[menu] TOGGLE_CATEGORY_SUCCESS', { categoryId: category.id, newActive: !category.active });
-    setToastMessage(`Danh mục "${category.name}" đã ${!category.active ? 'kích hoạt' : 'vô hiệu hóa'}`);
+    setToastMessage(`Category "${category.name}" ${!category.active ? 'activated' : 'deactivated'}`);
     setShowSuccessToast(true);
   };
 
@@ -170,7 +172,7 @@ export function useMenuMutationsController(selectedCategory: string) {
         }
         logger.info('[menu] CREATE_ITEM_SUCCESS', { itemId: result?.id });
 
-        setToastMessage(`Món "${itemFormData.name}" đã được tạo`);
+        setToastMessage(`Menu item "${itemFormData.name}" created successfully`);
       } else if (currentEditItemId) {
         logger.info('[menu] UPDATE_ITEM_ATTEMPT', { itemId: currentEditItemId });
         const updatePromises: Promise<unknown>[] = [
@@ -226,13 +228,32 @@ export function useMenuMutationsController(selectedCategory: string) {
 
         logger.info('[menu] UPDATE_ITEM_SUCCESS', { itemId: currentEditItemId });
 
-        setToastMessage(`Món "${itemFormData.name}" đã được cập nhật`);
+        setToastMessage(`Menu item "${itemFormData.name}" updated successfully`);
       }
 
       setShowSuccessToast(true);
       handleCloseItemModal();
-    } catch (error) {
-      logger.error('[menu] SAVE_ITEM_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
+    } catch (error: any) {
+      const errorCode = error?.response?.data?.error?.code;
+      const detailsCode = error?.response?.data?.error?.details?.code;
+      const errorMessage = error?.response?.data?.error?.message || (error instanceof Error ? error.message : 'Unknown error');
+      
+      logger.error('[menu] SAVE_ITEM_ERROR', { code: errorCode, detailsCode, message: errorMessage });
+      
+      // Check if it's a subscription limit error (can be in top-level code or nested details.code)
+      const isSubscriptionLimit = 
+        errorCode === 'SUBSCRIPTION_LIMIT_EXCEEDED' || 
+        detailsCode === 'SUBSCRIPTION_LIMIT_EXCEEDED' ||
+        (errorCode === 'AUTH_FORBIDDEN' && detailsCode === 'SUBSCRIPTION_LIMIT_EXCEEDED');
+      
+      if (isSubscriptionLimit) {
+        logger.warn('[menu] SUBSCRIPTION_LIMIT_EXCEEDED', { errorCode, detailsCode, errorMessage });
+        handleCloseItemModal(); // Close the add/edit modal
+        setShowSubscriptionLimitModal(true);
+        return;
+      }
+      
+      notifyError(errorMessage);
     }
   };
 
@@ -288,6 +309,7 @@ export function useMenuMutationsController(selectedCategory: string) {
     itemToDelete,
     showSuccessToast,
     toastMessage,
+    showSubscriptionLimitModal,
 
     // setters
     setNewCategoryName,
@@ -311,5 +333,6 @@ export function useMenuMutationsController(selectedCategory: string) {
     handleConfirmDelete,
     closeDeleteModal,
     handleToggleAvailability,
+    handleCloseSubscriptionModal: () => setShowSubscriptionLimitModal(false),
   };
 }
