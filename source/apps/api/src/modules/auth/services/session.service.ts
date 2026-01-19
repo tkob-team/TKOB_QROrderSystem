@@ -1,8 +1,22 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { TokenService } from './token.service';
+import { RedisService } from '../../redis/redis.service';
 import { TokenPair, CreateSessionData } from '../interfaces/registration-data.interface';
 import * as bcrypt from 'bcrypt';
+
+/**
+ * Session data stored in Redis for fast validation
+ */
+export interface SessionData {
+  userId: string;
+  email: string;
+  role: string;
+  tenantId: string;
+  deviceInfo: string;
+  sessionId: string;
+  createdAt: string;
+}
 
 /**
  * Session Service
@@ -16,11 +30,69 @@ import * as bcrypt from 'bcrypt';
 export class SessionService {
   private readonly logger = new Logger(SessionService.name);
   private readonly SALT_ROUNDS = 10;
+  private readonly SESSION_KEY_PREFIX = 'session';
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
+    private readonly redis: RedisService,
   ) {}
+
+  // ==================== Redis Session Methods ====================
+
+  /**
+   * Build Redis key for session
+   * Format: session:{userId}:{sessionId}
+   */
+  private buildSessionKey(userId: string, sessionId: string): string {
+    return `${this.SESSION_KEY_PREFIX}:${userId}:${sessionId}`;
+  }
+
+  /**
+   * Store session metadata in Redis for fast validation
+   * This is called alongside PostgreSQL storage for dual-write
+   */
+  private async storeSessionInRedis(
+    sessionId: string,
+    data: Omit<SessionData, 'sessionId'>,
+  ): Promise<void> {
+    const key = this.buildSessionKey(data.userId, sessionId);
+    const ttl = this.tokenService.getRefreshTokenExpirySeconds();
+
+    const sessionData: SessionData = {
+      ...data,
+      sessionId,
+    };
+
+    await this.redis.setJson(key, sessionData, ttl);
+    this.logger.debug(`Session stored in Redis: ${key}`);
+  }
+
+  /**
+   * Get session from Redis (fast path for validation)
+   * Returns null if not found or Redis unavailable (triggers DB fallback)
+   */
+  async getSessionFromRedis(userId: string, sessionId: string): Promise<SessionData | null> {
+    const key = this.buildSessionKey(userId, sessionId);
+    return this.redis.getJson<SessionData>(key);
+  }
+
+  /**
+   * Delete session from Redis (logout)
+   */
+  private async deleteSessionFromRedis(userId: string, sessionId: string): Promise<void> {
+    const key = this.buildSessionKey(userId, sessionId);
+    await this.redis.del(key);
+    this.logger.debug(`Session deleted from Redis: ${key}`);
+  }
+
+  /**
+   * Delete all sessions for user from Redis
+   */
+  private async deleteAllSessionsFromRedis(userId: string): Promise<void> {
+    const deletedCount = await this.redis.deleteByPattern(`${this.SESSION_KEY_PREFIX}:${userId}:*`);
+    this.logger.debug(`Deleted ${deletedCount} sessions from Redis for user: ${userId}`);
+  }
 
   /**
    * Create a new session for user
@@ -53,6 +125,11 @@ export class SessionService {
     return {
       accessToken: data.refreshToken, // Will be replaced by caller
       refreshToken,
+      sessionId: (await this.prisma.userSession.findFirst({
+        where: { userId, refreshTokenHash },
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+      }))?.id || '',
     };
   }
 
@@ -91,12 +168,25 @@ export class SessionService {
       user.tenantId,
     );
 
-    // Create session
-    await this.createSession({
+    // Create session in PostgreSQL (source of truth)
+    const session = await this.createSession({
       userId,
       deviceInfo,
       refreshToken: tokens.refreshToken,
     });
+
+    // Also store session metadata in Redis for fast lookup
+    // This enables O(1) session validation instead of DB queries
+    if (session.sessionId) {
+      await this.storeSessionInRedis(session.sessionId, {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+        deviceInfo: deviceInfo || 'Unknown',
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     return tokens;
   }
@@ -154,9 +244,13 @@ export class SessionService {
     for (const session of sessions) {
       const isMatch = await bcrypt.compare(refreshToken, session.refreshTokenHash);
       if (isMatch) {
+        // Delete from PostgreSQL
         await this.prisma.userSession.delete({
           where: { id: session.id },
         });
+
+        // Also delete from Redis for immediate session invalidation
+        await this.deleteSessionFromRedis(userId, session.id);
 
         this.logger.log(`Session deleted for user: ${userId}`);
         return;
@@ -171,9 +265,13 @@ export class SessionService {
    * @param userId - User ID
    */
   async deleteAllSessions(userId: string): Promise<void> {
+    // Delete from PostgreSQL
     const result = await this.prisma.userSession.deleteMany({
       where: { userId },
     });
+
+    // Also delete all sessions from Redis
+    await this.deleteAllSessionsFromRedis(userId);
 
     this.logger.log(`Deleted ${result.count} sessions for user: ${userId}`);
   }

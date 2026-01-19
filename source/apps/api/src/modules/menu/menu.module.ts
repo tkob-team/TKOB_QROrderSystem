@@ -12,6 +12,7 @@ import { PublicMenuController } from './controllers/public-menu.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { MenuPhotoController } from './controllers/menu-photo.controller';
 import { MenuPhotoService } from './services/menu-photo.service';
+import { MenuCacheService } from './services/menu-cache.service';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { MenuItemsPublicController } from './controllers/menu-item-public.controller';
@@ -46,6 +47,7 @@ import { forwardRef } from '@nestjs/common';
     MenuItemsService,
     ModifierGroupService,
     MenuPhotoService,
+    MenuCacheService,
 
     // Repository
     MenuCategoryRepository,
