@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type {
   CreateMenuItemDto,
   MenuItemFiltersDto,
@@ -9,13 +9,17 @@ import { MenuItemsRepository } from '../repositories/menu-item.repository';
 import { ErrorCode, ErrorMessages } from 'src/common/constants/error-codes.constant';
 import { ModifierGroupRepository } from '../repositories/modifier-group.repository';
 import { MenuSortByEnum, PublicMenuFiltersDto, SortOrderEnum } from '../dto/menu-publish.dto';
+import { MenuCacheService } from './menu-cache.service';
 
 @Injectable()
 export class MenuItemsService {
+  private readonly logger = new Logger(MenuItemsService.name);
+
   constructor(
     private readonly menuItemRepo: MenuItemsRepository,
     private readonly menuCategoryRepo: MenuCategoryRepository,
     private readonly modifierGroupRepo: ModifierGroupRepository,
+    private readonly menuCache: MenuCacheService,
   ) {}
 
   async create(tenantId: string, dto: CreateMenuItemDto) {
@@ -80,6 +84,10 @@ export class MenuItemsService {
       }
     }
 
+    // Invalidate cache when new item created
+    await this.menuCache.invalidate(tenantId);
+    this.logger.debug(`Cache invalidated after creating menu item for tenant: ${tenantId}`);
+
     // Return with details
     return this.menuItemRepo.findByIdWithDetails(item.id);
   }
@@ -114,7 +122,8 @@ export class MenuItemsService {
   }
 
   async update(menuItemId: string, dto: UpdateMenuItemDto) {
-    await this.findById(menuItemId);
+    // Get existing item to get tenantId for cache invalidation
+    const existingItem = await this.findById(menuItemId);
 
     if (dto.categoryId) {
       await this.menuCategoryRepo.findById(dto.categoryId);
@@ -153,13 +162,23 @@ export class MenuItemsService {
       await this.menuItemRepo.attachModifierGroups(menuItemId, validGroupIds);
     }
 
+    // Invalidate cache after update
+    await this.menuCache.invalidate(existingItem.tenantId);
+    this.logger.debug(`Cache invalidated after updating menu item: ${menuItemId}`);
+
     // Return updated item
     return this.menuItemRepo.findByIdWithDetails(menuItemId);
   }
 
   async delete(menuItemId: string) {
-    await this.findById(menuItemId);
-    return this.menuItemRepo.softDelete(menuItemId);
+    const existingItem = await this.findById(menuItemId);
+    const result = await this.menuItemRepo.softDelete(menuItemId);
+
+    // Invalidate cache after delete
+    await this.menuCache.invalidate(existingItem.tenantId);
+    this.logger.debug(`Cache invalidated after deleting menu item: ${menuItemId}`);
+
+    return result;
   }
 
   async getPublicMenu(tenantId: string, filters?: PublicMenuFiltersDto) {
@@ -172,6 +191,19 @@ export class MenuItemsService {
       page = 1,
       limit = 20,
     } = filters || {};
+
+    // Only cache if no filters applied (base menu without search/category/chef filters)
+    // Filtered results have too many variations to cache effectively
+    const canCache = !search && !categoryId && chefRecommended === undefined && page === 1;
+
+    if (canCache) {
+      // 1. Try to get from cache (Cache-Aside pattern - read path)
+      const cached = await this.menuCache.getMenu(tenantId);
+      if (cached) {
+        this.logger.debug(`Returning cached menu for tenant: ${tenantId}`);
+        return cached;
+      }
+    }
 
     // Get paginated items with filters
     const result = await this.menuItemRepo.findPublishedMenuPaginated(tenantId, {
@@ -245,7 +277,7 @@ export class MenuItemsService {
       (a, b) => a.displayOrder - b.displayOrder,
     );
 
-    return {
+    const response = {
       categories,
       pagination: {
         page: result.page,
@@ -256,19 +288,38 @@ export class MenuItemsService {
         hasPrevious: result.hasPrevious,
       },
       publishedAt: new Date(),
+      cachedAt: new Date(), // Timestamp when data was cached
     };
+
+    // 3. Store in cache for next request (Cache-Aside pattern - write on miss)
+    if (canCache) {
+      await this.menuCache.setMenu(tenantId, response);
+      this.logger.debug(`Cached menu for tenant: ${tenantId}`);
+    }
+
+    return response;
   }
 
   async publish(itemId: string) {
-    await this.findById(itemId); // Verify exists
+    const item = await this.findById(itemId); // Verify exists
+    const result = await this.menuItemRepo.publish(itemId);
 
-    return this.menuItemRepo.publish(itemId);
+    // Invalidate cache - item now visible to customers
+    await this.menuCache.invalidate(item.tenantId);
+    this.logger.debug(`Cache invalidated after publishing menu item: ${itemId}`);
+
+    return result;
   }
 
   async unpublish(itemId: string) {
-    await this.findById(itemId); // Verify exists
+    const item = await this.findById(itemId); // Verify exists
+    const result = await this.menuItemRepo.unpublish(itemId);
 
-    return this.menuItemRepo.unpublish(itemId);
+    // Invalidate cache - item no longer visible to customers
+    await this.menuCache.invalidate(item.tenantId);
+    this.logger.debug(`Cache invalidated after unpublishing menu item: ${itemId}`);
+
+    return result;
   }
 
   async toggleAvailability(itemId: string, available: boolean) {

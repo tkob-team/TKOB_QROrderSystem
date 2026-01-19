@@ -1,6 +1,24 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { AuthResponseDto, RegisterSubmitResponseDto } from '../dto/auth-response.dto';
 import { RegisterSubmitDto } from '../dto/register-submit.dto';
@@ -11,9 +29,12 @@ import { LogoutDto } from '../dto/logout.dto';
 import { ForgotPasswordDto, ForgotPasswordResponseDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto, ResetPasswordResponseDto } from '../dto/reset-password.dto';
 import { VerifyEmailDto, VerifyEmailResponseDto } from '../dto/verify-email.dto';
-import { ResendVerificationDto, ResendVerificationResponseDto } from '../dto/resend-verification.dto';
+import {
+  ResendVerificationDto,
+  ResendVerificationResponseDto,
+} from '../dto/resend-verification.dto';
 import { ChangePasswordDto, ChangePasswordResponseDto } from '../dto/change-password.dto';
-import { UpdateProfileDto, UpdateProfileResponseDto } from '../dto/update-profile.dto';
+import { UpdateUserProfileDto, UpdateProfileResponseDto } from '../dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
@@ -225,7 +246,7 @@ export class AuthController {
   })
   async updateProfile(
     @CurrentUser() user: any,
-    @Body() dto: UpdateProfileDto,
+    @Body() dto: UpdateUserProfileDto,
   ): Promise<UpdateProfileResponseDto> {
     const updatedUser = await this.authService.updateProfile(user.userId, dto);
     return {
@@ -269,7 +290,10 @@ export class AuthController {
     schema: {
       properties: {
         message: { type: 'string', example: 'Avatar updated successfully' },
-        avatarUrl: { type: 'string', example: 'http://localhost:3000/uploads/avatars/user-123.jpg' },
+        avatarUrl: {
+          type: 'string',
+          example: 'http://localhost:3000/uploads/avatars/user-123.jpg',
+        },
       },
     },
   })
@@ -287,7 +311,6 @@ export class AuthController {
   }
 
   // ==================== PASSWORD RESET ====================
-
 
   @Post('forgot-password')
   @Public()
@@ -340,7 +363,9 @@ export class AuthController {
       },
     },
   })
-  async verifyResetToken(@Body('token') token: string): Promise<{ valid: boolean; email?: string }> {
+  async verifyResetToken(
+    @Body('token') token: string,
+  ): Promise<{ valid: boolean; email?: string }> {
     return this.authService.verifyResetToken(token);
   }
 

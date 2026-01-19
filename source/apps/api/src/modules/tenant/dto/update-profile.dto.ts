@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  MaxLength,
-  MinLength,
-  Matches,
-} from 'class-validator';
+import { IsString, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -25,7 +19,8 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   @Matches(/^\+?[0-9\s\-()]{10,20}$/, {
-    message: 'Phone must be a valid phone number (10-20 digits, optional +, spaces, dashes, parentheses)',
+    message:
+      'Phone must be a valid phone number (10-20 digits, optional +, spaces, dashes, parentheses)',
   })
   phone?: string;
 

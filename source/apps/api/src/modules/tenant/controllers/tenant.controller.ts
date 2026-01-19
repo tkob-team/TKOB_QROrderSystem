@@ -134,7 +134,9 @@ export class TenantController {
   @UseGuards(JwtAuthGuard, RolesGuard, TenantOwnershipGuard)
   @ApiBearerAuth()
   @Roles(UserRole.OWNER)
-  @ApiOperation({ summary: 'Update settings (Onboarding Step 3) - includes tax, service charge, tip config' })
+  @ApiOperation({
+    summary: 'Update settings (Onboarding Step 3) - includes tax, service charge, tip config',
+  })
   @ApiResponse({
     status: 200,
     description: 'Settings updated successfully',
