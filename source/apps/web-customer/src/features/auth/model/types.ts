@@ -20,7 +20,6 @@ export interface ResetPasswordForm {
 
 export interface AuthState {
   isLoading: boolean
-  isGoogleLoading: boolean
   error: string | null
 }
 
