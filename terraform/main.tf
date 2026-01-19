@@ -91,6 +91,14 @@ resource "aws_security_group" "web_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  # API Server port (NestJS)
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "API Server"
+  }
   # Outbound: Cho phép server gọi ra ngoài thoải mái (để cài soft, gọi API)
   egress {
     from_port   = 0
