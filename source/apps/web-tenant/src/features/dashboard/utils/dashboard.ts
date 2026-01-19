@@ -31,17 +31,30 @@ export function getOrderCountByStatus(
 
 /**
  * Get badge variant for order status
+ * BUG-13 Fix: Handle all status types from API mapping
  */
-export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'info' | 'primary' | 'default' {
+export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'info' | 'primary' | 'default' | 'destructive' {
   switch (status) {
     case 'completed':
+    case 'COMPLETED':
+    case 'served':
+    case 'SERVED':
       return 'success';
     case 'preparing':
+    case 'PREPARING':
       return 'warning';
     case 'ready':
+    case 'READY':
       return 'info';
     case 'placed':
+    case 'PENDING':
+    case 'confirmed':
+    case 'CONFIRMED':
+    case 'RECEIVED':
       return 'primary';
+    case 'cancelled':
+    case 'CANCELLED':
+      return 'destructive';
     default:
       // INVARIANT: Unexpected order status value
       if (typeof window !== 'undefined') {
@@ -53,6 +66,7 @@ export function getStatusBadgeVariant(status: string): 'success' | 'warning' | '
       return 'default';
   }
 }
+
 
 /**
  * Format orders by status for chart display

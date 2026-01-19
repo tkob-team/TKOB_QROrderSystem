@@ -20,8 +20,8 @@ export const ROLE_HOME_ROUTES: RoleRoutes = {
 };
 
 export const ROLE_ALLOWED_ROUTES: RoleAllowedRoutes = {
-  admin: ['/admin/*', '/admin/account-settings'],
-  waiter: ['/waiter/*', '/admin/account-settings'],
+  admin: ['/admin/*', '/admin/profile'],
+  waiter: ['/waiter/*', '/admin/profile'],
   kds: ['/kds/*'],
   null: ['/auth/*'],
 };

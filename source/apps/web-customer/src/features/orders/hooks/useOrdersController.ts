@@ -11,6 +11,7 @@ import { OrdersDataFactory } from '../data'
 import { orderQueryKeys } from '../data/cache/orderQueryKeys'
 import { useSession } from '@/features/tables/hooks/useSession'
 import { USE_MOCK_API } from '@/shared/config'
+import { useCurrentUser } from '@/features/profile/hooks/queries/useCurrentUser'
 
 export function useOrdersController() {
   const router = useRouter()
@@ -48,6 +49,10 @@ export function useOrdersController() {
       return sorted.map(toFeatureOrder)
     },
     enabled: !!sessionId,
+    // BUG FIX: Force refetch on mount and consider data always stale
+    refetchOnMount: 'always',
+    staleTime: 0, // Always consider data stale
+    refetchInterval: false, // Don't poll (will use WebSocket later)
   })
   const { data: orderHistory = [], isLoading: historyLoading } = useQuery({
     queryKey: orderQueryKeys.orderHistory(sessionId || 'default'),
@@ -70,6 +75,10 @@ export function useOrdersController() {
     enabled: !!sessionId,
   })
 
+  // Get current user to check login status
+  const { data: userResponse } = useCurrentUser()
+  const isLoggedIn = !!userResponse?.data
+
   // State
   const state: OrdersState = useMemo(
     () => ({
@@ -77,11 +86,11 @@ export function useOrdersController() {
       currentSessionOrders,
       orderHistory,
       selectedOrder,
-      isLoggedIn: false, // TODO: Get from auth context
+      isLoggedIn,
       isLoading: currentLoading || historyLoading,
       error: null,
     }),
-    [currentSessionOrders, orderHistory, selectedOrder, currentLoading, historyLoading]
+    [currentSessionOrders, orderHistory, selectedOrder, isLoggedIn, currentLoading, historyLoading]
   )
 
   // Actions
@@ -90,7 +99,9 @@ export function useOrdersController() {
   }
 
   const openOrderDetails = (orderId: string) => {
-    router.push(`/orders/${orderId}`)
+    log('ui', 'Navigate to order detail from orders list', { orderId: maskId(orderId) }, { feature: 'orders' });
+    // BUG-13 fix: Add ?from=orders param to enable smart back navigation
+    router.push(`/orders/${orderId}?from=orders`)
   }
 
   const openTracking = (orderId: string) => {

@@ -194,6 +194,7 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
       const response = await orderControllerGetOrders({
         page: 1,
         limit: 5, // 5 most recent
+        status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED,PAID', // Exclude CANCELLED
         // Add sortBy: 'createdAt', sortOrder: 'DESC' if backend supports
       });
       
@@ -307,15 +308,22 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
 
   private mapOrderStatus(status: string): OrderStatus {
     const statusMap: Record<string, OrderStatus> = {
-      PLACED: 'placed',
-      CONFIRMED: 'confirmed',
+      PENDING: 'placed',
+      RECEIVED: 'confirmed',
       PREPARING: 'preparing',
       READY: 'ready',
       SERVED: 'served',
       COMPLETED: 'completed',
+      PAID: 'completed', // Treat PAID as completed for dashboard
       CANCELLED: 'cancelled',
     };
-    return statusMap[status] || 'placed';
+    
+    const mapped = statusMap[status];
+    if (!mapped) {
+      logger.warn(`[dashboard] Unknown order status: ${status}, defaulting to cancelled`);
+      return 'cancelled';
+    }
+    return mapped;
   }
 
   private getDateRangeForPeriod(period: ChartPeriod): { from: string; to: string; groupBy: AnalyticsControllerGetRevenueGroupBy } {

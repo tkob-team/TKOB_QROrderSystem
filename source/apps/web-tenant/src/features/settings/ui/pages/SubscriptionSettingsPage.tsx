@@ -194,40 +194,100 @@ export function SubscriptionSettingsPage() {
         {/* Usage Stats */}
         {currentUsage && (
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="border border-gray-200 rounded-lg p-4">
+            <div className={`border rounded-lg p-4 ${
+              current?.limits?.maxMenuItems !== -1 && currentUsage.menuItemsUsed >= current?.limits?.maxMenuItems
+                ? 'border-red-300 bg-red-50'
+                : currentUsage.menuItemsUsed >= (current?.limits?.maxMenuItems || 0) * 0.8
+                ? 'border-amber-300 bg-amber-50'
+                : 'border-gray-200'
+            }`}>
               <p className="text-sm text-gray-600">Menu Items</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className={`text-2xl font-bold ${
+                current?.limits?.maxMenuItems !== -1 && currentUsage.menuItemsUsed >= current?.limits?.maxMenuItems
+                  ? 'text-red-700'
+                  : 'text-gray-900'
+              }`}>
                 {currentUsage.menuItemsUsed || 0}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${
+                current?.limits?.maxMenuItems !== -1 && currentUsage.menuItemsUsed >= current?.limits?.maxMenuItems
+                  ? 'text-red-600 font-semibold'
+                  : 'text-gray-500'
+              }`}>
                 of {current?.limits?.maxMenuItems === -1 ? '∞' : current?.limits?.maxMenuItems || 0} limit
+                {current?.limits?.maxMenuItems !== -1 && currentUsage.menuItemsUsed >= current?.limits?.maxMenuItems && ' ⚠️'}
               </p>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
+            <div className={`border rounded-lg p-4 ${
+              current?.limits?.maxTables !== -1 && currentUsage.tablesUsed >= current?.limits?.maxTables
+                ? 'border-red-300 bg-red-50'
+                : currentUsage.tablesUsed >= (current?.limits?.maxTables || 0) * 0.8
+                ? 'border-amber-300 bg-amber-50'
+                : 'border-gray-200'
+            }`}>
               <p className="text-sm text-gray-600">Tables</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className={`text-2xl font-bold ${
+                current?.limits?.maxTables !== -1 && currentUsage.tablesUsed >= current?.limits?.maxTables
+                  ? 'text-red-700'
+                  : 'text-gray-900'
+              }`}>
                 {currentUsage.tablesUsed || 0}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${
+                current?.limits?.maxTables !== -1 && currentUsage.tablesUsed >= current?.limits?.maxTables
+                  ? 'text-red-600 font-semibold'
+                  : 'text-gray-500'
+              }`}>
                 of {current?.limits?.maxTables === -1 ? '∞' : current?.limits?.maxTables || 0} limit
+                {current?.limits?.maxTables !== -1 && currentUsage.tablesUsed >= current?.limits?.maxTables && ' ⚠️'}
               </p>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
+            <div className={`border rounded-lg p-4 ${
+              current?.limits?.maxStaff !== -1 && currentUsage.staffUsed >= current?.limits?.maxStaff
+                ? 'border-red-300 bg-red-50'
+                : currentUsage.staffUsed >= (current?.limits?.maxStaff || 0) * 0.8
+                ? 'border-amber-300 bg-amber-50'
+                : 'border-gray-200'
+            }`}>
               <p className="text-sm text-gray-600">Staff</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className={`text-2xl font-bold ${
+                current?.limits?.maxStaff !== -1 && currentUsage.staffUsed >= current?.limits?.maxStaff
+                  ? 'text-red-700'
+                  : 'text-gray-900'
+              }`}>
                 {currentUsage.staffUsed || 0}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${
+                current?.limits?.maxStaff !== -1 && currentUsage.staffUsed >= current?.limits?.maxStaff
+                  ? 'text-red-600 font-semibold'
+                  : 'text-gray-500'
+              }`}>
                 of {current?.limits?.maxStaff === -1 ? '∞' : current?.limits?.maxStaff || 0} limit
+                {current?.limits?.maxStaff !== -1 && currentUsage.staffUsed >= current?.limits?.maxStaff && ' ⚠️'}
               </p>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
+            <div className={`border rounded-lg p-4 ${
+              current?.limits?.maxOrdersMonth !== -1 && currentUsage.ordersThisMonth >= current?.limits?.maxOrdersMonth
+                ? 'border-red-300 bg-red-50'
+                : currentUsage.ordersThisMonth >= (current?.limits?.maxOrdersMonth || 0) * 0.8
+                ? 'border-amber-300 bg-amber-50'
+                : 'border-gray-200'
+            }`}>
               <p className="text-sm text-gray-600">Orders (this month)</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className={`text-2xl font-bold ${
+                current?.limits?.maxOrdersMonth !== -1 && currentUsage.ordersThisMonth >= current?.limits?.maxOrdersMonth
+                  ? 'text-red-700'
+                  : 'text-gray-900'
+              }`}>
                 {currentUsage.ordersThisMonth || 0}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${
+                current?.limits?.maxOrdersMonth !== -1 && currentUsage.ordersThisMonth >= current?.limits?.maxOrdersMonth
+                  ? 'text-red-600 font-semibold'
+                  : 'text-gray-500'
+              }`}>
                 of {current?.limits?.maxOrdersMonth === -1 ? '∞' : current?.limits?.maxOrdersMonth || 0} limit
+                {current?.limits?.maxOrdersMonth !== -1 && currentUsage.ordersThisMonth >= current?.limits?.maxOrdersMonth && ' ⚠️'}
               </p>
             </div>
           </div>

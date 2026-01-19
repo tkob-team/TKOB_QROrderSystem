@@ -1,7 +1,6 @@
-// Account sections
+// Account sections - backed by real API
 export { AccountProfileSection, type AccountProfileSectionProps } from './AccountProfileSection';
 export { AccountPasswordSection, type AccountPasswordSectionProps } from './AccountPasswordSection';
-export { Account2FASection, type Account2FASectionProps } from './Account2FASection';
 
 // Tenant sections
 export { TenantBasicInfoSection, type TenantBasicInfoSectionProps } from './TenantBasicInfoSection';

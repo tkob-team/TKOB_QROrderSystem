@@ -7,12 +7,31 @@ import type { SortOption } from '../../model/types';
 import { CategorySidebar, MenuToolbar, MenuItemGrid } from '../components';
 import { CategoryModal, DeleteConfirmModal, MenuItemModal } from '../modals';
 import { useMenuManagementController } from '../../hooks/useMenuManagementController';
+import { PlanLimitWarning } from '@/shared/components/PlanLimitWarning';
+import { useSubscriptionController } from '@/features/settings/hooks';
 
 export function MenuManagementPage() {
   const controller = useMenuManagementController();
+  const { currentSubscription } = useSubscriptionController();
+
+  const currentUsage = currentSubscription.data?.usage;
+  const limits = currentSubscription.data?.limits;
+  const planName = currentSubscription.data?.subscription?.plan?.name || 'Free';
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-primary">
+      {/* Plan Limit Warning for Menu Items */}
+      {currentUsage && limits && limits.maxMenuItems !== -1 && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40 max-w-2xl w-full px-4">
+          <PlanLimitWarning
+            currentCount={currentUsage.menuItemsUsed || 0}
+            maxAllowed={limits.maxMenuItems}
+            resourceType="menu_items"
+            planName={planName}
+            variant="inline"
+          />
+        </div>
+      )}
       <CategorySidebar
         categories={controller.categoriesWithCount as any}
         selectedCategory={controller.selectedCategory}
@@ -177,6 +196,18 @@ export function MenuManagementPage() {
             <span className="font-medium">{controller.toastMessage}</span>
           </div>
         </div>
+      )}
+
+      {/* Subscription Limit Modal */}
+      {controller.showSubscriptionLimitModal && (
+        <PlanLimitWarning
+          currentCount={currentUsage?.menuItemsUsed || 0}
+          maxAllowed={limits?.maxMenuItems || 10}
+          resourceType="menu_items"
+          planName={planName}
+          variant="modal"
+          onDismiss={controller.handleCloseSubscriptionModal}
+        />
       )}
     </div>
   );

@@ -41,6 +41,9 @@ export function useStaffController() {
   // Toast state
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  
+  // Subscription limit modal state
+  const [showSubscriptionLimitModal, setShowSubscriptionLimitModal] = useState(false);
 
   // Data queries
   const staffQuery = useStaffMembers();
@@ -96,11 +99,31 @@ export function useStaffController() {
         setShowInviteModal(false);
         staffQuery.refetch();
         invitationsQuery.refetch();
-      } catch (error) {
+      } catch (error: any) {
+        const errorCode = error?.response?.data?.error?.code;
+        const detailsCode = error?.response?.data?.error?.details?.code;
+        const errorMessage = error?.response?.data?.error?.message || (error instanceof Error ? error.message : 'Unknown error');
+        
         logger.error('[staff] SEND_INVITE_ERROR', {
           role: selectedRole,
-          message: error instanceof Error ? error.message : 'Unknown error',
+          code: errorCode,
+          detailsCode,
+          message: errorMessage,
         });
+        
+        // Check if it's a subscription limit error (can be in top-level code or nested details.code)
+        const isSubscriptionLimit = 
+          errorCode === 'SUBSCRIPTION_LIMIT_EXCEEDED' || 
+          detailsCode === 'SUBSCRIPTION_LIMIT_EXCEEDED' ||
+          (errorCode === 'AUTH_FORBIDDEN' && detailsCode === 'SUBSCRIPTION_LIMIT_EXCEEDED');
+        
+        if (isSubscriptionLimit) {
+          logger.warn('[staff] SUBSCRIPTION_LIMIT_EXCEEDED', { errorCode, detailsCode, errorMessage });
+          setShowInviteModal(false); // Close the invite modal
+          setShowSubscriptionLimitModal(true);
+          return;
+        }
+        
         showSuccessToast('Failed to send invitation');
       }
     }
@@ -202,6 +225,7 @@ export function useStaffController() {
       editForm,
       showToast,
       toastMessage,
+      showSubscriptionLimitModal,
     },
     handlers: {
       setActiveTab,
@@ -225,5 +249,7 @@ export function useStaffController() {
       invitationsQuery,
     },
     isLoading,
+    showSubscriptionLimitModal,
+    handleCloseSubscriptionModal: () => setShowSubscriptionLimitModal(false),
   };
 }

@@ -2,14 +2,13 @@
 
 import React from 'react';
 import { useAccountSettingsController } from '../../hooks';
-import {
-  AccountProfileSection,
-  AccountPasswordSection,
-  Account2FASection,
-} from '../components/sections';
+import { AccountPasswordSection, AccountProfileSection } from '../components/sections';
 
-
-
+/**
+ * Account Settings Page
+ * - Profile: Update tenant/restaurant name (backed by real API)
+ * - Password: Change password (backed by real API)
+ */
 export function AccountSettingsPage() {
   const controller = useAccountSettingsController();
 
@@ -18,7 +17,7 @@ export function AccountSettingsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-text-primary">Account Settings</h1>
         <p className="text-text-secondary text-sm">
-          Manage your profile, password, and security preferences
+          Manage your restaurant profile and account security
         </p>
       </div>
 
@@ -46,48 +45,35 @@ export function AccountSettingsPage() {
         </div>
       </div>
 
-      {/* Profile Tab */}
+      {/* Profile Tab - Tenant Name */}
       {controller.activeTab === 'profile' && (
         <AccountProfileSection
-          displayName={controller.displayName}
+          tenantName={controller.tenantName}
           email={controller.email}
-          avatarColor={controller.avatarColor}
-          avatarInitials={controller.avatarInitials}
           isSaving={controller.isSavingProfile}
-          onDisplayNameChange={controller.setDisplayName}
-          onAvatarColorChange={controller.setAvatarColor}
+          onTenantNameChange={controller.setTenantName}
           onSave={controller.handleSaveProfile}
         />
       )}
 
-      {/* Security Tab */}
+      {/* Security Tab - Password */}
       {controller.activeTab === 'security' && (
-        <div className="flex flex-col gap-6">
-          <AccountPasswordSection
-            currentPassword={controller.currentPassword}
-            newPassword={controller.newPassword}
-            confirmPassword={controller.confirmPassword}
-            showCurrent={controller.showCurrent}
-            showNew={controller.showNew}
-            showConfirm={controller.showConfirm}
-            isSaving={controller.isSavingPassword}
-            onCurrentPasswordChange={controller.setCurrentPassword}
-            onNewPasswordChange={controller.setNewPassword}
-            onConfirmPasswordChange={controller.setConfirmPassword}
-            onShowCurrentToggle={() => controller.setShowCurrent(!controller.showCurrent)}
-            onShowNewToggle={() => controller.setShowNew(!controller.showNew)}
-            onShowConfirmToggle={() => controller.setShowConfirm(!controller.showConfirm)}
-            onSave={controller.handleSavePassword}
-          />
-
-          <Account2FASection
-            verificationCode={controller.verificationCode}
-            twoFactorEnabled={controller.twoFactorEnabled}
-            isVerifying={controller.isVerifying}
-            onVerificationCodeChange={controller.setVerificationCode}
-            onEnable={controller.handleEnable2FA}
-          />
-        </div>
+        <AccountPasswordSection
+          currentPassword={controller.currentPassword}
+          newPassword={controller.newPassword}
+          confirmPassword={controller.confirmPassword}
+          showCurrent={controller.showCurrent}
+          showNew={controller.showNew}
+          showConfirm={controller.showConfirm}
+          isSaving={controller.isSavingPassword}
+          onCurrentPasswordChange={controller.setCurrentPassword}
+          onNewPasswordChange={controller.setNewPassword}
+          onConfirmPasswordChange={controller.setConfirmPassword}
+          onShowCurrentToggle={() => controller.setShowCurrent(!controller.showCurrent)}
+          onShowNewToggle={() => controller.setShowNew(!controller.showNew)}
+          onShowConfirmToggle={() => controller.setShowConfirm(!controller.showConfirm)}
+          onSave={controller.handleSavePassword}
+        />
       )}
     </div>
   );

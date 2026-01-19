@@ -1,11 +1,14 @@
 import { logger } from '@/shared/utils/logger';
 import type { UserRole as NavigationUserRole } from '@/shared/config';
-import type { AuthUserResponseDto } from '@/services/generated/models';
-import type { User } from './types';
+import type { AuthUserResponseDto, AuthTenantResponseDto } from '@/services/generated/models';
+import type { User, Tenant } from './types';
 
 const VALID_BACKEND_ROLES = ['owner', 'kitchen', 'waiter', 'service'];
 
-export function mapBackendUserToDomainUser(currentUserData: AuthUserResponseDto | null | undefined): User | null {
+export function mapBackendUserToDomainUser(
+  currentUserData: AuthUserResponseDto | null | undefined,
+  tenantData?: AuthTenantResponseDto | null
+): User | null {
   if (!currentUserData) return null;
 
   const hasRequiredFields = Boolean(
@@ -41,11 +44,21 @@ export function mapBackendUserToDomainUser(currentUserData: AuthUserResponseDto 
     ? 'kds'
     : 'waiter') as NavigationUserRole;
 
+  const tenant: Tenant | undefined = tenantData
+    ? {
+        id: tenantData.id,
+        name: tenantData.name,
+        slug: tenantData.slug,
+        status: tenantData.status,
+      }
+    : undefined;
+
   return {
     id: currentUserData.id,
     email: currentUserData.email,
     name: currentUserData.fullName,
     role: mappedRole as User['role'],
     tenantId: currentUserData.tenantId,
+    tenant,
   } satisfies User;
 }

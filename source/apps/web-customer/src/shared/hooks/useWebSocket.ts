@@ -2,16 +2,17 @@
  * useWebSocket - React hook for Socket.IO connection management
  * 
  * Manages connection lifecycle and provides event subscription utilities.
+ * Also invalidates React Query cache on real-time events for immediate UI updates.
  */
 
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Socket } from 'socket.io-client';
 import {
   getSocket,
   disconnectSocket,
-  isSocketConnected,
   SocketEvents,
   type OrderStatusChangedPayload,
   type PaymentCompletedPayload,
@@ -76,7 +77,6 @@ interface UseWebSocketReturn {
  *   tableId: 'table-456',
  *   onOrderStatusChanged: (data) => {
  *     console.log('Order status changed:', data.order.status);
- *     queryClient.invalidateQueries(['orderTracking', data.order.id]);
  *   },
  * });
  * ```
@@ -90,6 +90,7 @@ export function useWebSocket({
 }: UseWebSocketOptions): UseWebSocketReturn {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const socketRef = useRef<Socket | null>(null);
+  const queryClient = useQueryClient();
   const callbacksRef = useRef({ onOrderStatusChanged, onPaymentCompleted });
 
   // Keep callbacks ref updated
@@ -122,14 +123,25 @@ export function useWebSocket({
     // Business events
     socket.on(SocketEvents.ORDER_STATUS_CHANGED, (payload: OrderStatusChangedPayload) => {
       console.log('[useWebSocket] Order status changed:', payload.order.status);
+      
+      // Invalidate order tracking queries for real-time UI updates
+      queryClient.invalidateQueries({ queryKey: ['orderTracking', payload.order.id] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      
       callbacksRef.current.onOrderStatusChanged?.(payload);
     });
 
     socket.on(SocketEvents.PAYMENT_COMPLETED, (payload: PaymentCompletedPayload) => {
       console.log('[useWebSocket] Payment completed:', payload.orderId);
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['orderTracking', payload.orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      
       callbacksRef.current.onPaymentCompleted?.(payload);
     });
-  }, []);
+  }, [queryClient]);
 
   const connect = useCallback(() => {
     if (!tenantId || !tableId) {

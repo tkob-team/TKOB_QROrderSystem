@@ -3,9 +3,9 @@
 import React from 'react';
 import { useTenantProfileController } from '../../hooks';
 import {
-  TenantBasicInfoSection,
   TenantOpeningHoursSection,
   TenantPaymentsSection,
+  TenantPromotionsSection,
 } from '../components/sections';
 import { SubscriptionSettingsPage } from './SubscriptionSettingsPage';
 import type { TenantProfileTab } from '../../model';
@@ -15,9 +15,9 @@ export function TenantProfilePage() {
   const controller = useTenantProfileController();
 
   const tabLabels: Record<TenantProfileTab, string> = {
-    profile: 'Profile',
     hours: 'Opening Hours',
     payments: 'Payments',
+    promotions: 'Promotions',
     subscription: 'Subscription',
   };
 
@@ -31,7 +31,7 @@ export function TenantProfilePage() {
       {/* Tabs */}
       <div className="border-b border-default">
         <div className="flex gap-2 overflow-x-auto">
-          {(['profile', 'hours', 'payments', 'subscription'] as TenantProfileTab[]).map((tab) => (
+          {(['hours', 'payments', 'promotions', 'subscription'] as TenantProfileTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => controller.setActiveTab(tab)}
@@ -45,27 +45,6 @@ export function TenantProfilePage() {
           ))}
         </div>
       </div>
-
-      {/* Profile Tab */}
-      {controller.activeTab === 'profile' && (
-        <div className="flex flex-col gap-6">
-          <TenantBasicInfoSection
-            restaurantName={controller.restaurantName}
-            urlSlug={controller.urlSlug}
-            address={controller.address}
-            phone={controller.phone}
-            email={controller.email}
-            description={controller.description}
-            onRestaurantNameChange={controller.setRestaurantName}
-            onUrlSlugChange={controller.setUrlSlug}
-            onAddressChange={controller.setAddress}
-            onPhoneChange={controller.setPhone}
-            onEmailChange={controller.setEmail}
-            onDescriptionChange={controller.setDescription}
-            onSave={controller.handleSaveProfile}
-          />
-        </div>
-      )}
 
       {/* Hours Tab */}
       {controller.activeTab === 'hours' && (
@@ -82,6 +61,11 @@ export function TenantProfilePage() {
       {/* Payments Tab */}
       {controller.activeTab === 'payments' && (
         <TenantPaymentsSection />
+      )}
+
+      {/* Promotions Tab */}
+      {controller.activeTab === 'promotions' && (
+        <TenantPromotionsSection />
       )}
 
       {/* Subscription Tab */}

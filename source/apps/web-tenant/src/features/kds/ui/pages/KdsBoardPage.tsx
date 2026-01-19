@@ -7,6 +7,8 @@ import { useKdsController } from '../../hooks';
 import { useKdsWebSocket } from '../../hooks/useKdsWebSocket';
 import { useKdsAutoRefresh } from '../../hooks/useKdsAutoRefresh';
 import { initializeAudio } from '@/lib/websocket';
+import { playNotificationSound } from '@/shared/utils/soundNotifications';
+import { OVERDUE_THRESHOLD } from '../../model/constants';
 
 // Import UI components
 import { KdsHeaderSection as KdsHeaderBar } from '../components/sections/KdsHeaderSection';
@@ -33,35 +35,40 @@ export function KdsBoardPage({
   // ========== CONTROLLER ==========
   const controller = useKdsController({ showKdsProfile, enableKitchenServe });
 
-  // ========== INITIALIZE AUDIO ON MOUNT (user gesture satisfied by page navigation) ==========
+  // ========== INITIALIZE AUDIO ON FIRST USER CLICK (required by browser autoplay policy) ==========
   useEffect(() => {
-    // Initialize audio context on mount (page navigation counts as user gesture)
-    initializeAudio()
-      .then((success) => {
-        if (success) {
-          console.log('[kds] Audio initialized successfully');
-        } else {
-          console.warn('[kds] Audio initialization failed, sounds may not play');
+    let initialized = false;
+    
+    const handleFirstClick = async () => {
+      if (!initialized) {
+        initialized = true;
+        try {
+          const success = await initializeAudio();
+          if (success) {
+            console.log('[kds] Audio initialized on user interaction');
+          } else {
+            console.warn('[kds] Audio init failed');
+          }
+        } catch (err) {
+          console.error('[kds] Audio init error:', err);
         }
-      })
-      .catch((err) => {
-        console.error('[kds] Audio initialization error:', err);
-      });
+        // Remove listener after first successful init
+        document.removeEventListener('click', handleFirstClick);
+      }
+    };
+    
+    // Listen for first click anywhere on page
+    document.addEventListener('click', handleFirstClick, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', handleFirstClick);
+    };
   }, []);
 
   // ========== RE-INITIALIZE AUDIO WHEN SOUND IS ENABLED ==========
   useEffect(() => {
     if (controller.soundEnabled) {
-      // User just enabled sound - ensure audio context is ready
-      initializeAudio()
-        .then((success) => {
-          if (success) {
-            console.log('[kds] Audio re-initialized on sound enable');
-          }
-        })
-        .catch((err) => {
-          console.error('[kds] Audio re-initialization error:', err);
-        });
+      initializeAudio().catch(console.error);
     }
   }, [controller.soundEnabled]);
 
@@ -94,6 +101,28 @@ export function KdsBoardPage({
     intervalMs: 15000, // 15 seconds fallback
     wsConnected: isConnected,
   });
+
+  // ========== OVERDUE NOTIFICATION CHECK ==========
+  useEffect(() => {
+    if (!controller.soundEnabled) return;
+
+    // Check for overdue orders every 30 seconds
+    const checkOverdueInterval = setInterval(() => {
+      const overdueOrders = controller.orders.filter(order => 
+        order.isOverdue && 
+        order.status === 'preparing' && // Only alert for orders currently being prepared
+        order.time >= OVERDUE_THRESHOLD
+      );
+
+      if (overdueOrders.length > 0) {
+        // Play urgent alert for overdue orders
+        playNotificationSound('kds-overdue', 2);
+        console.log(`[kds] ${overdueOrders.length} overdue orders detected`);
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(checkOverdueInterval);
+  }, [controller.orders, controller.soundEnabled]);
 
   // Visual indicator for WebSocket connection status
   useEffect(() => {
@@ -133,14 +162,10 @@ export function KdsBoardPage({
       {/* Header */}
       <KdsHeaderBar
         currentTime={controller.currentTime}
-        soundEnabled={controller.soundEnabled}
-        autoRefresh={controller.autoRefresh}
         showKdsProfile={controller.showKdsProfile}
         isUserMenuOpen={controller.isUserMenuOpen}
         userMenuRef={controller.userMenuRef}
         connectionStatus={status}
-        onToggleSound={controller.handleToggleSound}
-        onToggleAutoRefresh={controller.handleToggleAutoRefresh}
         onToggleUserMenu={controller.handleToggleUserMenu}
         onLogout={controller.handleLogout}
       />

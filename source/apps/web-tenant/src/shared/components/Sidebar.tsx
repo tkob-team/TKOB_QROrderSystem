@@ -31,6 +31,7 @@ export interface SidebarProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   userRole?: string;
+  tenantName?: string;
   isMobileView?: boolean;
 }
 
@@ -48,6 +49,7 @@ export function Sidebar({
   collapsed = false,
   onToggleCollapse,
   userRole = 'Owner',
+  tenantName = 'TKOB',
   isMobileView = false,
 }: SidebarProps) {
   // Memoize greeting to prevent unnecessary recalculations
@@ -100,7 +102,7 @@ export function Sidebar({
   const bottomMenuItems = [
     { id: 'analytics', label: 'Reports', icon: BarChart3 },
     { id: 'staff', label: 'Staff', icon: Users },
-    { id: 'tenant-profile', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   // Render menu item
@@ -164,7 +166,7 @@ export function Sidebar({
             </div>
             <div className="flex flex-col">
               <span className="font-display text-lg font-semibold text-gray-900 leading-tight">
-                TKOB
+                {tenantName}
               </span>
               <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                 Restaurant

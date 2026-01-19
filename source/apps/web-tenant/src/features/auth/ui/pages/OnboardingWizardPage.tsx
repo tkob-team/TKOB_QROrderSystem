@@ -49,9 +49,6 @@ const INITIAL_FORM_DATA: FormData = {
   description: '',
   phone: '',
   address: '',
-  logoUrl: '',
-  language: 'en',
-  theme: 'emerald',
   openingHours: {
     monday: { enabled: true, openTime: '09:00', closeTime: '22:00' },
     tuesday: { enabled: true, openTime: '09:00', closeTime: '22:00' },
@@ -78,6 +75,18 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
 
   const stepContentRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+
+  // Pre-fill tenant name and slug from auth context (already entered in signup)
+  useEffect(() => {
+    const tenant = controller.currentUserQuery.data?.tenant;
+    if (tenant) {
+      setFormData(prev => ({
+        ...prev,
+        name: tenant.name || prev.name,
+        slug: tenant.slug || prev.slug,
+      }));
+    }
+  }, [controller.currentUserQuery.data?.tenant]);
 
   useEffect(() => {
     if (headerRef.current) fadeInUp(headerRef.current, 0);
@@ -126,6 +135,16 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
       return;
     }
 
+    // Validate phone format if provided
+    if (currentStep === 1 && formData.phone.trim()) {
+      const cleaned = formData.phone.replace(/[\s\-()]/g, '');
+      const phoneRegex = /^\+?[0-9]{10,15}$/;
+      if (!phoneRegex.test(cleaned)) {
+        setError('Invalid phone number format. Please use 10-15 digits.');
+        return;
+      }
+    }
+
     if (currentStep === 1 && !formData.slug && formData.name) {
       setFormData({ ...formData, slug: generateSlug(formData.name) });
     }
@@ -157,7 +176,6 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
           description: formData.description || undefined,
           phone: formData.phone || undefined,
           address: formData.address || undefined,
-          logoUrl: formData.logoUrl || undefined,
         });
 
         // Step 2: Update opening hours
@@ -189,10 +207,6 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
       setCurrentStep(currentStep - 1);
       setError(null);
     }
-  };
-
-  const handleLogoUpload = () => {
-    setFormData({ ...formData, logoUrl: 'https://via.placeholder.com/200x200/10B981/FFFFFF?text=Logo' });
   };
 
   const handleFieldChange = (field: StringField, value: string) => {
@@ -248,7 +262,6 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
               <WorkspaceSetupSection
                 formData={formData}
                 onFieldChange={(field, value) => handleFieldChange(field, value)}
-                onLogoUpload={handleLogoUpload}
               />
             )}
             {currentStep === 2 && (

@@ -11,9 +11,16 @@ import { TablesHeader } from '../sections/TablesHeader';
 import { TablesList } from '../sections/TablesList';
 import { selectFormModalProps, selectHeaderProps, selectQrCodeActionsProps, selectTablesListProps } from '../../domain/selectors';
 import { useTablesController } from '../../data/useTablesController';
+import { PlanLimitWarning } from '@/shared/components/PlanLimitWarning';
+import { useSubscriptionController } from '@/features/settings/hooks';
 
 export function TablesPage() {
   const controller = useTablesController();
+  const { currentSubscription } = useSubscriptionController();
+
+  const currentUsage = currentSubscription.data?.usage;
+  const limits = currentSubscription.data?.limits;
+  const planName = currentSubscription.data?.subscription?.plan?.name || 'Free';
 
   if (controller.error) {
     return (
@@ -35,6 +42,18 @@ export function TablesPage() {
 
   return (
     <>
+      {/* Plan Limit Warning for Tables */}
+      {currentUsage && limits && limits.maxTables !== -1 && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40 max-w-2xl w-full px-4">
+          <PlanLimitWarning
+            currentCount={currentUsage.tablesUsed || 0}
+            maxAllowed={limits.maxTables}
+            resourceType="tables"
+            planName={planName}
+            variant="inline"
+          />
+        </div>
+      )}
       <div className="mx-auto flex flex-col gap-6 px-6 pt-6 pb-5" style={{ maxWidth: '1600px' }}>
         <TablesHeader {...headerProps} />
         <TablesList {...listProps} />
@@ -45,6 +64,18 @@ export function TablesPage() {
 
       {controller.toast.show && (
         <Toast message={controller.toast.message} type={controller.toast.type} onClose={controller.toast.onClose} />
+      )}
+
+      {/* Subscription Limit Modal */}
+      {controller.subscription.showLimitModal && (
+        <PlanLimitWarning
+          currentCount={currentUsage?.tablesUsed || 0}
+          maxAllowed={limits?.maxTables || 0}
+          resourceType="tables"
+          planName={planName}
+          variant="modal"
+          onDismiss={controller.subscription.closeLimitModal}
+        />
       )}
     </>
   );

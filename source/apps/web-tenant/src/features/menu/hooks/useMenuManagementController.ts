@@ -185,5 +185,7 @@ export function useMenuManagementController() {
     handleDeleteCategory: mutationsController.handleDeleteCategory,
     handleToggleAvailability: mutationsController.handleToggleAvailability,
     setItemFormData: mutationsController.setItemFormData,
+    showSubscriptionLimitModal: mutationsController.showSubscriptionLimitModal,
+    handleCloseSubscriptionModal: mutationsController.handleCloseSubscriptionModal,
   };
 }

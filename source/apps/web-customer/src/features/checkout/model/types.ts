@@ -9,6 +9,11 @@ export type CheckoutFormData = {
   name: string
   notes: string
   paymentMethod: PaymentMethod
+  // Voucher/discount fields
+  discountCode?: string | null
+  discountApplied?: boolean
+  discountAmount?: number
+  promotionId?: string | null
 }
 
 export type CheckoutState = CheckoutFormData & {

@@ -16,11 +16,17 @@ function mapOrderStatus(apiStatus: ApiOrderStatus): OrderStatus {
     PREPARING: 'preparing',
     READY: 'ready',
     SERVED: 'served',
-    COMPLETED: 'completed',
-    PAID: 'completed', // Orders that have been paid (after close table)
+    COMPLETED: 'completed', // Ready for bill/payment
+    PAID: 'completed', // Table closed and paid - should not appear in active orders
     CANCELLED: 'cancelled',
   }
-  return statusMap[apiStatus] || 'placed'
+  
+  const mapped = statusMap[apiStatus];
+  if (!mapped) {
+    console.error(`[orders/mapper] Unknown status from API: ${apiStatus}`);
+    return 'cancelled'; // Treat unknown statuses as cancelled instead of placed
+  }
+  return mapped;
 }
 
 /**

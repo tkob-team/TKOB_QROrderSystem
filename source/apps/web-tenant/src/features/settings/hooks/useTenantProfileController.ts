@@ -13,7 +13,7 @@ import { samplePayload } from '@/shared/utils/dataInspector';
 import type { TenantProfileTab, DayKey, TenantFullProfileState } from '../model/types';
 
 const DEFAULT_STATE: TenantFullProfileState = {
-  activeTab: 'profile',
+  activeTab: 'hours',
   restaurantName: 'TKOB Restaurant',
   urlSlug: 'tkob-restaurant',
   address: '123 Main Street, Downtown',

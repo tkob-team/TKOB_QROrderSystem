@@ -9,6 +9,7 @@ import { StaffMemberGrid } from '../components/sections/StaffMemberGrid';
 import { InviteStaffModal } from '../components/modals/InviteStaffModal';
 import { EditStaffModal } from '../components/modals/EditStaffModal';
 import { StaffToast } from '../components/modals/StaffToast';
+import { PlanLimitWarning } from '@/shared/components/PlanLimitWarning';
 
 export function StaffPage() {
   const staff = useStaffController();
@@ -23,6 +24,7 @@ export function StaffPage() {
     editForm,
     showToast,
     toastMessage,
+    showSubscriptionLimitModal,
   } = staff.state;
 
   const {
@@ -88,6 +90,12 @@ export function StaffPage() {
         getInitials={getInitials}
         onEditMember={handleOpenEditModal}
         onInviteClick={handleOpenInviteModal}
+        onToggleStatus={(member) => {
+          // Set selected member and trigger revoke/remove
+          staff.handlers.setSelectedMember(member);
+          // Use setTimeout to ensure state is set before action
+          setTimeout(() => staff.handlers.handleRevokeInvite(), 0);
+        }}
       />
 
       <InviteStaffModal
@@ -114,6 +122,18 @@ export function StaffPage() {
       />
 
       <StaffToast show={showToast} message={toastMessage} />
+
+      {/* Subscription Limit Modal */}
+      {showSubscriptionLimitModal && (
+        <PlanLimitWarning
+          currentCount={activeMembers.length}
+          maxAllowed={1} // TODO: Get from subscription limits
+          resourceType="staff_members"
+          planName="Current Plan"
+          variant="modal"
+          onDismiss={staff.handleCloseSubscriptionModal}
+        />
+      )}
     </div>
   );
 }

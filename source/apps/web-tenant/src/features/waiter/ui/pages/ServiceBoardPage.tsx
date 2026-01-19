@@ -5,9 +5,10 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toast } from '@/shared/components';
 import { useWaiterController } from '../../hooks';
+import { initializeAudio } from '@/lib/websocket';
 import {
   ServiceHeaderMobile,
   ServiceHeaderDesktop,
@@ -25,28 +26,44 @@ export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps)
   // All state and logic managed by controller
   const { state, actions } = useWaiterController();
 
+  // ========== INITIALIZE AUDIO ON FIRST USER CLICK (required by browser autoplay policy) ==========
+  useEffect(() => {
+    let initialized = false;
+    
+    const handleFirstClick = async () => {
+      if (!initialized) {
+        initialized = true;
+        try {
+          const success = await initializeAudio();
+          if (success) {
+            console.log('[waiter] Audio initialized on user interaction');
+          }
+        } catch (err) {
+          console.error('[waiter] Audio init error:', err);
+        }
+        document.removeEventListener('click', handleFirstClick);
+      }
+    };
+    
+    document.addEventListener('click', handleFirstClick, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', handleFirstClick);
+    };
+  }, []);
+
   // Render
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <ServiceHeaderMobile
-          soundEnabled={state.soundEnabled}
-          autoRefresh={state.autoRefresh}
-          onToggleSound={actions.toggleSound}
-          onToggleAutoRefresh={actions.toggleAutoRefresh}
-          onRefresh={actions.refresh}
           onLogout={actions.handleLogout}
         />
 
         {/* Desktop Header */}
         <ServiceHeaderDesktop
-          soundEnabled={state.soundEnabled}
-          autoRefresh={state.autoRefresh}
           userRole={userRole}
-          onToggleSound={actions.toggleSound}
-          onToggleAutoRefresh={actions.toggleAutoRefresh}
-          onRefresh={actions.refresh}
           onManualOrder={actions.manualOrder}
           onLogout={actions.handleLogout}
         />

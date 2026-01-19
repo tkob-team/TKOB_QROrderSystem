@@ -111,10 +111,12 @@ export function useTableGridController(): UseTableGridControllerReturn {
   const [filterStatus, setFilterStatus] = useState<TableViewStatus | 'all'>('all');
 
   // Fetch tables with orders
+  // Note: Real-time updates are handled by useWaiterWebSocket which invalidates this query
   const { data: tables = [], isLoading, error, refetch } = useQuery({
     queryKey: ['tables', 'overview'],
     queryFn: fetchTablesWithOrders,
-    refetchInterval: 30000, // Refresh every 30s
+    staleTime: 30000, // Consider stale after 30s
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   // Clear table mutation

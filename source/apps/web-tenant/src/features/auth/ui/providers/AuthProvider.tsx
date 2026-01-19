@@ -90,8 +90,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sync user state with React Query data
   useEffect(() => {
-    // getCurrentUser returns { user, tenant }, so extract user field
-    const mappedUser = mapBackendUserToDomainUser(currentUserData?.user);
+    // getCurrentUser returns { user, tenant }, so extract both fields
+    const mappedUser = mapBackendUserToDomainUser(currentUserData?.user, currentUserData?.tenant);
 
     if (hasToken && mappedUser) {
       setUser(mappedUser);

@@ -48,12 +48,27 @@ function createAPIClient(): AxiosInstance {
     (error: AxiosError) => {
       // Handle 401 - Session expired or invalid
       if (error.response?.status === 401) {
+        const url = error.config?.url || '';
+        
+        // BUG-14 Fix: Don't redirect for /auth/me - customers use session cookies
+        // not JWT tokens, so 401 is expected. Profile page handles this gracefully.
+        const skipRedirectPaths = ['/auth/me', '/auth/profile', '/auth/login'];
+        const shouldSkipRedirect = skipRedirectPaths.some(path => url.includes(path));
+        
+        if (shouldSkipRedirect) {
+          // Just throw the error, let the calling code handle it
+          const customError = new NetworkError('Unauthorized');
+          (customError as any).status = 401;
+          throw customError;
+        }
+        
         logError('data', 'Session expired or invalid - redirecting to invalid-qr', null, { feature: 'api' });
         if (typeof window !== 'undefined') {
           window.location.href = '/invalid-qr?reason=session-expired'
         }
         throw new NetworkError('Session expired. Please scan QR code again.')
       }
+
       
       // Transform errors to custom error classes
       if (error.response) {

@@ -21,6 +21,7 @@ import { logger } from '@/shared/utils/logger';
 import { orderControllerUpdateOrderStatus } from '@/services/generated/orders/orders';
 import { api as axiosInstance } from '@/services/axios';
 import type { UpdateOrderStatusDtoStatus } from '@/services/generated/models';
+import { useWaiterWebSocket } from './useWaiterWebSocket';
 
 interface WaiterState {
   // Data
@@ -31,8 +32,9 @@ interface WaiterState {
   // UI State
   activeTab: OrderStatus;
   expandedOrders: Set<string>;
-  soundEnabled: boolean;
-  autoRefresh: boolean;
+  
+  // WebSocket
+  isConnected: boolean;
   
   // Derived
   currentOrders: ServiceOrder[];
@@ -60,8 +62,6 @@ interface WaiterActions {
   toggleOrderExpanded: (orderId: string) => void;
   
   // UI actions
-  toggleSound: () => void;
-  toggleAutoRefresh: () => void;
   refresh: () => void;
   manualOrder: () => void;
   closeToast: () => void;
@@ -76,10 +76,18 @@ export interface UseWaiterControllerReturn {
 export function useWaiterController(): UseWaiterControllerReturn {
   // Router and Auth
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   
   // Data from query hook
   const { data: fetchedOrders = [], isLoading, error, refetch } = useServiceOrders();
+  
+  // WebSocket for real-time updates
+  const { isConnected } = useWaiterWebSocket({
+    tenantId: user?.tenantId || '',
+    soundEnabled: true, // Always enabled
+    onNewOrder: () => refetch(),
+    onOrderStatusChanged: () => refetch(),
+  });
   
   // Local state for orders (for optimistic updates)
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
@@ -87,8 +95,6 @@ export function useWaiterController(): UseWaiterControllerReturn {
   // UI state
   const [activeTab, setActiveTab] = useState<OrderStatus>('ready');
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -97,16 +103,7 @@ export function useWaiterController(): UseWaiterControllerReturn {
     setOrders(fetchedOrders);
   }, [fetchedOrders]);
 
-  // Auto refresh - reduced to 2s for more responsive updates
-  useEffect(() => {
-    if (!autoRefresh) return;
 
-    const refreshInterval = setInterval(() => {
-      refetch();
-    }, 2000); // 2 seconds for faster realtime feel
-
-    return () => clearInterval(refreshInterval);
-  }, [autoRefresh, refetch]);
 
   // Derived values
   const getOrdersByStatus = useCallback((status: OrderStatus) => {
@@ -535,8 +532,7 @@ export function useWaiterController(): UseWaiterControllerReturn {
       });
     }, []),
     
-    toggleSound: useCallback(() => setSoundEnabled(prev => !prev), []),
-    toggleAutoRefresh: useCallback(() => setAutoRefresh(prev => !prev), []),
+
     
     refresh: useCallback(() => {
         logger.info('[waiter] REFRESH_ACTION', { trigger: 'manual' });
@@ -562,8 +558,7 @@ export function useWaiterController(): UseWaiterControllerReturn {
     error,
     activeTab,
     expandedOrders,
-    soundEnabled,
-    autoRefresh,
+    isConnected,
     currentOrders,
     ordersByTable, // Grouped orders for completed tab
     tabCounts,

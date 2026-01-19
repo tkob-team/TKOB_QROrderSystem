@@ -21,7 +21,7 @@ export const promotionsApi = {
     includeExpired?: boolean;
   }): Promise<PromotionListResponse> {
     const response = await api.get('/api/v1/admin/promotions', { params });
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -29,7 +29,7 @@ export const promotionsApi = {
    */
   async getPromotion(id: string): Promise<Promotion> {
     const response = await api.get(`/api/v1/admin/promotions/${id}`);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -37,7 +37,7 @@ export const promotionsApi = {
    */
   async createPromotion(data: CreatePromotionInput): Promise<Promotion> {
     const response = await api.post('/api/v1/admin/promotions', data);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -45,7 +45,7 @@ export const promotionsApi = {
    */
   async updatePromotion(id: string, data: UpdatePromotionInput): Promise<Promotion> {
     const response = await api.put(`/api/v1/admin/promotions/${id}`, data);
-    return response.data;
+    return response.data.data;
   },
 
   /**

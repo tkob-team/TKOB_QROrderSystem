@@ -221,6 +221,34 @@ export class ApiAuthAdapter implements IAuthAdapter {
     }
   }
 
+  async verifyResetToken(token: string): Promise<{ valid: boolean; email?: string; code?: string }> {
+    logger.info('[auth] VERIFY_RESET_TOKEN_ATTEMPT');
+
+    try {
+      const response = await customInstance<any>({
+        url: this.apiUrl + '/api/v1/auth/verify-reset-token',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { token },
+      });
+
+      logger.info('[auth] VERIFY_RESET_TOKEN_SUCCESS', { valid: response?.valid });
+
+      return {
+        valid: response?.valid || false,
+        email: response?.email,
+      };
+    } catch (error: unknown) {
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] VERIFY_RESET_TOKEN_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+
+      // Return invalid if API fails
+      return {
+        valid: false,
+      };
+    }
+  }
+
   async verifyOtp(data: RegisterConfirmData): Promise<OtpVerificationResponse> {
     logger.debug('[auth] VERIFY_OTP_ATTEMPT');
 
@@ -476,6 +504,78 @@ export class ApiAuthAdapter implements IAuthAdapter {
       };
     } catch (error: unknown) {
       this.handleError(error, 'GET_CURRENT_USER', 'Failed to get user');
+    }
+  }
+
+  /**
+   * Change password for authenticated user
+   */
+  async changePassword(data: { currentPassword: string; newPassword: string }): Promise<{ success: boolean; message?: string }> {
+    logger.debug('[auth] CHANGE_PASSWORD_ATTEMPT');
+
+    try {
+      await customInstance({
+        url: `${this.apiUrl}/api/v1/auth/change-password`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        },
+      });
+
+      logger.info('[auth] CHANGE_PASSWORD_SUCCESS');
+      return { success: true };
+    } catch (error: unknown) {
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] CHANGE_PASSWORD_ERROR', { 
+        code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+        message: errorMessage 
+      });
+      
+      return { 
+        success: false, 
+        message: errorMessage 
+      };
+    }
+  }
+
+  /**
+   * Update user profile (fullName)
+   */
+  async updateProfile(data: { fullName: string }): Promise<{ success: boolean; message?: string; user?: any }> {
+    logger.debug('[auth] UPDATE_PROFILE_ATTEMPT');
+
+    try {
+      const response = await customInstance({
+        url: `${this.apiUrl}/api/v1/auth/me`,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          fullName: data.fullName,
+        },
+      });
+
+      logger.info('[auth] UPDATE_PROFILE_SUCCESS');
+      
+      // Handle both wrapped (data.data) and unwrapped (data) responses
+      const userData = response.data?.data?.user || response.data?.user;
+      
+      return { 
+        success: true,
+        user: userData 
+      };
+    } catch (error: unknown) {
+      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      logger.error('[auth] UPDATE_PROFILE_ERROR', { 
+        code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+        message: errorMessage 
+      });
+      
+      return { 
+        success: false, 
+        message: errorMessage 
+      };
     }
   }
 }

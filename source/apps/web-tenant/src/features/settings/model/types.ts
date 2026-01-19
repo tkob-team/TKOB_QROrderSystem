@@ -28,8 +28,8 @@ export interface AccountSettingsState extends AccountProfileState, AccountSecuri
   activeTab: AccountSettingsTab;
 }
 
-// Tenant Profile Types
-export type TenantProfileTab = 'profile' | 'hours' | 'payments' | 'promotions' | 'subscription';
+// Tenant Profile Types (Settings page - Profile is separate page at /admin/account-settings)
+export type TenantProfileTab = 'hours' | 'payments' | 'promotions' | 'subscription';
 export type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 export interface OpeningHoursDay {
