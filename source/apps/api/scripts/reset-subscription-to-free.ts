@@ -48,7 +48,7 @@ async function main() {
       );
     }
 
-    console.log('\n✨ Done! All subscriptions reset to FREE plan');
+    console.log('\nDone! All subscriptions reset to FREE plan');
   } catch (error) {
     console.error('❌ Error:', error);
   } finally {
