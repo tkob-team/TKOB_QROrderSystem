@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { useCart } from '@/shared/hooks/useCart'
 import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
@@ -14,6 +15,7 @@ import type { CheckoutRequest } from '../data'
 
 export function useCheckoutController() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { 
     items: cartItems, 
     subtotal, 
@@ -153,13 +155,17 @@ export function useCheckoutController() {
       // 4. Reset checkout form
       resetCheckout()
 
-      // 5. Navigate based on payment method
+      // 5. Invalidate orders cache (BUG-07 fix)
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['table-orders'] })
+      
+      // 6. Navigate based on payment method (BUG-06 fix: use replace instead of push)
       if (paymentMethod === 'SEPAY_QR') {
         // Go to payment page to show QR with payment method parameter
-        router.push(`/payment?orderId=${order.id}&paymentMethod=${paymentMethod}`)
+        router.replace(`/payment?orderId=${order.id}&paymentMethod=${paymentMethod}`)
       } else {
-        // BILL_TO_TABLE - go directly to order tracking
-        router.push(`/orders/${order.id}`)
+        // BUG-13 fix: BILL_TO_TABLE - go to orders list to see all session orders
+        router.replace('/orders')
       }
 
     } catch (err) {
@@ -171,7 +177,8 @@ export function useCheckoutController() {
   }
 
   const handleBack = () => {
-    router.back()
+    // Navigate to menu instead of router.back() to avoid going back to order detail
+    router.push('/menu')
   }
 
   return {

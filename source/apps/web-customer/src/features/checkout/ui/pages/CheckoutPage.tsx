@@ -5,6 +5,7 @@ import { ArrowLeft, QrCode, Wallet, Loader2, PlusCircle } from 'lucide-react'
 import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { useCheckoutController } from '../../hooks'
 import { usePaymentMethods } from '../../hooks/usePaymentMethods'
+import { useVoucherValidation } from '../../hooks/useVoucherValidation'
 import { useSession } from '@/features/tables/hooks/useSession'
 import { colors, shadows, transitions, typography } from '@/styles/design-tokens'
 
@@ -14,9 +15,11 @@ export function CheckoutPage() {
   
   const { session, loading: sessionLoading } = useSession()
   const { data: paymentMethods, isLoading: isLoadingPayments, error: paymentError } = usePaymentMethods()
+  const { mutate: validateVoucher, isPending: isValidatingVoucher, reset: resetVoucherValidation } = useVoucherValidation()
   
   // Custom tip input state
   const [customTipInput, setCustomTipInput] = useState('')
+  const [voucherError, setVoucherError] = useState<string | null>(null)
   
   // Check if specific payment method is available
   const isSepayAvailable = paymentMethods?.methods?.includes('SEPAY_QR') ?? false
@@ -335,6 +338,142 @@ export function CheckoutPage() {
                 }}
               >
                 Tip: ${tipAmount.toFixed(2)}
+              </div>
+            )}
+          </div>
+
+          {/* FEAT-14: Discount Code Section */}
+          <div 
+            className="bg-white rounded-xl p-4" 
+            style={{ 
+              border: `1px solid ${colors.border.light}`,
+              boxShadow: shadows.card,
+            }}
+          >
+            <label 
+              className="block mb-3" 
+              style={{ 
+                color: colors.text.primary,
+                fontSize: '14px',
+                fontWeight: '500',
+              }}
+            >
+              Discount code (optional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter discount code"
+                value={state.discountCode || ''}
+                onChange={(e) => updateField('discountCode', e.target.value)}
+                className="flex-1 px-4 rounded-lg border-2"
+                style={{
+                  borderColor: colors.border.DEFAULT,
+                  color: colors.text.primary,
+                  minHeight: '44px',
+                  fontSize: '14px',
+                  transition: transitions.fast,
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = colors.primary[500];
+                  e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.primary[100]}`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = colors.border.DEFAULT;
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                aria-label="Discount code"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  // Validate voucher via API
+                  if (!state.discountCode || state.discountCode.trim() === '') {
+                    setVoucherError('Please enter a voucher code');
+                    return;
+                  }
+                  
+                  setVoucherError(null);
+                  resetVoucherValidation();
+                  
+                  validateVoucher(
+                    {
+                      code: state.discountCode.trim(),
+                      orderSubtotal: subtotal,
+                    },
+                    {
+                      onSuccess: (data) => {
+                        if (data.valid && data.discountAmount) {
+                          updateField('discountApplied', true);
+                          updateField('discountAmount', data.discountAmount);
+                          updateField('promotionId', data.promotion?.id || null);
+                          setVoucherError(null);
+                        } else {
+                          updateField('discountApplied', false);
+                          updateField('discountAmount', 0);
+                          updateField('promotionId', null);
+                          setVoucherError(data.error || 'Invalid voucher code');
+                        }
+                      },
+                      onError: (error) => {
+                        updateField('discountApplied', false);
+                        updateField('discountAmount', 0);
+                        updateField('promotionId', null);
+                        setVoucherError(error.message || 'Failed to validate voucher');
+                      },
+                    }
+                  );
+                }}
+                disabled={isValidatingVoucher || !state.discountCode}
+                className="px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: colors.primary[500],
+                  color: 'white',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  minHeight: '44px',
+                  transition: transitions.fast,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isValidatingVoucher && state.discountCode) {
+                    e.currentTarget.style.backgroundColor = colors.primary[600];
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.primary[500];
+                }}
+              >
+                {isValidatingVoucher ? 'Validating...' : 'Apply'}
+              </button>
+            </div>
+            
+            {/* Error Message */}
+            {voucherError && (
+              <div 
+                className="mt-2 p-2 rounded-lg text-center" 
+                style={{ 
+                  backgroundColor: colors.error.light,
+                  color: colors.error.dark,
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                {voucherError}
+              </div>
+            )}
+            
+            {/* Success Message */}
+            {state.discountApplied && state.discountAmount > 0 && (
+              <div 
+                className="mt-2 p-2 rounded-lg text-center" 
+                style={{ 
+                  backgroundColor: colors.success.light,
+                  color: colors.success.dark,
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                Discount applied: -${state.discountAmount.toFixed(2)}
               </div>
             )}
           </div>
