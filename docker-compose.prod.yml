@@ -4,8 +4,8 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    env_file:
-      - .env
+    volumes:
+      - ./.env:/app/source/apps/api/.env:ro  # Chỉ dùng volume mount
     depends_on:
       - redis
     networks:

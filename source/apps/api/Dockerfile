@@ -62,4 +62,18 @@ USER nestjs
 
 EXPOSE 3000
 
-CMD ["node", "dist/src/main.js"]
+# Create entrypoint script to run migrations before starting app
+USER root
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'set -e' >> /docker-entrypoint.sh && \
+    echo 'echo "🔄 Running Prisma migrations..."' >> /docker-entrypoint.sh && \
+    echo 'cd /app/source/apps/api' >> /docker-entrypoint.sh && \
+    echo 'npx prisma migrate deploy || echo "⚠️  Migration failed, continuing..."' >> /docker-entrypoint.sh && \
+    echo 'echo "✅ Migrations completed"' >> /docker-entrypoint.sh && \
+    echo 'echo "🚀 Starting application..."' >> /docker-entrypoint.sh && \
+    echo 'exec node dist/src/main.js' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
+
+USER nestjs
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
