@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import type { EnvConfig } from './config/env.validation';
 import cookieParser from 'cookie-parser';
+import { FileLogger } from './config/logger.config';
 
 // Import filters
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -17,15 +18,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  // Production logging level
-  const logLevels: ('log' | 'error' | 'warn' | 'debug' | 'verbose')[] =
-    process.env.NODE_ENV === 'production'
-      ? ['log', 'error', 'warn']
-      : ['log', 'error', 'warn', 'debug', 'verbose'];
-
-  app.useLogger(logLevels);
+  const app = await NestFactory.create(AppModule, {
+    logger: new FileLogger(), // Custom logger ghi cả console và file
+  });
 
   // Get config service
   const configService = app.get<ConfigService<EnvConfig, true>>(ConfigService);

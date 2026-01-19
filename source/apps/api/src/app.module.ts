@@ -35,14 +35,37 @@ import { HealthController } from './common/controllers/health.controller';
         transport:
           process.env.NODE_ENV !== 'production'
             ? {
-                target: 'pino-pretty',
-                options: {
-                  colorize: true,
-                  translateTime: 'SYS:standard',
-                  ignore: 'pid,hostname',
-                },
+                targets: [
+                  {
+                    target: 'pino-pretty',
+                    options: {
+                      colorize: true,
+                      translateTime: 'SYS:standard',
+                      ignore: 'pid,hostname',
+                    },
+                    level: process.env.LOG_LEVEL || 'info',
+                  },
+                  {
+                    target: 'pino/file',
+                    options: { destination: './logs/dev.log', mkdir: true },
+                    level: 'debug',
+                  },
+                ],
               }
-            : undefined,
+            : {
+                targets: [
+                  {
+                    target: 'pino/file',
+                    options: { destination: './logs/app.log', mkdir: true },
+                    level: 'info',
+                  },
+                  {
+                    target: 'pino/file',
+                    options: { destination: 1 }, // stdout for container logs
+                    level: process.env.LOG_LEVEL || 'info',
+                  },
+                ],
+              },
         level: process.env.LOG_LEVEL || 'info',
         autoLogging: true,
       },
