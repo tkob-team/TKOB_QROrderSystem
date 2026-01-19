@@ -1,18 +1,38 @@
-import React from 'react';
-import { Upload, Phone, MapPin, Globe, Palette } from 'lucide-react';
-import { Button } from '@/shared/components/Button';
+import React, { useState } from 'react';
+import { Phone, MapPin, AlertCircle } from 'lucide-react';
 import { Input } from '@/shared/components/Input';
 import type { FormData } from './types';
 
-type WorkspaceField = 'name' | 'slug' | 'description' | 'phone' | 'address' | 'language' | 'theme';
+type WorkspaceField = 'name' | 'slug' | 'description' | 'phone' | 'address';
 
 interface WorkspaceSetupSectionProps {
   formData: FormData;
   onFieldChange: (field: WorkspaceField, value: string) => void;
-  onLogoUpload: () => void;
 }
 
-export function WorkspaceSetupSection({ formData, onFieldChange, onLogoUpload }: WorkspaceSetupSectionProps) {
+// Phone validation: 10-15 digits, optional + prefix, spaces/dashes allowed
+const validatePhone = (phone: string): boolean => {
+  if (!phone.trim()) return true; // Empty is valid (optional field)
+  // Remove all spaces, dashes, parentheses
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  // Must be: optional +, then 10-15 digits
+  const phoneRegex = /^\+?[0-9]{10,15}$/;
+  return phoneRegex.test(cleaned);
+};
+
+export function WorkspaceSetupSection({ formData, onFieldChange }: WorkspaceSetupSectionProps) {
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const handlePhoneChange = (value: string) => {
+    onFieldChange('phone', value);
+    
+    // Validate on change
+    if (value.trim() && !validatePhone(value)) {
+      setPhoneError('Invalid phone format. Use 10-15 digits with optional + prefix.');
+    } else {
+      setPhoneError(null);
+    }
+  };
   return (
     <div className="space-y-5">
       <Input
@@ -56,9 +76,17 @@ export function WorkspaceSetupSection({ formData, onFieldChange, onLogoUpload }:
           </label>
           <Input
             value={formData.phone}
-            onChange={(e) => onFieldChange('phone', e.target.value)}
-            placeholder="+1 234 567 8900"
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            placeholder="+84 123 456 789"
+            className={phoneError ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : ''}
           />
+          {phoneError && (
+            <div className="flex items-center gap-1.5 text-xs text-red-600">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{phoneError}</span>
+            </div>
+          )}
+          <p className="text-xs text-gray-500">Example: +84912345678 or 0912 345 678</p>
         </div>
 
         <div className="space-y-2">
@@ -72,79 +100,6 @@ export function WorkspaceSetupSection({ formData, onFieldChange, onLogoUpload }:
             placeholder="123 Main Street"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Globe className="w-4 h-4" />
-            Language
-          </label>
-          <select
-            value={formData.language}
-            onChange={(e) => onFieldChange('language', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white text-gray-900 \
-              focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 \
-              transition-all duration-200 text-sm cursor-pointer"
-          >
-            <option value="en">English</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="th">ไทย (Thai)</option>
-            <option value="zh">中文 (Chinese)</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Palette className="w-4 h-4" />
-            Theme
-          </label>
-          <select
-            value={formData.theme}
-            onChange={(e) => onFieldChange('theme', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white text-gray-900 \
-              focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 \
-              transition-all duration-200 text-sm cursor-pointer"
-          >
-            <option value="emerald">Emerald (Green)</option>
-            <option value="ocean">Ocean (Blue)</option>
-            <option value="sunset">Sunset (Orange)</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Logo</label>
-        {formData.logoUrl ? (
-          <div className="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg bg-gray-50">
-            <img 
-              src={formData.logoUrl} 
-              alt="Logo preview" 
-              className="w-16 h-16 rounded-lg object-cover shadow-sm"
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Logo uploaded</p>
-              <p className="text-xs text-gray-500">Click to change</p>
-            </div>
-            <Button variant="secondary" onClick={onLogoUpload}>
-              Change
-            </Button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onLogoUpload}
-            className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg \
-              hover:border-emerald-400 hover:bg-emerald-50/50 \
-              transition-all duration-200 group"
-          >
-            <div className="flex flex-col items-center gap-2 text-gray-500 group-hover:text-emerald-600">
-              <Upload className="w-8 h-8" />
-              <span className="text-sm font-medium">Click to upload logo</span>
-              <span className="text-xs">(Simulated in demo)</span>
-            </div>
-          </button>
-        )}
       </div>
     </div>
   );

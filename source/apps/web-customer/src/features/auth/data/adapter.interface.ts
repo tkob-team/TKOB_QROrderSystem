@@ -31,4 +31,29 @@ export interface IAuthAdapter {
   }): Promise<ApiResponse<User>>;
 
   logout(): Promise<ApiResponse<{ message: string }>>;
+  
+  // Registration & verification
+  register(data: { 
+    email: string; 
+    password: string; 
+    fullName?: string 
+  }): Promise<ApiResponse<{ message: string }>>;
+  
+  verifyEmail(data: { 
+    token: string 
+  }): Promise<ApiResponse<{ message: string }>>;
+  
+  resendVerification(data: { 
+    email: string 
+  }): Promise<ApiResponse<{ message: string }>>;
+  
+  // Password reset
+  requestPasswordReset(data: { 
+    email: string 
+  }): Promise<ApiResponse<{ message: string }>>;
+  
+  resetPassword(data: { 
+    token: string; 
+    password: string 
+  }): Promise<ApiResponse<{ message: string }>>;
 }

@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import type { MenuItem } from '@/types'
 import { useCart } from '@/shared/hooks/useCart'
 import { useSession } from '@/features/tables/hooks'
-import { useItemDetailQuery, useMenuItemsQuery } from './queries/useItemDetailQueries'
+import { useItemDetailQuery, useMenuItemsQuery, useItemReviewsQuery } from './queries/useItemDetailQueries'
 import type { ItemDetailController } from '../model'
 
 const REVIEWS_PER_PAGE = 3
@@ -19,6 +19,9 @@ export function useItemDetailController(itemId: string): ItemDetailController {
 
   const { data: item, isLoading, error } = useItemDetailQuery(itemId)
   const { data: allMenuItems = [] } = useMenuItemsQuery(tenantId)
+  
+  // FEAT-02: Fetch reviews from API instead of relying on item.reviews
+  const { data: reviewsData } = useItemReviewsQuery(itemId, tenantId)
 
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [selectedToppings, setSelectedToppings] = useState<string[]>([])
@@ -50,16 +53,20 @@ export function useItemDetailController(itemId: string): ItemDetailController {
       .slice(0, 4)
   }, [allMenuItems, item])
 
-  const reviews = item?.reviews || []
-  const totalReviews = reviews.length
+  // FEAT-02: Use reviews from API query, fallback to item.reviews for mock mode
+  const reviews = reviewsData?.reviews || item?.reviews || []
+  const totalReviews = reviewsData?.totalReviews || reviews.length
   const totalReviewPages = Math.ceil(totalReviews / REVIEWS_PER_PAGE) || 1
   const reviewStartIndex = (reviewPage - 1) * REVIEWS_PER_PAGE
   const reviewEndIndex = reviewStartIndex + REVIEWS_PER_PAGE
   const currentReviews = reviews.slice(reviewStartIndex, reviewEndIndex)
 
-  const averageRating = totalReviews > 0
-    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1)
-    : '0.0'
+  // Use API average rating if available, otherwise calculate
+  const averageRating = reviewsData?.averageRating 
+    ? reviewsData.averageRating.toFixed(1)
+    : totalReviews > 0
+      ? (reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1)
+      : '0.0'
 
   const derivedTotal = useMemo(() => {
     if (!item) return 0

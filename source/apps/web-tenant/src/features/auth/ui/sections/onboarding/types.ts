@@ -20,8 +20,5 @@ export interface FormData {
   description: string;
   phone: string;
   address: string;
-  logoUrl: string;
-  language: string;
-  theme: string;
   openingHours: Record<DayKey, OpeningHoursDay>;
 }

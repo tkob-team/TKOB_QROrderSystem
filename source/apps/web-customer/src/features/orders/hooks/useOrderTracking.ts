@@ -11,12 +11,13 @@ interface UseOrderTrackingOptions {
   orderId: string
   /**
    * Enable polling for real-time updates
-   * @default true
+   * Note: WebSocket is preferred for real-time updates - polling is fallback
+   * @default false
    */
   polling?: boolean
   /**
-   * Polling interval in milliseconds
-   * @default 2000 (2 seconds) for real-time feel
+   * Polling interval in milliseconds (only used when polling=true)
+   * @default 10000 (10 seconds) - longer interval since WebSocket handles real-time
    */
   pollingInterval?: number
   /**
@@ -34,23 +35,28 @@ interface UseOrderTrackingResult {
 }
 
 /**
- * Hook for fetching order tracking data with optional polling
+ * Hook for fetching order tracking data
+ * 
+ * Note: Real-time updates are primarily handled by useWebSocket hook which
+ * invalidates this query when order status changes. Polling is disabled by
+ * default and only serves as a fallback mechanism.
  * 
  * @example
  * ```tsx
  * const { tracking, isLoading } = useOrderTracking({ orderId: '123' })
  * 
- * // With custom polling interval
+ * // With fallback polling enabled
  * const { tracking } = useOrderTracking({ 
  *   orderId: '123', 
- *   pollingInterval: 5000 
+ *   polling: true,
+ *   pollingInterval: 10000 
  * })
  * ```
  */
 export function useOrderTracking({
   orderId,
-  polling = true,
-  pollingInterval = 2000, // 2 seconds for real-time feel
+  polling = false,
+  pollingInterval = 10000, // 10 seconds - WebSocket handles real-time
   enabled = true,
 }: UseOrderTrackingOptions): UseOrderTrackingResult {
   // Stop polling for terminal statuses
@@ -88,9 +94,11 @@ export function useOrderTracking({
     },
     enabled: enabled && !!orderId,
     refetchInterval: (query) => {
+      // Real-time updates are primarily handled by WebSocket
+      // Polling is only used as fallback when explicitly enabled
       return shouldPoll(query.state.data) ? pollingInterval : false
     },
-    staleTime: 1000, // Consider data stale after 1 second for real-time feel
+    staleTime: 30000, // Consider data stale after 30s (WebSocket invalidates on changes)
     retry: 2,
   })
 
@@ -102,3 +110,4 @@ export function useOrderTracking({
     refetch,
   }
 }
+

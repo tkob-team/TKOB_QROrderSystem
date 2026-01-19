@@ -17,26 +17,26 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format currency to Vietnamese Dong
+ * Format currency to US Dollar
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'VND',
+    currency: 'USD',
   }).format(amount);
 }
 
 /**
- * Format currency short (¥1.2K, ¥437K)
+ * Format currency short ($1.2K, $437K)
  */
 export function formatCurrencyShort(amount: number): string {
   if (amount >= 1000000) {
-    return `¥${(amount / 1000000).toFixed(1)}M`;
+    return `$${(amount / 1000000).toFixed(1)}M`;
   }
   if (amount >= 1000) {
-    return `¥${(amount / 1000).toFixed(0)}K`;
+    return `$${(amount / 1000).toFixed(0)}K`;
   }
-  return `¥${amount}`;
+  return `$${amount}`;
 }
 
 /**

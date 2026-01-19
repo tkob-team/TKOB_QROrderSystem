@@ -1,41 +1,32 @@
 /**
  * KDS Header Section
- * Top bar with clock, toggles (sound/auto-refresh), and user menu
+ * Minimalist header - WebSocket handles real-time updates automatically
  */
 
 'use client';
 
 import React from 'react';
-import { Badge } from '@/shared/components/Badge';
-import { Bell, BellOff, RefreshCw, Clock, ChevronDown, LogOut, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, Clock, ChevronDown, Wifi, WifiOff } from 'lucide-react';
 import { formatKdsTime } from '../../../utils/formatKdsTime';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 export interface KdsHeaderSectionProps {
   currentTime: Date | null;
-  soundEnabled: boolean;
-  autoRefresh: boolean;
   showKdsProfile: boolean;
   isUserMenuOpen: boolean;
   userMenuRef: React.RefObject<HTMLDivElement>;
   connectionStatus?: ConnectionStatus;
-  onToggleSound: () => void;
-  onToggleAutoRefresh: () => void;
   onToggleUserMenu: () => void;
   onLogout: () => void;
 }
 
 export function KdsHeaderSection({
   currentTime,
-  soundEnabled,
-  autoRefresh,
   showKdsProfile,
   isUserMenuOpen,
   userMenuRef,
   connectionStatus = 'connected',
-  onToggleSound,
-  onToggleAutoRefresh,
   onToggleUserMenu,
   onLogout,
 }: KdsHeaderSectionProps) {
@@ -129,41 +120,8 @@ export function KdsHeaderSection({
           </div>
         </div>
 
-        {/* Right - Controls */}
+        {/* Right - User Menu Only */}
         <div className="flex items-center gap-3">
-          {/* Sound Toggle */}
-          <button
-            onClick={onToggleSound}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              soundEnabled
-                ? 'bg-green-500/10 text-green-500 border-2 border-green-500/20'
-                : 'bg-elevated text-text-tertiary border-2 border-default'
-            }`}
-            style={{ fontSize: '14px', fontWeight: 600, height: '40px' }}
-            title={soundEnabled ? 'Sound enabled' : 'Sound disabled'}
-          >
-            {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-            <span className="hidden sm:inline">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
-          </button>
-
-          {/* Auto Refresh Toggle */}
-          <button
-            onClick={onToggleAutoRefresh}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              autoRefresh
-                ? 'bg-green-500/10 text-green-500 border-2 border-green-500/20'
-                : 'bg-elevated text-text-tertiary border-2 border-default'
-            }`}
-            style={{ fontSize: '14px', fontWeight: 600, height: '40px' }}
-            title={autoRefresh ? 'Auto-refresh enabled' : 'Auto-refresh disabled'}
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`}
-              style={{ animationDuration: '3s' }}
-            />
-            <span className="hidden sm:inline">Auto</span>
-          </button>
-
           {/* User Menu */}
           {showKdsProfile && (
             <div className="relative" ref={userMenuRef}>
@@ -193,6 +151,23 @@ export function KdsHeaderSection({
 
               {isUserMenuOpen && (
                 <div className="absolute top-full right-0 mt-2 w-56 bg-secondary rounded-lg border border-default shadow-lg py-2 z-50">
+                  {/* Profile Link */}
+                  <a
+                    href="/kds/profile"
+                    className="w-full px-4 py-2.5 text-left hover:bg-elevated transition-colors flex items-center gap-3 group"
+                  >
+                    <svg className="w-4 h-4 text-text-tertiary group-hover:text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span
+                      className="text-text-secondary group-hover:text-text-primary"
+                      style={{ fontSize: '14px', fontWeight: 500 }}
+                    >
+                      Profile
+                    </span>
+                  </a>
+                  {/* Divider */}
+                  <div className="border-t border-default my-1" />
                   <button
                     onClick={onLogout}
                     className="w-full px-4 py-2.5 text-left hover:bg-red-500/10 transition-colors flex items-center gap-3 group"

@@ -51,7 +51,7 @@ export function TopBar({
           className="text-2xl md:text-3xl tracking-tight hover:opacity-80 transition-opacity"
           style={{ fontFamily: 'var(--font-sour-gummy), cursive' }}
         >
-          {restaurantName}
+          TKOB Restaurant
         </Link>
       </div>
 

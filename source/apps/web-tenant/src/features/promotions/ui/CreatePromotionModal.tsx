@@ -219,14 +219,13 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Min Order (đ)
+                Min Order ($)
               </label>
               <input
                 type="number"
                 value={formData.minOrderValue}
                 onChange={(e) => handleChange('minOrderValue', parseFloat(e.target.value) || 0)}
                 min={0}
-                step={10000}
                 placeholder="0 = no limit"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
               />
@@ -235,14 +234,13 @@ export function CreatePromotionModal({ promotion, onClose }: CreatePromotionModa
             {formData.type === 'PERCENTAGE' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Discount (đ)
+                  Max Discount ($)
                 </label>
                 <input
                   type="number"
                   value={formData.maxDiscount}
                   onChange={(e) => handleChange('maxDiscount', parseFloat(e.target.value) || 0)}
                   min={0}
-                  step={10000}
                   placeholder="0 = no limit"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
                 />

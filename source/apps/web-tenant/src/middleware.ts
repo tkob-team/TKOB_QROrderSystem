@@ -31,9 +31,28 @@ export function middleware(request: NextRequest) {
 
   // Allow public/marketing routes for everyone
   if (publicRoutes.some(route => pathname.startsWith(route))) {
-    // If authenticated user tries to access login/signup, redirect to dashboard
+    // If authenticated user tries to access login/signup, redirect based on role
     if (isAuthenticated && authOnlyRoutes.some(route => pathname.startsWith(route))) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      try {
+        const tokenParts = authToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+          const userRole = payload.role as string;
+          
+          // Redirect based on role
+          if (userRole === 'OWNER') {
+            return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+          } else if (userRole === 'STAFF') {
+            return NextResponse.redirect(new URL('/waiter', request.url));
+          } else if (userRole === 'KITCHEN') {
+            return NextResponse.redirect(new URL('/kds', request.url));
+          }
+        }
+      } catch (error) {
+        logger.log('[middleware] Failed to parse JWT for auth redirect:', error);
+      }
+      // Fallback to home if role parsing fails
+      return NextResponse.redirect(new URL('/home', request.url));
     }
     return NextResponse.next();
   }

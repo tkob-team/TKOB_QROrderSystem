@@ -6,6 +6,7 @@ import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { log } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { useOrdersController } from '../../hooks'
+import { usePaymentMethods } from '@/features/checkout/hooks/usePaymentMethods'
 import { ORDERS_TEXT } from '../../model'
 import { isPaymentRequired, isOrderPaid } from '../../model/statusUtils'
 
@@ -26,13 +27,29 @@ function formatRelativeTime(dateStr: string): string {
 export function OrderListPage() {
   const router = useRouter()
   const { state, openOrderDetails, handleLogin } = useOrdersController()
+  const { data: paymentMethods, isLoading: isLoadingPayments } = usePaymentMethods()
+
+  // Check if any payment method is available
+  const hasPaymentMethods = paymentMethods?.methods && paymentMethods.methods.length > 0
+  const isSepayAvailable = paymentMethods?.methods?.includes('SEPAY_QR') ?? false
 
   const handlePayNow = (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent order detail navigation
+    
+    // Block payment if no payment methods available
+    if (!hasPaymentMethods) {
+      log('ui', 'Payment blocked: No payment methods available', { orderId: maskId(orderId) }, { feature: 'orders' })
+      alert('Payment is not available yet. Please ask staff for assistance.')
+      return
+    }
+    
     if (process.env.NEXT_PUBLIC_USE_LOGGING) {
       log('ui', 'Navigate to payment for order', { orderId: maskId(orderId) }, { feature: 'orders' })
     }
-    router.push(`/payment?orderId=${orderId}&source=order`)
+    
+    // Redirect to payment with available method
+    const defaultMethod = isSepayAvailable ? 'SEPAY_QR' : 'BILL_TO_TABLE'
+    router.push(`/payment?orderId=${orderId}&paymentMethod=${defaultMethod}&source=order`)
   }
 
   return (
@@ -106,7 +123,8 @@ export function OrderListPage() {
                       <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--gray-200)' }}>
                         <button
                           onClick={(e) => handlePayNow(order.id, e)}
-                          className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-full transition-all hover:shadow-sm active:scale-95"
+                          disabled={isLoadingPayments || !hasPaymentMethods}
+                          className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-full transition-all hover:shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: 'var(--orange-500)',
                             color: 'white',
@@ -114,7 +132,7 @@ export function OrderListPage() {
                           }}
                         >
                           <CreditCard className="w-4 h-4" />
-                          Pay ${order.total.toFixed(2)}
+                          {isLoadingPayments ? 'Loading...' : !hasPaymentMethods ? 'Payment Unavailable' : `Pay $${order.total.toFixed(2)}`}
                         </button>
                       </div>
                     )}

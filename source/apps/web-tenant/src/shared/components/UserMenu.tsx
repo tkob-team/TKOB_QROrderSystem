@@ -6,7 +6,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, User, LogOut, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronDown, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
 import type { AdminScreenId } from './AdminShell';
 
@@ -22,10 +23,13 @@ export function UserMenu({ onNavigate, variant = 'light' }: UserMenuProps) {
   const { user, logout } = useAuth();
 
   const userName = user?.name || 'Admin User';
-  const userRole =
-    user?.role === 'admin' || user?.role === 'kds' || user?.role === 'waiter'
-      ? 'Admin'
-      : 'Staff';
+  const userRole = user?.role === 'OWNER' || user?.role === 'admin'
+    ? 'Admin'
+    : user?.role === 'KITCHEN' || user?.role === 'kds'
+    ? 'Kitchen Staff'
+    : user?.role === 'STAFF' || user?.role === 'waiter'
+    ? 'Waiter'
+    : 'Staff';
   const initials = userName
     .split(' ')
     .map((n) => n[0])
@@ -95,7 +99,15 @@ export function UserMenu({ onNavigate, variant = 'light' }: UserMenuProps) {
 
           {/* Menu Items */}
           <div className="py-1">
-            {/* Account Settings and Help removed - no backend API support */}
+            {/* Profile Link - Above Logout */}
+            <Link
+              href="/admin/profile"
+              onClick={() => setIsOpen(false)}
+              className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+            >
+              <User className="w-4 h-4 text-gray-500" />
+              <span className="text-gray-700 text-sm font-medium">Profile</span>
+            </Link>
           </div>
 
           <div className="border-t border-gray-100 my-1"></div>

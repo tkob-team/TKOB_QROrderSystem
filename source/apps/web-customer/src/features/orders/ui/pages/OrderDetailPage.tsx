@@ -1,130 +1,182 @@
-'use client'
+/**
+ * Order Detail Page - Customer order tracking view
+ * 
+ * Real-time order tracking using WebSocket-triggered React Query invalidation
+ * WebSocket connection is managed globally by app layout
+ */
 
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { useLanguage } from '@/shared/hooks/useLanguage'
-import { log } from '@/shared/logging/logger'
-import { maskId } from '@/shared/logging/helpers'
-import { OrdersDataFactory } from '../../data'
-import { orderQueryKeys } from '../../data/cache/orderQueryKeys'
-import type { Order as ApiOrder } from '@/types/order'
-import { ORDERS_TEXT } from '../../model'
-import { isLiveOrder, isOrderPaid } from '../../model/statusUtils'
-import { usePaymentVerification } from '../../hooks/usePaymentVerification'
-import { OrderHeader } from '../components/sections/OrderHeader'
-import { PaymentBanner } from '../components/sections/PaymentBanner'
-import { OrderSummary } from '../components/sections/OrderSummary'
-import { useOrderStore } from '@/stores/order.store'
+'use client';
 
-interface OrderDetailPageProps {
-  orderId: string
-}
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ChevronLeft, Clock, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { useOrderTracking } from '../../hooks/useOrderTracking';
+import { log } from '@/shared/logging/logger';
+import { maskId } from '@/shared/logging/helpers';
+import { OrderTrackingTimeline } from '../components/OrderTrackingTimeline';
 
-export function OrderDetailPage({ orderId: propOrderId }: OrderDetailPageProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { language } = useLanguage()
-  const t = ORDERS_TEXT[language]
-  
-  // Fallback: use active order from store if no orderId provided
-  const activeOrderId = useOrderStore((state) => state.activeOrderId)
-  const setActiveOrder = useOrderStore((state) => state.setActiveOrder)
-  const updateLastSeen = useOrderStore((state) => state.updateLastSeen)
-  const orderId = propOrderId || activeOrderId || ''
-  
-  // Track this as active order when viewing
-  useEffect(() => {
-    if (orderId) {
-      setActiveOrder(orderId, 'order-detail')
-      updateLastSeen()
-    }
-  }, [orderId, setActiveOrder, updateLastSeen])
+export function OrderDetailPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('orderId');
 
-  const { data: order, isLoading, error, refetch } = useQuery({
-    queryKey: orderQueryKeys.order(orderId),
-    queryFn: async () => {
-      const strategy = OrdersDataFactory.getStrategy()
-      log('data', 'Fetching order detail', { orderId: maskId(orderId) }, { feature: 'orders' });
-      const resp = await strategy.getOrder(orderId)
-      const apiOrder = resp.data as ApiOrder | undefined
-      if (!apiOrder) {
-        throw new Error('Order not found')
-      }
-      return apiOrder
-    },
-    // Enable polling for live orders (PENDING, RECEIVED, PREPARING, READY)
-    refetchInterval: (query) => {
-      const order = query.state.data as ApiOrder | undefined
-      if (!order) return false
-      
-      // Poll every 2 seconds for real-time feel
-      const liveStatuses = ['PENDING', 'RECEIVED', 'PREPARING', 'READY']
-      const isLive = liveStatuses.includes(order.status || '')
-      
-      if (isLive) {
-        log('data', 'Order tracking polling enabled', { orderId: maskId(orderId), status: order.status }, { feature: 'orders', dedupe: true, dedupeTtlMs: 30000 });
-        return 2000 // 2 seconds for real-time feel
-      }
-      
-      return false // Stop polling when order is completed/served
-    },
-    refetchOnWindowFocus: true,
-    staleTime: 1000, // Consider data stale after 1 second
-  })
-
-  // Payment verification hook - handles ?paid=1 param and banner display
-  const { showPaymentBanner } = usePaymentVerification({
-    orderId,
-    searchParams,
-    refetch,
+  // Fetch tracking data (WebSocket automatically invalidates this query)
+  const { tracking, isLoading } = useOrderTracking({
+    orderId: orderId || '',
+    enabled: !!orderId,
+    polling: false, // WebSocket handles real-time updates
   });
 
-  const isLive = order ? isLiveOrder(order) : false
+  if (!orderId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold mb-2">Order not found</h2>
+          <p className="text-gray-600 mb-4">Invalid order ID</p>
+          <button
+            onClick={() => router.push('/orders')}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+          >
+            Back to Orders
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tracking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold mb-2">Order not found</h2>
+          <p className="text-gray-600 mb-4">Unable to load order details</p>
+          <button
+            onClick={() => router.push('/orders')}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+          >
+            Back to Orders
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isCompleted = ['COMPLETED', 'SERVED', 'CANCELLED'].includes(tracking.currentStatus);
+  const isCancelled = tracking.currentStatus === 'CANCELLED';
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--gray-50)' }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <OrderHeader orderId={orderId} />
-
-      <div className="p-4">
-        {/* Payment Success Banner */}
-        <PaymentBanner 
-          show={showPaymentBanner} 
-          isPaid={order ? isOrderPaid(order.paymentStatus) : false} 
-        />
-        
-        {/* Loading State */}
-        {isLoading && (
-          <div className="text-center py-8">
-            <p style={{ color: 'var(--gray-600)' }}>Loading order...</p>
-          </div>
-        )}
-        
-        {/* Error State */}
-        {error && (
-          <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
-            <p style={{ color: 'var(--gray-900)' }}>Order not found</p>
-            <p style={{ color: 'var(--gray-600)', fontSize: '14px', marginTop: '8px' }}>
-              This order could not be found. It may have expired.
-            </p>
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/orders')}
-              className="mt-6 px-6 py-2 rounded-full"
-              style={{ backgroundColor: 'var(--orange-500)', color: 'white' }}
+              onClick={() => router.back()}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Back to orders
+              <ChevronLeft className="w-6 h-6" />
             </button>
+            <div className="flex-1">
+              <h1 className="text-lg font-semibold">Order Tracking</h1>
+              <p className="text-sm text-gray-600">
+                Order #{orderId.slice(-8).toUpperCase()}
+              </p>
+            </div>
+            {!isCompleted && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span>Live tracking</span>
+              </div>
+            )}
           </div>
-        )}
-        
-        {/* Order Content */}
-        {order && (
-          <div className="space-y-4">
-            <OrderSummary order={order} isLive={isLive} />
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Current Status Card */}
+        <div className="bg-white rounded-xl p-6 text-center border">
+          <div className="flex justify-center mb-4">
+            <div 
+              className={`w-20 h-20 rounded-full flex items-center justify-center ${
+                isCancelled 
+                  ? 'bg-red-100' 
+                  : isCompleted 
+                  ? 'bg-emerald-100' 
+                  : 'bg-blue-100'
+              }`}
+            >
+              {isCancelled ? (
+                <XCircle className="w-10 h-10 text-red-600" />
+              ) : isCompleted ? (
+                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+              ) : (
+                <Clock className="w-10 h-10 text-blue-600" />
+              )}
+            </div>
           </div>
-        )}
+          <h3 className="text-xl font-semibold mb-2 text-gray-900">
+            {tracking.currentStatus.replace(/_/g, ' ')}
+          </h3>
+          <p className="text-gray-600">
+            {tracking.currentStatusMessage}
+          </p>
+          {tracking.estimatedTimeRemaining && tracking.estimatedTimeRemaining > 0 && !isCompleted && (
+            <div className="flex items-center justify-center gap-2 mt-4 text-gray-600">
+              <Clock className="w-4 h-4" />
+              <span>Estimated time: {tracking.estimatedTimeRemaining} minutes</span>
+            </div>
+          )}
+        </div>
+
+        {/* Order Timeline */}
+        <div className="bg-white rounded-xl p-6 border">
+          <h2 className="text-lg font-semibold mb-4">Order Timeline</h2>
+          <OrderTrackingTimeline 
+            timeline={tracking.timeline}
+            currentStatus={tracking.currentStatus}
+            estimatedTimeRemaining={tracking.estimatedTimeRemaining}
+            elapsedMinutes={tracking.elapsedMinutes}
+          />
+        </div>
+
+        {/* Order Info */}
+        <div className="bg-white rounded-xl p-6 border">
+          <h2 className="text-lg font-semibold mb-4">Order Information</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Order Number</span>
+              <span className="font-medium">{tracking.orderNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Table Number</span>
+              <span className="font-medium">{tracking.tableNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Created At</span>
+              <span className="font-medium">
+                {new Date(tracking.createdAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );
 }

@@ -11,6 +11,7 @@ export { TableGridView } from './ui/components/tables';
 export { useWaiterController } from './hooks';
 export type { UseWaiterControllerReturn } from './hooks';
 export { useTableGridController } from './hooks/useTableGridController';
+export { useWaiterWebSocket } from './hooks/useWaiterWebSocket';
 
 // Model (Types & Constants)
 export type * from './model/types';

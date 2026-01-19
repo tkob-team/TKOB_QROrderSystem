@@ -23,7 +23,7 @@ export const MOCK_ACCOUNT_SETTINGS_STATE: AccountSettingsState = {
 };
 
 export const MOCK_TENANT_PROFILE_STATE: TenantFullProfileState = {
-  activeTab: 'profile',
+  activeTab: 'hours',
   restaurantName: 'TKOB Restaurant',
   urlSlug: 'tkob-restaurant',
   address: '123 Main Street, Downtown',

@@ -205,12 +205,34 @@ export class OrderService {
   }
 
   async getTableOrders(tableId: string): Promise<OrderResponseDto[]> {
+    // Get current active session for this table
+    const activeSession = await this.prisma.tableSession.findFirst({
+      where: {
+        tableId,
+        active: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // If no active session, return empty (table cleared)
+    const activeSessionId = activeSession?.id;
+    if (!activeSessionId) {
+      return [];
+    }
+
     const orders = await this.prisma.order.findMany({
       where: {
         tableId,
+        sessionId: activeSessionId, // Only orders from current session
+        // Include ALL statuses (don't filter out COMPLETED/PAID)
+        // Orders should persist in current session until table is closed
         status: {
-          // Include PENDING so customer can track CASH/BILL_TO_TABLE orders before waiter confirmation
-          in: [OrderStatus.PENDING, OrderStatus.RECEIVED, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.SERVED],
+          notIn: [OrderStatus.CANCELLED], // Only exclude cancelled orders
         },
       },
       include: {
@@ -231,6 +253,8 @@ export class OrderService {
     tenantId: string,
     filters: OrderFiltersDto,
   ): Promise<PaginatedResponseDto<OrderResponseDto>> {
+    this.logger.log(`[getOrders] Fetching orders for tenant ${tenantId} with filters: ${JSON.stringify(filters)}`);
+    
     const where: Prisma.OrderWhereInput = {
       tenantId,
       ...(filters.status && filters.status.length > 0 && {

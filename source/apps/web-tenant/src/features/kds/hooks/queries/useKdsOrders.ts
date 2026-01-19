@@ -1,6 +1,9 @@
 /**
  * useKdsOrders - Internal Query Hook
  * Fetches KDS orders from adapter (mock or API) with React Query
+ * 
+ * Note: Real-time updates are handled by useKdsWebSocket hook
+ * which invalidates this query on new order/status change events.
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -28,8 +31,9 @@ export function useKdsOrders() {
       
       return data;
     },
-    refetchInterval: 5000, // Poll every 5s for more responsive realtime feel
-    staleTime: 3000, // Consider data stale after 3s
+    // No polling - WebSocket handles real-time updates via useKdsWebSocket
+    staleTime: 30000, // Consider data stale after 30s
     refetchOnWindowFocus: true,
   });
 }
+

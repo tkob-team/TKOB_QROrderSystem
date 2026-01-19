@@ -24,7 +24,8 @@ function mapOrderStatus(backendStatus: string): WaiterOrderStatus | null {
     return null;
   }
   
-  return statusMap[backendStatus] || 'placed';
+  // Return null for unknown statuses so they are filtered out instead of showing as 'placed'
+  return statusMap[backendStatus] || null;
 }
 
 /**
@@ -96,7 +97,7 @@ export const waiterApi = {
   async getServiceOrders(): Promise<ServiceOrder[]> {
     try {
       // Backend expects comma-separated string for status filter
-      // Fetch active orders (not including PAID since those tables are closed)
+      // Exclude PAID (closed tables) and CANCELLED orders
       const response = await orderControllerGetOrders({
         status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED',
         page: 1,

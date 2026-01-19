@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { MulterModule } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { EnvConfig } from '../../config/env.validation';
 
 // Controllers
@@ -39,6 +41,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         },
       }),
       inject: [ConfigService],
+    }),
+
+    // Multer configuration for avatar uploads
+    MulterModule.register({
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB max
+      },
     }),
   ],
 

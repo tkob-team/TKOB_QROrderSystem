@@ -232,26 +232,26 @@ export class PromotionService {
     });
 
     if (!promotion) {
-      return { valid: false, error: 'Mã giảm giá không tồn tại' };
+      return { valid: false, error: 'Voucher is not valid' };
     }
 
     // Check if active
     if (!promotion.active) {
-      return { valid: false, error: 'Mã giảm giá không còn hoạt động' };
+      return { valid: false, error: 'Voucher is no longer active' };
     }
 
     // Check date range
     const now = new Date();
     if (now < promotion.startsAt) {
-      return { valid: false, error: 'Mã giảm giá chưa có hiệu lực' };
+      return { valid: false, error: 'Voucher is not yet valid' };
     }
     if (now > promotion.expiresAt) {
-      return { valid: false, error: 'Mã giảm giá đã hết hạn' };
+      return { valid: false, error: 'Voucher has expired' };
     }
 
     // Check usage limit
     if (promotion.usageLimit && promotion.usageCount >= promotion.usageLimit) {
-      return { valid: false, error: 'Mã giảm giá đã hết lượt sử dụng' };
+      return { valid: false, error: 'Voucher usage limit reached' };
     }
 
     // Check minimum order value
@@ -261,7 +261,7 @@ export class PromotionService {
     if (dto.orderSubtotal < minOrderValue) {
       return {
         valid: false,
-        error: `Đơn hàng tối thiểu ${minOrderValue.toLocaleString('vi-VN')}đ để áp dụng mã này`,
+        error: `Minimum order value is ${minOrderValue.toLocaleString('en-US')} to apply this voucher`,
       };
     }
 

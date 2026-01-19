@@ -21,8 +21,11 @@ export function useProfileController(): ProfileState & {
   const handleLogin = () => router.push('/login')
   
   const handleLogout = async () => {
+    // Logout only clears JWT token, NOT the table session cookie
+    // This allows customer to continue browsing menu after logout
     await AuthDataFactory.getStrategy().logout()
-    router.push('/')
+    // Redirect to menu (not home) to keep customer in current table session
+    router.push('/menu')
   }
   
   const handleViewHistory = () => router.push('/orders')

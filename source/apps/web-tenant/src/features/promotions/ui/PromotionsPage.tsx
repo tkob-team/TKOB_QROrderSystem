@@ -233,7 +233,7 @@ export function PromotionsPage() {
                     </span>
                     {promo.maxDiscount && promo.type === 'PERCENTAGE' && (
                       <span className="text-xs text-blue-500">
-                        (max {promo.maxDiscount.toLocaleString()}đ)
+                        (max ${promo.maxDiscount.toFixed(2)})
                       </span>
                     )}
                   </div>
@@ -255,7 +255,7 @@ export function PromotionsPage() {
                     </div>
                     {promo.minOrderValue && (
                       <span className="text-xs">
-                        Min order: {promo.minOrderValue.toLocaleString()}đ
+                        Min order: ${promo.minOrderValue.toFixed(2)}
                       </span>
                     )}
                   </div>
