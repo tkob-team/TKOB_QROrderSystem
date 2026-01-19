@@ -3,16 +3,13 @@ name: Deploy to AWS EC2
 on:
   push:
     branches: [ "release" ]
-  # Cho phép chạy thủ công từ tab Actions
   workflow_dispatch:
 
 env:
-  # Thay tên image của bạn vào đây
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # JOB 1: BUILD & PUSH IMAGE
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
@@ -46,15 +43,13 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: ./source/apps/api/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Cache để build nhanh hơn cho lần sau
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # JOB 2: DEPLOY TO EC2
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest

@@ -1,46 +1,11 @@
 TKOB_QROrderSystem
+├── .github/workflows
+│   ├── deploy.yml
 ├── source/
 │   ├── apps/
 │   │   ├── api/
 │   │   │   ├── prisma/
 │   │   │   │   ├── migrations/
-│   │   │   │   │   ├── 20251124113547_init_auth_and_tenant/
-│   │   │   │   │   │   └── migration.sql (2.1 KB)
-│   │   │   │   │   ├── 20251204091502_update_tenant_and_payment_schema/
-│   │   │   │   │   │   └── migration.sql (0.7 KB)
-│   │   │   │   │   ├── 20251204113915_update_tenant/
-│   │   │   │   │   │   └── migration.sql (0.6 KB)
-│   │   │   │   │   ├── 20251207125004_create/
-│   │   │   │   │   │   └── migration.sql (4.8 KB)
-│   │   │   │   │   ├── 20251208101516_add_unique_constraint_menu_category_name/
-│   │   │   │   │   │   └── migration.sql (0.3 KB)
-│   │   │   │   │   ├── 20251208115425_swap_category_name_and_tenantid/
-│   │   │   │   │   │   └── migration.sql (0.4 KB)
-│   │   │   │   │   ├── 20251210085128_update_menu_items_name_tenant_category_unique/
-│   │   │   │   │   │   └── migration.sql (0.3 KB)
-│   │   │   │   │   ├── 20251216035526_create_table_model/
-│   │   │   │   │   │   └── migration.sql (1.3 KB)
-│   │   │   │   │   ├── 20251218110840_add_table_session_haidilao_style/
-│   │   │   │   │   │   └── migration.sql (1.1 KB)
-│   │   │   │   │   ├── 20251222071034_add_menu_item_photos_and_fields/
-│   │   │   │   │   │   └── migration.sql (1.4 KB)
-│   │   │   │   │   ├── 20260102014103_add_order_models/
-│   │   │   │   │   │   └── migration.sql (3.3 KB)
-│   │   │   │   │   ├── 20260102065712_add_payment_to_order/
-│   │   │   │   │   │   └── migration.sql (0.4 KB)
-│   │   │   │   │   ├── 20260109164002_add_kds_timestamps/
-│   │   │   │   │   │   └── migration.sql (0.1 KB)
-│   │   │   │   │   ├── 20260111051002_add_cart_schema/
-│   │   │   │   │   │   └── migration.sql (1.9 KB)
-│   │   │   │   │   ├── 20260111053918_add_payment_schema/
-│   │   │   │   │   │   └── migration.sql (1.5 KB)
-│   │   │   │   │   ├── 20260113075330_update_order/
-│   │   │   │   │   │   └── migration.sql (0.4 KB)
-│   │   │   │   │   ├── 20260114170300_add_subscription_system/
-│   │   │   │   │   │   └── migration.sql (6.3 KB)
-│   │   │   │   │   ├── 20260115153719_make_payment_order_optional/
-│   │   │   │   │   │   └── migration.sql (0.1 KB)
-│   │   │   │   │   ├── 20260118102004_add_bill_entity/
 │   │   │   │   │   │   └── migration.sql (1.7 KB)
 │   │   │   │   │   └── migration_lock.toml (0.1 KB)
 │   │   │   │   ├── prisma.config.ts (0.4 KB)

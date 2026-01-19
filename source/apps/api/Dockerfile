@@ -13,7 +13,16 @@ RUN corepack enable
 FROM base AS builder
 WORKDIR /app
 
-COPY . .
+# Copy pnpm workspace files from root
+COPY pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml ./
+COPY package.json ./
+
+# Copy app source
+COPY source/apps/api ./source/apps/api
+
+# Copy packages if any
+COPY source/packages ./source/packages
 
 RUN pnpm install --frozen-lockfile
 
@@ -32,22 +41,21 @@ RUN apk add --no-cache libssl3 libcrypto3
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy TOÀN BỘ workspace structure (giữ nguyên cấu trúc pnpm)
+# Copy workspace structure
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nestjs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=builder --chown=nestjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Copy toàn bộ source/apps/api
+# Copy source/apps/api
 COPY --from=builder --chown=nestjs:nodejs /app/source/apps/api ./source/apps/api
 
-# Copy packages nếu có dependencies internal
+# Copy source/packages if any
 COPY --from=builder --chown=nestjs:nodejs /app/source/packages ./source/packages
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Chạy từ thư mục api
 WORKDIR /app/source/apps/api
 
 USER nestjs
