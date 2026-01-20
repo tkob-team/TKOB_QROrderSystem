@@ -445,8 +445,14 @@ export class AuthController {
     try {
       const result = await this.authService.googleAuth(req.user);
       
-      // Get frontend URL from config
-      const frontendUrl = this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      // Determine which frontend to redirect to based on user role
+      // OWNER/STAFF users go to tenant app, customers go to customer app
+      const userRole = result.user.role;
+      const isTenantUser = ['OWNER', 'STAFF', 'KDS', 'WAITER'].includes(userRole);
+      
+      const frontendUrl = isTenantUser
+        ? this.configService.get('TENANT_APP_URL', { infer: true })
+        : this.configService.get('CUSTOMER_APP_URL', { infer: true });
       
       // Redirect to frontend with tokens as query params
       const redirectUrl = new URL(`${frontendUrl}/auth/google/callback`);
@@ -456,6 +462,7 @@ export class AuthController {
       
       return res.redirect(redirectUrl.toString());
     } catch (error) {
+      // Default to customer app on error
       const frontendUrl = this.configService.get('CUSTOMER_APP_URL', { infer: true });
       return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
     }
