@@ -163,6 +163,8 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
       log('data', 'Creating SePay payment intent', {
         orderId: maskId(orderId),
         tip: tipAmount,
+        discount: discountAmount,
+        voucher: voucherCode,
       }, { feature: 'payment' })
       
       const intent = await checkoutApi.createPaymentIntent({
@@ -170,6 +172,8 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
         returnUrl: `${window.location.origin}/orders/${orderId}`,
         cancelUrl: `${window.location.origin}/checkout`,
         tip: tipAmount > 0 ? tipAmount : undefined,
+        discount: discountAmount > 0 ? discountAmount : undefined,
+        voucherCode: voucherCode || undefined,
       })
       
       setPaymentIntent(intent)

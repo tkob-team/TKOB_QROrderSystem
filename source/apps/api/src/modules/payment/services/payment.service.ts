@@ -163,7 +163,8 @@ export class PaymentService {
       // 3. Calculate amount - convert USD to VND for SePay
       const orderAmountUSD = order.total.toNumber();
       const tipAmountUSD = dto.tip || 0;
-      const amountUSD = orderAmountUSD + tipAmountUSD;
+      const discountAmountUSD = dto.discount || 0;
+      const amountUSD = Math.max(0, orderAmountUSD + tipAmountUSD - discountAmountUSD);
       const amountVND = Math.round(amountUSD * USD_TO_VND_RATE);
 
       if (amountUSD <= 0) {
@@ -173,7 +174,7 @@ export class PaymentService {
       }
 
       this.logger.debug(
-        `[${tenantId}] Order ${order.orderNumber} - Order: $${orderAmountUSD} + Tip: $${tipAmountUSD} = $${amountUSD} -> VND: ${amountVND}`,
+        `[${tenantId}] Order ${order.orderNumber} - Order: $${orderAmountUSD} + Tip: $${tipAmountUSD} - Discount: $${discountAmountUSD} = $${amountUSD} -> VND: ${amountVND}`,
       );
 
       // 4. Get tenant's SePay config for customer payments

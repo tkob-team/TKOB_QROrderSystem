@@ -414,9 +414,7 @@ export function BillPreviewPage() {
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
             style={{ 
-              border: '1px solid var(--gray-200)',
-              opacity: billRequested ? 0.6 : 1,
-              pointerEvents: billRequested ? 'none' : 'auto'
+              border: '1px solid var(--gray-200)'
             }}
           >
             <div className="flex items-center gap-2 mb-4">

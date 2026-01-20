@@ -877,7 +877,7 @@ export class OrderService {
         tenantId,
         status: { notIn: [OrderStatus.CANCELLED] },
       },
-      select: { total: true },
+      select: { id: true, total: true },
     });
 
     if (orders.length === 0) {
@@ -887,15 +887,55 @@ export class OrderService {
     const baseTotal = orders.reduce((sum, order) => sum + Number(order.total), 0);
     const tipAmount = tip || 0;
     const discountAmount = discount || 0;
-    const finalTotal = baseTotal + tipAmount - discountAmount;
+    const finalTotal = Math.max(0, baseTotal + tipAmount - discountAmount);
 
-    // Lock the session (tip/discount/voucher will be saved when Bill is generated)
-    await this.prisma.tableSession.update({
-      where: { id: sessionId },
-      data: { 
-        billRequestedAt: new Date(),
-      },
+    // Distribute tip and discount proportionally across all orders
+    // This ensures each order reflects its share of tip/discount
+    const orderUpdates = orders.map((order, index) => {
+      const orderTotal = Number(order.total);
+      const ratio = orderTotal / baseTotal;
+      
+      // For the last order, use remaining amounts to avoid rounding errors
+      const isLastOrder = index === orders.length - 1;
+      const orderTip = isLastOrder 
+        ? tipAmount - orders.slice(0, -1).reduce((sum, o, i) => sum + Math.round(Number(o.total) / baseTotal * tipAmount * 100) / 100, 0)
+        : Math.round(ratio * tipAmount * 100) / 100;
+      
+      const orderDiscount = isLastOrder
+        ? discountAmount - orders.slice(0, -1).reduce((sum, o, i) => sum + Math.round(Number(o.total) / baseTotal * discountAmount * 100) / 100, 0)
+        : Math.round(ratio * discountAmount * 100) / 100;
+      
+      const newTotal = Math.max(0, orderTotal + orderTip - orderDiscount);
+      
+      return {
+        orderId: (order as any).id,
+        tip: orderTip,
+        discount: orderDiscount,
+        total: newTotal,
+      };
     });
+
+    // Update all orders with tip and discount in a transaction
+    await this.prisma.$transaction([
+      // Lock the session
+      this.prisma.tableSession.update({
+        where: { id: sessionId },
+        data: { 
+          billRequestedAt: new Date(),
+        },
+      }),
+      // Update each order with its share of tip/discount
+      ...orderUpdates.map(update => 
+        this.prisma.order.update({
+          where: { id: update.orderId },
+          data: {
+            tip: update.tip,
+            // Note: discount field doesn't exist in schema yet, will be reflected in total
+            total: update.total,
+          },
+        })
+      ),
+    ]);
 
     // Notify staff with final total including tip and discount
     this.orderGateway.emitBillRequested(tenantId, {

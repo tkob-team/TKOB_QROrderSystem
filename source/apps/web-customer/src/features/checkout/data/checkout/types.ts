@@ -54,6 +54,8 @@ export interface PaymentIntentRequest {
   returnUrl?: string;
   cancelUrl?: string;
   tip?: number; // Tip amount in USD (optional)
+  discount?: number; // Discount amount in USD (optional, from voucher)
+  voucherCode?: string; // Voucher code used for discount (optional)
 }
 
 /**
