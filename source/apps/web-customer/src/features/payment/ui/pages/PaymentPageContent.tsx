@@ -221,12 +221,14 @@ export function PaymentPageContent() {
   }
 
   // BUG-10: Prevent customer self-payment before order is ready
-  // Only allow payment for orders in READY, SERVED, or COMPLETED status
+  // Only apply this check for 'bill' source (pay after flow)
+  // For 'checkout' source (pay first flow), always allow QR payment
   const allowedPaymentStatuses = ['READY', 'SERVED', 'COMPLETED', 'PAID'];
   const orderStatus = orderData?.status?.toUpperCase() || '';
   const isPaymentStatusAllowed = allowedPaymentStatuses.includes(orderStatus);
+  const isPayAfterFlow = source === 'bill';
   
-  if (mounted && orderData && !isPaymentStatusAllowed && paymentMethod === 'SEPAY_QR') {
+  if (mounted && orderData && !isPaymentStatusAllowed && paymentMethod === 'SEPAY_QR' && isPayAfterFlow) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>
         {/* Header */}
@@ -293,8 +295,22 @@ export function PaymentPageContent() {
     return <SepayPaymentPage />
   }
 
-  // BILL_TO_TABLE: Redirect to bill page (payment is handled there now)
-  // This shouldn't normally be reached since BillPreviewPage handles BILL_TO_TABLE directly
-  router.replace('/bill')
-  return null
+  // BILL_TO_TABLE/CASH: Should not reach here after fix
+  // BillPreviewPage now handles BILL_TO_TABLE directly and navigates to /orders
+  // If somehow reached, redirect to orders page
+  useEffect(() => {
+    if (mounted && (paymentMethod === 'BILL_TO_TABLE' || paymentMethod === 'CASH')) {
+      log('ui', 'Redirecting BILL_TO_TABLE/CASH to orders', { paymentMethod }, { feature: 'payment' })
+      router.replace('/orders')
+    }
+  }, [mounted, paymentMethod, router])
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--gray-50)' }}>
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--orange-500)' }}></div>
+        <p style={{ color: 'var(--gray-600)' }}>Redirecting...</p>
+      </div>
+    </div>
+  )
 }

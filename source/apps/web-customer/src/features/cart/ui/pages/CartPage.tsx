@@ -120,7 +120,7 @@ export function CartPage() {
         ) : (
           <>
             {/* Cart Items */}
-            <div className="flex-1 p-4 pb-28">
+            <div className="flex-1 p-4 pb-24">
               <div className="space-y-3">
                 {cartItems.map((item) => (
                   <CartItemCard

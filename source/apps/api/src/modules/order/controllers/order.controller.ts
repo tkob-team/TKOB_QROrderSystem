@@ -256,6 +256,45 @@ export class OrderController {
     return this.orderService.cancelSessionBillRequest(session.sessionId, session.tenantId);
   }
 
+  @Post('orders/session/confirm-payment')
+  @UseGuards(SessionGuard)
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Confirm payment for session',
+    description: 'Lock session and notify staff when customer confirms payment. Called after selecting payment method.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        sessionId: { type: 'string' },
+        tableNumber: { type: 'string' },
+        totalAmount: { type: 'number' },
+        orderCount: { type: 'number' },
+        lockedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async confirmSessionPayment(
+    @Session() session: SessionData,
+    @Body() body: { paymentMethod: string; tip?: number; discount?: number; voucherCode?: string },
+  ) {
+    return this.orderService.confirmSessionPayment(
+      session.sessionId,
+      session.tableId,
+      session.tenantId,
+      body.paymentMethod,
+      body.tip,
+      body.discount,
+      body.voucherCode,
+    );
+  }
+
   @Post('orders/:orderId/cancel')
   @UseGuards(SessionGuard)
   @Public()

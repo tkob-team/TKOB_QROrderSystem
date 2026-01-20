@@ -30,9 +30,20 @@ export interface RequestBillResponse {
   message: string;
   sessionId: string;
   tableNumber: string;
-  requestedAt: string;
   totalAmount: number;
   orderCount: number;
+  billRequestedAt?: string; // Existing lock status if any
+}
+
+export interface ConfirmPaymentResponse {
+  success: boolean;
+  message: string;
+  sessionId: string;
+  tableNumber: string;
+  totalAmount?: number;
+  orderCount?: number;
+  lockedAt?: string;
+  alreadyLocked?: boolean;
 }
 
 export interface CancelBillResponse {
@@ -95,13 +106,30 @@ export class OrdersAdapter implements IOrdersAdapter {
   }
 
   /**
-   * Request bill for current session
-   * Locks the session - no more orders can be placed
-   * Notifies staff to bring the bill
+   * Request bill preview for current session
+   * Does NOT lock session - just returns bill info
    */
   async requestSessionBill(): Promise<RequestBillResponse> {
     const response = await apiClient.post<{ success: boolean; data: RequestBillResponse }>(
       '/orders/session/request-bill'
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Confirm payment for current session
+   * Locks session and notifies staff
+   * Called when customer clicks Pay button
+   */
+  async confirmSessionPayment(
+    paymentMethod: string,
+    tip?: number,
+    discount?: number,
+    voucherCode?: string,
+  ): Promise<ConfirmPaymentResponse> {
+    const response = await apiClient.post<{ success: boolean; data: ConfirmPaymentResponse }>(
+      '/orders/session/confirm-payment',
+      { paymentMethod, tip, discount, voucherCode }
     );
     return response.data.data;
   }

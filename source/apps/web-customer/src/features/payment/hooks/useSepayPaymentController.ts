@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { checkoutApi } from '@/features/checkout/data'
+import { orderApi } from '@/features/orders/data'
 import { usePaymentPolling } from './usePaymentPolling'
 import type { PaymentIntentResponse } from '@/features/checkout/data'
 
@@ -28,6 +29,7 @@ interface UseSepayPaymentResult {
   pollingProgress: number // 0-100% polling progress
   pollingAttempt: number // current polling attempt
   pollingMaxAttempts: number // max polling attempts
+  source: 'bill' | 'checkout' // where user came from
   
   // Actions
   createPaymentIntent: () => Promise<void>
@@ -42,6 +44,10 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
   const orderId = searchParams.get('orderId')
   const tipParam = searchParams.get('tip') // Tip amount from Bill page
   const tipAmount = tipParam ? parseFloat(tipParam) : 0
+  const discountParam = searchParams.get('discount') // Discount amount from Bill page
+  const discountAmount = discountParam ? parseFloat(discountParam) : 0
+  const voucherCode = searchParams.get('voucher') || undefined // Voucher code from Bill page
+  const source = searchParams.get('source') || 'checkout' // 'bill' or 'checkout'
   
   const [status, setStatus] = useState<SepayPaymentStatus>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -66,10 +72,28 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     autoStart: true, // Auto-start when paymentId available
     interval: 3000, // Poll every 3 seconds (safe for SePay rate limit)
     maxAttempts: 60, // 3 minutes total (60 × 3s = 180s)
-    onSuccess: () => {
+    onSuccess: async () => {
       log('data', '[sepay] Payment confirmed via polling', {
         paymentId: paymentIntent?.paymentId ? maskId(paymentIntent.paymentId) : null,
       }, { feature: 'payment' })
+      
+      // If user came from bill flow, confirm session payment now (lock session + notify staff)
+      // This happens AFTER payment is verified, not before
+      if (source === 'bill') {
+        try {
+          await orderApi.confirmSessionPayment(
+            'SEPAY_QR',
+            tipAmount > 0 ? tipAmount : undefined,
+            discountAmount > 0 ? discountAmount : undefined,
+            voucherCode,
+          )
+          log('data', '[sepay] Session payment confirmed after QR payment success', { feature: 'payment' })
+        } catch (err) {
+          logError('data', '[sepay] Failed to confirm session payment', err, { feature: 'payment' })
+          // Don't block success state - payment was received, just logging failed
+        }
+      }
+      
       setStatus('success')
       if (countdownRef.current) clearInterval(countdownRef.current)
     },
@@ -191,18 +215,18 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     setTimeout(() => createPaymentIntent(), 100)
   }, [createPaymentIntent, stopPolling, resetPolling])
 
-  // Navigate to order tracking - use replace to prevent back to payment page
+  // Navigate to orders list - use replace to prevent back to payment page
   const goToOrderTracking = useCallback(() => {
-    if (orderId) {
-      router.replace(`/orders/${orderId}`)
-    }
-  }, [orderId, router])
+    router.replace('/orders')
+  }, [router])
 
   // Go back - use replace to prevent back navigation loop
+  // Navigate based on source: /bill if came from bill, /checkout otherwise
   const goBack = useCallback(() => {
     stopPolling()
-    router.replace('/checkout')
-  }, [router, stopPolling])
+    const destination = source === 'bill' ? '/bill' : '/checkout'
+    router.replace(destination)
+  }, [router, stopPolling, source])
 
   return {
     status,
@@ -212,6 +236,7 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     pollingProgress,
     pollingAttempt,
     pollingMaxAttempts,
+    source: source as 'bill' | 'checkout',
     createPaymentIntent,
     retryPayment,
     goToOrderTracking,

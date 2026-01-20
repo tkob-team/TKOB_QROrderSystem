@@ -322,7 +322,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   /**
    * Emit bill request notification to staff
-   * Triggered when customer requests bill
+   * Triggered when customer confirms payment
    */
   emitBillRequested(
     tenantId: string,
@@ -333,6 +333,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       tableNumber: string;
       totalAmount: number;
       orderCount?: number;
+      paymentMethod?: string;
       requestedAt: Date;
     },
   ) {
@@ -342,7 +343,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       timestamp: new Date(),
     });
     this.logger.log(
-      `Bill request notification sent to ${staffRoom} - Order #${data.orderNumber} at Table ${data.tableNumber}`,
+      `Bill request notification sent to ${staffRoom} - Order #${data.orderNumber} at Table ${data.tableNumber}${data.paymentMethod ? ` (${data.paymentMethod})` : ''}`,
     );
   }
   // ==================== UTILITY METHODS ====================
