@@ -53,8 +53,9 @@ export { xService } from './services/xService.client';
 - Tên hook `use<Domain><Verb>` hoặc `use<Concept>`.
 - Đặt hooks ở `features/<feature>/hooks/` nếu đặc thù; generic thì ở `shared/hooks`.
 
+**Example pattern:**
 ```ts
-// features/menu/hooks/useMenuCRUD.ts
+// Example: features/menu/hooks/useMenuCRUD.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { menuService } from '../services/menuService.client';
 
@@ -79,9 +80,11 @@ export function useMenuCRUD(tenantId: string) {
 - `*.server.ts`: dùng `fetch`, chạy trong Server Component (SEO + ít JS)
 - `*.client.ts`: dùng Axios + interceptors trong Client Component (cần token, trạng thái realtime)
 
+**Example pattern (pseudo-code):**
 ```ts
-// features/menu/services/menuService.server.ts
-const API_URL = process.env.API_URL;
+// Example: features/menu/services/menuService.server.ts
+// ⏳ ADD HERE: Verify actual API_URL env var in .env files
+const API_URL = process.env.API_URL; // Verify in source/apps/web-tenant/.env.example
 export const menuServiceServer = {
   async getMenu(tenantId: string) {
     const res = await fetch(`${API_URL}/tenants/${tenantId}/menu`, { cache: 'no-store' });
@@ -90,7 +93,7 @@ export const menuServiceServer = {
   }
 };
 
-// features/menu/services/menuService.client.ts
+// Example: features/menu/services/menuService.client.ts
 'use client';
 import apiClient from '@/lib/api/client';
 export const menuService = {
@@ -102,6 +105,8 @@ export const menuService = {
   },
 };
 ```
+
+**Verification:** Check actual service implementations in `source/apps/web-tenant/src/features/*/services/`
 
 ### Quy Tắc
 | Điều | Lý do |
@@ -174,8 +179,9 @@ qc.prefetchQuery({ queryKey: ['menu', tenantId], queryFn: () => menuService.getM
 - Persist bằng `persist` middleware khi cần giữ qua reload
 - Không lưu dữ liệu nhạy cảm (token) nếu có thể dùng cookie/httpOnly
 
+**Example pattern:**
 ```ts
-// features/cart/store/cartStore.ts
+// Example: features/cart/store/cartStore.ts
 'use client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -187,6 +193,8 @@ export const useCartStore = create<CartState>()(persist((set) => ({
   clear: () => set({ items: [] }),
 }), { name: 'cart-storage' }));
 ```
+
+**Verification:** Check actual store implementations in `source/apps/web-customer/src/stores/` (verified: cart.store.ts, checkout.store.ts, order.store.ts)
 
 ## 11. Folder Decision Matrix
 | Khi nào tạo feature mới? | Điều kiện |
@@ -210,8 +218,9 @@ const HeavyChart = dynamic(() => import('./HeavyChart'), { ssr: false }); // Eng
 - Form nhỏ: dùng controlled state + basic validation
 - Form phức tạp: dùng `react-hook-form` (khi thêm dependency) + schema (Zod)
 
-Cơ bản:
+**Example pattern:**
 ```tsx
+// Example: MenuItemForm component (pseudo-code)
 'use client';
 export function MenuItemForm({ onSubmit }) {
   const [name, setName] = useState('');
@@ -267,4 +276,4 @@ A: Trích types chung ra `@packages/dto`, dùng event/callback thay vì import n
 - `./ONBOARDING_CHECKLIST.md`
 
 ---
-Last Updated: 2025-11-30
+Last Updated: 2026-01-20

@@ -1,228 +1,80 @@
-# Customer Web App (Frontend)
+# Tài liệu Frontend
 
-Frontend Next.js 15 cho ứng dụng khách hàng quét QR, đặt món và thanh toán.
+**Dự án:** TKOB_QROrderSystem  
+**Tech Stack:** Next.js 15, React (⏳ ADD HERE: verify version in source/apps/*/package.json), TypeScript, TailwindCSS (⏳ ADD HERE: verify version in source/apps/*/package.json)  
+**Architecture:** Monorepo với 2 Ứng dụng (web-tenant, web-customer)
 
-## 1. Giới thiệu
-Mục tiêu: hiển thị menu theo tenant (quán), cho phép khách thêm vào giỏ, checkout, theo dõi trạng thái đơn hàng.
+## Tổng quan
 
-**Architecture**: Clean Architecture với Next.js 15 App Router
-- **Presentation Layer**: `app/` - Routing và page wrappers
-- **Domain Layer**: `src/features/` - Business logic và feature UI
-- **Shared Layer**: `src/shared/` - Reusable components/hooks/utils
-- **Infrastructure Layer**: `src/lib/` - API clients, providers
+Frontend bao gồm **hai ứng dụng Next.js 15 riêng biệt** trong một monorepo pnpm workspace:
 
-## 2. Quick Start
+1. **web-tenant** - Cổng quản lý Admin/Nhân viên (desktop-first)
+   - Quản lý menu, theo dõi đơn hàng, phân tích, quản lý bàn/QR
+   - Kiểm soát truy cập dựa trên vai trò (OWNER, STAFF, KITCHEN)
+   - Vị trí: `source/apps/web-tenant/`
+
+2. **web-customer** - Ứng dụng đặt hàng khách hàng (mobile-first)
+   - Quét mã QR, duyệt menu, giỏ hàng, thanh toán, theo dõi đơn hàng
+   - Nhẹ và được tối ưu hóa cho thiết bị di động
+   - Vị trí: `source/apps/web-customer/`
+
+## Khởi động Nhanh
+
 ```bash
-pnpm --filter web-customer dev
-```
-Truy cập: http://localhost:3001
+# Cài đặt dependencies tại thư mục gốc repo
+pnpm install
 
-## 3. Tech Stack
-- **Framework**: Next.js 15 (App Router)
-- **UI**: React 19, TailwindCSS v4
-- **State**: TanStack Query (server state), Zustand (client state: giỏ hàng)
-- **API**: Axios client with interceptors
-- **Icons**: lucide-react
+# Chạy web-tenant (Admin Portal)
+cd source/apps/web-tenant
+pnpm dev
+# Port: 3002 (verify in source/apps/web-tenant/package.json dev script)
 
-## 4. Cấu trúc Thư mục (Clean Architecture)
-
-```
-web-customer/
-├─ src/
-│  ├─ app/                      # Presentation Layer (Next.js App Router)
-│  │  ├─ layout.tsx             # Root layout
-│  │  ├─ page.tsx               # Landing page
-│  │  ├─ providers.tsx          # Client providers wrapper
-│  ├─ (auth)/                   # Route group: Auth pages
-│  │  └─ login/page.tsx
-│  ├─ (menu)/                   # Route group: Menu browsing
-│  │  ├─ menu/page.tsx
-│  │  └─ [itemId]/page.tsx
-│  └─ (cart)/                   # Route group: Cart & checkout
-│     ├─ cart/page.tsx
-│     └─ checkout/page.tsx
-│
-├─ src/
-│  ├─ features/                 # Domain Layer (Business logic)
-│  │  ├─ landing/               # QR validation & welcome
-│  │  ├─ menu-view/             # Menu browsing
-│  │  │  ├─ components/
-│  │  │  │  ├─ MenuList.tsx
-│  │  │  │  └─ MenuItem.tsx
-│  │  │  ├─ hooks/
-│  │  │  │  └─ useMenu.ts
-│  │  │  └─ index.ts
-│  │  ├─ cart/                  # Cart management
-│  │  │  ├─ components/
-│  │  │  ├─ store/
-│  │  │  │  └─ cartStore.ts    # Zustand store
-│  │  │  └─ index.ts
-│  │  ├─ checkout/              # Checkout & payment
-│  │  └─ order-tracking/        # Order status tracking
-│  │
-│  ├─ shared/                   # Shared Layer (Reusable)
-│  │  ├─ components/
-│  │  │  ├─ ui/                 # UI primitives
-│  │  │  │  ├─ Button.tsx
-│  │  │  │  ├─ Input.tsx
-│  │  │  │  └─ Card.tsx
-│  │  │  └─ layouts/            # Layout components
-│  │  ├─ context/               # Global contexts
-│  │  │  ├─ SessionContext.tsx  # Customer session
-│  │  │  ├─ TenantContext.tsx   # Restaurant details
-│  │  │  └─ TableContext.tsx    # Table info
-│  │  ├─ hooks/                 # Shared hooks
-│  │  └─ utils/                 # Helpers
-│  │
-│  ├─ lib/                      # Infrastructure Layer
-│  │  ├─ api/
-│  │  │  ├─ client.ts           # Axios instance
-│  │  │  └─ endpoints.ts
-│  │  └─ qr/
-│  │     └─ validateQRToken.ts
-│  │
-│  ├─ store/                    # Global state (Zustand)
-│  └─ styles/
-│     └─ globals.css
-│
-└─ public/                      # Static assets
+# Chạy web-customer (Customer App) - trong terminal riêng
+cd source/apps/web-customer
+pnpm dev
+# Port: 3001 (verify in source/apps/web-customer/package.json dev script)
 ```
 
-### Giải thích Clean Architecture Layers
+## Cấu trúc Tài liệu
 
-**1. Presentation Layer (`app/`)**
-- **Purpose**: Handle routing only, thin page wrappers
-- **Rules**: Import from `features/`, no business logic
-- **Example**: `app/menu/page.tsx` renders `<MenuView />` from features
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Hướng dẫn kiến trúc hoàn chỉnh bao quát cả hai ứng dụng, cấu trúc monorepo, các lớp Clean Architecture, patterns routing, và các luồng chính
+- **[RBAC_GUIDE.md](./RBAC_GUIDE.md)** - Kiểm soát truy cập dựa trên vai trò cho web-tenant
+- **[ORVAL.md](./ORVAL.md)** - Tạo mã API với Orval (TypeScript client + React Query hooks)
+- **[guide/](./guide/)** - Hướng dẫn cho nhà phát triển (onboarding, patterns, Next.js 15 App Router, ví dụ triển khai tính năng)
+- **[web-customer/README.md](./web-customer/README.md)** - Chi tiết cụ thể của web-customer (xem bên dưới)
+- **[web-tenant/README.md](./web-tenant/README.md)** - Chi tiết cụ thể của web-tenant (⏳ ADD HERE: create if doesn't exist)
 
-**2. Domain Layer (`src/features/`)**
-- **Purpose**: Business logic and feature-specific UI
-- **Rules**: Self-contained, can import from `shared/` and `lib/`
-- **Example**: `features/cart/` owns cart logic, UI, and Zustand store
+## Chi tiết Cụ thể từng Ứng dụng
 
-**3. Shared Layer (`src/shared/`)**
-- **Purpose**: Reusable components/hooks/utils
-- **Rules**: No feature-specific logic, used by any feature
-- **Example**: `shared/components/ui/Button.tsx` is a generic button
+### Ứng dụng Web-Customer
 
-**4. Infrastructure Layer (`src/lib/`)**
-- **Purpose**: API clients, external service configs
-- **Rules**: Framework-agnostic when possible
-- **Example**: `lib/api/client.ts` configures Axios with interceptors
+Xem chi tiết triển khai web-customer tại [web-customer/README.md](./web-customer/README.md):
+- Cấu trúc Clean Architecture (các lớp Presentation/Domain/Shared/Infrastructure)
+- Tổ chức tính năng (landing, menu-view, cart, checkout, order-tracking)
+- Quản lý trạng thái (TanStack Query cho server state, Zustand cho giỏ hàng)
+- Context providers (SessionContext, TenantContext, TableContext)
+- Luồng quét QR và xác thực token
 
-## 5. Architecture Principles
+### Ứng dụng Web-Tenant
 
-### Data Flow (Clean Architecture)
-```
-app/page.tsx → features/Feature.tsx → shared/components → lib/api
-     ↓              ↓                       ↓                ↓
-  Routing      Business Logic        UI Primitives    External APIs
-```
+Xem chi tiết triển khai web-tenant tại [web-tenant/README.md](./web-tenant/README.md), [ARCHITECTURE.md](./ARCHITECTURE.md), và [RBAC_GUIDE.md](./RBAC_GUIDE.md):
+- Các module tính năng (auth, dashboard, menu-management, order-management, staff, tables)
+- Route guards dựa trên vai trò
+- Layout admin và điều hướng
 
-### Dependency Rule
-- **app/** can import from `features/`
-- **features/** can import from `shared/`, `lib/`, other features (via index.ts)
-- **shared/** can import from `lib/` only (no features)
-- **lib/** can import external libraries only (no app code)
+## Mục lục Hướng dẫn (Tài liệu hướng dẫn bổ sung)
 
-### Component Patterns
-- **Dumb (ui)**: Presentational, no side-effects, no API calls
-- **Smart (features)**: Can use TanStack Query, Zustand, business logic
-- **Page (app)**: Thin wrapper, imports from features, handles routing
+Các tài liệu chi tiết nằm trong thư mục `docs/frontend/guide/` giúp onboard và chuẩn hoá phát triển:
 
-## 6. State Management
+| Tệp | Nội dung |
+|------|----------|
+| [guide/README.md](./guide/README.md) | Mục lục & định hướng đọc |
+| [guide/ONBOARDING_CHECKLIST.md](./guide/ONBOARDING_CHECKLIST.md) | Checklist vào dự án |
+| [guide/NEXTJS_15_APP_ROUTER_GUIDE.md](./guide/NEXTJS_15_APP_ROUTER_GUIDE.md) | App Router & Server/Client Components |
+| [guide/PATTERNS_AND_CONVENTIONS.md](./guide/PATTERNS_AND_CONVENTIONS.md) | Quy ước tổ chức code & patterns |
+| [guide/FEATURE_IMPLEMENTATION_GUIDE.md](./guide/FEATURE_IMPLEMENTATION_GUIDE.md) | Ví dụ triển khai Analytics Dashboard |
 
-### Server State (TanStack Query)
-```ts
-// features/menu-view/hooks/useMenu.ts
-export const useMenu = (tenantId: string) => {
-  return useQuery({
-    queryKey: ['menu', tenantId],
-    queryFn: () => menuService.getMenu(tenantId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-```
+Liên kết nhanh: [Guide Index](./guide/README.md) · [Checklist](./guide/ONBOARDING_CHECKLIST.md) · [App Router](./guide/NEXTJS_15_APP_ROUTER_GUIDE.md) · [Patterns](./guide/PATTERNS_AND_CONVENTIONS.md) · [Feature Example](./guide/FEATURE_IMPLEMENTATION_GUIDE.md) · [Architecture](./ARCHITECTURE.md)
 
-### Client State (Zustand)
-```ts
-// features/cart/store/cartStore.ts
-export const useCartStore = create<CartState>()(
-  persist(
-    (set) => ({
-      items: [],
-      addItem: (item) => set((state) => ({ items: [...state.items, item] })),
-      clearCart: () => set({ items: [] }),
-    }),
-    { name: 'cart-storage' }
-  )
-);
-```
-
-## 7. Context Providers
-
-### Session Management
-```tsx
-// shared/context/SessionContext.tsx
-export function SessionProvider({ children }) {
-  const [tenantId, setTenantId] = useState(null);
-  const [tableId, setTableId] = useState(null);
-  
-  return (
-    <SessionContext.Provider value={{ tenantId, tableId, setSession }}>
-      {children}
-    </SessionContext.Provider>
-  );
-}
-```
-
-### Provider Hierarchy
-```tsx
-// app/providers.tsx
-<QueryClientProvider>
-  <SessionProvider>
-    <TenantProvider>
-      <TableProvider>
-        {children}
-      </TableProvider>
-    </TenantProvider>
-  </SessionProvider>
-</QueryClientProvider>
-```
-
-## 8. Import Rules
-
-### ✅ Allowed
-```ts
-// External libraries
-import { useQuery } from '@tanstack/react-query';
-
-// Shared resources
-import { Button } from '@/shared/components/ui';
-import { formatCurrency } from '@/shared/utils';
-
-// Within same feature (relative)
-import { useMenu } from '../hooks/useMenu';
-
-// From other features (via index.ts only)
-import { useCart } from '@/features/cart';
-```
-
-### ❌ Prohibited
-```ts
-// Don't import internal files from other features
-import { CartItem } from '@/features/cart/components/CartItem';
-
-// Don't use deep relative imports across features
-import { useAuth } from '../../../auth/hooks/useAuth';
-```
-
-## 10. Mở rộng
-Thêm feature mới:
-1. Tạo folder trong `components/features/<feature>/`.
-2. Tạo hook chuyên biệt (nếu cần) trong `hooks/`.
-3. Định nghĩa query/mutation trong `lib/api.ts`.
-4. Viết test (nếu áp dụng) cho utils và hooks quan trọng.
-
-Ngắn gọn, ưu tiên tách biệt: UI (trình bày) / Feature (nghiệp vụ) / Data (query) / State (store) / Helpers (utils).
-\n+## Guide Index (Tài liệu hướng dẫn bổ sung)\n+Các tài liệu chi tiết nằm trong thư mục `docs/frontend/guide/` giúp onboard và chuẩn hoá phát triển:\n+\n+| File | Nội dung |\n+|------|----------|\n+| `guide/README.md` | Mục lục & định hướng đọc |\n+| `guide/ONBOARDING_CHECKLIST.md` | Checklist vào dự án |\n+| `guide/NEXTJS_15_APP_ROUTER_GUIDE.md` | App Router & Server/Client Components |\n+| `guide/PATTERNS_AND_CONVENTIONS.md` | Quy ước tổ chức code & patterns |\n+| `guide/FEATURE_IMPLEMENTATION_GUIDE.md` | Ví dụ triển khai Analytics Dashboard |\n+\n+Liên kết nhanh: [Guide Index](./guide/README.md) · [Checklist](./guide/ONBOARDING_CHECKLIST.md) · [App Router](./guide/NEXTJS_15_APP_ROUTER_GUIDE.md) · [Patterns](./guide/PATTERNS_AND_CONVENTIONS.md) · [Feature Example](./guide/FEATURE_IMPLEMENTATION_GUIDE.md) · [Architecture](./ARCHITECTURE.md)\n*** End Patch
+---
+**Last Updated:** 2026-01-20

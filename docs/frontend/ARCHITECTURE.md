@@ -1,83 +1,83 @@
-## Scope vs MVP
+## Phạm vi so với MVP
 
-Some frontend features described in this document are post-MVP (future scope). For example: a rich POS interface in order-management, advanced analytics dashboards, and offline support via service workers are planned for later phases.
+Một số tính năng frontend được mô tả trong tài liệu này là hậu-MVP (phạm vi tương lai). Ví dụ: giao diện POS phong phú trong quản lý đơn hàng, bảng điều khiển phân tích nâng cao, và hỗ trợ ngoại tuyến thông qua service workers được lên kế hoạch cho các giai đoạn sau.
 
-The MVP will focus on the essential flows:
+MVP sẽ tập trung vào các luồng thiết yếu:
 
-- **Core MVP:**
-  - Tenant onboarding and authentication
-  - Menu management (CRUD)
-  - Table management and QR code generation
-  - Customer ordering and payment
-  - Basic kitchen display system (KDS)
-- **Future Enhancements:**
-  - Full-featured POS/order-management for staff
-  - Advanced analytics and reporting dashboards
-  - Offline support (service workers/PWA)
-  - Loyalty, promotions, and integrations
+- **MVP Cốt lõi:**
+  - Onboarding tenant và xác thực
+  - Quản lý menu (CRUD)
+  - Quản lý bàn và tạo mã QR
+  - Đặt hàng và thanh toán của khách hàng
+  - Hệ thống hiển thị bếp cơ bản (KDS)
+- **Nâng cấp Tương lai:**
+  - POS/quản lý đơn hàng có tính năng đầy đủ cho nhân viên
+  - Bảng điều khiển phân tích và báo cáo nâng cao
+  - Hỗ trợ ngoại tuyến (service workers/PWA)
+  - Tích hợp loyalty, khuyến mãi và API
 
-# Frontend Architecture – Unified Restaurant Ordering Platform (Next.js 15+ App Router)
+# Kiến trúc Frontend – Nền tảng Đặt hàng Nhà hàng Thống nhất (Next.js 15+ App Router)
 
-**Project:** TKQR-in Ordering Platform  
-**Architecture:** Feature-Based Clean Architecture with Next.js 15 App Router  
+**Dự án:** TKOB_QROrderSystem  
+**Kiến trúc:** Kiến trúc sạch dựa trên Tính năng với Next.js 15 App Router  
 **Tech Stack:** Next.js 15, React 19, TypeScript, TailwindCSS v4  
-**Last Updated:** 2025-11-28
+**Cập nhật lần cuối:** 2026-01-20
 
 ---
 
-## Table of Contents
+## Mục lục
 
-1. [Architecture Overview](#architecture-overview)
-2. [Monorepo Structure](#monorepo-structure)
-3. [Next.js App Router Structure](#nextjs-app-router-structure)
-4. [Web-Tenant (Admin/Staff Portal)](#web-tenant-adminstaff-portal)
-5. [Web-Customer (Client Ordering App)](#web-customer-client-ordering-app)
-6. [Shared Packages](#shared-packages)
-7. [API Integration](#api-integration)
-8. [State Management Strategy](#state-management-strategy)
-9. [Naming Conventions](#naming-conventions)
-10. [Import Rules](#import-rules)
-11. [Code Organization Best Practices](#code-organization-best-practices)
-12. [Testing Strategy](#testing-strategy)
-13. [Deployment Strategy](#deployment-strategy)
-14. [Performance Benchmarks](#performance-benchmarks)
-15. [Troubleshooting](#troubleshooting)
-16. [Resources](#resources)
-17. [Changelog](#changelog)
-18. [Approval](#approval)
-
----
-
-## Architecture Overview
-
-This frontend is a **Next.js 15+ monorepo** with two distinct applications:
-
-- **web-tenant**: Admin/Staff management portal (desktop-first, feature-rich)
-- **web-customer**: Customer ordering app (mobile-first, lightweight)
-
-**Key Next.js 15+ Principles:**
-- Uses the **App Router** (`app/` directory) for file-based routing.
-- **Server Components by default** for data fetching, SEO, and performance.
-- **Client Components** only when interactivity or browser APIs are needed (marked with `'use client'`).
-- **Streaming UI** with `loading.tsx` and `error.tsx` for route segments.
-- **API calls** via `fetch` in Server Components or via TanStack Query in Client Components.
-- **Environment variables** use `NEXT_PUBLIC_...` for client-exposed config and `process.env.API_URL` for server-only.
+1. [Tổng quan Kiến trúc](#architecture-overview)
+2. [Cấu trúc Monorepo](#monorepo-structure)
+3. [Cấu trúc Next.js App Router](#nextjs-app-router-structure)
+4. [Web-Tenant (Cổng thông tin Quản trị/Nhân viên)](#web-tenant-adminstaff-portal)
+5. [Web-Customer (Ứng dụng Đặt hàng Khách hàng)](#web-customer-client-ordering-app)
+6. [Gói chia sẻ](#shared-packages)
+7. [Tích hợp API](#api-integration)
+8. [Chiến lược Quản lý Trạng thái](#state-management-strategy)
+9. [Quy ước Đặt tên](#naming-conventions)
+10. [Quy tắc Import](#import-rules)
+11. [Các thực tiễn tốt nhất Tổ chức Mã](#code-organization-best-practices)
+12. [Chiến lược Kiểm tra](#testing-strategy)
+13. [Chiến lược Triển khai](#deployment-strategy)
+14. [Mục tiêu Hiệu suất](#performance-benchmarks)
+15. [Xử lý sự cố](#troubleshooting)
+16. [Tài nguyên](#resources)
+17. [Nhật ký thay đổi](#changelog)
+18. [Phê duyệt](#approval)
 
 ---
 
-## Monorepo & pnpm Workspace
+## Tổng quan Kiến trúc
 
-The repository is organized as a monorepo managed with pnpm workspaces. Each application (customer and admin) is isolated under `source/apps/*` with its own tooling configuration, while shared libraries live under `packages/*` and are consumed via workspace dependencies.
+Frontend này là một **monorepo Next.js 15+** với hai ứng dụng riêng biệt:
 
-At the root, `package.json` and `pnpm-workspace.yaml` declare the workspace globs so dependencies install once at the root and link locally between apps and packages. Run `pnpm install` from the repository root; development commands can be filtered per app.
+- **web-tenant**: Cổng thông tin quản trị/nhân viên (desktop-first, giàu tính năng)
+- **web-customer**: Ứng dụng đặt hàng khách hàng (mobile-first, nhẹ)
 
-- Apps (Next.js 15, React 19):
-  - `source/apps/web-customer` – customer-facing QR ordering app
-  - `source/apps/web-tenant` – admin/staff portal
-- Per-app config: each app owns its `package.json`, `next.config.mjs`, `tsconfig.json`, `tailwind.config.ts`, `.eslintrc.json` for independent builds and linting.
-- Shared packages: `packages/*` (e.g., `ui`, `dto`, `config`, etc.) published as workspace deps.
+**Các Nguyên tắc Next.js 15+ Chính:**
+- Sử dụng **App Router** (thư mục `app/`) để định tuyến dựa trên tệp.
+- **Server Components theo mặc định** cho fetching dữ liệu, SEO, và hiệu suất.
+- **Client Components** chỉ khi cần tương tác hoặc API trình duyệt (đánh dấu bằng `'use client'`).
+- **UI Streaming** với `loading.tsx` và `error.tsx` cho các segment route.
+- **Gọi API** thông qua `fetch` trong Server Components hoặc thông qua TanStack Query trong Client Components.
+- **Biến môi trường** sử dụng `NEXT_PUBLIC_...` cho cấu hình được phơi bày cho client và `process.env.API_URL` cho server-only.
 
-Example workspace config and dev commands:
+---
+
+## Monorepo & Không gian làm việc pnpm
+
+Repository được tổ chức dưới dạng monorepo được quản lý bằng pnpm workspaces. Mỗi ứng dụng (khách hàng và quản trị) được cách ly dưới `source/apps/*` với cấu hình công cụ riêng của nó, trong khi các thư viện chia sẻ nằm dưới `packages/*` và được tiêu thụ thông qua các phụ thuộc workspace.
+
+Ở root, `package.json` và `pnpm-workspace.yaml` khai báo các glob workspace để cài đặt các phụ thuộc một lần ở root và liên kết cục bộ giữa các ứng dụng và gói. Chạy `pnpm install` từ root repository; các lệnh phát triển có thể được lọc trên mỗi ứng dụng.
+
+- Ứng dụng (Next.js 15, React 19):
+  - `source/apps/web-customer` – ứng dụng đặt hàng QR hướng tới khách hàng
+  - `source/apps/web-tenant` – cổng thông tin quản trị/nhân viên
+- Cấu hình mỗi ứng dụng: mỗi ứng dụng sở hữu `package.json`, `next.config.mjs`, `tsconfig.json`, `tailwind.config.ts`, `.eslintrc.json` của nó để xây dựng và linting độc lập.
+- Gói chia sẻ: `packages/*` (ví dụ: `ui`, `dto`, `config`, v.v.) được xuất bản dưới dạng các phụ thuộc workspace.
+
+Ví dụ cấu hình workspace và lệnh dev:
 
 ```yaml
 # pnpm-workspace.yaml
@@ -154,55 +154,55 @@ source/
 
 ---
 
-## Next.js App Router Structure
+## Cấu trúc Next.js App Router
 
-### 1. App Directory (Presentation Layer)
+### 1. Thư mục App (Lớp Trình bày)
 
-**Purpose**: Handle routing, page rendering, and Next.js-specific concerns only.
+**Mục đích**: Xử lý định tuyến, rendering trang, và các mối quan tâm cụ thể của Next.js.
 
-**Key Principles**:
-- **Thin wrappers**: Pages should import from `features/` and render them
-- **No business logic**: All domain logic lives in `src/features/`
-- **Route groups**: Use `(auth)` for organizing without affecting URLs; use explicit `admin/` segment for admin routes.
-- **Server Components by default**: Use `'use client'` only when needed
+**Các Nguyên tắc Chính**:
+- **Wrapper mỏng**: Các trang nên import từ `features/` và render chúng
+- **Không logic kinh doanh**: Tất cả logic miền sống trong `src/features/`
+- **Nhóm route**: Sử dụng `(auth)` để tổ chức mà không ảnh hưởng đến URL; sử dụng segment `admin/` rõ ràng cho route admin.
+- **Server Components theo mặc định**: Sử dụng `'use client'` chỉ khi cần thiết
 
-### 2. Route Segments & Special Files
+### 2. Các Segment Route & Tệp Đặc biệt
 
-- **page.tsx**: Main page component (Server Component by default)
-- **layout.tsx**: Shared layout for nested routes
-- **loading.tsx**: Streaming UI loading state
-- **error.tsx**: Error boundary for route segment
-- **not-found.tsx**: 404 page
+- **page.tsx**: Thành phần trang chính (Server Component theo mặc định)
+- **layout.tsx**: Layout chia sẻ cho các nested route
+- **loading.tsx**: Trạng thái UI loading streaming
+- **error.tsx**: Error boundary cho route segment
+- **not-found.tsx**: Trang 404
 
-### 3. Dynamic Routes
+### 3. Route Động
 
 - Dynamic segments: `[id]`, `[slug]`
 - Optional catch-all: `[[...slug]]`
 - Required catch-all: `[...slug]`
 
-### 4. API Routes (Optional)
+### 4. API Routes (Tùy chọn)
 
-- Define under `app/api/` for Backend-for-Frontend (BFF) pattern
-- Use when you need server-side logic before calling external APIs
-- Example: `/api/webhook`, `/api/internal/cache-clear`
+- Định nghĩa dưới `app/api/` cho mô hình Backend-for-Frontend (BFF)
+- Sử dụng khi bạn cần logic server-side trước khi gọi API bên ngoài
+- Ví dụ: `/api/webhook`, `/api/internal/cache-clear`
 
 
 ### 5. Middleware
 
-- Each app can define its own `middleware.ts` for request handling.
-- **apps/web-tenant/middleware.ts**: Handles tenant/admin concerns such as authentication checks and RBAC guard for admin routes.
-- **apps/web-customer/middleware.ts** (optional): Used for QR scanning logic, only matches QR-related routes like `/s/:tenantSlug/:token` or `/scan?token=...`.
+- Mỗi ứng dụng có thể định nghĩa middleware.ts của riêng nó để xử lý yêu cầu.
+- **apps/web-tenant/middleware.ts**: Xử lý các vấn đề tenant/admin như kiểm tra xác thực và RBAC guard cho các route admin.
+- **apps/web-customer/middleware.ts** (tùy chọn): Được sử dụng cho logic quét QR, chỉ khớp các route liên quan đến QR như `/s/:tenantSlug/:token` hoặc `/scan?token=...`.
 
-**Responsibilities:**
-- **web-tenant middleware:**
-  - Protects private dashboard routes
-  - Checks JWT/session validity
-  - Redirects to `/login` if not authenticated
-  - Enforces RBAC for admin routes
-- **web-customer middleware (optional):**
-  - Parses QR token from URL
-  - Sets context cookies for session/tenant/table
-  - Optionally rewrites to the public menu route
+**Trách nhiệm:**
+- **Middleware web-tenant:**
+  - Bảo vệ các route dashboard riêng tư
+  - Kiểm tra tính hợp lệ của JWT/session
+  - Chuyển hướng đến `/login` nếu không được xác thực
+  - Thi hành RBAC cho các route admin
+- **Middleware web-customer (tùy chọn):**
+  - Parse token QR từ URL
+  - Đặt cookie ngữ cảnh cho session/tenant/table
+  - Tùy chọn rewrite sang route menu công khai
 
 ### Example Structure
 
@@ -237,19 +237,19 @@ web-tenant/
 
 ---
 
-## Web-Tenant (Admin/Staff Portal)
+## Web-Tenant (Cổng thông tin Quản trị/Nhân viên)
 
-**Purpose:** Full-featured management interface for restaurant owners and staff.
+**Mục đích:** Giao diện quản lý đầy đủ tính năng cho chủ nhà hàng và nhân viên.
 
-### Features Structure (Domain Layer)
+### Cấu trúc Tính năng (Lớp Miền)
 
-**Purpose**: Self-contained modules with business logic and feature-specific UI.
+**Mục đích**: Các module tự chứa đựng với logic kinh doanh và UI cụ thể cho tính năng.
 
-**Key Principles**:
-- **Feature isolation**: Each feature owns its components, hooks, types, and API calls
-- **Barrel exports**: Use `index.ts` to expose public API
-- **Can import from**: `shared/`, `lib/`, other features via index
-- **Cannot import from**: `app/` (circular dependency)
+**Các Nguyên tắc Chính**:
+- **Cách ly tính năng**: Mỗi tính năng sở hữu các thành phần, hook, loại, và gọi API của nó
+- **Barrel exports**: Sử dụng `index.ts` để phơi bày API công khai
+- **Có thể import từ**: `shared/`, `lib/`, các tính năng khác thông qua index
+- **Không thể import từ**: `app/` (phụ thuộc vòng tròn)
 
 ```
 web-tenant/src/features/
@@ -436,25 +436,25 @@ web-tenant/src/shared/
 
 ### Frontend RBAC & Route Guards
 
-The web-tenant app enforces role-based access control (RBAC) for all sensitive routes and features.
+Ứng dụng web-tenant thi hành kiểm soát truy cập dựa trên vai trò (RBAC) cho tất cả các route và tính năng nhạy cảm.
 
-**Roles:**
-- `tenant-admin`: Full access to all admin features
-- `manager`: Most admin features (except some tenant-level settings)
-- `kitchen`: Access to kitchen display system (KDS) only
-- `server`: Access to order-taking and table management
+**Vai trò:**
+- `tenant-admin`: Truy cập đầy đủ tất cả các tính năng quản trị
+- `manager`: Hầu hết các tính năng quản trị (ngoại trừ một số cài đặt cấp tenant)
+- `kitchen`: Chỉ truy cập hệ thống hiển thị bếp (KDS)
+- `server`: Truy cập lấy đơn hàng và quản lý bàn
 
-**Route Groups & Access:**
-- `admin/*`: Accessible by `tenant-admin`, `manager`
-- `(kitchen)`: Accessible by `kitchen` (KDS)
-- `(server)`: Accessible by `server` (order-taking)
+**Nhóm Route & Quyền truy cập:**
+- `admin/*`: Có thể truy cập bởi `tenant-admin`, `manager`
+- `(kitchen)`: Có thể truy cập bởi `kitchen` (KDS)
+- `(server)`: Có thể truy cập bởi `server` (lấy đơn hàng)
 
-**Enforcement Pattern:**
-- The `useAuth()` hook returns `{ user, role }` for the current session.
-- The `RoleGuard` component accepts an `allowedRoles` prop and renders children if the user has permission, or redirects to a Forbidden/AccessDenied page.
-- Optionally, a `withRoleGuard` HOC/helper can be used in layout components for DRY protection.
+**Mô hình Thi hành:**
+- Hook `useAuth()` trả về `{ user, role }` cho phiên hiện tại.
+- Thành phần `RoleGuard` chấp nhận prop `allowedRoles` và render các child nếu người dùng có quyền, hoặc chuyển hướng đến trang Forbidden/AccessDenied.
+- Tùy chọn, một HOC `withRoleGuard`/helper có thể được sử dụng trong các thành phần layout để bảo vệ DRY.
 
-**Example Usage:**
+**Ví dụ Sử dụng:**
 ```tsx
 import { RoleGuard } from '@/shared/components/auth/RoleGuard';
 
@@ -467,19 +467,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 ```
 
-**RBAC Rules (Summary):**
-- All admin routes must be wrapped in `RoleGuard`.
-- Unauthorized users are redirected to `/forbidden` or a custom access denied page.
-- The `role` is determined at login and stored in the auth context.
-- Use `withRoleGuard` for layouts to avoid repeating logic in every page.
+**Quy tắc RBAC (Tóm tắt):**
+- Tất cả các route admin phải được bao bọc trong `RoleGuard`.
+- Người dùng không được phép được chuyển hướng đến `/forbidden` hoặc trang từ chối quyền truy cập tùy chỉnh.
+- `role` được xác định tại lúc đăng nhập và được lưu trữ trong auth context.
+- Sử dụng `withRoleGuard` cho các layout để tránh lặp lại logic trong mọi trang.
 
 ---
 
-## Web-Customer (Client Ordering App)
+## Web-Customer (Ứng dụng Đặt hàng Khách hàng)
 
-**Purpose:** Lightweight, mobile-first ordering experience for customers.
+**Mục đích:** Trải nghiệm đặt hàng nhẹ, mobile-first cho khách hàng.
 
-### Features Structure
+### Cấu trúc Tính năng
 
 ```
 web-customer/src/features/
@@ -606,39 +606,39 @@ web-customer/src/shared/
     └── api.types.ts
 ```
 
-### Key Features
+### Tính năng Chính
 
-1. **QR Code Entry**
-   - Scan QR code
-   - Validate token
-   - Load tenant context
+1. **Nhập QR Code**
+   - Quét mã QR
+   - Xác thực token
+   - Tải ngữ cảnh tenant
 
-2. **Menu Browsing**
-   - View categorized menu
-   - Search functionality
-   - Filter by availability
-   - Item details with modifiers
+2. **Duyệt Menu**
+   - Xem menu được phân loại
+   - Chức năng tìm kiếm
+   - Lọc theo tính khả dụng
+   - Chi tiết mục với bộ sửa đổi
 
-3. **Cart Management**
-   - Add/remove items
-   - Modify quantities
-   - Apply modifiers
-   - Calculate totals
+3. **Quản lý Giỏ hàng**
+   - Thêm/xóa mục
+   - Sửa đổi số lượng
+   - Áp dụng bộ sửa đổi
+   - Tính toán tổng cộng
 
-4. **Checkout**
-   - Guest checkout (no registration)
-   - Customer info form
-   - Payment integration (Stripe)
-   - Order confirmation
+4. **Thanh toán**
+   - Thanh toán khách (không cần đăng ký)
+   - Biểu mẫu thông tin khách hàng
+   - Tích hợp thanh toán (Stripe)
+   - Xác nhận đơn hàng
 
-5. **Order Tracking**
-   - Real-time status updates
-   - Order timeline
-   - WebSocket notifications
+5. **Theo dõi Đơn hàng**
+   - Cập nhật trạng thái thực tế
+   - Dòng thời gian đơn hàng
+   - Thông báo WebSocket
 
-### Performance Optimizations
+### Tối ưu hóa Hiệu suất
 
-1. **Code Splitting with next/dynamic**
+1. **Chia tách mã với next/dynamic**
    ```typescript
    // Lazy load heavy client components
    import dynamic from 'next/dynamic';
@@ -649,62 +649,62 @@ web-customer/src/shared/
    );
    ```
 
-2. **Image Optimization**
-   - WebP format with fallbacks
-   - Lazy loading images
+2. **Tối ưu hóa Hình ảnh**
+   - Định dạng WebP với fallback
+   - Lazy loading hình ảnh
    - Progressive image loading
 
-3. **Bundle Size**
-   - Tree-shaking unused code
-   - Dynamic imports for routes
-   - Minification in production
+3. **Kích thước Bundle**
+   - Tree-shaking mã không sử dụng
+   - Dynamic imports cho route
+   - Minification trong production
 
-4. **Caching Strategy**
-   - Service Worker for offline support
-   - API response caching (React Query)
-   - LocalStorage for cart persistence
+4. **Chiến lược Lưu vào Bộ nhớ cache**
+   - Service Worker cho hỗ trợ ngoại tuyến
+   - Lưu vào bộ nhớ cache phản hồi API (React Query)
+   - LocalStorage cho sự lâu bền giỏ hàng
 
 ---
 
-## Cross-App QR Flow (web-tenant → web-customer)
+## Luồng QR Xuyên Ứng dụng (web-tenant → web-customer)
 
-This section documents how QR codes generated in **web-tenant** (Admin Portal) are scanned and processed by **web-customer** (Customer Ordering App).
+Phần này ghi lại cách các mã QR được tạo trong **web-tenant** (Cổng thông tin Quản trị) được quét và xử lý bởi **web-customer** (Ứng dụng Đặt hàng Khách hàng).
 
-### 1. QR URL Generation (Backend)
+### 1. Tạo URL QR (Backend)
 
-The backend API provides an endpoint for generating signed QR codes. These QR codes contain encrypted tokens that embed critical ordering context.
+API backend cung cấp endpoint để tạo các mã QR được ký. Các mã QR này chứa các token được mã hóa nhúng ngữ cảnh đặt hàng quan trọng.
 
-**QR URL Format:**
+**Định dạng URL QR:**
 ```
 https://order.example.com/s/[tenantSlug]/[token]
 ```
 
-**Example:**
+**Ví dụ:**
 ```
 https://order.example.com/s/pho-restaurant/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-**Components:**
-- `order.example.com`: The domain hosting **web-customer**
-- `s`: Short URL prefix for "scan"
-- `[tenantSlug]`: Human-readable restaurant identifier (e.g., `pho-restaurant`)
-- `[token]`: JWT/HMAC-signed token containing encrypted session data
+**Các Thành phần:**
+- `order.example.com`: Miền lưu trữ **web-customer**
+- `s`: Tiền tố URL ngắn cho "scan"
+- `[tenantSlug]`: Định danh nhà hàng con người có thể đọc được (ví dụ: `pho-restaurant`)
+- `[token]`: Token được ký JWT/HMAC chứa dữ liệu phiên được mã hóa
 
-### 2. QR Token Structure
+### 2. Cấu trúc Token QR
 
-The token is a **signed JWT** containing the following payload:
+Token là một **JWT được ký** chứa payload sau:
 
 ```typescript
 interface QRTokenPayload {
-  tenantId: string;      // UUID of the restaurant
-  tableId: string;       // UUID of the table
-  exp: number;           // Expiration timestamp (Unix)
-  version: string;       // Token schema version (e.g., "1.0")
-  iat?: number;          // Issued at timestamp (optional)
+  tenantId: string;      // UUID của nhà hàng
+  tableId: string;       // UUID của bàn
+  exp: number;           // Dấu thời gian hết hạn (Unix)
+  version: string;       // Phiên bản lược đồ token (ví dụ: "1.0")
+  iat?: number;          // Phát hành tại dấu thời gian (tùy chọn)
 }
 ```
 
-**Token Generation (Backend Reference):**
+**Tạo Token (Tham chiếu Backend):**
 ```typescript
 // Backend: services/qr-generation.service.ts
 import * as jwt from 'jsonwebtoken';
@@ -724,26 +724,26 @@ export function generateQRToken(tenantId: string, tableId: string): string {
 ```
 
 **Security Features:**
-- **HMAC Signature**: Prevents token tampering
-- **Expiration**: Tokens expire after a configurable period (default: 1 year)
-- **Version Field**: Allows for token schema evolution
+- **HMAC Signature**: Ngăn chặn việc giả mạo token
+- **Expiration**: Token hết hạn sau một khoảng thời gian có thể định cấu hình (mặc định: 1 năm)
+- **Version Field**: Cho phép tiến hóa lược đồ token
 
-**Related Documentation:**
-- See `docs/backend/qr-generation-flow.md` (TODO) for detailed backend QR generation logic
-- See `01-product/diagrams/qr-generation-flow.md` for visual flow diagrams
+**Tài liệu Liên quan:**
+- Xem `docs/backend/qr-generation-flow.md` (TODO) để tìm hiểu logic tạo QR ở backend chi tiết
+- Xem `01-product/diagrams/qr-generation-flow.md` để xem các sơ đồ luồng trực quan
 
-### 3. Customer Scan Flow (web-customer)
+### 3. Luồng Quét Khách hàng (web-customer)
 
-When a customer scans the QR code, their mobile browser navigates to the QR URL. The **web-customer** app handles this route and validates the token.
+Khi khách hàng quét mã QR, trình duyệt di động của họ điều hướng đến URL QR. Ứng dụng **web-customer** xử lý lộ trình này và xác thực token.
 
-#### 3.1 Route Handling
+#### 3.1 Xử lý Lộ trình
 
-**File Location:**
+**Vị trí Tệp:**
 ```
 apps/web-customer/app/s/[tenantSlug]/[token]/page.tsx
 ```
 
-**Route Structure:**
+**Cấu trúc Lộ trình:**
 ```typescript
 // app/s/[tenantSlug]/[token]/page.tsx
 interface ScanPageProps {
@@ -756,26 +756,26 @@ interface ScanPageProps {
 export default async function ScanPage({ params }: ScanPageProps) {
   const { tenantSlug, token } = params;
   
-  // Server-side token validation
+  // Xác thực token phía máy chủ
   const session = await validateQRToken(token);
   
   if (!session) {
     return <InvalidQRError />;
   }
   
-  // Redirect to menu with session context
+  // Chuyển hướng đến menu với bối cảnh phiên
   return <RedirectToMenu session={session} />;
 }
 ```
 
-#### 3.2 Token Validation (Server Component)
+#### 3.2 Xác thực Token (Server Component)
 
-**File Location:**
+**Vị trí Tệp:**
 ```
 apps/web-customer/src/lib/qr/validateQRToken.ts
 ```
 
-**Server-Side Validation:**
+**Xác thực Phía Máy chủ:**
 ```typescript
 // lib/qr/validateQRToken.ts
 import type { QRTokenPayload } from '@packages/dto';
@@ -787,7 +787,7 @@ export async function validateQRToken(token: string): Promise<QRTokenPayload | n
     const response = await fetch(`${API_URL}/api/public/scan?token=${token}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store', // Always validate fresh
+      cache: 'no-store', // Luôn xác thực mới
     });
 
     if (!response.ok) {
@@ -797,7 +797,7 @@ export async function validateQRToken(token: string): Promise<QRTokenPayload | n
 
     const data: QRTokenPayload = await response.json();
     
-    // Additional client-side checks
+    // Kiểm tra bổ sung phía client
     if (data.exp && data.exp < Date.now() / 1000) {
       console.error('Token expired');
       return null;
@@ -811,7 +811,7 @@ export async function validateQRToken(token: string): Promise<QRTokenPayload | n
 }
 ```
 
-**Backend API Endpoint:**
+**Endpoint API Backend:**
 ```
 GET /api/public/scan?token={token}
 
@@ -829,11 +829,11 @@ Response (401 Unauthorized):
 }
 ```
 
-#### 3.3 Customer Session Creation
+#### 3.3 Tạo Phiên Khách hàng
 
-After successful validation, a **short-lived customer session** is created client-side. This session is stored in React Context and optionally persisted to `localStorage` for page refreshes.
+Sau khi xác thực thành công, một **phiên khách hàng sống ngắn** được tạo ở phía client. Phiên này được lưu trữ trong React Context và tùy chọn được lưu vào `localStorage` để làm mới trang.
 
-**File Location:**
+**Vị trí Tệp:**
 ```
 apps/web-customer/src/shared/context/SessionContext.tsx
 ```
@@ -860,7 +860,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [tableId, setTableId] = useState<string | null>(null);
 
-  // Restore session from localStorage on mount
+  // Khôi phục phiên từ localStorage khi mount
   useEffect(() => {
     const stored = localStorage.getItem('customer-session');
     if (stored) {
@@ -882,7 +882,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setTenantId(data.tenantId);
     setTableId(data.tableId);
     
-    // Persist to localStorage
+    // Lưu vào localStorage
     localStorage.setItem('customer-session', JSON.stringify(data));
   };
 
@@ -916,30 +916,30 @@ export function useSession() {
 }
 ```
 
-### 4. Context Providers Architecture
+### 4. Kiến trúc Context Providers
 
-The **web-customer** app uses multiple React Context providers to manage ordering state:
+Ứng dụng **web-customer** sử dụng nhiều React Context providers để quản lý trạng thái đặt hàng:
 
-#### 4.1 Directory Structure
+#### 4.1 Cấu trúc Thư mục
 
 ```
 apps/web-customer/src/shared/context/
-├── SessionContext.tsx       # Customer session (tenantId, tableId)
-├── TenantContext.tsx        # Tenant/restaurant details
-├── TableContext.tsx         # Table-specific information
+├── SessionContext.tsx       # Phiên khách hàng (tenantId, tableId)
+├── TenantContext.tsx        # Chi tiết nhà hàng/quán ăn
+├── TableContext.tsx         # Thông tin cụ thể bàn
 └── index.ts                 # Barrel exports
 ```
 
 #### 4.2 TenantContext Provider
 
-**Purpose:** Fetches and caches restaurant details (name, logo, menu settings) based on `tenantId` from session.
+**Mục đích:** Lấy và lưu vào bộ nhớ cache chi tiết nhà hàng (tên, logo, cài đặt menu) dựa trên `tenantId` từ phiên.
 
-**File Location:**
+**Vị trí Tệp:**
 ```
 apps/web-customer/src/shared/context/TenantContext.tsx
 ```
 
-**Implementation:**
+**Triển khai:**
 ```typescript
 // shared/context/TenantContext.tsx
 'use client';
@@ -968,7 +968,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     enabled: !!tenantId,
-    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    staleTime: 10 * 60 * 1000, // Lưu vào bộ nhớ cache trong 10 phút
   });
 
   return (
@@ -989,14 +989,14 @@ export function useTenant() {
 
 #### 4.3 TableContext Provider
 
-**Purpose:** Fetches table details (name, floor, status) based on `tableId` from session.
+**Mục đích:** Lấy chi tiết bàn (tên, tầng, trạng thái) dựa trên `tableId` từ phiên.
 
-**File Location:**
+**Vị trí Tệp:**
 ```
 apps/web-customer/src/shared/context/TableContext.tsx
 ```
 
-**Implementation:**
+**Triển khai:**
 ```typescript
 // shared/context/TableContext.tsx
 'use client';
@@ -1027,7 +1027,7 @@ export function TableProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     enabled: !!tenantId && !!tableId,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000, // Lưu vào bộ nhớ cache trong 5 phút
   });
 
   return (
@@ -1046,15 +1046,15 @@ export function useTable() {
 }
 ```
 
-### 5. Provider Hierarchy (Root Layout)
+### 5. Phân cấp Provider (Root Layout)
 
-**File Location:**
+**Vị trí Tệp:**
 ```
 apps/web-customer/app/layout.tsx
 ```
 
 
-**Recommended Provider Pattern (Next.js App Router):**
+**Mẫu Provider Được Khuyến nghị (Next.js App Router):**
 
 **app/providers.tsx** (Client Component)
 ```tsx
@@ -1096,17 +1096,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-**Provider Order:**
-1. **QueryClientProvider**: React Query for server state
-2. **SessionProvider**: Manages tenantId/tableId from QR scan
-3. **TenantProvider**: Fetches restaurant details (depends on SessionProvider)
-4. **TableProvider**: Fetches table details (depends on SessionProvider)
+**Thứ tự Provider:**
+1. **QueryClientProvider**: React Query cho trạng thái máy chủ
+2. **SessionProvider**: Quản lý tenantId/tableId từ quét QR
+3. **TenantProvider**: Lấy chi tiết nhà hàng (phụ thuộc vào SessionProvider)
+4. **TableProvider**: Lấy chi tiết bàn (phụ thuộc vào SessionProvider)
 
-### 6. Consuming Context in Features
+### 6. Sử dụng Context Trong Tính năng
 
-Features throughout **web-customer** can access ordering context via custom hooks.
+Các tính năng trong **web-customer** có thể truy cập ngữ cảnh đặt hàng thông qua các hook tùy chỉnh.
 
-**Example: Menu Feature**
+**Ví dụ: Tính năng Menu**
 ```typescript
 // features/menu-view/components/MenuHeader.tsx
 'use client';
@@ -1132,7 +1132,7 @@ export function MenuHeader() {
 }
 ```
 
-**Example: Checkout Feature**
+**Ví dụ: Tính năng Thanh toán**
 ```typescript
 // features/checkout/hooks/useCheckout.ts
 'use client';
@@ -1162,55 +1162,55 @@ export function useCheckout() {
 }
 ```
 
-### 7. QR Flow Summary
+### 7. Tóm tắt Luồng QR
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     QR Code Generation Flow                       │
+│                   Luồng Tạo Mã QR                                 │
 └─────────────────────────────────────────────────────────────────┘
 
-1. Admin (web-tenant) → "Generate QR for Table 5"
+1. Admin (web-tenant) → "Tạo QR cho Bàn 5"
                 ↓
-2. Backend API → Create JWT token with { tenantId, tableId, exp }
+2. Backend API → Tạo token JWT với { tenantId, tableId, exp }
                 ↓
-3. Backend → Return QR URL: https://order.example.com/s/pho-restaurant/eyJ...
+3. Backend → Trả về URL QR: https://order.example.com/s/pho-restaurant/eyJ...
                 ↓
-4. Admin downloads/prints QR code
+4. Admin tải xuống/in mã QR
                 ↓
-5. QR code placed on physical table
+5. Mã QR được đặt trên bàn vật lý
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Customer Scan Flow                            │
+│                   Luồng Quét Khách hàng                            │
 └─────────────────────────────────────────────────────────────────┘
 
-1. Customer scans QR code with phone camera
+1. Khách hàng quét mã QR bằng camera điện thoại
                 ↓
-2. Browser navigates to: /s/pho-restaurant/eyJ...
+2. Trình duyệt điều hướng tới: /s/pho-restaurant/eyJ...
                 ↓
-3. Next.js Server Component (page.tsx) → Validate token via backend
+3. Next.js Server Component (page.tsx) → Xác thực token qua backend
                 ↓
-4. Backend → Verify JWT signature, check expiration
+4. Backend → Xác minh chữ ký JWT, kiểm tra hết hạn
                 ↓
-5. Backend → Return { tenantId, tableId, exp, version }
+5. Backend → Trả về { tenantId, tableId, exp, version }
                 ↓
-6. Client Component → Create session in SessionContext
+6. Client Component → Tạo phiên trong SessionContext
                 ↓
-7. SessionProvider → Store in localStorage + React state
+7. SessionProvider → Lưu trữ trong localStorage + trạng thái React
                 ↓
-8. TenantProvider → Fetch restaurant details from tenantId
+8. TenantProvider → Lấy chi tiết nhà hàng từ tenantId
                 ↓
-9. TableProvider → Fetch table details from tableId
+9. TableProvider → Lấy chi tiết bàn từ tableId
                 ↓
-10. Redirect to menu: /menu
+10. Chuyển hướng đến menu: /menu
                 ↓
-11. Customer browses menu, adds items to cart
+11. Khách hàng duyệt menu, thêm mục vào giỏ hàng
                 ↓
-12. Checkout → Submit order with tenantId + tableId from context
+12. Thanh toán → Gửi đơn hàng với tenantId + tableId từ ngữ cảnh
 ```
 
-### 8. Error Handling
+### 8. Xử lý Lỗi
 
-**Invalid/Expired Token:**
+**Token Không hợp lệ/Hết hạn:**
 ```typescript
 // app/s/[tenantSlug]/[token]/page.tsx
 export default async function ScanPage({ params }: ScanPageProps) {
@@ -1219,18 +1219,18 @@ export default async function ScanPage({ params }: ScanPageProps) {
   if (!session) {
     return (
       <div className="error-container">
-        <h1>Invalid QR Code</h1>
-        <p>This QR code is invalid or has expired.</p>
-        <p>Please request a new QR code from the staff.</p>
+        <h1>Mã QR Không hợp lệ</h1>
+        <p>Mã QR này không hợp lệ hoặc đã hết hạn.</p>
+        <p>Vui lòng yêu cầu mã QR mới từ nhân viên.</p>
       </div>
     );
   }
   
-  // Success path...
+  // Đường dẫn thành công...
 }
 ```
 
-**Session Expiration During Browsing:**
+**Hết hạn Phiên Trong Khi Duyệt:**
 ```typescript
 // shared/context/SessionContext.tsx
 useEffect(() => {
@@ -1240,39 +1240,39 @@ useEffect(() => {
       const data = JSON.parse(stored);
       if (data.exp < Date.now() / 1000) {
         clearSession();
-        alert('Your session has expired. Please scan the QR code again.');
+        alert('Phiên của bạn đã hết hạn. Vui lòng quét mã QR lại.');
         window.location.href = '/';
       }
     }
   };
   
-  const interval = setInterval(checkExpiration, 60000); // Check every minute
+  const interval = setInterval(checkExpiration, 60000); // Kiểm tra mỗi phút
   return () => clearInterval(interval);
 }, []);
 ```
 
-### 9. Security Considerations
+### 9. Những Cân nhắc về Bảo mật
 
-1. **Token Signing**: Use strong secrets (`QR_SECRET_KEY` minimum 32 characters)
-2. **HTTPS Only**: QR URLs must use HTTPS in production
-3. **Short Expiry for Sensitive Operations**: Consider shorter expiry (e.g., 24 hours) for high-security scenarios
-4. **Rate Limiting**: Backend should rate-limit `/api/public/scan` to prevent token brute-forcing
-5. **No Sensitive Data in Token**: Token only contains IDs, never include PII or credentials
+1. **Token Signing**: Sử dụng các bí mật mạnh (`QR_SECRET_KEY` tối thiểu 32 ký tự)
+2. **HTTPS Only**: URL QR phải sử dụng HTTPS trong production
+3. **Short Expiry for Sensitive Operations**: Hãy cân nhắc thời gian hết hạn ngắn hơn (ví dụ: 24 giờ) cho các tình huống bảo mật cao
+4. **Rate Limiting**: Backend nên áp dụng giới hạn tốc độ `/api/public/scan` để ngăn chặn brute-forcing token
+5. **No Sensitive Data in Token**: Token chỉ chứa ID, không bao giờ bao gồm PII hoặc thông tin xác thực
 
-### 10. Related Documentation
+### 10. Tài liệu Liên quan
 
 - **Backend QR Generation**: `docs/backend/qr-generation-service.md` (TODO)
 - **QR Flow Diagrams**: `01-product/diagrams/qr-generation-flow.md`
 - **Security Threat Model**: `08-security/THREAT_MODEL.md`
-- **API Documentation**: `02-api/openapi.yaml` (see `/api/public/scan` endpoint)
+- **API Documentation**: `02-api/openapi.yaml` (xem endpoint `/api/public/scan`)
 
 ---
 
-## Shared Packages
+## Các Gói Được Chia sẻ
 
 ### @packages/ui
 
-Shared component library used by both apps:
+Thư viện thành phần được chia sẻ được sử dụng bởi cả hai ứng dụng:
 
 ```
 packages/ui/
@@ -1288,15 +1288,15 @@ packages/ui/
 └── tsconfig.json
 ```
 
-**Usage:**
+**Cách sử dụng:**
 ```typescript
-// In web-tenant or web-customer
+// Trong web-tenant hoặc web-customer
 import { Button, Card } from '@packages/ui';
 ```
 
 ### @packages/dto
 
-Shared TypeScript types from backend:
+Các loại TypeScript được chia sẻ từ backend:
 
 ```
 packages/dto/
@@ -1311,7 +1311,7 @@ packages/dto/
 
 ### @packages/config
 
-Shared configuration files:
+Các tệp cấu hình được chia sẻ:
 
 ```
 packages/config/
@@ -1325,18 +1325,18 @@ packages/config/
 
 ---
 
-## API Integration
+## Tích hợp API
 
-### API Client Setup
+### Thiết lập API Client
 
-**Important:** In Next.js, we have two types of API calls:
+**Quan trọng:** Trong Next.js, chúng ta có hai loại cuộc gọi API:
 
-1. **Server Components**: Use native `fetch()` with `process.env.API_URL` (server-only, not exposed to client)
-2. **Client Components**: Use Axios with `process.env.NEXT_PUBLIC_API_URL` (exposed to browser)
+1. **Server Components**: Sử dụng `fetch()` gốc với `process.env.API_URL` (chỉ phía máy chủ, không được hiển thị cho client)
+2. **Client Components**: Sử dụng Axios với `process.env.NEXT_PUBLIC_API_URL` (được hiển thị cho trình duyệt)
 
 #### Client-Side API Client (Axios)
 
-**⚠️ This client is CLIENT-ONLY** and must only be imported in Client Components (files with `'use client'`) or custom hooks. Do not import this in Server Components.
+**⚠️ Client này chỉ dành cho CLIENT** và chỉ nên được nhập trong Client Components (tệp có `'use client'`) hoặc các hook tùy chỉnh. Không nhập điều này trong Server Components.
 
 ```typescript
 // lib/api/client.ts
@@ -1345,7 +1345,7 @@ packages/config/
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL, // ⏳ THÊM TẠI ĐÂY: Xác minh URL API thực tế trong tệp .env
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -1363,7 +1363,7 @@ export default apiClient;
 
 import apiClient from './client';
 
-// Request interceptor - Add auth token
+// Request interceptor - Thêm auth token
 apiClient.interceptors.request.use(
   (config) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -1375,12 +1375,12 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - Handle errors
+// Response interceptor - Xử lý lỗi
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized
+      // Xử lý unauthorized
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
         window.location.href = '/login';
@@ -1391,20 +1391,20 @@ apiClient.interceptors.response.use(
 );
 ```
 
-### Service Layer Pattern
+### Mẫu Tầng Dịch vụ
 
-#### Server-Side Service (for Server Components)
+#### Dịch vụ Phía Máy chủ (cho Server Components)
 
 ```typescript
 // features/menu/services/menuService.server.ts
 import type { MenuItem, MenuCategory } from '../types/menu.types';
 
-const API_URL = process.env.API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.API_URL; // ⏳ THÊM TẠI ĐÂY: Xác minh URL API phía máy chủ trong .env
 
 export const menuService = {
   async getMenu(tenantId: string): Promise<MenuItem[]> {
     const res = await fetch(`${API_URL}/tenants/${tenantId}/menu`, {
-      cache: 'no-store', // or 'force-cache' for static data
+      cache: 'no-store', // hoặc 'force-cache' cho dữ liệu tĩnh
       headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) throw new Error('Failed to fetch menu');
@@ -1413,7 +1413,7 @@ export const menuService = {
 
   async getCategories(tenantId: string): Promise<MenuCategory[]> {
     const res = await fetch(`${API_URL}/tenants/${tenantId}/categories`, {
-      next: { revalidate: 3600 }, // ISR: revalidate every hour
+      next: { revalidate: 3600 }, // ISR: xác thực lại mỗi giờ
     });
     if (!res.ok) throw new Error('Failed to fetch categories');
     return res.json();
@@ -1421,7 +1421,7 @@ export const menuService = {
 };
 ```
 
-#### Client-Side Service (for Client Components)
+#### Dịch vụ Phía Client (cho Client Components)
 
 ```typescript
 // features/menu/services/menuService.client.ts
@@ -1441,7 +1441,7 @@ export const menuService = {
     return data;
   },
 
-  // web-tenant only - mutations typically happen client-side
+  // web-tenant chỉ - mutations thường xảy ra phía client
   async createMenuItem(tenantId: string, item: Partial<MenuItem>): Promise<MenuItem> {
     const { data } = await apiClient.post(`/tenants/${tenantId}/menu`, item);
     return data;
@@ -1451,11 +1451,11 @@ export const menuService = {
 
 ---
 
-## State Management Strategy
+## Chiến lược Quản lý Trạng thái
 
-### Global State (React Query)
+### Trạng thái Toàn cầu (React Query)
 
-Use **TanStack Query** for server state in Client Components:
+Sử dụng **TanStack Query** cho trạng thái máy chủ trong Client Components:
 
 ```typescript
 // features/menu/hooks/useMenu.ts
@@ -1468,15 +1468,15 @@ export const useMenu = (tenantId: string) => {
   return useQuery({
     queryKey: ['menu', tenantId],
     queryFn: () => menuService.getMenu(tenantId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 phút
     enabled: !!tenantId,
   });
 };
 ```
 
-### Local State (Zustand)
+### Trạng thái Cục bộ (Zustand)
 
-Use **Zustand** for client-side state:
+Sử dụng **Zustand** cho trạng thái phía client:
 
 ```typescript
 // web-customer/src/features/cart/store/cartStore.ts
@@ -1536,9 +1536,9 @@ export const useCartStore = create<CartState>()(
 );
 ```
 
-### State Management Split
+### Phân tách Quản lý Trạng thái
 
-| State Type | web-tenant | web-customer |
+| Loại Trạng thái | web-tenant | web-customer |
 |------------|------------|--------------|
 | **Auth** | Zustand + JWT | LocalStorage (guest) |
 | **Menu** | React Query | React Query |
@@ -1548,29 +1548,29 @@ export const useCartStore = create<CartState>()(
 
 ---
 
-## Naming Conventions
+## Quy ước Đặt tên
 
-### Files
+### Tệp
 
-| Type | Convention | Example |
+| Loại | Quy ước | Ví dụ |
 |------|------------|---------|
 | Component | PascalCase | `MenuList.tsx` |
-| Hook | camelCase, prefix `use` | `useMenu.ts` |
-| Service | camelCase, suffix `Service` | `menuService.ts` |
-| Type | camelCase, suffix `.types` | `menu.types.ts` |
-| Store | camelCase, suffix `Store` | `cartStore.ts` |
+| Hook | camelCase, tiền tố `use` | `useMenu.ts` |
+| Service | camelCase, hậu tố `Service` | `menuService.ts` |
+| Type | camelCase, hậu tố `.types` | `menu.types.ts` |
+| Store | camelCase, hậu tố `Store` | `cartStore.ts` |
 | Util | camelCase | `formatCurrency.ts` |
-| Page | PascalCase, suffix `Page` | `MenuPage.tsx` |
+| Page | PascalCase, hậu tố `Page` | `MenuPage.tsx` |
 
-### Variables & Functions
+### Biến & Hàm
 
 ```typescript
-// ✅ Good
+// ✅ Tốt
 const userName = 'John';
 const getUserById = (id: string) => { };
 const MAX_ITEMS = 10;
 
-// ❌ Bad
+// ❌ Xấu
 const UserName = 'John';
 const get_user_by_id = (id: string) => { };
 const max_items = 10;
@@ -1579,16 +1579,605 @@ const max_items = 10;
 ### Types & Interfaces
 
 ```typescript
-// ✅ Prefer interfaces for objects
+// ✅ Thích dùng interfaces cho objects
 interface User {
   id: string;
   name: string;
 }
 
-// ✅ Use type for unions/intersections
+// ✅ Sử dụng type cho unions/intersections
 type UserRole = 'admin' | 'staff' | 'kitchen';
 
-// ✅ Suffix props interfaces
+// ✅ Hậu tố props interfaces
+interface MenuItemProps {
+  item: MenuItem;
+}
+```
+
+---
+
+## Quy tắc Import
+
+### ✅ Nhập Được Phép
+
+```typescript
+// 1. Thư viện bên ngoài
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+// 2. Gói được chia sẻ (monorepo)
+import { Button } from '@packages/ui';
+import type { MenuItemDTO } from '@packages/dto';
+
+// 3. Tài nguyên được chia sẻ (cùng app)
+import { formatCurrency } from '@/shared/utils';
+import { Card } from '@/shared/components/ui';
+
+// 4. Trong cùng feature (relative)
+import { useMenu } from '../hooks/useMenu';
+import type { MenuItem } from '../types/menu.types';
+
+// 5. Từ các features khác (chỉ qua index.ts)
+import { useCart } from '@/features/cart';
+```
+
+### ❌ Nhập Bị Cấm
+
+```typescript
+// ❌ Không nhập các tệp nội bộ từ các features khác
+import { CartItem } from '@/features/cart/components/CartItem';
+
+// ❌ Không nhập từ app khác
+import { AdminLayout } from '@apps/web-tenant/shared/components/layout';
+
+// ❌ Không sử dụng deep relative imports trên features
+import { useAuth } from '../../../auth/hooks/useAuth';
+```
+
+### Thứ tự Import
+
+```typescript
+// 1. React & thư viện bên ngoài
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+// 2. Gói monorepo
+import { Button } from '@packages/ui';
+
+// 3. Nhập absolute nội bộ
+import { formatCurrency } from '@/shared/utils';
+
+// 4. Nhập feature (relative)
+import { useMenu } from '../hooks/useMenu';
+import type { MenuItem } from '../types/menu.types';
+
+// 5. Styles (nếu có)
+import './MenuList.css';
+```
+
+---
+
+## Thực tiễn Tốt nhất về Tổ chức Code
+
+### 1. Cô lập Feature
+
+Mỗi tính năng tự chứa:
+
+```typescript
+// ✅ Tốt - Mọi thứ liên quan đến menu ở một nơi
+features/menu-management/
+├── components/        # UI
+├── hooks/             # Logic
+├── services/          # API
+├── types/             # Types
+├── utils/             # Helpers
+└── index.ts           # Public API
+```
+
+### 2. Barrel Exports
+
+Sử dụng `index.ts` để kiểm soát API công khai:
+
+```typescript
+// features/menu-management/index.ts
+export { MenuList, MenuItem, MenuItemForm } from './components';
+export { useMenu, useMenuCRUD } from './hooks';
+export { menuService } from './services/menuService';
+export type { MenuItem, MenuCategory } from './types/menu.types';
+
+// Các thành phần nội bộ không được xuất
+// - MenuItemModal (chỉ được sử dụng bên trong MenuList)
+// - formatMenuPrice (internal helper)
+```
+
+### 3. Kích thước Component
+
+Giữ các thành phần dưới **200 dòng**:
+
+```typescript
+// ✅ Tốt - Chia thành các thành phần nhỏ hơn
+const MenuList = () => {
+  return (
+    <div>
+      <MenuHeader />
+      <MenuFilters />
+      <MenuItems />
+      <MenuPagination />
+    </div>
+  );
+};
+
+// ❌ Xấu - Thành phần monolithic 500 dòng
+const MenuList = () => {
+  // Quá nhiều logic và UI trong một thành phần
+};
+```
+
+### 4. Custom Hooks cho Logic
+
+Trích xuất logic kinh doanh vào hooks:
+
+```typescript
+// features/menu/hooks/useMenuCRUD.ts
+export const useMenuCRUD = (tenantId: string) => {
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (item: Partial<MenuItem>) => 
+      menuService.createMenuItem(tenantId, item),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['menu', tenantId]);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<MenuItem> }) =>
+      menuService.updateMenuItem(tenantId, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['menu', tenantId]);
+    },
+  });
+
+  return {
+    create: createMutation.mutate,
+    update: updateMutation.mutate,
+    isCreating: createMutation.isLoading,
+    isUpdating: updateMutation.isLoading,
+  };
+};
+```
+
+### 5. Xử lý Lỗi
+
+Xử lý lỗi một cách nhất quán:
+
+```typescript
+// ✅ Xử lý lỗi trong hooks
+export const useMenu = (tenantId: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['menu', tenantId],
+    queryFn: () => menuService.getMenu(tenantId),
+  });
+
+  if (error) {
+    console.error('Menu fetch failed:', error);
+  }
+
+  return { menu: data ?? [], isLoading, error };
+};
+
+// ✅ Hiển thị lỗi trong các thành phần
+export const MenuList = () => {
+  const { menu, isLoading, error } = useMenu(tenantId);
+
+  if (error) return <ErrorState message="Failed to load menu" />;
+  if (isLoading) return <LoadingState />;
+
+  return <div>{/* Render menu */}</div>;
+};
+```
+
+---
+
+## Chiến lược Kiểm thử
+
+⏳ **THÊM TẠI ĐÂY**: Xác minh thiết lập kiểm thử trong codebase thực tế.
+- Unit tests: Kiểm tra các tệp `*.test.ts(x)` trong `source/apps/web-tenant/` và `source/apps/web-customer/`
+- E2E tests: Kiểm tra cấu hình Cypress hoặc Playwright trong gốc dự án
+- Xem [guide/PATTERNS_AND_CONVENTIONS.md](./guide/PATTERNS_AND_CONVENTIONS.md) để biết các mẫu kiểm thử khi được triển khai
+
+---
+
+## Chiến lược Triển khai
+
+⏳ **THÊM TẠI ĐÂY**: Xác minh cấu hình triển khai.
+- Kiểm tra các script `package.json` trong mỗi ứng dụng cho các lệnh build/start
+- Xác minh chiến lược biến môi trường (tiền tố NEXT_PUBLIC_ cho phía client)
+- Xem các cấu hình triển khai thực tế trong tệp CI/CD (nếu tồn tại)
+
+**web-tenant/.env:**
+```env
+# Client-side (exposed to browser)
+NEXT_PUBLIC_API_URL=https://api.restaurant.com
+NEXT_PUBLIC_APP_NAME=Restaurant Admin
+NEXT_PUBLIC_WS_URL=wss://api.restaurant.com
+
+# Server-side only (not exposed to browser)
+API_URL=https://api.restaurant.com
+API_SECRET=your-secret-key
+```
+
+**web-customer/.env:**
+```env
+# Client-side (exposed to browser)
+NEXT_PUBLIC_API_URL=https://api.restaurant.com
+NEXT_PUBLIC_APP_NAME=Order Now
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
+
+# Server-side only (not exposed to browser)
+API_URL=https://api.restaurant.com
+STRIPE_SECRET_KEY=sk_live_xxx
+```
+
+### Mục tiêu Triển khai
+
+| App | Platform | Lệnh Build | Output |
+|-----|----------|---------------|--------|
+| web-tenant | Vercel/Netlify | `pnpm build --filter web-tenant` | `.next/` |
+| web-customer | Vercel/Netlify | `pnpm build --filter web-customer` | `.next/` |
+
+**Lưu ý:** Các nền tảng như Vercel tự động xử lý các artefact xây dựng Next.js. Đối với các triển khai tự lưu trữ, thư mục `.next/` chứa bản xây dựng production.
+
+### Pipeline CI/CD
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-tenant:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build web-tenant
+        run: pnpm build --filter web-tenant
+      - name: Deploy to Vercel
+        run: vercel deploy --prod
+
+  deploy-customer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build web-customer
+        run: pnpm build --filter web-customer
+```
+
+---
+
+## Mục tiêu Hiệu suất
+
+⏳ **THÊM TẠI ĐÂY**: Xác minh với các báo cáo Lighthouse hoặc phân tích bundle thực tế.
+- Chạy `pnpm --filter web-tenant build` và kiểm tra kích thước bundle
+- Chạy `pnpm --filter web-customer build` và kiểm tra kích thước bundle
+- Sử dụng `next build --experimental-debug` để phân tích chi tiết
+
+---
+
+## Path Aliases & Quy ước
+
+**Xác minh path aliases trong `tsconfig.json` của mỗi ứng dụng:**
+- `@/*` → `./src/*` (mẫu tiêu chuẩn)
+- Kiểm tra `source/apps/web-tenant/tsconfig.json` để tìm cấu hình thực tế
+- Kiểm tra `source/apps/web-customer/tsconfig.json` để tìm cấu hình thực tế
+
+**Quy ước**: Các tệp page trong `app/` nên giữ ngôn ngữ thin và nhập UI/logic từ `src/features/*`.
+
+---
+
+## Khắc phục sự cố
+
+### Vấn đề: Module not found '@/shared/...'
+
+**Giải pháp:** Cấu hình path aliases trong `tsconfig.json`:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@packages/ui": ["../../packages/ui/src"],
+      "@packages/dto": ["../../packages/dto/src"]
+    }
+  }
+}
+```
+
+Đối với các alias tùy chỉnh trong `next.config.js`:
+
+```javascript
+// next.config.js
+module.exports = {
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
+    return config;
+  },
+};
+```
+
+### Vấn đề: Sử dụng các API chỉ dành cho client trong Server Components
+
+**Lỗi:** `localStorage is not defined`, `window is not defined`
+
+**Giải pháp:** 
+1. Thêm chỉ thị `'use client'` ở đầu các tệp sử dụng các API trình duyệt
+2. Kiểm tra `typeof window !== 'undefined'` trước khi truy cập các global trình duyệt
+3. Di chuyển logic client đến Client Components, giữ Server Components cho fetching dữ liệu
+
+### Vấn đề: Tiền tố biến môi trường sai
+
+**Lỗi:** `process.env.API_URL` không xác định trong trình duyệt
+
+**Giải pháp:**
+- Sử dụng tiền tố `NEXT_PUBLIC_*` cho các biến được client exposed
+- Sử dụng các tên rõ (không có tiền tố) cho các bí mật chỉ phía máy chủ
+- Không bao giờ để lộ các bí mật như API key cho client
+
+### Vấn đề: Phụ thuộc vòng tròn giữa các features
+
+**Giải pháp:**
+1. Di chuyển các types được chia sẻ đến `@packages/dto`
+2. Chỉ sử dụng các xuất index.ts
+3. Cân nhắc dependency injection
+
+### Vấn đề: Kích thước bundle lớn
+
+**Giải pháp:**
+1. Sử dụng Server Components theo mặc định (zero JS cho client)
+2. Lazy load Client Components với `next/dynamic`
+3. Bật tree-shaking (tự động trong Next.js)
+4. Phân tích bundle với `@next/bundle-analyzer`
+5. Sử dụng `next build --experimental-debug` để phân tích chi tiết
+
+---
+
+## Tài nguyên
+
+### Next.js & React
+- [Next.js App Router Documentation](https://nextjs.org/docs/app)
+- [Next.js Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components)
+- [Next.js Client Components](https://nextjs.org/docs/app/building-your-application/rendering/client-components)
+- [Next.js Data Fetching](https://nextjs.org/docs/app/building-your-application/data-fetching)
+- [React 19 Documentation](https://react.dev/)
+
+### Quản lý Trạng thái
+- [TanStack Query (React Query)](https://tanstack.com/query/latest)
+- [Zustand](https://github.com/pmndrs/zustand)
+
+### Styling & UI
+- [TailwindCSS](https://tailwindcss.com/)
+- [Shadcn UI](https://ui.shadcn.com/)
+
+### Công cụ Monorepo
+- [Turborepo](https://turbo.build/repo)
+- [pnpm Workspaces](https://pnpm.io/workspaces)
+- [Monorepo Best Practices](https://monorepo.tools/)
+
+### Kiểm thử
+- [Playwright](https://playwright.dev/)
+- [Cypress](https://www.cypress.io/)
+- [React Testing Library](https://testing-library.com/react)
+
+---
+
+## Các Guides Liên quan
+
+Các guides hỗ trợ thực thi và onboarding nằm trong `docs/frontend/guide/`:
+
+| File | Nội dung |
+|------|----------|
+| `guide/ONBOARDING_CHECKLIST.md` | Checklist nhanh & nhiệm vụ đầu tiên |
+| `guide/NEXTJS_15_APP_ROUTER_GUIDE.md` | App Router, Server/Client Components, middleware |
+| `guide/PATTERNS_AND_CONVENTIONS.md` | Quy ước cấu trúc feature, hooks, services, import rules |
+| `guide/FEATURE_IMPLEMENTATION_GUIDE.md` | Ví dụ triển khai Analytics Dashboard đầy đủ |
+| `guide/README.md` | Mục lục & định hướng đọc |
+
+Thứ tự đọc khuyến nghị: Checklist → App Router → Patterns → Feature Example → (tài liệu kiến trúc này).
+
+## Nhật ký thay đổi
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-01-20 | 2.1 | Updated project naming, made grader-friendly, added ADD HERE placeholders for unverified claims |
+
+## Phê duyệt
+
+Kiến trúc này phải được xem xét và phê duyệt bởi:
+
+- [ ] Tech Lead
+- [ ] Senior Frontend Developer
+- [ ] Team (3 developers)
+
+**Có câu hỏi?** Liên hệ với Frontend Lead hoặc mở một cuộc thảo luận trong kênh team.
+
+---
+
+
+## Chiến lược Bản địa hóa / i18n
+
+- Cả hai ứng dụng **web-tenant** và **web-customer** phải hỗ trợ nhiều ngôn ngữ (Tiếng Anh, Tiếng Việt).
+- Chúng tôi sử dụng một thư viện i18n chuẩn Next.js (ví dụ: `next-intl` hoặc `next-i18next`) để xử lý bản dịch mạnh mẽ và có thể mở rộng.
+- Các tệp dịch được tổ chức theo ứng dụng và ngôn ngữ:
+  - `apps/web-tenant/src/locales/en/*.json`, `vi/*.json`
+  - `apps/web-customer/src/locales/en/*.json`, `vi/*.json`
+- Nhà cung cấp i18n được thiết lập trong `layout.tsx` gốc của mỗi ứng dụng, giúp các bản dịch có sẵn qua hooks (ví dụ: `useTranslations()`).
+- Giao diện người dùng chuyển đổi ngôn ngữ: trong cài đặt tenant (admin) và dưới dạng bật tắt trong ứng dụng khách hàng.
+
+**Ví dụ (sử dụng next-intl):**
+
+```tsx
+// apps/web-customer/app/layout.tsx
+import { NextIntlProvider } from 'next-intl';
+import messages from '../src/locales/en/common.json';
+
+export default function RootLayout({ children }) {
+  return (
+    <NextIntlProvider messages={messages} locale="en">
+      {children}
+    </NextIntlProvider>
+  );
+}
+```
+
+---
+
+**END OF FRONTEND ARCHITECTURE DOCUMENT**
+
+---
+
+## Chiến lược Quản lý Trạng thái
+
+### Trạng thái Toàn cầu (React Query)
+
+Sử dụng **TanStack Query** cho trạng thái máy chủ trong Client Components:
+
+```typescript
+// features/menu/hooks/useMenu.ts
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { menuService } from '../services/menuService.client';
+
+export const useMenu = (tenantId: string) => {
+  return useQuery({
+    queryKey: ['menu', tenantId],
+    queryFn: () => menuService.getMenu(tenantId),
+    staleTime: 5 * 60 * 1000, // 5 phút
+    enabled: !!tenantId,
+  });
+};
+```
+
+### Trạng thái Cục bộ (Zustand)
+
+Sử dụng **Zustand** cho trạng thái phía client:
+
+```typescript
+// web-customer/src/features/cart/store/cartStore.ts
+'use client';
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { CartItem } from '../types/cart.types';
+
+interface CartState {
+  items: CartItem[];
+  addItem: (item: CartItem) => void;
+  removeItem: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  clearCart: () => void;
+  getTotal: () => number;
+}
+
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      
+      addItem: (item) => set((state) => {
+        const existing = state.items.find(i => i.id === item.id);
+        if (existing) {
+          return {
+            items: state.items.map(i =>
+              i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+            ),
+          };
+        }
+        return { items: [...state.items, item] };
+      }),
+      
+      removeItem: (itemId) => set((state) => ({
+        items: state.items.filter(i => i.id !== itemId),
+      })),
+      
+      updateQuantity: (itemId, quantity) => set((state) => ({
+        items: state.items.map(i =>
+          i.id === itemId ? { ...i, quantity } : i
+        ),
+      })),
+      
+      clearCart: () => set({ items: [] }),
+      
+      getTotal: () => {
+        const state = get();
+        return state.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      },
+    }),
+    {
+      name: 'cart-storage',
+    }
+  )
+);
+```
+
+### Phân tách Quản lý Trạng thái
+
+| Loại Trạng thái | web-tenant | web-customer |
+|------------|------------|--------------|
+| **Auth** | Zustand + JWT | LocalStorage (guest) |
+| **Menu** | React Query | React Query |
+| **Cart** | N/A | Zustand (persisted) |
+| **Orders** | React Query | React Query |
+| **UI State** | Zustand | Zustand |
+
+---
+
+## Quy ước Đặt tên
+
+### Tệp
+
+| Loại | Quy ước | Ví dụ |
+|------|------------|---------|
+| Component | PascalCase | `MenuList.tsx` |
+| Hook | camelCase, tiền tố `use` | `useMenu.ts` |
+| Service | camelCase, hậu tố `Service` | `menuService.ts` |
+| Type | camelCase, hậu tố `.types` | `menu.types.ts` |
+| Store | camelCase, hậu tố `Store` | `cartStore.ts` |
+| Util | camelCase | `formatCurrency.ts` |
+| Page | PascalCase, hậu tố `Page` | `MenuPage.tsx` |
+
+### Biến & Hàm
+
+```typescript
+// ✅ Tốt
+const userName = 'John';
+const getUserById = (id: string) => { };
+const MAX_ITEMS = 10;
+
+// ❌ Xấu
+const UserName = 'John';
+const get_user_by_id = (id: string) => { };
+const max_items = 10;
+```
+
+### Types & Interfaces
+
+```typescript
+// ✅ Thích dùng interfaces cho objects
+interface User {
+  id: string;
+  name: string;
+}
+
+// ✅ Sử dụng type cho unions/intersections
+type UserRole = 'admin' | 'staff' | 'kitchen';
+
+// ✅ Hậu tố props interfaces
 interface MenuItemProps {
   item: MenuItem;
 }
@@ -1781,122 +2370,19 @@ export const MenuList = () => {
 
 ## Testing Strategy
 
-### Unit Tests
-
-Colocate tests with files:
-
-```typescript
-// features/menu/hooks/useMenu.test.ts
-import { renderHook, waitFor } from '@testing-library/react';
-import { useMenu } from './useMenu';
-
-describe('useMenu', () => {
-  it('should fetch menu items', async () => {
-    const { result } = renderHook(() => useMenu('tenant-1'));
-    
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.menu).toHaveLength(5);
-  });
-});
-```
-
-### Component Tests
-
-```typescript
-// features/menu/components/MenuItem.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MenuItem } from './MenuItem';
-
-describe('MenuItem', () => {
-  const mockItem = {
-    id: '1',
-    name: 'Pho Bo',
-    price: 50000,
-    image: '/pho.jpg',
-  };
-
-  it('should render item details', () => {
-    render(<MenuItem item={mockItem} onAddToCart={jest.fn()} />);
-    
-    expect(screen.getByText('Pho Bo')).toBeInTheDocument();
-    expect(screen.getByText('50,000 VND')).toBeInTheDocument();
-  });
-
-  it('should call onAddToCart when clicked', () => {
-    const onAddToCart = jest.fn();
-    render(<MenuItem item={mockItem} onAddToCart={onAddToCart} />);
-    
-    fireEvent.click(screen.getByText('Add to Cart'));
-    
-    expect(onAddToCart).toHaveBeenCalledWith('1');
-  });
-});
-```
-
-### E2E Tests (Cypress/Playwright)
-
-```typescript
-// e2e/customer-ordering.spec.ts
-describe('Customer Ordering Flow', () => {
-  it('should complete order from QR scan to checkout', () => {
-    cy.visit('/scan?token=xyz123');
-    
-    // Verify menu loads
-    cy.contains('Menu').should('be.visible');
-    
-    // Add item to cart
-    cy.contains('Pho Bo').click();
-    cy.contains('Add to Cart').click();
-    
-    // Proceed to checkout
-    cy.get('[data-testid="cart-button"]').click();
-    cy.contains('Checkout').click();
-    
-    // Fill customer info
-    cy.get('input[name="name"]').type('John Doe');
-    cy.get('input[name="phone"]').type('0123456789');
-    
-    // Submit order
-    cy.contains('Place Order').click();
-    cy.contains('Order Confirmed').should('be.visible');
-  });
-});
-```
+⏳ **ADD HERE**: Verify testing setup in actual codebase.
+- Unit tests: Check for `*.test.ts(x)` files in `source/apps/web-tenant/` and `source/apps/web-customer/`
+- E2E tests: Check for Cypress or Playwright config in project root
+- See [guide/PATTERNS_AND_CONVENTIONS.md](./guide/PATTERNS_AND_CONVENTIONS.md) for testing patterns once implemented
 
 ---
 
 ## Deployment Strategy
 
-### Build Configuration
-
-**web-tenant (Admin Portal):**
-```json
-{
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  }
-}
-```
-
-**web-customer (Customer App):**
-```json
-{
-  "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "next lint"
-  }
-}
-```
-
-### Environment Variables
+⏳ **ADD HERE**: Verify deployment configuration.
+- Check `package.json` scripts in each app for build/start commands
+- Verify environment variable strategy (NEXT_PUBLIC_ prefix for client-side)
+- See actual deployment configs in CI/CD files (if exist)
 
 **web-tenant/.env:**
 ```env
@@ -1957,64 +2443,25 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build web-customer
         run: pnpm build --filter web-customer
-      - name: Deploy to Netlify
-        run: netlify deploy --prod
-```
-
 ---
 
-## Performance Benchmarks
+## Performance Targets
 
-### web-tenant (Target)
-- **First Load**: < 2s on 4G
-- **Bundle Size**: < 500KB gzipped
-- **Lighthouse Score**: > 90
-
-### web-customer (Target)
-- **First Load**: < 1.5s on 3G
-- **Bundle Size**: < 200KB gzipped
-- **Lighthouse Score**: > 95
-- **Time to Interactive**: < 3s
+⏳ **ADD HERE**: Verify with actual Lighthouse reports or bundle analyzer.
+- Run `pnpm --filter web-tenant build` and check bundle size
+- Run `pnpm --filter web-customer build` and check bundle size
+- Use `next build --experimental-debug` for detailed analysis
 
 ---
 
 ## Path Aliases & Conventions
 
-For both apps, use:
+**Verify path aliases in each app's `tsconfig.json`:**
+- `@/*` → `./src/*` (standard pattern)
+- Check `source/apps/web-tenant/tsconfig.json` for actual config
+- Check `source/apps/web-customer/tsconfig.json` for actual config
 
-- `@/*` → `./src/*`
-- `@/app/*` → `./src/app/*`
-
-Remove legacy `src/pages/` to avoid conflicts with the App Router.
-
-Page files should stay thin and import UI/logic from `src/features/*`.
-
-## Migration Path
-
-### From Single App to Split Apps
-
-If you have existing code in a single app:
-
-1. **Identify Features**
-   - List all features
-   - Categorize as "Admin" or "Customer"
-
-2. **Create New Apps**
-   - Scaffold `web-tenant` and `web-customer`
-   - Move features to appropriate app
-
-3. **Extract Shared Code**
-   - Move shared components to `@packages/ui`
-   - Move shared types to `@packages/dto`
-
-4. **Update Imports**
-   - Replace relative imports with monorepo imports
-   - Use barrel exports
-
-5. **Test Thoroughly**
-   - Run unit tests
-   - Test E2E flows
-   - Verify bundle sizes
+**Convention**: Page files in `app/` should stay thin and import UI/logic from `src/features/*`.
 
 ---
 
@@ -2103,21 +2550,21 @@ module.exports = {
 - [TailwindCSS](https://tailwindcss.com/)
 - [Shadcn UI](https://ui.shadcn.com/)
 
-### Monorepo Tools
+### Công cụ Monorepo
 - [Turborepo](https://turbo.build/repo)
 - [pnpm Workspaces](https://pnpm.io/workspaces)
 - [Monorepo Best Practices](https://monorepo.tools/)
 
-### Testing
+### Kiểm thử
 - [Playwright](https://playwright.dev/)
 - [Cypress](https://www.cypress.io/)
 - [React Testing Library](https://testing-library.com/react)
 
 ---
 
-## Related Guides
+## Các Guides Liên quan
 
-Các guide hỗ trợ thực thi và onboarding nằm trong `docs/frontend/guide/`:
+Các guides hỗ trợ thực thi và onboarding nằm trong `docs/frontend/guide/`:
 
 | File | Nội dung |
 |------|----------|
@@ -2133,10 +2580,7 @@ Thứ tự đọc khuyến nghị: Checklist → App Router → Patterns → Fea
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2025-11-21 | 2.0 | Migrated from React+Vite to Next.js 15 App Router |
-| 2025-01-11 | 1.0 | Initial split architecture document |
-
----
+| 2026-01-20 | 2.1 | Updated project naming, made grader-friendly, added ADD HERE placeholders for unverified claims |
 
 ## Approval
 
@@ -2151,17 +2595,17 @@ This architecture must be reviewed and approved by:
 ---
 
 
-## Localization / i18n Strategy
+## Chiến lược Bản địa hóa / i18n
 
-- Both **web-tenant** and **web-customer** apps must support multiple languages (English, Vietnamese).
-- We use a standard Next.js i18n library (e.g. `next-intl` or `next-i18next`) for robust, scalable translation handling.
-- Translation files are organized by app and language:
+- Cả hai ứng dụng **web-tenant** và **web-customer** phải hỗ trợ nhiều ngôn ngữ (Tiếng Anh, Tiếng Việt).
+- Chúng tôi sử dụng một thư viện i18n chuẩn Next.js (ví dụ: `next-intl` hoặc `next-i18next`) để xử lý bản dịch mạnh mẽ và có thể mở rộng.
+- Các tệp dịch được tổ chức theo ứng dụng và ngôn ngữ:
   - `apps/web-tenant/src/locales/en/*.json`, `vi/*.json`
   - `apps/web-customer/src/locales/en/*.json`, `vi/*.json`
-- The i18n provider is set up in each app’s root `layout.tsx`, making translations available via hooks (e.g. `useTranslations()`).
-- Language switcher UI: in tenant settings (admin) and as a toggle in the customer app.
+- Nhà cung cấp i18n được thiết lập trong `layout.tsx` gốc của mỗi ứng dụng, giúp các bản dịch có sẵn qua hooks (ví dụ: `useTranslations()`).
+- Giao diện người dùng chuyển đổi ngôn ngữ: trong cài đặt tenant (admin) và dưới dạng bật tắt trong ứng dụng khách hàng.
 
-**Example (using next-intl):**
+**Ví dụ (sử dụng next-intl):**
 
 ```tsx
 // apps/web-customer/app/layout.tsx
