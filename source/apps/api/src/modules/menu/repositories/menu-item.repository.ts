@@ -5,6 +5,11 @@ import { BaseRepository } from 'src/database/repositories/base.repository';
 import { MenuItemFiltersDto } from '../dto/menu-item.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { MenuSortByEnum, SortOrderEnum } from '../dto/menu-publish.dto';
+import {
+  fuzzySearch,
+  FuzzySearchPresets,
+  shouldUseFuzzySearch,
+} from 'src/common/utils/fuzzy-search.util';
 
 export interface MenuItemWithRelations extends MenuItem {
   category?: any;
@@ -108,7 +113,7 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
         'Price (High)': 'price',
         'Name (A-Z)': 'name',
         'Name (Z-A)': 'name',
-        'Popularity': 'popularity',
+        Popularity: 'popularity',
       };
       sortByField = sortByMap[sortByField] || sortByField;
     }
@@ -122,11 +127,11 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
 
     // Handle pageSize alias for limit - prioritize pageSize over limit
     const limit = filters.pageSize ?? filters.limit ?? 20;
-    console.log('[MenuItemRepository] Pagination:', { 
-      pageSize: filters.pageSize, 
-      limit: filters.limit, 
-      finalLimit: limit, 
-      page: filters.page 
+    console.log('[MenuItemRepository] Pagination:', {
+      pageSize: filters.pageSize,
+      limit: filters.limit,
+      finalLimit: limit,
+      page: filters.page,
     });
 
     // Handle availability filter
@@ -154,16 +159,12 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
     const result = await this.findPaginated(new PaginationDto(filters.page, limit), {
       where: {
         tenantId,
-        ...(filters.categoryId && filters.categoryId !== 'all' && { categoryId: filters.categoryId }),
+        ...(filters.categoryId &&
+          filters.categoryId !== 'all' && { categoryId: filters.categoryId }),
         ...(statusFilter && { status: statusFilter }),
         ...(availabilityFilter !== undefined && { available: availabilityFilter }),
         ...(filters.chefRecommended !== undefined && { chefRecommended: filters.chefRecommended }),
-        ...(filters.search && {
-          OR: [
-            { name: { contains: filters.search, mode: 'insensitive' } },
-            { description: { contains: filters.search, mode: 'insensitive' } },
-          ],
-        }),
+        // Remove search from Prisma query - will apply fuzzy search post-query
       },
       include: {
         category: true,
@@ -195,22 +196,30 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
     });
 
     // Transform Decimal to number for all items
+    let items = result.data.map((item: any) => ({
+      ...item,
+      price: Number(item.price),
+      modifierGroups: item.modifierGroups?.map((mg: any) => ({
+        ...mg,
+        modifierGroup: {
+          ...mg.modifierGroup,
+          options: mg.modifierGroup.options.map((opt: any) => ({
+            ...opt,
+            priceDelta: Number(opt.priceDelta),
+          })),
+        },
+      })),
+    }));
+
+    // Apply fuzzy search if search query is provided
+    if (filters.search && shouldUseFuzzySearch(filters.search)) {
+      items = fuzzySearch(items, filters.search, FuzzySearchPresets.MENU_ITEMS);
+    }
+
     return {
       ...result,
-      data: result.data.map((item: any) => ({
-        ...item,
-        price: Number(item.price),
-        modifierGroups: item.modifierGroups?.map((mg: any) => ({
-          ...mg,
-          modifierGroup: {
-            ...mg.modifierGroup,
-            options: mg.modifierGroup.options.map((opt: any) => ({
-              ...opt,
-              priceDelta: Number(opt.priceDelta),
-            })),
-          },
-        })),
-      })),
+      data: items,
+      total: items.length, // Update total after fuzzy search filtering
     } as any;
   }
 
