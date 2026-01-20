@@ -280,7 +280,7 @@ Sau khi đăng nhập, bạn sẽ thấy:
    - Thời gian chuẩn bị (phút)
    - Thẻ (ví dụ: "chay", "cay")
    - Chất gây dị ứng (ví dụ: "gluten", "hạt")
-4. Tải lên ảnh (ADD HERE: giới hạn ảnh chưa xác nhận, ví dụ: tối đa 10 ảnh mỗi mục)
+4. Tải lên ảnh 
 5. Lưu thành "Bản nháp" hoặc "Xuất bản" ngay lập tức
 
 **Trạng thái mục:**
@@ -853,9 +853,6 @@ Dưới đây là các chú thích ảnh chụp màn hình cho các ảnh sẽ �
 
 ## Cần giúp đỡ?
 
-**Hỗ trợ kỹ thuật:**  
-ADD HERE (ví dụ: support@tkqrin.com)
-
 **Tài liệu:**  
 Để tìm tài liệu nhà phát triển và chi tiết API, xem:
 - [docs/common/OPENAPI.md](./OPENAPI.md)
@@ -863,7 +860,7 @@ ADD HERE (ví dụ: support@tkqrin.com)
 - [docs/frontend/README.md](../frontend/README.md)
 
 **Báo cáo sự cố:**  
-ADD HERE (ví dụ: liên kết GitHub Issues hoặc cổng thông tin hỗ trợ)
+(ví dụ: liên kết GitHub Issues hoặc cổng thông tin hỗ trợ)
 
 ---
 

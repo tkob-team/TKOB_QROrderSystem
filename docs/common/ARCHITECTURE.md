@@ -847,15 +847,6 @@ CREATE POLICY tenant_isolation ON orders
 - **At Rest**: Database encryption (PostgreSQL + disk encryption)
 - **Sensitive Fields**: PII (phone, email) → AES‑256 encryption
 
-### 4.4. Giới hạn Tốc độ (❌ Chưa triển khai)
-
-**Ghi chú**: Giới hạn tốc độ chưa được triển khai trong MVP. Đây là các mức đề xuất cho sản xuất.
-
-**Các mức được đề xuất**:
-- **API Gateway**: ADD HERE req/min per IP (khi API Gateway được triển khai)
-- **Application**: ADD HERE req/min per user (cần triển khai với Redis)
-- **QR Scan**: ADD HERE scans/min per QR code (cần triển khai logic chống spam)
-
 ---
 
 ## 5. Scalability & Performance
