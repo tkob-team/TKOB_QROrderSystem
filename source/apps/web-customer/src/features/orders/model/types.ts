@@ -28,6 +28,8 @@ export type Order = {
   subtotal: number
   tax: number
   serviceCharge: number
+  tip?: number  // Tip amount (optional, set when payment confirmed)
+  discount?: number  // Discount amount (optional, calculated from voucher)
   total: number
   createdAt: string
   updatedAt: string

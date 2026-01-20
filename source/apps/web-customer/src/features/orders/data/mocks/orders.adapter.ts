@@ -26,4 +26,10 @@ export class MockOrdersAdapter implements IOrdersAdapter {
   async updateOrderStatus(orderId: string, status: Order['status']): Promise<ApiResponse<Order>> {
     return orderHandlers.updateOrderStatus(orderId, status);
   }
+
+  async getTableOrders(): Promise<Order[]> {
+    // Mock returns data from getOrderHistory
+    const result = await orderHandlers.getOrderHistory('mock-user', 'mock-session');
+    return result.data || [];
+  }
 }

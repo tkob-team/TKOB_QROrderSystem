@@ -21,5 +21,7 @@ export interface IOrdersAdapter {
 
   getOrderHistory(userId: string, sessionId?: string): Promise<ApiResponse<Order[]>>;
 
+  getTableOrders(): Promise<Order[]>;
+
   updateOrderStatus(orderId: string, status: Order['status']): Promise<ApiResponse<Order>>;
 }

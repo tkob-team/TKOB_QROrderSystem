@@ -7,7 +7,7 @@ import { AvatarUploadModal } from '../components/modals/AvatarUploadModal'
 
 export function EditProfilePage() {
   const controller = useEditProfileController()
-  const t = PROFILE_TEXT.EN // Static for now, can be extended with language support
+  const t = PROFILE_TEXT // Static text constant
 
   if (controller.isLoading) {
     return (

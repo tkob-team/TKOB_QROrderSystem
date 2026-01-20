@@ -5,7 +5,7 @@ import { X, Receipt, Printer, CreditCard, Banknote, Loader2 } from 'lucide-react
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api } from '@/services/axios'
-import { printBill, type BillData } from '../../utils/billPdf'
+import { printBill, type BillData } from '../../../utils/billPdf'
 
 interface Order {
   id: string
@@ -14,6 +14,7 @@ interface Order {
   subtotal?: number
   serviceCharge?: number
   tax?: number
+  tip?: number  // Tip from customer (if already set during payment confirmation)
   items: Array<{
     id: string
     menuItemName?: string
@@ -47,8 +48,19 @@ export function CloseTableModal({
 }: CloseTableModalProps) {
   const queryClient = useQueryClient()
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
-  const [discount, setDiscount] = useState(0)
-  const [tip, setTip] = useState(0)
+  
+  // Initialize tip from orders (customer may have already set tip during payment confirmation)
+  const existingTip = orders.reduce((sum, order) => sum + (order.tip || 0), 0)
+  
+  // Calculate discount from difference if orders have discounted totals
+  const ordersSubtotal = orders.reduce((sum, order) => sum + (order.subtotal || 0), 0)
+  const ordersTotal = orders.reduce((sum, order) => sum + (order.total || 0), 0)
+  const ordersTax = orders.reduce((sum, order) => sum + (order.tax || 0), 0)
+  const ordersServiceCharge = orders.reduce((sum, order) => sum + (order.serviceCharge || 0), 0)
+  const existingDiscount = Math.max(0, ordersSubtotal + ordersTax + ordersServiceCharge + existingTip - ordersTotal)
+  
+  const [discount, setDiscount] = useState(existingDiscount)
+  const [tip, setTip] = useState(existingTip)
   const [notes, setNotes] = useState('')
 
   // Calculate totals from all orders
