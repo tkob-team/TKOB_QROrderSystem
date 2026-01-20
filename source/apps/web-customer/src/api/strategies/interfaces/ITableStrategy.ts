@@ -10,6 +10,8 @@ export interface SessionInfo {
   tenantId: string;
   active: boolean;
   createdAt: string;
+  /** Timestamp when customer requested bill, null if not requested */
+  billRequestedAt?: string | null;
 }
 
 export interface ITableStrategy {

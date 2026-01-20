@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
 
 export class CreatePaymentIntentDto {
   @ApiProperty({
@@ -24,4 +24,14 @@ export class CreatePaymentIntentDto {
   @IsString()
   @IsOptional()
   cancelUrl?: string;
+
+  @ApiProperty({
+    description: 'Tip amount in USD (optional)',
+    example: 5.00,
+    required: false,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  tip?: number;
 }

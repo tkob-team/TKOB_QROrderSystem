@@ -35,6 +35,9 @@ export class ReviewResponseDto {
 
   @ApiPropertyOptional({ description: 'Menu item name' })
   itemName?: string;
+
+  @ApiPropertyOptional({ description: 'Reviewer display name (anonymized)' })
+  reviewerName?: string;
 }
 
 export class OrderReviewSummaryDto {
@@ -66,6 +69,9 @@ export class MenuItemReviewStatsDto {
 
   @ApiProperty({ description: 'Rating distribution (1-5)' })
   ratingDistribution: Record<number, number>;
+
+  @ApiPropertyOptional({ description: 'List of individual reviews', type: [ReviewResponseDto] })
+  reviews?: ReviewResponseDto[];
 }
 
 export class TenantReviewStatsDto {

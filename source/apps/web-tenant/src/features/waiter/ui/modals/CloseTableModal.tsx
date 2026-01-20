@@ -80,7 +80,7 @@ export function CloseTableModal({
           <div className="flex items-center gap-3">
             <Receipt className="w-6 h-6" />
             <div>
-              <h2 className="text-xl font-bold">Close Table & Generate Bill</h2>
+              <h2 className="text-xl font-bold">Close Table</h2>
               <p className="text-sm text-emerald-100">{tableGroup.tableNumber}</p>
             </div>
           </div>

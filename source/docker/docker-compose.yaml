@@ -8,14 +8,14 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DATABASE_USER:-postgres}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
-      POSTGRES_DB: ${DATABASE_NAME:-qr_ordering_dev}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-tkob_bathangkho123}
+      POSTGRES_DB: ${DATABASE_NAME:-qr_ordering}
     ports:
       - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-qr_ordering_dev}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-qr_ordering}"]
       interval: 5s
       timeout: 5s
       retries: 5

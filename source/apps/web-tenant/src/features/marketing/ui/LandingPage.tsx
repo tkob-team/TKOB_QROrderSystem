@@ -233,7 +233,7 @@ export function LandingPage() {
                 </span>
               </h1>
               
-              <p className="text-lg md:text-xl text-gray-600 max-w-xl">
+              <p className="text-lg md:text-xl text-gray-600 max-w-xl pb-6">
                 QR ordering, payments, KDS, and a service board—everything you need to move orders from table to kitchen without the chaos.
               </p>
 

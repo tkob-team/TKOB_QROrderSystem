@@ -10,6 +10,37 @@ import apiClient from '@/api/client';
 import { Order, CartItem, ApiResponse } from '@/types';
 import { IOrdersAdapter } from '../adapter.interface';
 
+// Session Bill Types
+export interface SessionBillPreview {
+  orders: Order[];
+  summary: {
+    subtotal: number;
+    tax: number;
+    serviceCharge: number;
+    total: number;
+    orderCount: number;
+    itemCount: number;
+  };
+  tableNumber: string;
+  sessionStartedAt: string;
+}
+
+export interface RequestBillResponse {
+  success: boolean;
+  message: string;
+  sessionId: string;
+  tableNumber: string;
+  requestedAt: string;
+  totalAmount: number;
+  orderCount: number;
+}
+
+export interface CancelBillResponse {
+  success: boolean;
+  message: string;
+  sessionId: string;
+}
+
 export class OrdersAdapter implements IOrdersAdapter {
   /**
    * Get current order by ID (customer tracking)
@@ -50,6 +81,42 @@ export class OrdersAdapter implements IOrdersAdapter {
     return response.data.data;
   }
 
+  // ===== SESSION BILL METHODS (New "Order now, pay later" flow) =====
+
+  /**
+   * Get bill preview for current session
+   * Returns all orders and summary for the session
+   */
+  async getSessionBillPreview(): Promise<SessionBillPreview> {
+    const response = await apiClient.get<{ success: boolean; data: SessionBillPreview }>(
+      '/orders/session/bill-preview'
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Request bill for current session
+   * Locks the session - no more orders can be placed
+   * Notifies staff to bring the bill
+   */
+  async requestSessionBill(): Promise<RequestBillResponse> {
+    const response = await apiClient.post<{ success: boolean; data: RequestBillResponse }>(
+      '/orders/session/request-bill'
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Cancel bill request for current session
+   * Unlocks the session - customer can order more
+   */
+  async cancelSessionBillRequest(): Promise<CancelBillResponse> {
+    const response = await apiClient.post<{ success: boolean; data: CancelBillResponse }>(
+      '/orders/session/cancel-bill-request'
+    );
+    return response.data.data;
+  }
+
   /**
    * Deprecated: OrdersAdapter.createOrder is not used for checkout
    * Use CheckoutApiService.checkout() instead
@@ -81,3 +148,6 @@ export class OrdersAdapter implements IOrdersAdapter {
     throw new Error('[DEPRECATED] Order status updates are handled by backend only');
   }
 }
+
+// Export singleton for direct use
+export const orderApi = new OrdersAdapter();

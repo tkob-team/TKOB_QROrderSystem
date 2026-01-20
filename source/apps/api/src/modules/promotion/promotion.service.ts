@@ -220,6 +220,10 @@ export class PromotionService {
     tenantId: string,
     dto: ValidatePromoDto,
   ): Promise<ValidatePromoResponseDto> {
+    if (!tenantId) {
+      throw new BadRequestException('tenantId is required');
+    }
+
     const code = dto.code.toUpperCase().trim();
 
     const promotion = await this.prisma.promotion.findUnique({

@@ -8,7 +8,6 @@ import { useKdsWebSocket } from '../../hooks/useKdsWebSocket';
 import { useKdsAutoRefresh } from '../../hooks/useKdsAutoRefresh';
 import { initializeAudio } from '@/lib/websocket';
 import { playNotificationSound } from '@/shared/utils/soundNotifications';
-import { OVERDUE_THRESHOLD } from '../../model/constants';
 
 // Import UI components
 import { KdsHeaderSection as KdsHeaderBar } from '../components/sections/KdsHeaderSection';
@@ -106,20 +105,27 @@ export function KdsBoardPage({
   useEffect(() => {
     if (!controller.soundEnabled) return;
 
-    // Check for overdue orders every 30 seconds
-    const checkOverdueInterval = setInterval(() => {
+    // Helper function to check and play overdue alert
+    const checkAndPlayOverdueAlert = () => {
+      // Find orders that are overdue AND currently being prepared
+      // Note: isOverdue is calculated in mapper based on elapsedMinutes > estimatedTime
       const overdueOrders = controller.orders.filter(order => 
         order.isOverdue && 
-        order.status === 'preparing' && // Only alert for orders currently being prepared
-        order.time >= OVERDUE_THRESHOLD
+        order.status === 'preparing' // Only alert for orders currently being prepared
       );
 
       if (overdueOrders.length > 0) {
         // Play urgent alert for overdue orders
         playNotificationSound('kds-overdue', 2);
-        console.log(`[kds] ${overdueOrders.length} overdue orders detected`);
+        console.log(`[kds] ${overdueOrders.length} overdue orders detected, playing alert`);
       }
-    }, 30000); // Check every 30 seconds
+    };
+
+    // Immediate check on mount or when orders change
+    checkAndPlayOverdueAlert();
+
+    // Check for overdue orders every 30 seconds
+    const checkOverdueInterval = setInterval(checkAndPlayOverdueAlert, 30000);
 
     return () => clearInterval(checkOverdueInterval);
   }, [controller.orders, controller.soundEnabled]);

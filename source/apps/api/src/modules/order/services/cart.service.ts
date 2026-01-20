@@ -66,6 +66,17 @@ export class CartService {
     tableId: string,
     dto: AddToCartDto,
   ): Promise<CartResponseDto> {
+    // 0. Check if bill has been requested (locked session)
+    const session = await this.prisma.tableSession.findUnique({
+      where: { id: sessionId },
+      select: { billRequestedAt: true },
+    });
+    if (session?.billRequestedAt) {
+      throw new BadRequestException(
+        'Bill has been requested. Please cancel the bill request first to add more items.',
+      );
+    }
+
     // 1. Fetch menu item detail
     const menuItem = await this.prisma.menuItem.findUnique({
       where: { id: dto.menuItemId, tenantId },
