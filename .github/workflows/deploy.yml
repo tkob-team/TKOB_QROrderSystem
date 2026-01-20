@@ -23,15 +23,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: '**/pnpm-lock.yaml'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         shell: bash
@@ -85,7 +83,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/release' }}
             type=sha,format=long
             type=ref,event=pr
 
@@ -94,8 +92,8 @@ jobs:
         with:
           context: .
           file: ./source/apps/api/Dockerfile
-          # Chỉ push image khi push vào main
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          # Chỉ push image khi push vào release
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/release' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -106,11 +104,10 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    # Chỉ deploy khi push vào main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Chỉ deploy khi push vào release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
     environment:
       name: production
-      url: http://${{ secrets.EC2_HOST }}
 
     steps:
       - name: Checkout code
