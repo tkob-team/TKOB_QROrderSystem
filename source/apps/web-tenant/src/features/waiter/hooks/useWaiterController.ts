@@ -22,6 +22,7 @@ import { orderControllerUpdateOrderStatus } from '@/services/generated/orders/or
 import { api as axiosInstance } from '@/services/axios';
 import type { UpdateOrderStatusDtoStatus } from '@/services/generated/models';
 import { useWaiterWebSocket } from './useWaiterWebSocket';
+import type { BillRequest } from '../ui/components/modals/BillRequestsDialog';
 
 interface WaiterState {
   // Data
@@ -35,6 +36,9 @@ interface WaiterState {
   
   // WebSocket
   isConnected: boolean;
+  billRequestCount: number;
+  billRequests: BillRequest[]; // List of pending bill requests
+  showBillRequestsDialog: boolean;
   
   // Derived
   currentOrders: ServiceOrder[];
@@ -60,6 +64,12 @@ interface WaiterActions {
   markTableAsPaid: (tableGroup: TableOrdersGroup) => Promise<void>; // Mark all orders in table as paid
   closeTable: (data: CloseTableData) => Promise<void>; // Updated signature
   toggleOrderExpanded: (orderId: string) => void;
+  resetBillRequestCount: () => void;
+  
+  // Bill request actions
+  openBillRequestsDialog: () => void;
+  closeBillRequestsDialog: () => void;
+  handleBillRequestHandled: (requestId: string) => void;
   
   // UI actions
   refresh: () => void;
@@ -81,12 +91,39 @@ export function useWaiterController(): UseWaiterControllerReturn {
   // Data from query hook
   const { data: fetchedOrders = [], isLoading, error, refetch } = useServiceOrders();
   
+  // Bill requests state
+  const [billRequests, setBillRequests] = useState<BillRequest[]>([]);
+  const [showBillRequestsDialog, setShowBillRequestsDialog] = useState(false);
+  
   // WebSocket for real-time updates
-  const { isConnected } = useWaiterWebSocket({
+  const { isConnected, billRequestCount, resetBillRequestCount } = useWaiterWebSocket({
     tenantId: user?.tenantId || '',
     soundEnabled: true, // Always enabled
     onNewOrder: () => refetch(),
     onOrderStatusChanged: () => refetch(),
+    onBillRequested: (data) => {
+      // Add to bill requests list
+      const newRequest: BillRequest = {
+        id: data.orderId, // sessionId from backend
+        tableId: data.tableId,
+        tableNumber: data.tableNumber,
+        totalAmount: data.totalAmount,
+        orderCount: (data as any).orderCount || 1,
+        requestedAt: data.requestedAt,
+      };
+      
+      setBillRequests(prev => {
+        // Check if request already exists (by id)
+        const exists = prev.some(r => r.id === newRequest.id);
+        if (exists) return prev;
+        return [...prev, newRequest];
+      });
+      
+      // Show toast notification for bill request
+      setToastMessage(`Table ${data.tableNumber} requested bill - $${data.totalAmount.toFixed(2)}`);
+      setShowSuccessToast(true);
+      refetch();
+    },
   });
   
   // Local state for orders (for optimistic updates)
@@ -532,7 +569,21 @@ export function useWaiterController(): UseWaiterControllerReturn {
       });
     }, []),
     
-
+    resetBillRequestCount,
+    
+    // Bill request dialog actions
+    openBillRequestsDialog: useCallback(() => {
+      setShowBillRequestsDialog(true);
+    }, []),
+    
+    closeBillRequestsDialog: useCallback(() => {
+      setShowBillRequestsDialog(false);
+      resetBillRequestCount();
+    }, [resetBillRequestCount]),
+    
+    handleBillRequestHandled: useCallback((requestId: string) => {
+      setBillRequests(prev => prev.filter(r => r.id !== requestId));
+    }, []),
     
     refresh: useCallback(() => {
         logger.info('[waiter] REFRESH_ACTION', { trigger: 'manual' });
@@ -559,6 +610,9 @@ export function useWaiterController(): UseWaiterControllerReturn {
     activeTab,
     expandedOrders,
     isConnected,
+    billRequestCount,
+    billRequests,
+    showBillRequestsDialog,
     currentOrders,
     ordersByTable, // Grouped orders for completed tab
     tabCounts,

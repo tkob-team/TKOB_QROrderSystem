@@ -12,6 +12,8 @@ export const mockMenuItems: MenuItem[] = [
     imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
     availability: 'Available',
     badge: 'Popular',
+    averageRating: 4.6,
+    totalReviews: 5,
     sizes: [
       { size: 'Single', price: 16.50 },
       { size: 'Double', price: 21.00 },
@@ -70,6 +72,8 @@ export const mockMenuItems: MenuItem[] = [
     availability: 'Sold out',
     badge: 'Chef\'s recommendation',
     dietary: ['Vegetarian'],
+    averageRating: 4.8,
+    totalReviews: 12,
     sizes: [
       { size: 'Regular', price: 22.00 },
       { size: 'Large', price: 28.00 },
@@ -88,6 +92,8 @@ export const mockMenuItems: MenuItem[] = [
     imageUrl: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=800&q=80',
     availability: 'Available',
     dietary: ['Vegetarian'],
+    averageRating: 4.2,
+    totalReviews: 8,
     toppings: [
       { id: 'top-7', name: 'Grilled Chicken', price: 5.00 },
       { id: 'top-8', name: 'Grilled Shrimp', price: 7.00 },

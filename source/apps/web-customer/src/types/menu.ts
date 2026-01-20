@@ -51,6 +51,9 @@ export interface MenuItem {
   sizes?: MenuItemSize[];
   toppings?: MenuItemTopping[];
   reviews?: Review[];
+  // Rating stats from reviews
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface MenuItemSize {

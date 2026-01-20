@@ -5,6 +5,7 @@
 import { useMutation } from '@tanstack/react-query';
 import apiClient from '@/api/client';
 import { log, logError } from '@/shared/logging/logger';
+import { useSession } from '@/features/tables/hooks/useSession';
 
 interface ValidateVoucherRequest {
   code: string;
@@ -26,14 +27,21 @@ interface ValidateVoucherResponse {
 }
 
 export function useVoucherValidation() {
+  const { session } = useSession();
+
   return useMutation<ValidateVoucherResponse, Error, ValidateVoucherRequest>({
     mutationFn: async ({ code, orderSubtotal }) => {
-      log('data', 'VALIDATE_VOUCHER', { code, orderSubtotal });
+      log('data', 'VALIDATE_VOUCHER', { code, orderSubtotal, tenantId: session?.tenantId });
+
+      if (!session?.tenantId) {
+        throw new Error('No active session found. Please scan QR code again.');
+      }
 
       try {
         const response = await apiClient.post<{ data: ValidateVoucherResponse }>(
           `/checkout/validate-promo`,
-          { code, orderSubtotal }
+          { code, orderSubtotal },
+          { params: { tenantId: session.tenantId } }
         );
 
         const data = (response.data as any).data || response.data;

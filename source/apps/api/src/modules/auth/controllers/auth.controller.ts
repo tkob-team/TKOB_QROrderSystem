@@ -13,7 +13,7 @@ import { ResetPasswordDto, ResetPasswordResponseDto } from '../dto/reset-passwor
 import { VerifyEmailDto, VerifyEmailResponseDto } from '../dto/verify-email.dto';
 import { ResendVerificationDto, ResendVerificationResponseDto } from '../dto/resend-verification.dto';
 import { ChangePasswordDto, ChangePasswordResponseDto } from '../dto/change-password.dto';
-import { UpdateProfileDto, UpdateProfileResponseDto } from '../dto/update-profile.dto';
+import { UpdateUserProfileDto, UpdateProfileResponseDto } from '../dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
@@ -225,7 +225,7 @@ export class AuthController {
   })
   async updateProfile(
     @CurrentUser() user: any,
-    @Body() dto: UpdateProfileDto,
+    @Body() dto: UpdateUserProfileDto,
   ): Promise<UpdateProfileResponseDto> {
     const updatedUser = await this.authService.updateProfile(user.userId, dto);
     return {

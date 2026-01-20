@@ -40,6 +40,8 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
+  const tipParam = searchParams.get('tip') // Tip amount from Bill page
+  const tipAmount = tipParam ? parseFloat(tipParam) : 0
   
   const [status, setStatus] = useState<SepayPaymentStatus>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -136,12 +138,14 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     try {
       log('data', 'Creating SePay payment intent', {
         orderId: maskId(orderId),
+        tip: tipAmount,
       }, { feature: 'payment' })
       
       const intent = await checkoutApi.createPaymentIntent({
         orderId,
         returnUrl: `${window.location.origin}/orders/${orderId}`,
         cancelUrl: `${window.location.origin}/checkout`,
+        tip: tipAmount > 0 ? tipAmount : undefined,
       })
       
       setPaymentIntent(intent)
@@ -153,6 +157,7 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
       log('data', 'SePay payment intent created', {
         paymentId: maskId(intent.paymentId),
         amount: intent.amount,
+        tip: tipAmount,
         expiresAt: intent.expiresAt,
       }, { feature: 'payment' })
       
@@ -163,7 +168,7 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
       setError(err instanceof Error ? err.message : 'Failed to create payment')
       setStatus('failed')
     }
-  }, [orderId, startCountdown, resetPolling, startPolling])
+  }, [orderId, tipAmount, startCountdown, resetPolling, startPolling])
 
   // Auto-create payment intent on mount
   useEffect(() => {
@@ -186,17 +191,17 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     setTimeout(() => createPaymentIntent(), 100)
   }, [createPaymentIntent, stopPolling, resetPolling])
 
-  // Navigate to order tracking
+  // Navigate to order tracking - use replace to prevent back to payment page
   const goToOrderTracking = useCallback(() => {
     if (orderId) {
-      router.push(`/orders/${orderId}`)
+      router.replace(`/orders/${orderId}`)
     }
   }, [orderId, router])
 
-  // Go back
+  // Go back - use replace to prevent back navigation loop
   const goBack = useCallback(() => {
     stopPolling()
-    router.back()
+    router.replace('/checkout')
   }, [router, stopPolling])
 
   return {
