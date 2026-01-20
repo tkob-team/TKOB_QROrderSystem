@@ -10,6 +10,7 @@ import { ErrorCode, ErrorMessages } from 'src/common/constants/error-codes.const
 import { ModifierGroupRepository } from '../repositories/modifier-group.repository';
 import { MenuSortByEnum, PublicMenuFiltersDto, SortOrderEnum } from '../dto/menu-publish.dto';
 import { MenuCacheService } from './menu-cache.service';
+import { PrismaService } from '@/database/prisma.service';
 
 @Injectable()
 export class MenuItemsService {
@@ -20,6 +21,7 @@ export class MenuItemsService {
     private readonly menuCategoryRepo: MenuCategoryRepository,
     private readonly modifierGroupRepo: ModifierGroupRepository,
     private readonly menuCache: MenuCacheService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(tenantId: string, dto: CreateMenuItemDto) {

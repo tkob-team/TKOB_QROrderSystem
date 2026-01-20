@@ -1,4 +1,4 @@
 // Tables hooks barrel export
 
-export { useSession } from './useSession';
+export { useSession, sessionQueryKey } from './useSession';
 export { useQRHandler } from './useQRHandler';

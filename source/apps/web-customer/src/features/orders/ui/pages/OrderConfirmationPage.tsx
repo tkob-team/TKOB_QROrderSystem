@@ -217,7 +217,7 @@ export function OrderConfirmationPage({ orderId: propOrderId }: OrderConfirmatio
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg" style={{ borderColor: 'var(--gray-200)' }}>
         <div className="max-w-[480px] mx-auto space-y-2">
           <button
-            onClick={() => router.push(orderId ? `/orders/${orderId}` : '/orders')}
+            onClick={() => router.push('/orders')}
             className="w-full py-3 px-6 rounded-full transition-all hover:shadow-md active:scale-95"
             style={{
               backgroundColor: 'var(--orange-500)',
@@ -226,7 +226,7 @@ export function OrderConfirmationPage({ orderId: propOrderId }: OrderConfirmatio
               fontSize: '15px',
             }}
           >
-            Track order
+            View My Orders
           </button>
           <button
             onClick={() => {

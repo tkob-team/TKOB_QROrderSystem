@@ -37,6 +37,7 @@ export interface MenuItem {
   name: string;
   description: string;
   category: string;
+  categoryId?: string; // Added for proper related items filtering
   basePrice: number;
   imageUrl: string;
   primaryPhoto?: PhotoDto;

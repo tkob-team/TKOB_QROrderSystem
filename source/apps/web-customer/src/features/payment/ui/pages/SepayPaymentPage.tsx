@@ -418,7 +418,7 @@ function StickyActionBar({
       style={{ borderColor: 'var(--gray-200)' }}
     >
       <div className="max-w-md mx-auto space-y-2">
-        {/* Success: View Order button */}
+        {/* Success: View Orders button */}
         {status === 'success' && (
           <button
             onClick={onViewOrder}
@@ -431,7 +431,7 @@ function StickyActionBar({
               fontWeight: 600,
             }}
           >
-            View Order Status
+            View My Orders
           </button>
         )}
 
