@@ -180,9 +180,19 @@ Sau khi thanh toán, bạn sẽ thấy theo dõi đơn hàng với:
 
 Khi bạn sẵn sàng thanh toán (cho những đơn hàng "Thanh toán theo bàn"):
 
-1. Vào chi tiết đơn hàng của bạn
-2. Nhấn nút "Yêu cầu hóa đơn"
-3. Nhân viên sẽ được thông báo và mang hóa đơn cho bạn
+**Bước 1:** Vào chi tiết đơn hàng của bạn
+
+**Bước 2:** Nhấn nút "Yêu cầu hóa đơn"
+
+**Bước 3:** Xác nhận yêu cầu của bạn
+
+**Những gì xảy ra tiếp theo:**
+- **Thông báo gửi đến nhân viên:** Nhân viên sẽ nhận được thông báo ngay lập tức trên hệ thống của họ
+- **Xác nhận cuối cùng:** Nhân viên sẽ xác nhận yêu cầu và mang hóa đơn đến bàn của bạn
+- **Thời gian chờ:** Thường mất 1-2 phút, tùy thuộc vào tính bận rộn của nhân viên
+- **Trạng thái yêu cầu:** Bạn có thể thấy trạng thái yêu cầu (Chờ xử lý, Đã xác nhận, Đã hoàn thành)
+
+> **Ghi chú:** Yêu cầu được gửi tức thì nhưng nhân viên phải xác nhận thủ công khi mang hóa đơn. Nếu chờ lâu, gọi nhân viên trực tiếp để họ trợ giúp.
 
 ### 2.7) Đánh giá & Đánh giá
 
@@ -206,19 +216,28 @@ Sau bữa ăn của bạn, bạn có thể đánh giá các mục riêng lẻ:
 **Đăng ký lần đầu:**
 1. Truy cập URL bảng điều khiển nhà hàng
 2. Nhấp vào "Đăng ký"
-3. Nhập:
-   - Địa chỉ email
-   - Mật khẩu
-   - Tên đầy đủ
-   - Tên nhà hàng
-   - Slug nhà hàng (định danh URL)
-4. Xác minh email qua mã OTP
-5. Hoàn thành các bước onboarding
+3. Chọn phương thức:
+   - **Email & Mật khẩu:**
+     - Nhập địa chỉ email
+     - Tạo mật khẩu
+     - Tên đầy đủ
+     - Tên nhà hàng
+     - Slug nhà hàng (định danh URL)
+     - Xác minh email qua mã OTP
+   - **Đăng ký bằng Google:**
+     - Nhấp vào "Đăng ký bằng Google"
+     - Xác thực tài khoản Google của bạn
+     - Nhập tên nhà hàng và slug
+     - Tài khoản được tạo tự động
+4. Hoàn thành các bước onboarding
 
 **Đăng nhập:**
 1. Vào bảng điều khiển nhà hàng
-2. Nhập email và mật khẩu
-3. Nhấp vào "Đăng nhập"
+2. Chọn phương thức:
+   - **Email & Mật khẩu:** Nhập email và mật khẩu, nhấp "Đăng nhập"
+   - **Google:** Nhấp "Đăng nhập bằng Google" và xác thực tài khoản Google
+
+> **Lợi ích đăng ký Google:** Đăng nhập nhanh chóng, không cần nhớ mật khẩu thêm, bảo mật được quản lý bởi Google.
 
 **Vai trò:**
 - **OWNER:** Truy cập đầy đủ vào tất cả các tính năng
@@ -261,7 +280,7 @@ Sau khi đăng nhập, bạn sẽ thấy:
    - Thời gian chuẩn bị (phút)
    - Thẻ (ví dụ: "chay", "cay")
    - Chất gây dị ứng (ví dụ: "gluten", "hạt")
-4. Tải lên ảnh (ADD HERE: giới hạn ảnh chưa xác nhận, ví dụ: tối đa 10 ảnh mỗi mục)
+4. Tải lên ảnh 
 5. Lưu thành "Bản nháp" hoặc "Xuất bản" ngay lập tức
 
 **Trạng thái mục:**
@@ -834,9 +853,6 @@ Dưới đây là các chú thích ảnh chụp màn hình cho các ảnh sẽ �
 
 ## Cần giúp đỡ?
 
-**Hỗ trợ kỹ thuật:**  
-ADD HERE (ví dụ: support@tkqrin.com)
-
 **Tài liệu:**  
 Để tìm tài liệu nhà phát triển và chi tiết API, xem:
 - [docs/common/OPENAPI.md](./OPENAPI.md)
@@ -844,7 +860,7 @@ ADD HERE (ví dụ: support@tkqrin.com)
 - [docs/frontend/README.md](../frontend/README.md)
 
 **Báo cáo sự cố:**  
-ADD HERE (ví dụ: liên kết GitHub Issues hoặc cổng thông tin hỗ trợ)
+(ví dụ: liên kết GitHub Issues hoặc cổng thông tin hỗ trợ)
 
 ---
 
