@@ -11,6 +11,7 @@ import { useMenu } from '@/features/menu/hooks'
 import { useSession } from '@/features/tables/hooks'
 import { FeatureErrorBoundary } from '@/shared/components/error'
 import { ITEMS_PER_PAGE, MENU_TEXT, type SortOption } from '../../model'
+import { searchItems } from '@/shared/utils/fuzzySearch'
 
 export function MenuPage() {
   const router = useRouter()
@@ -37,12 +38,25 @@ export function MenuPage() {
   // Filter
   const filteredItems = useMemo(() => {
     if (!menuItems) return []
-    return menuItems.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // First, apply category and chef recommended filters
+    let items = menuItems.filter(item => {
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
       const matchesChefRecommended = !filterChefRecommended || item.chefRecommended
-      return matchesSearch && matchesCategory && matchesChefRecommended
+      return matchesCategory && matchesChefRecommended
     })
+    
+    // Then apply fuzzy search if there's a search query
+    if (searchQuery && searchQuery.trim().length >= 2) {
+      // Use fuzzy search with typo tolerance
+      items = searchItems(items, searchQuery, {
+        threshold: 0.3, // Lower = more strict, higher = more lenient (0.3 is good balance)
+        fuzzy: true,
+        keys: ['name', 'description', 'category'],
+      })
+    }
+    
+    return items
   }, [menuItems, searchQuery, selectedCategory, filterChefRecommended])
 
   // Sort
