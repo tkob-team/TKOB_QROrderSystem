@@ -49,6 +49,7 @@ export class OrderService {
     tenantId: string,
     tableId: string,
     dto: CheckoutDto,
+    customerId?: string | null,
   ): Promise<OrderResponseDto> {
     // 0. Check if bill has been requested (locked session)
     const billRequested = await this.isSessionBillRequested(sessionId);
@@ -132,6 +133,7 @@ export class OrderService {
           tenantId,
           tableId,
           sessionId,
+          customerId: customerId || undefined, // Link order to customer if logged in
           customerName: dto.customerName,
           customerNotes: dto.customerNotes,
           status: initialStatus,
@@ -1649,5 +1651,61 @@ export class OrderService {
     });
 
     return orders.map((order) => this.toResponseDto(order));
+  }
+
+  /**
+   * Get order history for a logged-in customer
+   * Returns past orders from previous sessions (completed/paid orders)
+   * 
+   * Note: Currently the Order model doesn't have a customerId field,
+   * so we cannot track orders across different restaurants for a customer.
+   * This endpoint returns an empty array until schema is updated to link
+   * customers to their orders.
+   */
+  async getCustomerOrderHistory(
+    customerId: string,
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<{ orders: OrderResponseDto[]; total: number }> {
+    this.logger.log(`[getCustomerOrderHistory] Fetching order history for customer ${customerId}`);
+    
+    // Query orders linked to this customer across all tenants
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          customerId,
+          status: {
+            notIn: [OrderStatus.CANCELLED],
+          },
+        },
+        include: {
+          items: true,
+          table: {
+            select: { tableNumber: true },
+          },
+          tenant: {
+            select: { name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.order.count({
+        where: {
+          customerId,
+          status: {
+            notIn: [OrderStatus.CANCELLED],
+          },
+        },
+      }),
+    ]);
+
+    this.logger.log(`[getCustomerOrderHistory] Found ${orders.length} orders for customer ${customerId} (total: ${total})`);
+
+    return {
+      orders: orders.map((order) => this.toResponseDto(order)),
+      total,
+    };
   }
 }

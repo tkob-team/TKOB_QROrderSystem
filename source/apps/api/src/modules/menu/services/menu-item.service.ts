@@ -123,6 +123,36 @@ export class MenuItemsService {
     };
   }
 
+  /**
+   * Find menu item for public/customer endpoints
+   * Uses explicit tenantId instead of auto-filter from JWT context
+   * This allows logged-in customers to view menu items from other restaurants
+   */
+  async findByIdForCustomer(menuItemId: string, tenantId: string) {
+    const item = await this.menuItemRepo.findByIdWithDetailsForTenant(menuItemId, tenantId);
+    if (!item) {
+      throw new NotFoundException(ErrorMessages[ErrorCode.MENU_ITEM_NOT_FOUND]);
+    }
+    
+    // Transform modifier groups to flat structure
+    const modifierGroups = (item.modifierGroups ?? []).map(
+      (mg: { modifierGroup: Record<string, any>; displayOrder: number }) => ({
+        ...mg.modifierGroup,
+        displayOrder: mg.displayOrder,
+      }),
+    );
+    
+    // Get primary photo
+    const primaryPhoto =
+      (item.photos ?? []).find((p: any) => p.isPrimary) || (item.photos ?? [])[0];
+    
+    return {
+      ...item,
+      modifierGroups,
+      primaryPhoto: primaryPhoto || null,
+    };
+  }
+
   async update(menuItemId: string, dto: UpdateMenuItemDto) {
     // Get existing item to get tenantId for cache invalidation
     const existingItem = await this.findById(menuItemId);

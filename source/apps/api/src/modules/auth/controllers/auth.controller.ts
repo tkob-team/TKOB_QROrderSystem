@@ -24,6 +24,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
+import { CustomerAuthService } from '../services/customer-auth.service';
 import { AuthResponseDto, RegisterSubmitResponseDto } from '../dto/auth-response.dto';
 import { RegisterSubmitDto } from '../dto/register-submit.dto';
 import { RegisterConfirmDto } from '../dto/register-confirm.dto';
@@ -57,6 +58,7 @@ import { EnvConfig } from '../../../config/env.validation';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly customerAuthService: CustomerAuthService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
@@ -443,16 +445,27 @@ export class AuthController {
   @ApiResponse({ status: 302, description: 'Redirect to frontend with tokens' })
   async googleAuthCallback(@Req() req: any, @Res() res: Response) {
     try {
-      const result = await this.authService.googleAuth(req.user);
+      // Check origin from state parameter (set by frontend)
+      const origin = req.user?.origin || 'tenant';
+      const isCustomer = origin === 'customer';
       
-      // Determine which frontend to redirect to based on user role
-      // OWNER/STAFF users go to tenant app, customers go to customer app
-      const userRole = result.user.role;
-      const isTenantUser = ['OWNER', 'STAFF', 'KDS', 'WAITER'].includes(userRole);
+      let result;
+      let frontendUrl: string;
       
-      const frontendUrl = isTenantUser
-        ? this.configService.get('TENANT_APP_URL', { infer: true })
-        : this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      if (isCustomer) {
+        // Customer OAuth - creates Customer, not User
+        result = await this.customerAuthService.googleAuth(req.user);
+        frontendUrl = this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      } else {
+        // Tenant OAuth - creates User with OWNER role
+        result = await this.authService.googleAuth(req.user);
+        // Determine which frontend based on role
+        const userRole = result.user.role;
+        const isTenantUser = ['OWNER', 'STAFF', 'KDS', 'WAITER'].includes(userRole);
+        frontendUrl = isTenantUser
+          ? this.configService.get('TENANT_APP_URL', { infer: true })
+          : this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      }
       
       // Redirect to frontend with tokens as query params
       const redirectUrl = new URL(`${frontendUrl}/auth/google/callback`);

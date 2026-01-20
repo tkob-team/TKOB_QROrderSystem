@@ -10,6 +10,7 @@ import { useOrdersController } from '../../hooks'
 import { useRequestBill } from '../../hooks/useRequestBill'
 import { useCancelBillRequest } from '../../hooks/useCancelBillRequest'
 import { useOrderRealtimeUpdates } from '../../hooks/useOrderRealtimeUpdates'
+import { useSubmitReviews } from '../../hooks/useSubmitReviews'
 import { useSession } from '@/features/tables/hooks'
 import { ORDERS_TEXT } from '../../model'
 import { InlineOrderTracking } from '../components/InlineOrderTracking'
@@ -24,7 +25,34 @@ export function OrderListPage() {
   
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [isSubmittingReviews, setIsSubmittingReviews] = useState(false)
+  
+  // Build item-to-order mapping for review submission
+  const itemToOrderMap = useMemo(() => {
+    const map = new Map<string, string>()
+    state.currentSessionOrders.forEach(order => {
+      order.items.forEach(item => {
+        map.set(item.id, order.id)
+      })
+    })
+    return map
+  }, [state.currentSessionOrders])
+  
+  // Track if we should navigate to bill after review submission
+  const [shouldNavigateToBill, setShouldNavigateToBill] = useState(false)
+  
+  // Use the real review submission hook
+  const submitReviewsMutation = useSubmitReviews({
+    tenantId: session?.tenantId || '',
+    sessionId: session?.sessionId || '',
+    onSuccess: () => {
+      setShowReviewModal(false)
+      // Only navigate to bill if we're in the "request bill" flow
+      if (shouldNavigateToBill) {
+        setShouldNavigateToBill(false)
+        proceedToRequestBill()
+      }
+    },
+  })
   
   // Connect WebSocket at page level for real-time updates on all orders
   const { isRealtimeConnected, connectionStatus } = useOrderRealtimeUpdates({
@@ -83,12 +111,21 @@ export function OrderListPage() {
     )
     
     if (hasServedOrders) {
+      // Mark that we should navigate to bill after review
+      setShouldNavigateToBill(true)
       // Show review modal for served items
       setShowReviewModal(true)
     } else {
       // No served items, go directly to bill
       proceedToRequestBill()
     }
+  }
+  
+  // Handle Leave Review button (after bill already requested)
+  const handleLeaveReviewClick = () => {
+    // Don't navigate to bill after review since bill is already requested
+    setShouldNavigateToBill(false)
+    setShowReviewModal(true)
   }
   
   // Actually request the bill (called after review or skip)
@@ -108,30 +145,29 @@ export function OrderListPage() {
     }
   }
   
-  // Handle review submission
+  // Handle review submission - use real API
   const handleReviewSubmit = async (reviews: { itemId: string; rating: number; comment: string }[]) => {
-    setIsSubmittingReviews(true)
-    
-    try {
-      // TODO: Submit reviews to API
-      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
-        log('ui', 'Submitting reviews', { 
-          reviewCount: reviews.length,
-        }, { feature: 'orders' })
-      }
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+    if (reviews.length === 0) {
+      // No reviews to submit, just proceed
       setShowReviewModal(false)
-      
-      // Proceed to request bill
-      await proceedToRequestBill()
-    } catch (error) {
-      console.error('Failed to submit reviews:', error)
-    } finally {
-      setIsSubmittingReviews(false)
+      proceedToRequestBill()
+      return
     }
+
+    // Map reviews to include orderId
+    const reviewsWithOrderId = reviews.map(review => ({
+      ...review,
+      orderId: itemToOrderMap.get(review.itemId) || '',
+    })).filter(r => r.orderId) // Filter out reviews without valid orderId
+
+    if (reviewsWithOrderId.length === 0) {
+      setShowReviewModal(false)
+      proceedToRequestBill()
+      return
+    }
+
+    // Submit reviews via API
+    submitReviewsMutation.mutate(reviewsWithOrderId)
   }
   
   // Handle skip reviews
@@ -235,6 +271,20 @@ export function OrderListPage() {
                       <Receipt className="w-4 h-4" />
                       View Bill
                     </button>
+                    {/* Leave Review Button - Show when has served/completed orders */}
+                    {sessionSummary.hasServedOrders && (
+                      <button
+                        onClick={handleLeaveReviewClick}
+                        className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                        style={{ 
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          color: 'white',
+                          border: '1px solid rgba(255,255,255,0.3)'
+                        }}
+                      >
+                        ⭐ Leave Review
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -252,18 +302,31 @@ export function OrderListPage() {
                     </button>
                     {/* Print Bill Button - Only show for served/completed orders when bill not requested */}
                     {sessionSummary.hasServedOrders && (
-                      <button
-                        onClick={() => router.push('/bill?print=true')}
-                        className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
-                        style={{ 
-                          backgroundColor: 'rgba(255,255,255,0.2)',
-                          color: 'white',
-                          border: '1px solid rgba(255,255,255,0.3)'
-                        }}
-                      >
-                        <Printer className="w-4 h-4" />
-                        Print Bill
-                      </button>
+                      <>
+                        <button
+                          onClick={() => router.push('/bill?print=true')}
+                          className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                          style={{ 
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)'
+                          }}
+                        >
+                          <Printer className="w-4 h-4" />
+                          Print Bill
+                        </button>
+                        <button
+                          onClick={() => handlers.setShowReviewModal(true)}
+                          className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                          style={{ 
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)'
+                          }}
+                        >
+                          ⭐ Leave Review
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -327,6 +390,7 @@ export function OrderListPage() {
                   key={order.id} 
                   order={order}
                   defaultExpanded={index === 0} // Expand most recent order by default
+                  onReview={() => setShowReviewModal(true)}
                 />
               ))}
             </div>
@@ -402,7 +466,7 @@ export function OrderListPage() {
       onClose={() => setShowReviewModal(false)}
       onSkip={handleSkipReviews}
       onSubmit={handleReviewSubmit}
-      isSubmitting={isSubmittingReviews}
+      isSubmitting={submitReviewsMutation.isPending}
     />
     </PageTransition>
   )

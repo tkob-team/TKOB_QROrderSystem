@@ -121,8 +121,8 @@ export function BillPreviewPage() {
     if (hasSavedTip || billRequested) {
       const total = orders.reduce((sum, order) => sum + order.total, 0)
       
-      // Calculate discount from difference: discount = subtotal + tax + serviceCharge + tip - total
-      const savedDiscount = Math.max(0, subtotal + tax + serviceCharge + tipAmount - total)
+      // Use discount from orders if available, otherwise use UI voucherDiscount
+      const savedDiscount = orders.reduce((sum, order) => sum + (order.discount || 0), 0) || voucherDiscount
       
       return {
         orders,

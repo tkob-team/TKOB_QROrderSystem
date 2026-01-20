@@ -8,6 +8,7 @@ import { EnvConfig } from '../../config/env.validation';
 
 // Controllers
 import { AuthController } from './controllers/auth.controller';
+import { CustomerAuthController } from './controllers/customer-auth.controller';
 
 // Services
 import { AuthService } from './services/auth.service';
@@ -15,11 +16,15 @@ import { RegistrationService } from './services/registration.service';
 import { SessionService } from './services/session.service';
 import { TokenService } from './services/token.service';
 import { OtpService } from './services/otp.service';
+import { CustomerAuthService } from './services/customer-auth.service';
+import { CustomerSessionService } from './services/customer-session.service';
 
 // Guards & Strategies
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { CustomerAuthGuard } from './guards/customer-auth.guard';
+import { OptionalCustomerAuthGuard } from './guards/optional-customer-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 
@@ -54,7 +59,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     }),
   ],
 
-  controllers: [AuthController],
+  controllers: [AuthController, CustomerAuthController],
 
   providers: [
     // Main orchestrator
@@ -65,6 +70,8 @@ import { GoogleStrategy } from './strategies/google.strategy';
     SessionService,
     TokenService,
     OtpService,
+    CustomerAuthService,
+    CustomerSessionService,
 
     // Guards & Strategies
     JwtStrategy,
@@ -72,13 +79,18 @@ import { GoogleStrategy } from './strategies/google.strategy';
     JwtAuthGuard,
     RolesGuard,
     GoogleAuthGuard,
+    CustomerAuthGuard,
+    OptionalCustomerAuthGuard,
   ],
 
   exports: [
     // Export for use in other modules
     AuthService,
+    CustomerAuthService,
     JwtAuthGuard,
     RolesGuard,
+    CustomerAuthGuard,
+    OptionalCustomerAuthGuard,
     TokenService, // May be needed for other modules
   ],
 })

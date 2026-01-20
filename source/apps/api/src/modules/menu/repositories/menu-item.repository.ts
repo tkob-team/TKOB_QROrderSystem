@@ -81,6 +81,63 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
     } as any;
   }
 
+  /**
+   * Find menu item by ID for public/customer endpoints
+   * Uses explicit tenantId instead of auto-filter from context
+   * This is needed when logged-in customer (with their own tenant) views another restaurant's menu
+   */
+  async findByIdWithDetailsForTenant(itemId: string, tenantId: string): Promise<MenuItemWithRelations | null> {
+    // Use base prisma client (not extended) with explicit tenantId filter
+    const item = await this.prisma.menuItem.findFirst({
+      where: { 
+        id: itemId,
+        tenantId: tenantId,
+      },
+      include: {
+        category: true,
+        photos: {
+          orderBy: [{ isPrimary: 'desc' }, { displayOrder: 'asc' }],
+        },
+        modifierGroups: {
+          where: {
+            modifierGroup: {
+              active: true,
+            },
+          },
+          include: {
+            modifierGroup: {
+              include: {
+                options: {
+                  where: { active: true },
+                  orderBy: { displayOrder: 'asc' },
+                },
+              },
+            },
+          },
+          orderBy: { displayOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!item) return null;
+
+    // Convert Prisma Decimal to number
+    return {
+      ...item,
+      price: Number(item.price),
+      modifierGroups: item.modifierGroups?.map((mg) => ({
+        ...mg,
+        modifierGroup: {
+          ...mg.modifierGroup,
+          options: mg.modifierGroup.options.map((opt) => ({
+            ...opt,
+            priceDelta: Number(opt.priceDelta),
+          })),
+        },
+      })),
+    } as any;
+  }
+
   async attachModifierGroups(itemId: string, modifierGroupIds: string[]) {
     // Delete existing relations
     await this.prisma.menuItemModifier.deleteMany({

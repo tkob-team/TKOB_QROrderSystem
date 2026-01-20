@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -26,6 +27,8 @@ import { Public } from '@/common/decorators/public.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import { TenantOwnershipGuard } from '@/modules/tenant/guards/tenant-ownership.guard';
+import { CustomerAuthGuard } from '@/modules/auth/guards/customer-auth.guard';
+import { OptionalCustomerAuthGuard } from '@/modules/auth/guards/optional-customer-auth.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -46,7 +49,7 @@ export class OrderController {
   // ==================== CUSTOMER ENDPOINTS ====================
 
   @Post('checkout')
-  @UseGuards(SessionGuard)
+  @UseGuards(SessionGuard, OptionalCustomerAuthGuard)
   @Public()
   @ApiCookieAuth('table_session_id')
   @ApiOperation({ summary: 'Checkout and create order from cart' })
@@ -54,8 +57,12 @@ export class OrderController {
   async checkout(
     @Session() session: SessionData,
     @Body() dto: CheckoutDto,
+    @Req() req: any,
   ): Promise<OrderResponseDto> {
-    return this.orderService.checkout(session.sessionId, session.tenantId, session.tableId, dto);
+    // Extract customerId from request if customer is logged in
+    // Customer auth token is optional - anonymous checkout is allowed
+    const customerId = req.customer?.id || null;
+    return this.orderService.checkout(session.sessionId, session.tenantId, session.tableId, dto, customerId);
   }
 
   @Get('orders/mergeable')
@@ -110,6 +117,35 @@ export class OrderController {
   @ApiResponse({ status: 200, type: [OrderResponseDto] })
   async getTableOrders(@Param('tableId') tableId: string): Promise<OrderResponseDto[]> {
     return this.orderService.getTableOrders(tableId);
+  }
+
+  @Get('orders/history')
+  @UseGuards(CustomerAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get order history for logged-in customer',
+    description: 'Returns past completed/paid orders for the authenticated customer',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        orders: { type: 'array', items: { $ref: '#/components/schemas/OrderResponseDto' } },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async getOrderHistory(
+    @Req() req: any,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.orderService.getCustomerOrderHistory(
+      req.customer.id,
+      limit ? Number(limit) : 20,
+      offset ? Number(offset) : 0,
+    );
   }
 
   @Get('orders/:orderId')

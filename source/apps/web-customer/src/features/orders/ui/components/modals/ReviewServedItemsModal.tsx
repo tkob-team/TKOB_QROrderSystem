@@ -45,10 +45,11 @@ export function ReviewServedItemsModal({
   isSubmitting = false,
 }: ReviewServedItemsModalProps) {
   // Get all served items from orders
-  // Check for both SERVED (API uppercase) and Completed (model Title Case)
+  // Check for both uppercase and Title Case status values
   const servedItems: ReviewableItem[] = orders
     .filter(order => {
       const status = order.status?.toString().toUpperCase()
+      // Include SERVED, COMPLETED, and READY for review eligibility
       return status === 'SERVED' || status === 'COMPLETED' || status === 'READY'
     })
     .flatMap(order => 

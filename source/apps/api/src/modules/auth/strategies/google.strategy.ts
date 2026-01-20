@@ -17,10 +17,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: clientSecret || 'not-configured',
       callbackURL: callbackURL || 'http://localhost:3000/api/v1/auth/google/callback',
       scope: ['email', 'profile'],
+      passReqToCallback: true, // Pass request to get state parameter
     });
   }
 
   async validate(
+    req: any,
     accessToken: string,
     refreshToken: string,
     profile: Profile,
@@ -28,11 +30,15 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   ): Promise<void> {
     const { id, name, emails, photos } = profile;
     
+    // Get origin from state parameter (customer or tenant)
+    const origin = req.query?.state || 'tenant';
+    
     const user = {
       googleId: id,
       email: emails?.[0]?.value || '',
       fullName: `${name?.givenName || ''} ${name?.familyName || ''}`.trim(),
       avatarUrl: photos?.[0]?.value,
+      origin, // Pass origin to callback handler
     };
     
     done(null, user);

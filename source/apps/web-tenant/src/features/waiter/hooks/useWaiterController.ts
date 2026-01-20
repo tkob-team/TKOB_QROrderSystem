@@ -135,10 +135,15 @@ export function useWaiterController(): UseWaiterControllerReturn {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Sync fetched orders to local state
+  // Sync fetched orders to local state (only when content actually changes)
   useEffect(() => {
-    setOrders(fetchedOrders);
-  }, [fetchedOrders]);
+    // Compare by JSON string to avoid infinite loop from reference changes
+    const fetchedJson = JSON.stringify(fetchedOrders.map(o => o.id + o.status + o.paymentStatus));
+    const localJson = JSON.stringify(orders.map(o => o.id + o.status + o.paymentStatus));
+    if (fetchedJson !== localJson) {
+      setOrders(fetchedOrders);
+    }
+  }, [fetchedOrders, orders]);
 
 
 

@@ -29,7 +29,9 @@ export class MenuItemsPublicController {
   @Get(':id')
   @ApiOperation({ summary: 'Get menu item details for customer (with session)' })
   @ApiResponse({ status: 200, type: MenuItemResponseDto })
-  async findOne(@Param('id') id: string) {
-    return this.menuItemsService.findById(id);
+  async findOne(@CurrentSession() session: SessionData, @Param('id') id: string) {
+    // Use session.tenantId to bypass JWT tenant context
+    // This allows logged-in customers to view menu from the restaurant they're at
+    return this.menuItemsService.findByIdForCustomer(id, session.tenantId);
   }
 }

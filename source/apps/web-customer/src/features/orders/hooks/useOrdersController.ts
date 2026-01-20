@@ -12,6 +12,7 @@ import { orderQueryKeys } from '../data/cache/orderQueryKeys'
 import { useSession } from '@/features/tables/hooks/useSession'
 import { USE_MOCK_API } from '@/shared/config'
 import { useCurrentUser } from '@/features/profile/hooks/queries/useCurrentUser'
+import apiClient from '@/api/client'
 
 export function useOrdersController() {
   const router = useRouter()
@@ -75,22 +76,57 @@ export function useOrdersController() {
     enabled: !!sessionId,
   })
 
-  // Get current user to check login status
+  // Get current user to check login status (must be before using userResponse)
   const { data: userResponse } = useCurrentUser()
   const isLoggedIn = !!userResponse?.data
+
+  // Fetch logged-in user's order history from dedicated endpoint
+  const { data: userOrderHistory = [], isLoading: userHistoryLoading } = useQuery({
+    queryKey: ['customer-order-history', userResponse?.data?.id],
+    queryFn: async () => {
+      if (!userResponse?.data?.id) return []
+      
+      // Call the new /orders/history endpoint
+      const response = await apiClient.get<{ data: ApiOrder[], pagination: any }>('/orders/history', {
+        params: { limit: 50 }
+      })
+      
+      const list = response.data?.data || []
+      log('data', 'Fetched customer order history', { count: list.length }, { feature: 'orders' })
+      
+      return list.map(toFeatureOrder)
+    },
+    enabled: !!userResponse?.data?.id && !USE_MOCK_API,
+  })
+
+  // Combine order history: session orders + user's past orders (if logged in)
+  const combinedOrderHistory = useMemo(() => {
+    if (isLoggedIn && userOrderHistory.length > 0) {
+      // Merge and deduplicate by order ID
+      const allOrders = [...orderHistory, ...userOrderHistory]
+      const uniqueOrders = Array.from(
+        new Map(allOrders.map(o => [o.id, o])).values()
+      )
+      // Sort by createdAt desc
+      return uniqueOrders.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+    }
+    return orderHistory
+  }, [isLoggedIn, orderHistory, userOrderHistory])
 
   // State
   const state: OrdersState = useMemo(
     () => ({
       currentOrder: currentSessionOrders[0] || null,
       currentSessionOrders,
-      orderHistory,
+      orderHistory: combinedOrderHistory,
       selectedOrder,
       isLoggedIn,
-      isLoading: currentLoading || historyLoading,
+      isLoading: currentLoading || historyLoading || userHistoryLoading,
       error: null,
     }),
-    [currentSessionOrders, orderHistory, selectedOrder, isLoggedIn, currentLoading, historyLoading]
+    [currentSessionOrders, combinedOrderHistory, selectedOrder, isLoggedIn, currentLoading, historyLoading, userHistoryLoading]
   )
 
   // Actions
