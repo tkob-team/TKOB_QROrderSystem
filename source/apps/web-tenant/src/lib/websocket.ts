@@ -88,15 +88,6 @@ export interface BillRequestedPayload {
   requestedAt: Date;
 }
 
-export interface BillRequestedPayload {
-  orderId: string;
-  orderNumber: string;
-  tableId: string;
-  tableNumber: string;
-  totalAmount: number;
-  requestedAt: Date;
-}
-
 // ==================== CONNECTION MANAGEMENT ====================
 
 export interface SocketConnectionOptions {

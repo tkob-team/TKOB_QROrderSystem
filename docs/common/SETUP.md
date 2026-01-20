@@ -435,6 +435,7 @@ docker compose ps
 
 ### 6.2. Chạy Database Migrations
 
+**Terminal 1 - Backend API**:
 ```bash
 # Từ thư mục api
 cd source/apps/api
@@ -527,7 +528,15 @@ pnpm dev
 
 **API Health**:
 ```bash
-curl http://localhost:3000/health
+# Development
+pnpm dev                      # Chạy "--parallel dev" trong tất cả workspaces (từ package.json: "dev": "pnpm run --parallel dev")
+pnpm dev:web-customer         # Chỉ customer app
+pnpm dev:web-tenant           # Chỉ tenant dashboard
+
+# Build
+pnpm build                    # Build tất cả apps
+pnpm build:web-customer       # Build customer app
+pnpm build:web-tenant         # Build tenant dashboard
 
 # Lưu ý: /health được loại trừ khỏi /api/v1 prefix (xem source/apps/api/src/main.ts - global prefix excludes /health và /)
 # Kết quả mong đợi: {"status":"ok","timestamp":"..."}
@@ -559,7 +568,9 @@ docker exec -it qr-redis-dev redis-cli ping
 
 Xem [OPENAPI.md](./OPENAPI.md) để biết các ví dụ API đầy đủ.
 
----
+# Build
+pnpm build                    # Production build
+pnpm start                    # Serve production build
 
 ## 9. Scripts có sẵn
 
