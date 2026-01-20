@@ -20,6 +20,7 @@ export interface OrderTrackingResponse {
   tableNumber: string
   currentStatus: string
   currentStatusMessage: string
+  paymentStatus?: string // PENDING, COMPLETED, etc.
   timeline: OrderTrackingTimelineStep[]
   estimatedTimeRemaining: number | null // minutes
   elapsedMinutes: number

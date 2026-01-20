@@ -6,11 +6,13 @@
 'use client';
 
 import React from 'react';
-import { Plus, LogOut } from 'lucide-react';
+import { Plus, LogOut, Receipt } from 'lucide-react';
 
 interface ServiceHeaderProps {
   userRole?: 'admin' | 'waiter' | 'kds';
+  billRequestCount?: number;
   onManualOrder?: () => void;
+  onBillRequestClick?: () => void;
   onLogout: () => void;
 }
 
@@ -18,6 +20,8 @@ interface ServiceHeaderProps {
  * ServiceHeaderMobile Component
  */
 export function ServiceHeaderMobile({
+  billRequestCount = 0,
+  onBillRequestClick,
   onLogout,
 }: Omit<ServiceHeaderProps, 'userRole' | 'onManualOrder'>) {
   return (
@@ -28,6 +32,20 @@ export function ServiceHeaderMobile({
         </h1>
 
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Bill Request Badge */}
+          {billRequestCount > 0 && (
+            <button
+              onClick={onBillRequestClick}
+              className="relative flex items-center justify-center w-11 h-11 bg-orange-50 border border-orange-200 text-orange-600 rounded-lg active:bg-orange-100 hover:bg-orange-100 animate-pulse"
+              aria-label={`${billRequestCount} bill requests`}
+            >
+              <Receipt className="w-4 h-4" />
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full min-w-[20px] text-center">
+                {billRequestCount}
+              </span>
+            </button>
+          )}
+          
           {/* Profile Link */}
           <a
             href="/waiter/profile"
@@ -58,7 +76,9 @@ export function ServiceHeaderMobile({
  */
 export function ServiceHeaderDesktop({
   userRole,
+  billRequestCount = 0,
   onManualOrder,
+  onBillRequestClick,
   onLogout,
 }: ServiceHeaderProps) {
   return (
@@ -74,6 +94,20 @@ export function ServiceHeaderDesktop({
 
         {/* Right: Controls */}
         <div className="flex items-center gap-3">
+          {/* Bill Request Badge */}
+          {billRequestCount > 0 && (
+            <button
+              onClick={onBillRequestClick}
+              className="relative flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 border-2 border-orange-300 text-orange-600 rounded-lg transition-all text-sm font-semibold min-h-[40px] animate-pulse"
+            >
+              <Receipt className="w-4 h-4" />
+              <span>Bill Requests</span>
+              <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full">
+                {billRequestCount}
+              </span>
+            </button>
+          )}
+          
           {/* Manual Order - Admin only */}
           {userRole === 'admin' && onManualOrder && (
             <button

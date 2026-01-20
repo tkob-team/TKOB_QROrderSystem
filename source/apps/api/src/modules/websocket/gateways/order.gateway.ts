@@ -332,6 +332,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
       tableId: string;
       tableNumber: string;
       totalAmount: number;
+      orderCount?: number;
       requestedAt: Date;
     },
   ) {

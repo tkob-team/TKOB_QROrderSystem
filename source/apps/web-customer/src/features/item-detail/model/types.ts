@@ -1,5 +1,13 @@
 import type { MenuItem, Review } from '@/types'
 
+export interface RatingDistribution {
+  1: number
+  2: number
+  3: number
+  4: number
+  5: number
+}
+
 export interface ItemDetailState {
   item: MenuItem | null
   allMenuItems: MenuItem[]
@@ -16,6 +24,9 @@ export interface ItemDetailState {
   totalReviews: number
   totalReviewPages: number
   currentReviews: Review[]
+  allReviews: Review[]
+  ratingDistribution: RatingDistribution | Record<number, number> | null
+  showFullReviewList: boolean
 }
 
 export interface ItemDetailActions {
@@ -32,6 +43,8 @@ export interface ItemDetailActions {
   openItem: (id: string) => void
   previousReview: () => void
   nextReview: () => void
+  toggleFullReviewList: () => void
+  scrollToReviews: () => void
 }
 
 export interface ItemDetailController {

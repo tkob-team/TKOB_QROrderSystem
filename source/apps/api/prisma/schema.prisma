@@ -407,6 +407,9 @@ model TableSession {
   scannedAt DateTime @default(now()) @map("scanned_at")
   active    Boolean  @default(true)
 
+  // Bill request tracking (for "Request Bill" flow)
+  billRequestedAt DateTime? @map("bill_requested_at")
+
   // Cleared by staff (staff control when table is free)
   clearedAt DateTime? @map("cleared_at")
   clearedBy String?   @map("cleared_by") // Staff user ID

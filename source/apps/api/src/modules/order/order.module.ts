@@ -6,6 +6,7 @@ import { CartService } from './services/cart.service';
 import { TableModule } from '../table/table.module';
 import { OrderService } from './services/order.service';
 import { BillService } from './services/bill.service';
+import { BillPdfService } from './services/bill-pdf.service';
 import { OrderController } from './controllers/order.controller';
 import { KdsController } from './controllers/kds.controller';
 import { BillController } from './controllers/bill.controller';
@@ -26,7 +27,8 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module';
     CartService,
     OrderService,
     BillService,
+    BillPdfService,
   ],
-  exports: [CartService, OrderService, BillService],
+  exports: [CartService, OrderService, BillService, BillPdfService],
 })
 export class OrderModule {}

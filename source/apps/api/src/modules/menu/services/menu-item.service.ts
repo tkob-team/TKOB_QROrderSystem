@@ -216,6 +216,12 @@ export class MenuItemsService {
       limit,
     });
 
+    // Collect all menu item IDs for batch rating query
+    const menuItemIds = result.data.map((item) => item.id);
+
+    // Batch fetch review stats for all menu items at once (avoid N+1)
+    const reviewStats = await this.getMenuItemsRatingStats(tenantId, menuItemIds);
+
     // Group items by category
     const categoriesMap = new Map<
       string,
@@ -253,6 +259,9 @@ export class MenuItemsService {
       const primaryPhoto =
         (item.photos ?? []).find((p: any) => p.isPrimary) || (item.photos ?? [])[0];
 
+      // Get rating stats for this item
+      const itemRating = reviewStats.get(item.id);
+
       categoriesMap.get(categoryId)!.items.push({
         id: item.id,
         name: item.name,
@@ -269,6 +278,9 @@ export class MenuItemsService {
         chefRecommended: item.chefRecommended,
         popularity: item.popularity,
         displayOrder: item.displayOrder,
+        // Rating stats from reviews
+        averageRating: itemRating?.averageRating ?? 0,
+        totalReviews: itemRating?.totalReviews ?? 0,
       });
     }
 
@@ -330,6 +342,62 @@ export class MenuItemsService {
 
   async incrementPopularity(itemId: string): Promise<void> {
     await this.menuItemRepo.incrementPopularity(itemId);
+  }
+
+  /**
+   * Batch fetch rating statistics for multiple menu items
+   * Uses a single query to avoid N+1 problem
+   */
+  private async getMenuItemsRatingStats(
+    tenantId: string,
+    menuItemIds: string[],
+  ): Promise<Map<string, { averageRating: number; totalReviews: number }>> {
+    if (menuItemIds.length === 0) {
+      return new Map();
+    }
+
+    // Single query to get all reviews for all menu items
+    const reviews = await this.prisma.itemReview.findMany({
+      where: {
+        tenantId: tenantId,
+        orderItem: {
+          menuItemId: {
+            in: menuItemIds,
+          },
+        },
+      },
+      select: {
+        rating: true,
+        orderItem: {
+          select: {
+            menuItemId: true,
+          },
+        },
+      },
+    });
+
+    // Aggregate ratings by menu item
+    const statsMap = new Map<string, { totalRating: number; count: number }>();
+    
+    for (const review of reviews) {
+      const menuItemId = review.orderItem.menuItemId;
+      const existing = statsMap.get(menuItemId) || { totalRating: 0, count: 0 };
+      existing.totalRating += review.rating;
+      existing.count += 1;
+      statsMap.set(menuItemId, existing);
+    }
+
+    // Convert to final format
+    const result = new Map<string, { averageRating: number; totalReviews: number }>();
+    
+    for (const [menuItemId, stats] of statsMap) {
+      result.set(menuItemId, {
+        averageRating: Math.round((stats.totalRating / stats.count) * 10) / 10,
+        totalReviews: stats.count,
+      });
+    }
+
+    return result;
   }
 
   // async recalculatePopularity(tenantId: string): Promise<void> {

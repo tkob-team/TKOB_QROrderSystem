@@ -67,8 +67,8 @@ export function PaymentPageContent() {
     log('ui', 'Payment success navigation', { orderId: maskId(orderId), source, target: 'orders-list' }, { feature: 'payment' });
     
     // BUG-13 fix: After payment success, always go to orders list
-    // This allows user to see all their orders and continue ordering
-    router.push('/orders');
+    // Use replace() to prevent back navigation loop to payment page
+    router.replace('/orders');
   }
 
   const handlePaymentFailure = () => {
