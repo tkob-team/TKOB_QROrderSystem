@@ -101,11 +101,19 @@ export function BillRequestsDialog({
         }))
       )
 
-      // Calculate totals
-      const subtotal = orders.reduce((sum: number, o: any) => sum + (Number(o.subtotal) || Number(o.total) || 0), 0)
+      // Calculate totals - read tip from orders (set when payment was confirmed)
+      const subtotal = orders.reduce((sum: number, o: any) => sum + (Number(o.subtotal) || 0), 0)
       const serviceCharge = orders.reduce((sum: number, o: any) => sum + (Number(o.serviceCharge) || 0), 0)
       const tax = orders.reduce((sum: number, o: any) => sum + (Number(o.tax) || 0), 0)
-      const total = subtotal + serviceCharge + tax
+      const tip = orders.reduce((sum: number, o: any) => sum + (Number(o.tip) || 0), 0)
+      
+      // Calculate discount from difference: discount = subtotal + tax + serviceCharge + tip - total
+      const ordersTotal = orders.reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0)
+      const calculatedTotal = subtotal + serviceCharge + tax + tip
+      const discount = Math.max(0, calculatedTotal - ordersTotal)
+      
+      // Use the actual total from orders (already has tip added and discount subtracted)
+      const total = ordersTotal
 
       const billData: BillData = {
         billNumber: `BILL-${request.tableNumber}-${Date.now().toString(36).toUpperCase()}`,
@@ -117,8 +125,8 @@ export function BillRequestsDialog({
         subtotal,
         serviceCharge,
         tax,
-        discount: 0,
-        tip: 0,
+        discount,
+        tip,
         total,
         paymentMethod: 'BILL_TO_TABLE',
         paymentStatus: 'PENDING',

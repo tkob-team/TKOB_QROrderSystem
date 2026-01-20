@@ -13,6 +13,8 @@ export interface Order {
   subtotal: number;
   tax: number;
   serviceCharge: number;
+  tip?: number; // Tip amount (optional, set when payment confirmed)
+  discount?: number; // Discount amount (optional, calculated from voucher)
   total: number;
   paymentMethod: PaymentMethod;
   paymentStatus: 'Paid' | 'Unpaid' | 'Failed' | 'PENDING' | 'COMPLETED';
