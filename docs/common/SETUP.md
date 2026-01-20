@@ -1,678 +1,542 @@
 # Hướng dẫn Cài đặt Môi trường Phát triển
 
-> Tài liệu này hướng dẫn chi tiết cách thiết lập môi trường phát triển local cho **TKQR-in Ordering Platform**.
+> Hướng dẫn đầy đủ để cài đặt môi trường phát triển local cho **TKOB_QROrderSystem**.
 
-- **Version**: 1.0
-- **Last Updated**: 2025-01-11
-- **Prerequisites**: Node.js 20+, Docker, Git
+- **Version**: 2.0
+- **Cập nhật lần cuối**: 2026-01-20
+- **Yêu cầu**: Node.js 18+ (khuyến nghị 20 LTS), Docker, pnpm 8+
+
+---
+
+## Quick Start (5 Phút)
+
+```bash
+# 1. Cài đặt yêu cầu: Node.js 18+ (khuyến nghị 20 LTS), pnpm 8+, Docker
+# 2. Clone repository
+git clone TBD (repository URL)
+cd TKOB_QROrderSystem
+
+# 3. Cài đặt dependencies
+pnpm install
+
+# 4. Khởi động database services
+cd source/docker
+docker compose up -d
+
+# 5. Setup database
+cd ../apps/api
+cp .env.example .env
+# Chỉnh sửa .env với cấu hình của bạn
+pnpm db:generate
+pnpm db:migrate
+# Tùy chọn: pnpm db:reset (seed subscription plans)
+
+cd ../../..  # quay về repo root
+```
+
+**Dừng tại đây.** Bây giờ mở 3 terminal riêng biệt từ repo root cho các dịch vụ bên dưới.
+
+```bash
+# Terminal 1 - API (port 3000)
+cd source/apps/api
+pnpm start:dev
+
+# Terminal 2 - Customer App (port 3001)
+cd source/apps/web-customer
+cp .env.example .env
+pnpm dev
+
+# Terminal 3 - Tenant Dashboard (port 3002)
+cd source/apps/web-tenant
+cp .env.example .env
+pnpm dev
+
+# Xác minh
+# API: http://localhost:3000/health
+# Swagger: http://localhost:3000/api-docs
+# Customer: http://localhost:3001
+# Tenant: http://localhost:3002
+```
 
 ---
 
 ## Mục lục
 
 1. [Yêu cầu Hệ thống](#1-yêu-cầu-hệ-thống)
-2. [Cài đặt Prerequisites](#2-cài-đặt-prerequisites)
+2. [Cài đặt Yêu cầu](#2-cài-đặt-yêu-cầu)
 3. [Clone Repository](#3-clone-repository)
 4. [Cài đặt Dependencies](#4-cài-đặt-dependencies)
-5. [Cấu hình Environment Variables](#5-cấu-hình-environment-variables)
-6. [Khởi động Database Services](#6-khởi-động-database-services)
-7. [Database Migration & Seeding](#7-database-migration--seeding)
-8. [Chạy Development Server](#8-chạy-development-server)
-9. [Verify Setup](#9-verify-setup)
-10. [IDE Setup & Extensions](#10-ide-setup--extensions)
-11. [Docker Setup (Alternative)](#11-docker-setup-alternative)
-12. [Troubleshooting](#12-troubleshooting)
-13. [Next Steps](#13-next-steps)
+5. [Cấu hình Environment](#5-cấu-hình-environment)
+6. [Setup Database](#6-setup-database)
+7. [Chạy Development Servers](#7-chạy-development-servers)
+8. [Xác minh Setup](#8-xác-minh-setup)
+9. [Scripts có sẵn](#9-scripts-có-sẵn)
+10. [Setup IDE](#10-setup-ide)
+11. [Khắc phục sự cố](#11-khắc-phục-sự-cố)
 
 ---
 
 ## 1. Yêu cầu Hệ thống
 
-### 1.1. Minimum Requirements
+### Yêu cầu Tối thiểu
 
-| Component | Requirement |
+| Thành phần | Yêu cầu |
 |-----------|-------------|
 | **OS** | Windows 10/11, macOS 12+, Ubuntu 20.04+ |
 | **RAM** | 8GB (khuyến nghị 16GB) |
-| **Disk** | 10GB free space |
+| **Disk** | 10GB dung lượng trống |
 | **CPU** | 4 cores (khuyến nghị) |
-| **Network** | Stable internet connection |
 
-### 1.2. Software Prerequisites
+### Yêu cầu Phần mềm
 
-- **Node.js**: >= 20.x LTS
-- **pnpm**: >= 8.x
-- **Docker**: >= 24.x + Docker Compose
+- **Node.js**: >= 18.0.0 (20 LTS recommended)
+- **pnpm**: >= 8 (tested with pnpm 10.x)
+- **Docker**: >= 24.x with Docker Compose
 - **Git**: >= 2.30
-- **VS Code**: Latest (khuyến nghị)
 
 ---
 
-## 2. Cài đặt Prerequisites
+## 2. Cài đặt Yêu cầu
 
 ### 2.1. Node.js & pnpm
 
-#### Cài đặt Node.js
-
-**Option 1: Sử dụng nvm (khuyến nghị)**
+**Cài đặt Node.js** (qua nvm - khuyến nghị):
 
 ```bash
 # Linux/macOS
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-
-# Restart terminal, sau đó:
 nvm install 20
 nvm use 20
 nvm alias default 20
 
-# Verify
-node --version  # v20.x.x
-npm --version   # 10.x.x
+# Windows: Tải nvm-windows từ GitHub
+# https://github.com/coreybutler/nvm-windows/releases
+
+# Xác minh (yêu cầu Node.js 18+, khuyến nghị 20 LTS)
+node --version  # v18.x.x hoặc v20.x.x
+npm --version
 ```
 
-**Windows**: Download [nvm-windows](https://github.com/coreybutler/nvm-windows/releases)
-
-**Option 2: Direct Download**
-- Download từ [nodejs.org](https://nodejs.org/)
-- Chọn **LTS** version (20.x)
-
-#### Cài đặt pnpm
+**Cài đặt pnpm**:
 
 ```bash
-# Via npm (sau khi cài Node.js)
 npm install -g pnpm
 
-# Verify
-pnpm --version  # 8.x.x hoặc cao hơn
-```
-
-**Alternative methods**:
-```bash
-# Via Corepack (Node.js 16.13+)
+# Hoặc qua Corepack
 corepack enable
 corepack prepare pnpm@latest --activate
 
-# Via standalone script
-curl -fsSL https://get.pnpm.io/install.sh | sh -
+# Xác minh
+pnpm --version  # 8.x.x hoặc cao hơn
 ```
 
 ### 2.2. Docker & Docker Compose
 
-#### Windows
+**Windows**: Tải [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-1. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
-2. Install và restart máy
-3. Enable WSL 2 backend (khuyến nghị)
-
-```powershell
-# Verify
-docker --version
-docker-compose --version
-```
-
-#### macOS
-
+**macOS**:
 ```bash
-# Via Homebrew
 brew install --cask docker
-
-# Hoặc download Docker Desktop từ docker.com
 ```
 
-#### Linux (Ubuntu/Debian)
-
+**Linux (Ubuntu/Debian)**:
 ```bash
-# Remove old versions
-sudo apt-get remove docker docker-engine docker.io containerd runc
-
-# Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
-
-# Add user to docker group
 sudo usermod -aG docker $USER
 newgrp docker
 
-# Install Docker Compose
-sudo apt-get install docker-compose-plugin
-
-# Verify
+# Xác minh
 docker --version
 docker compose version
-```
-
-### 2.3. Git
-
-#### Windows
-- Download [Git for Windows](https://git-scm.com/download/win)
-- Trong quá trình cài đặt, chọn "Git from the command line and also from 3rd-party software"
-
-#### macOS
-```bash
-# Via Homebrew
-brew install git
-
-# Hoặc sử dụng Xcode Command Line Tools
-xcode-select --install
-```
-
-#### Linux
-```bash
-sudo apt-get install git  # Ubuntu/Debian
-sudo yum install git      # CentOS/RHEL
-```
-
-**Configure Git**:
-```bash
-git config --global user.name "Your Name"
-git config --global user.email "your.email@example.com"
-git config --global init.defaultBranch main
 ```
 
 ---
 
 ## 3. Clone Repository
 
-### 3.1. SSH Setup (khuyến nghị)
-
 ```bash
-# Generate SSH key (nếu chưa có)
-ssh-keygen -t ed25519 -C "your.email@example.com"
+# Clone repository
+git clone TBD (repository URL)
+cd TKOB_QROrderSystem
 
-# Start SSH agent
-eval "$(ssh-agent -s)"
-
-# Add SSH key
-ssh-add ~/.ssh/id_ed25519
-
-# Copy public key
-cat ~/.ssh/id_ed25519.pub
-# Paste vào GitHub Settings > SSH Keys
-```
-
-### 3.2. Clone Project
-
-```bash
-# Via SSH (khuyến nghị)
-git clone git@github.com:your-org/qr-dine-in-platform.git
-cd qr-dine-in-platform
-
-# Via HTTPS (alternative)
-git clone https://github.com/your-org/qr-dine-in-platform.git
-cd qr-dine-in-platform
-```
-
-### 3.3. Verify Structure
-
-```bash
+# Xác minh cấu trúc workspace
 ls -la
-# Expected folders:
-# apps/, packages/, docs/, infrastructure/, etc.
+# Kết quả mong đợi:
+# - source/apps/       (api, web-customer, web-tenant)
+# - source/packages/   (shared packages)
+# - source/docker/     (docker-compose.yaml)
+# - docs/             (documentation)
+# - package.json      (workspace root)
+# - pnpm-workspace.yaml
 ```
 
 ---
 
 ## 4. Cài đặt Dependencies
 
-### 4.1. Install All Dependencies
-
 ```bash
-# Install dependencies cho tất cả packages/apps
+# Từ repository root
 pnpm install
 
-# Nếu gặp lỗi, thử:
-pnpm install --frozen-lockfile
+# Lệnh này cài đặt dependencies cho tất cả workspace packages:
+# - source/apps/api
+# - source/apps/web-customer
+# - source/apps/web-tenant
+# - source/packages/* (nếu có)
 ```
 
-**Expected output**:
-```
-Packages: +XXX
-Progress: resolved XXX, reused XXX, downloaded X, added XXX, done
-```
-
-### 4.2. Verify Installation
-
+**Xác minh cài đặt**:
 ```bash
-# List installed workspaces
 pnpm list --depth=0
-
-# Check script availability
-pnpm run --list
 ```
 
 ---
 
-## 5. Cấu hình Environment Variables
+## 5. Cấu hình Environment
 
-### 5.1. Copy Template Files
+### 5.1. Docker Environment
 
 ```bash
-# Root .env
+cd source/docker
 cp .env.example .env
-
-# Backend API
-cp apps/api/.env.example apps/api/.env
-
-# Customer Web App
-cp apps/web-customer/.env.example apps/web-customer/.env
-
-# Staff Console
-cp apps/web-staff/.env.example apps/web-staff/.env
 ```
 
-### 5.2. Configure Root .env
+**Chỉnh sửa `source/docker/.env`**:
+```bash
+# Database
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=qr_ordering_dev
+DATABASE_PORT=5432
+
+# Redis
+REDIS_PORT=6379
+```
+
+### 5.2. API Environment
 
 ```bash
-# filepath: .env
+cd source/apps/api
+cp .env.example .env
+```
 
-# ============================================
-# DATABASE
-# ============================================
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
-DATABASE_HOST="localhost"
-DATABASE_PORT="5432"
-DATABASE_USER="postgres"
-DATABASE_PASSWORD="postgres"
-DATABASE_NAME="qr_ordering_dev"
-
-# ============================================
-# REDIS
-# ============================================
-REDIS_URL="redis://localhost:6379"
-REDIS_HOST="localhost"
-REDIS_PORT="6379"
-REDIS_PASSWORD=""
-
-# ============================================
-# AUTHENTICATION
-# ============================================
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-JWT_EXPIRES_IN="1h"
-JWT_REFRESH_SECRET="your-super-secret-refresh-key"
-JWT_REFRESH_EXPIRES_IN="7d"
-
-# QR Token Secret (for signed QR codes)
-QR_TOKEN_SECRET="your-qr-token-signing-secret"
-QR_TOKEN_EXPIRES_IN="365d"
-
-# ============================================
+**Chỉnh sửa `source/apps/api/.env`** (xem `.env.example` để biết danh sách đầy đủ):
+```bash
 # API
-# ============================================
-API_PORT="3000"
-API_HOST="localhost"
-API_URL="http://localhost:3000"
-CORS_ORIGINS="http://localhost:5173,http://localhost:5174"
-
-# ============================================
-# FRONTEND URLS
-# ============================================
-CUSTOMER_APP_URL="http://localhost:5173"
-STAFF_APP_URL="http://localhost:5174"
-KDS_APP_URL="http://localhost:5175"
-
-# ============================================
-# PAYMENTS (Stripe - Test Mode)
-# ============================================
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-
-# ============================================
-# STORAGE (Local/S3)
-# ============================================
-STORAGE_TYPE="local"  # local | s3 | r2
-STORAGE_PATH="./uploads"
-
-# AWS S3 (nếu dùng)
-# AWS_ACCESS_KEY_ID=""
-# AWS_SECRET_ACCESS_KEY=""
-# AWS_REGION="ap-southeast-1"
-# AWS_S3_BUCKET=""
-
-# Cloudflare R2 (nếu dùng)
-# R2_ACCOUNT_ID=""
-# R2_ACCESS_KEY_ID=""
-# R2_SECRET_ACCESS_KEY=""
-# R2_BUCKET=""
-
-# ============================================
-# EMAIL & SMS (Optional - MVP)
-# ============================================
-# SMTP_HOST="smtp.gmail.com"
-# SMTP_PORT="587"
-# SMTP_USER=""
-# SMTP_PASSWORD=""
-# TWILIO_ACCOUNT_SID=""
-# TWILIO_AUTH_TOKEN=""
-# TWILIO_PHONE_NUMBER=""
-
-# ============================================
-# LOGGING & MONITORING
-# ============================================
-LOG_LEVEL="debug"  # debug | info | warn | error
-NODE_ENV="development"
-
-# Sentry (optional)
-# SENTRY_DSN=""
-
-# ============================================
-# RATE LIMITING
-# ============================================
-RATE_LIMIT_WINDOW_MS="60000"  # 1 minute
-RATE_LIMIT_MAX_REQUESTS="100"
-```
-
-### 5.3. Configure API .env
-
-```bash
-# filepath: apps/api/.env
-
-# Inherits from root .env
-# Override nếu cần
-
 API_PORT=3000
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
-REDIS_URL="redis://localhost:6379"
-JWT_SECRET="your-super-secret-jwt-key"
-```
-
-### 5.4. Configure Frontend .env Files
-
-**Customer App**:
-```bash
-# filepath: apps/web-customer/.env
-
-VITE_API_URL=http://localhost:3000
-VITE_APP_NAME="TKQR-in"
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
-```
-
-**Staff Console**:
-```bash
-# filepath: apps/web-staff/.env
-
-VITE_API_URL=http://localhost:3000
-VITE_APP_NAME="TKQR-in Staff"
-VITE_WS_URL=ws://localhost:3000
-```
-
----
-
-## 6. Khởi động Database Services
-
-### 6.1. Using Docker Compose
-
-```bash
-# Start PostgreSQL + Redis
-docker-compose up -d
-
-# Verify containers are running
-docker-compose ps
-
-# Expected output:
-# NAME                SERVICE      STATUS       PORTS
-# qr-ordering-db      postgres     Up          0.0.0.0:5432->5432/tcp
-# qr-ordering-redis   redis        Up          0.0.0.0:6379->6379/tcp
-```
-
-### 6.2. Docker Compose Configuration
-
-```yaml
-# filepath: docker-compose.yml
-
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: qr-ordering-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: qr_ordering_dev
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: qr-ordering-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
-  redis_data:
-```
-
-### 6.3. Verify Database Connection
-
-```bash
-# Test PostgreSQL
-docker exec -it qr-ordering-db psql -U postgres -d qr_ordering_dev -c "SELECT version();"
-
-# Test Redis
-docker exec -it qr-ordering-redis redis-cli ping
-# Expected: PONG
-```
-
----
-
-## 7. Database Migration & Seeding
-
-### 7.1. Run Migrations
-
-```bash
-# Generate Prisma Client (nếu dùng Prisma)
-pnpm --filter @app/api prisma generate
-
-# Run migrations
-pnpm --filter @app/api db:migrate
-
-# Or using direct command
-pnpm --filter @app/api prisma migrate dev
-```
-
-**Expected output**:
-```
-✓ Generated Prisma Client
-✓ Applied migrations:
-  └─ 20250111000000_init
-  └─ 20250111000001_add_tenants
-  └─ 20250111000002_add_menus
-```
-
-### 7.2. Seed Sample Data
-
-```bash
-# Seed database với sample data
-pnpm --filter @app/api db:seed
-
-# Or
-pnpm --filter @app/api prisma db seed
-```
-
-**Sample data includes**:
-- 2 demo tenants (restaurants)
-- Sample menu categories & items
-- Sample tables với QR codes
-- Test users (admin, waiter, kitchen)
-
-### 7.3. Verify Data
-
-```bash
-# Connect to database
-docker exec -it qr-ordering-db psql -U postgres -d qr_ordering_dev
-
-# Check tables
-\dt
-
-# Check sample data
-SELECT id, name, slug FROM tenants;
-SELECT id, name, category_id FROM menu_items LIMIT 5;
-
-# Exit
-\q
-```
-
----
-
-## 8. Chạy Development Server
-
-### 8.1. Start All Services
-
-**Option 1: Run all in parallel**
-```bash
-# Start tất cả services cùng lúc
-pnpm dev
-```
-
-**Option 2: Run từng service riêng (khuyến nghị cho development)**
-
-```bash
-# Terminal 1: Backend API
-pnpm --filter @app/api dev
-
-# Terminal 2: Customer Web App
-pnpm --filter @app/web-customer dev
-
-# Terminal 3: Staff Console
-pnpm --filter @app/web-staff dev
-
-# Terminal 4: Kitchen Display System (optional)
-pnpm --filter @app/web-kds dev
-```
-
-### 8.2. Available Scripts
-
-```bash
-# Development
-pnpm dev              # Start all apps in dev mode
-pnpm dev:api          # Backend API only
-pnpm dev:customer     # Customer app only
-pnpm dev:staff        # Staff console only
-
-# Build
-pnpm build            # Build all apps
-pnpm build:api        # Build API only
-
-# Testing
-pnpm test             # Run all tests
-pnpm test:unit        # Unit tests only
-pnpm test:e2e         # E2E tests only
-pnpm test:cov         # With coverage
-
-# Linting & Formatting
-pnpm lint             # Check linting
-pnpm lint:fix         # Fix linting issues
-pnpm format           # Format code with Prettier
 
 # Database
-pnpm db:migrate       # Run migrations
-pnpm db:seed          # Seed data
-pnpm db:reset         # Reset database
-pnpm db:studio        # Open Prisma Studio
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
+
+# Logging
+LOG_LEVEL=debug
+NODE_ENV=development
+
+# JWT
+JWT_SECRET=your-secret-key-min-32-chars-CHANGE-THIS
+JWT_ACCESS_TOKEN_EXPIRES_IN=1h
+JWT_REFRESH_TOKEN_EXPIRES_IN=7d
+# Lưu ý: Đặt một secret mạnh (tối thiểu 32 ký tự) cho production
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# Email (SendGrid)
+EMAIL_PROVIDER=sendgrid
+SENDGRID_API_KEY=optional-for-dev
+EMAIL_FROM=noreply@localhost
+# Lưu ý: Đặt thông tin xác thực thật cho chức năng email production
+
+# Storage
+STORAGE_DRIVER=local
+MAX_FILE_SIZE=5242880
+ALLOWED_MIME_TYPES=image/jpeg,image/png,image/webp,image/gif
+```
+
+### 5.3. Frontend Environments
+
+**Customer App (`source/apps/web-customer/.env`)**:
+```bash
+cp source/apps/web-customer/.env.example source/apps/web-customer/.env
+```
+
+Chỉnh sửa:
+```bash
+# API
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_USE_MOCK_API=false
+
+# App
+NEXT_PUBLIC_APP_NAME=TKOB Customer
+
+# Logging (chỉ cho dev)
+NEXT_PUBLIC_USE_LOGGING=false
+```
+
+**Tenant Dashboard (`source/apps/web-tenant/.env`)**:
+```bash
+cp source/apps/web-tenant/.env.example source/apps/web-tenant/.env
+```
+
+Chỉnh sửa:
+```bash
+# API
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_CUSTOMER_APP_URL=http://localhost:3001
+
+# App
+NEXT_PUBLIC_APP_NAME=TKOB Tenant
+
+# WebSocket (tùy chọn - xác minh đường dẫn thực tế trong backend implementation)
+NEXT_PUBLIC_WS_URL=ws://localhost:3000
+
+# Logging (chỉ cho dev)
+NEXT_PUBLIC_USE_LOGGING=false
+
+# Lưu ý: Frontend sử dụng access tokens do API cấp
+# Không cần JWT_SECRET trong frontend environment
 ```
 
 ---
 
-## 9. Verify Setup
+## 6. Setup Database
 
-### 9.1. Health Checks
+### 6.1. Khởi động Database Services
 
-**Backend API**:
+```bash
+# Từ thư mục source/docker
+cd source/docker
+docker compose up -d
+
+# Xác minh các dịch vụ đang chạy
+docker compose ps
+
+# Kết quả mong đợi:
+# NAME              SERVICE    STATUS       PORTS
+# tkob-db-dev       postgres   Up          0.0.0.0:5432->5432/tcp
+# qr-redis-dev      redis      Up          0.0.0.0:6379->6379/tcp
+```
+
+### 6.2. Chạy Database Migrations
+
+```bash
+# Từ thư mục api
+cd source/apps/api
+
+# Generate Prisma Client
+pnpm db:generate
+
+# Chạy migrations
+pnpm db:migrate
+
+# Xác minh trạng thái migration
+pnpm prisma migrate status --config=./prisma/prisma.config.ts
+```
+
+### 6.3. Reset Database (Tùy chọn)
+
+Để reset database và seed subscription plans:
+
+```bash
+cd source/apps/api
+pnpm db:reset
+
+# Script này (scripts/reset-db.ts):
+# - Xoá tất cả dữ liệu
+# - Seed lại subscription plans
+# - KHÔNG tạo demo users/tenants
+```
+
+**Lưu ý**: KHÔNG có script seed tự động cho demo tenants hoặc users. Bạn phải tạo test data thông qua API hoặc thủ công.
+
+### 6.4. Prisma Studio (Database GUI)
+
+```bash
+cd source/apps/api
+pnpm db:studio
+
+# Mở tại: http://localhost:5555
+```
+
+---
+
+## 7. Chạy Development Servers
+
+### Phương án 1: Chạy Tất cả Các Dịch vụ (Khuyến nghị cho người mới)
+
+```bash
+# Từ repository root
+pnpm dev
+
+# Chạy "pnpm run --parallel dev" (từ root package.json)
+# Chạy dev script trong tất cả workspaces có nó:
+# - web-customer (port 3001)
+# - web-tenant (port 3002)
+# Lưu ý: API có "start:dev", không phải "dev", nên sẽ không khởi động với lệnh này
+```
+
+### Phương án 2: Chạy Từng Dịch vụ Riêng biệt (Khuyến nghị cho phát triển)
+
+**Terminal 1 - Backend API**:
+```bash
+cd source/apps/api
+pnpm start:dev
+
+# Chạy tại: http://localhost:3000
+# API prefix: /api/v1
+# Swagger: http://localhost:3000/api-docs (xem source/apps/api/src/main.ts: SwaggerModule.setup('api-docs', ...))
+```
+
+**Terminal 2 - Customer App**:
+```bash
+cd source/apps/web-customer
+pnpm dev
+
+# Chạy tại: http://localhost:3001 (từ package.json: "dev": "next dev -p 3001")
+```
+
+**Terminal 3 - Tenant Dashboard**:
+```bash
+cd source/apps/web-tenant
+pnpm dev
+
+# Chạy tại: http://localhost:3002 (từ package.json: "dev": "next dev -p 3002")
+```
+
+---
+
+## 8. Xác minh Setup
+
+### 8.1. Health Checks
+
+**API Health**:
 ```bash
 curl http://localhost:3000/health
 
-# Expected response:
-# {"status":"ok","timestamp":"2025-01-11T..."}
+# Lưu ý: /health được loại trừ khỏi /api/v1 prefix (xem source/apps/api/src/main.ts - global prefix excludes /health và /)
+# Kết quả mong đợi: {"status":"ok","timestamp":"..."}
 ```
 
-**Database**:
+**Kết nối Database**:
 ```bash
-curl http://localhost:3000/health/db
+# Test PostgreSQL
+docker exec -it tkob-db-dev psql -U postgres -d qr_ordering_dev -c "SELECT version();"
 
-# Expected:
-# {"database":"connected","redis":"connected"}
+# Test Redis
+docker exec -it qr-redis-dev redis-cli ping
+# Kết quả mong đợi: PONG
 ```
 
-### 9.2. Access Applications
+### 8.2. Truy cập Các Ứng dụng
 
-Open trong browser:
-
-| Application | URL | Credentials |
+| Ứng dụng | URL | Thông tin đăng nhập |
 |-------------|-----|-------------|
 | **Backend API** | http://localhost:3000 | N/A |
-| **API Docs (Swagger)** | http://localhost:3000/api-docs | N/A |
-| **Customer App** | http://localhost:5173 | No login required |
-| **Staff Console** | http://localhost:5174 | admin@demo.com / password |
-| **Kitchen Display** | http://localhost:5175 | kitchen@demo.com / password |
-| **Prisma Studio** | http://localhost:5555 | Run `pnpm db:studio` |
+| **Swagger UI** | http://localhost:3000/api-docs | N/A |
+| **Customer App** | http://localhost:3001 | Không cần đăng nhập |
+| **Tenant Dashboard** | http://localhost:3002 | Tạo qua Auth API (xem các endpoints bên dưới) |
+| **Prisma Studio** | http://localhost:5555 | Chạy `pnpm db:studio` trước |
 
-### 9.3. Test Sample Flow
+**Lưu ý**: Không có demo credentials được seed. Bạn phải:
+1. Đăng ký tenant qua API: `POST /api/v1/auth/register/submit` → `POST /api/v1/auth/register/confirm`
+2. Đăng nhập qua: `POST /api/v1/auth/login`
 
-1. **Scan QR Code** (simulate):
-   - Truy cập: http://localhost:5173/menu?token=SAMPLE_TOKEN_FROM_SEED
-   - Xem menu của demo restaurant
-
-2. **Create Order**:
-   - Add items to cart
-   - Checkout
-   - Submit order
-
-3. **Staff Console**:
-   - Login tại http://localhost:5174
-   - Xem order vừa tạo trong order list
-
-4. **Kitchen Display**:
-   - Login tại http://localhost:5175
-   - Xem order trong KDS queue
-   - Chuyển trạng thái: Received → Preparing → Ready
+Xem [OPENAPI.md](./OPENAPI.md) để biết các ví dụ API đầy đủ.
 
 ---
 
-## 10. IDE Setup & Extensions
+## 9. Scripts có sẵn
 
-### 10.1. VS Code (Recommended)
+### Root Scripts (từ `package.json`)
 
-#### Install Extensions
+```bash
+# Development
+pnpm dev                      # Chạy "--parallel dev" trong tất cả workspaces (từ package.json: "dev": "pnpm run --parallel dev")
+pnpm dev:web-customer         # Chỉ customer app
+pnpm dev:web-tenant           # Chỉ tenant dashboard
 
-Mở VS Code, install các extensions sau:
+# Build
+pnpm build                    # Build tất cả apps
+pnpm build:web-customer       # Build customer app
+pnpm build:web-tenant         # Build tenant dashboard
 
-```json
-// filepath: .vscode/extensions.json
-{
-  "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "prisma.prisma",
-    "bradlc.vscode-tailwindcss",
-    "ms-vscode.vscode-typescript-next",
-    "usernamehw.errorlens",
-    "streetsidesoftware.code-spell-checker",
-    "github.copilot",
-    "eamodio.gitlens"
-  ]
-}
+# Lint & Type Check
+pnpm lint                     # Lint tất cả
+pnpm lint:web-customer        # Lint customer app
+pnpm lint:web-tenant          # Lint tenant dashboard
+pnpm type-check               # Type check tất cả
 ```
 
-#### Workspace Settings
+### API Scripts (từ `source/apps/api/package.json`)
 
+```bash
+cd source/apps/api
+
+# Development
+pnpm start:dev                # Khởi động với hot reload
+pnpm start:debug              # Khởi động với debugger
+
+# Build & Production
+pnpm build                    # Build cho production
+pnpm start                    # Khởi động production build
+
+# Database
+pnpm db:migrate               # Chạy migrations
+pnpm db:generate              # Generate Prisma Client
+pnpm db:studio                # Mở Prisma Studio
+pnpm db:reset                 # Reset DB + seed plans
+
+# Testing
+pnpm test                     # Chạy unit tests
+pnpm test:watch               # Watch mode
+pnpm test:cov                 # Với coverage
+pnpm test:e2e                 # E2E tests
+
+# Lint & Format
+pnpm lint                     # ESLint
+pnpm format                   # Prettier
+```
+
+### Frontend Scripts (web-customer / web-tenant)
+
+```bash
+cd source/apps/web-customer  # hoặc web-tenant
+
+# Development
+pnpm dev                      # Khởi động dev server
+
+# Build
+pnpm build                    # Production build
+pnpm start                    # Serve production build
+
+# Code Generation
+pnpm sync-spec                # Fetch OpenAPI spec từ API
+pnpm orval                    # Generate TypeScript clients
+pnpm codegen                  # sync-spec + orval
+
+# Quality
+pnpm lint                     # ESLint
+pnpm type-check               # TypeScript check
+```
+
+---
+
+## 10. Setup IDE
+
+### VS Code (Khuyến nghị)
+
+**Cài đặt Extensions**:
+- ESLint (`dbaeumer.vscode-eslint`)
+- Prettier (`esbenp.prettier-vscode`)
+- Prisma (`prisma.prisma`)
+- Tailwind CSS IntelliSense (`bradlc.vscode-tailwindcss`)
+
+**Workspace Settings** (`.vscode/settings.json`):
 ```json
-// filepath: .vscode/settings.json
 {
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -680,409 +544,165 @@ Mở VS Code, install các extensions sau:
     "source.fixAll.eslint": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "tailwindCSS.experimental.classRegex": [
-    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
-}
-```
-
-### 10.2. Launch Configurations
-
-```json
-// filepath: .vscode/launch.json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug API",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@app/api", "dev:debug"],
-      "skipFiles": ["<node_internals>/**"],
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Debug Tests",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["test", "--watch"],
-      "console": "integratedTerminal"
-    }
-  ]
+  }
 }
 ```
 
 ---
 
-## 11. Docker Setup (Alternative)
+## 11. Khắc phục sự cố
 
-### 11.1. Full Stack với Docker
-
-Nếu muốn chạy toàn bộ stack trong Docker:
+### Vấn đề: `pnpm install` thất bại
 
 ```bash
-# Build images
-docker-compose -f docker-compose.full.yml build
-
-# Start all services
-docker-compose -f docker-compose.full.yml up -d
-
-# View logs
-docker-compose -f docker-compose.full.yml logs -f
-
-# Stop all
-docker-compose -f docker-compose.full.yml down
-```
-
-### 11.2. Production-like Setup
-
-```yaml
-# filepath: docker-compose.full.yml
-
-version: '3.8'
-
-services:
-  postgres:
-    # ...existing postgres config...
-
-  redis:
-    # ...existing redis config...
-
-  api:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/qr_ordering_dev
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - postgres
-      - redis
-
-  web-customer:
-    build:
-      context: .
-      dockerfile: apps/web-customer/Dockerfile
-    ports:
-      - "5173:80"
-    environment:
-      - VITE_API_URL=http://localhost:3000
-
-  web-staff:
-    build:
-      context: .
-      dockerfile: apps/web-staff/Dockerfile
-    ports:
-      - "5174:80"
-```
-
----
-
-## 12. Troubleshooting
-
-### 12.1. Common Issues
-
-#### Issue: `pnpm install` fails
-
-**Symptoms**:
-```
-ERR_PNPM_PEER_DEP_ISSUES
-```
-
-**Solution**:
-```bash
-# Clear pnpm store
+# Xóa pnpm cache
 pnpm store prune
 
-# Remove node_modules
+# Xoá node_modules
 rm -rf node_modules
-rm -rf apps/*/node_modules
-rm -rf packages/*/node_modules
+rm -rf source/apps/*/node_modules
+rm -rf source/packages/*/node_modules
 
-# Reinstall
-pnpm install --no-frozen-lockfile
+# Cài đặt lại
+pnpm install
 ```
 
-#### Issue: Docker containers won't start
+### Vấn đề: Xung đột port Docker
 
-**Symptoms**:
-```
-Error: port 5432 already in use
-```
-
-**Solution**:
 ```bash
-# Check what's using the port
+# Kiểm tra điều gì đang dùng port
 lsof -i :5432  # macOS/Linux
 netstat -ano | findstr :5432  # Windows
 
-# Stop conflicting service hoặc thay đổi port trong docker-compose.yml
-# Option 1: Stop PostgreSQL service
+# Phương án 1: Dừng dịch vụ xung đột
 sudo systemctl stop postgresql  # Linux
 brew services stop postgresql   # macOS
 
-# Option 2: Change port
-# Edit docker-compose.yml:
-ports:
-  - "5433:5432"  # Host:Container
+# Phương án 2: Thay đổi port trong source/docker/.env
+DATABASE_PORT=5433
 ```
 
-#### Issue: Database migration fails
+### Vấn đề: Database migration thất bại
 
-**Symptoms**:
-```
-Error: Can't reach database server
-```
-
-**Solution**:
 ```bash
-# Verify database is running
-docker-compose ps
+# Xác minh database đang chạy
+cd source/docker
+docker compose ps
 
-# Check logs
-docker-compose logs postgres
+# Kiểm tra logs (thay <service-name> với tên dịch vụ thực tế từ ps output)
+docker compose logs <service-name>
 
-# Restart database
-docker-compose restart postgres
+# Khởi động lại database
+docker compose restart <service-name>
 
-# Wait for health check
-docker-compose ps  # Status should be "Up (healthy)"
-
-# Retry migration
-pnpm --filter @app/api db:migrate
+# Đợi health check, sau đó thử lại
+cd ../apps/api  # từ source/docker
+pnpm db:migrate
 ```
 
-#### Issue: Frontend can't connect to API
+### Vấn đề: Frontend không kết nối được với API
 
-**Symptoms**:
-```
-Network Error / CORS error
-```
-
-**Solution**:
 ```bash
-# Check API is running
+# Xác minh API đang chạy
 curl http://localhost:3000/health
 
-# Verify CORS_ORIGINS in .env includes frontend URL
-CORS_ORIGINS="http://localhost:5173,http://localhost:5174"
+# Kiểm tra cấu hình CORS trong API main.ts
+# Đảm bảo http://localhost:3001 và http://localhost:3002 được cho phép
 
-# Restart API
-# Ctrl+C in API terminal, then:
-pnpm --filter @app/api dev
+# Xác minh frontend .env có API_URL đúng
+cat source/apps/web-customer/.env | grep API_URL
+# Nên là: NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
-#### Issue: TypeScript errors
-
-**Symptoms**:
-```
-Cannot find module '@app/shared'
-```
-
-**Solution**:
-```bash
-# Rebuild TypeScript references
-pnpm --filter @app/shared build
-
-# Generate Prisma Client
-pnpm --filter @app/api prisma generate
-
-# Restart TypeScript server in VS Code
-# Cmd/Ctrl + Shift + P > "TypeScript: Restart TS Server"
-```
-
-### 12.2. Reset Everything
-
-Nếu gặp nhiều lỗi, reset toàn bộ:
+### Reset Tất cả
 
 ```bash
-# Stop all services
-docker-compose down -v  # -v removes volumes
+# Dừng và xoá Docker volumes
+cd source/docker
+docker compose down -v
 
-# Remove node_modules
+# Xoá tất cả node_modules
+cd ../..
 rm -rf node_modules
-find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
+find source -name 'node_modules' -type d -prune -exec rm -rf '{}' +
 
-# Remove build artifacts
-find . -name 'dist' -type d -prune -exec rm -rf '{}' +
-find . -name '.next' -type d -prune -exec rm -rf '{}' +
+# Xóa build artifacts
+find source -name 'dist' -type d -prune -exec rm -rf '{}' +
+find source -name '.next' -type d -prune -exec rm -rf '{}' +
 
-# Reinstall
+# Cài đặt lại
 pnpm install
 
-# Restart Docker
-docker-compose up -d
+# Khởi động lại Docker
+cd source/docker
+docker compose up -d
 
-# Migrate & seed
-pnpm --filter @app/api db:migrate
-pnpm --filter @app/api db:seed
+# Migrate
+cd ../apps/api
+pnpm db:migrate
 
-# Start dev servers
-pnpm dev
-```
-
-### 12.3. Check System Resources
-
-```bash
-# Docker resource usage
-docker stats
-
-# Disk space
-df -h  # Linux/macOS
-wmic logicaldisk get size,freespace,caption  # Windows
-
-# Memory
-free -h  # Linux
-top  # macOS
-taskmgr  # Windows
+# Khởi động servers
+pnpm start:dev  # API
+# Ở các terminal khác: khởi động frontend apps
 ```
 
 ---
 
-## 13. Next Steps
+## 12. Tham chiếu Port
 
-### 13.1. Explore Codebase
+| Dịch vụ | Port | Nguồn |
+|---------|------|--------|
+| PostgreSQL | 5432 | `source/docker/docker-compose.yaml` |
+| Redis | 6379 | `source/docker/docker-compose.yaml` |
+| Backend API | 3000 | `source/apps/api/src/main.ts` (mặc định) |
+| Customer App | 3001 | `source/apps/web-customer/package.json` ("dev": "next dev -p 3001") |
+| Tenant Dashboard | 3002 | `source/apps/web-tenant/package.json` ("dev": "next dev -p 3002") |
+| Prisma Studio | 5555 | Prisma mặc định |
 
-```bash
-# Backend structure
-apps/api/src/
-├── modules/      # Feature modules
-│   ├── tenants/
-│   ├── menu/
-│   ├── orders/
-│   └── auth/
-├── common/       # Shared utilities
-├── config/       # Configuration
-└── main.ts       # Entry point
+---
 
-# Frontend structure
-apps/web-customer/src/
-├── components/   # React components
-├── pages/        # Page components
-├── hooks/        # Custom hooks
-├── lib/          # Utilities
-└── App.tsx       # Root component
+## 13. Các Bước Tiếp theo
+
+### Khám phá Codebase
+
+```
+source/
+├── apps/
+│   ├── api/                    # NestJS backend
+│   │   ├── src/
+│   │   │   ├── modules/       # Feature modules (auth, tenants, menu, orders, v.v.)
+│   │   │   ├── common/        # Tiện ích dùng chung
+│   │   │   └── main.ts        # Entry point
+│   │   ├── prisma/
+│   │   │   └── schema.prisma  # Database schema
+│   │   └── scripts/           # Utility scripts
+│   ├── web-customer/          # Next.js customer app
+│   └── web-tenant/            # Next.js tenant dashboard
+├── packages/
+│   └── ui/                    # Shared UI components
+└── docker/
+    └── docker-compose.yaml    # Dev services
 ```
 
-### 13.2. Read Documentation
+### Đọc Tài liệu
 
-- [Architecture](./ARCHITECTURE.md) – System architecture
-- [Contributing](./CONTRIBUTING.md) – Contribution guidelines
-- [API Documentation](http://localhost:3000/api-docs) – OpenAPI/Swagger
-
-### 13.3. Start Development
-
-1. **Pick a task**: Check [GitHub Issues](../../../issues) hoặc [USER_STORIES.md](./01-product/06-USER_STORIES.md)
-2. **Create branch**: `git checkout -b feature/your-feature`
-3. **Code**: Make changes
-4. **Test**: `pnpm test`
-5. **Commit**: Follow [commit conventions](./CONTRIBUTING.md#6-commit-messages)
-6. **Push**: `git push origin feature/your-feature`
-7. **PR**: Create Pull Request
-
-### 13.4. Learn the Stack
-
-**Backend (NestJS)**:
-- [NestJS Documentation](https://docs.nestjs.com/)
-- [Prisma Guide](https://www.prisma.io/docs/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-
-**Frontend (React)**:
-- [React Documentation](https://react.dev/)
-- [Vite Guide](https://vitejs.dev/guide/)
-- [TanStack Query](https://tanstack.com/query/latest)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-
-**DevOps**:
-- [Docker Documentation](https://docs.docker.com/)
-- [pnpm Workspaces](https://pnpm.io/workspaces)
+- [Kiến trúc](./ARCHITECTURE.md) - Kiến trúc hệ thống
+- [Database Schema](../backend/database/description.md) - Tài liệu schema đầy đủ
+- [Tài liệu API](http://localhost:3000/api-docs) - Swagger UI (khi API đang chạy)
+- [Contributing](./CONTRIBUTING.md) - Hướng dẫn đóng góp
 
 ---
 
-## 14. Support & Contact
+## Support
 
-### 14.1. Getting Help
-
-- **Documentation**: Check `docs/` folder
-- **GitHub Issues**: [Create new issue](../../../issues/new)
-- **GitHub Discussions**: [Ask questions](../../../discussions)
-- **Email**: dev@example.com
-
-### 14.2. Reporting Issues
-
-Nếu gặp vấn đề trong setup:
-
-1. Check [Troubleshooting](#12-troubleshooting) section
-2. Search [existing issues](../../../issues)
-3. Create new issue với:
-   - OS & version
-   - Node.js version
-   - Error message đầy đủ
-   - Steps to reproduce
+- **Tài liệu**: Kiểm tra thư mục `docs/`
+- **Issues**: TBD (team will fill later)
+- **Contact**: TBD (team will fill later)
 
 ---
 
-## 15. Appendix
+**Hoàn tất setup! 🎉**
 
-### 15.1. Useful Commands
-
-```bash
-# Package management
-pnpm add <package>              # Add dependency
-pnpm add -D <package>           # Add dev dependency
-pnpm remove <package>           # Remove dependency
-pnpm update                     # Update all packages
-
-# Workspace commands
-pnpm --filter @app/api <cmd>    # Run command in specific workspace
-pnpm -r <cmd>                   # Run in all workspaces
-pnpm -r --parallel <cmd>        # Run in parallel
-
-# Docker
-docker-compose up -d            # Start detached
-docker-compose down             # Stop containers
-docker-compose logs -f <service> # Follow logs
-docker-compose exec <service> sh # Shell into container
-docker-compose restart <service> # Restart service
-
-# Database
-pnpm db:migrate                 # Run migrations
-pnpm db:seed                    # Seed data
-pnpm db:studio                  # Open Prisma Studio
-pnpm db:reset                   # Reset database
-pnpm db:push                    # Push schema without migration
-```
-
-### 15.2. Environment Variables Reference
-
-Xem file `.env.example` để biết danh sách đầy đủ các biến môi trường.
-
-### 15.3. Port Reference
-
-| Service | Port | Description |
-|---------|------|-------------|
-| PostgreSQL | 5432 | Database |
-| Redis | 6379 | Cache & Session |
-| Backend API | 3000 | REST API |
-| Customer App | 5173 | Web app for customers |
-| Staff Console | 5174 | Staff management |
-| KDS | 5175 | Kitchen Display System |
-| Prisma Studio | 5555 | Database GUI |
-
----
-
-**Chúc bạn setup thành công! 🎉**
-
-*Nếu gặp vấn đề, đừng ngại tạo issue hoặc hỏi trong Discussions.*
+*Nếu gặp vấn đề, tham khảo phần Khắc phục sự cố hoặc tạo issue trong repository.*

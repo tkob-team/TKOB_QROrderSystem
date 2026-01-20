@@ -22,7 +22,7 @@ Các phần nâng cao (có thể làm sau – post-MVP):
 4. Viết hooks: `useAnalyticsSummary`, `useAnalyticsFilters`.
 5. Tạo UI components: `AnalyticsOverview`, `RevenueChart`, `KPIGrid`.
 6. Tạo page `app/admin/analytics/page.tsx` (mỏng) → import từ feature.
-7. Thêm RBAC guard (chỉ admin & manager).
+7. Thêm RBAC guard - Canonical roles: OWNER, STAFF (see docs/frontend/RBAC_GUIDE.md).
 8. Cập nhật navigation sidebar admin.
 9. Viết test đơn giản cho hook hoặc utils.
 10. Tối ưu: dynamic import chart, memo hóa tính toán.
@@ -79,8 +79,10 @@ export interface AnalyticsFilterState {
 
 ## 5. Service Layer
 ### Server Service (SSR fetch)
-`analyticsService.server.ts`
+**Example (pseudo-code):**
 ```ts
+// ⏳ ADD HERE: Verify API_URL env var in .env.example
+// ⏳ ADD HERE: Verify analytics endpoints in OpenAPI docs (see docs/common/OPENAPI.md)
 const API_URL = process.env.API_URL; // server-only
 export const analyticsServiceServer = {
   async getSummary(tenantId: string, from: string, to: string) {
@@ -99,8 +101,9 @@ export const analyticsServiceServer = {
 ```
 
 ### Client Service (Axios + React Query)
-`analyticsService.client.ts`
+**Example (pseudo-code):**
 ```ts
+// ⏳ ADD HERE: Verify apiClient import path and analytics endpoints in OpenAPI docs
 'use client';
 import apiClient from '@/lib/api/client';
 export const analyticsService = {
@@ -114,8 +117,9 @@ export const analyticsService = {
 ```
 
 ## 6. Hooks
-`useAnalyticsFilters.ts`
+**Example pattern (useAnalyticsFilters.ts):**
 ```ts
+// ⏳ ADD HERE: Verify react imports in package.json
 'use client';
 import { useState, useCallback } from 'react';
 import type { AnalyticsFilterState } from '../types/analytics.types';
@@ -137,8 +141,9 @@ export function useAnalyticsFilters() {
 }
 ```
 
-`useAnalyticsSummary.ts`
+**Example pattern (useAnalyticsSummary.ts):**
 ```ts
+// ⏳ ADD HERE: Verify @tanstack/react-query in package.json
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '../services/analyticsService.client';
@@ -154,7 +159,7 @@ export function useAnalyticsSummary(tenantId: string, from: string, to: string) 
 ```
 
 ## 7. Utils
-`analyticsHelpers.ts`
+**Example (analyticsHelpers.ts):**
 ```ts
 // English: compute date range from preset
 export function computeRange(filters: { preset: string; from?: string; to?: string }) {
@@ -181,7 +186,7 @@ export function computeRange(filters: { preset: string; from?: string; to?: stri
 ```
 
 ## 8. Components
-`KPIGrid.tsx`
+**Example (KPIGrid.tsx):**
 ```tsx
 'use client';
 export function KPIGrid({ data }: { data: { totalRevenue: number; ordersCount: number } }) {
@@ -200,8 +205,9 @@ export function KPIGrid({ data }: { data: { totalRevenue: number; ordersCount: n
 }
 ```
 
-`RevenueChart.tsx` (dynamic import ví dụ):
+**Example (RevenueChart.tsx - dynamic import pattern):**
 ```tsx
+// ⏳ ADD HERE: Verify chart library (e.g., recharts) in package.json
 'use client';
 import dynamic from 'next/dynamic';
 // English: Assume HeavyChart wraps a chart library (e.g., recharts)
@@ -211,7 +217,7 @@ export function RevenueChart({ series }: { series: Array<{ date: string; value: 
 }
 ```
 
-`AnalyticsOverview.tsx`
+**Example (AnalyticsOverview.tsx):**
 ```tsx
 'use client';
 import { useAnalyticsSummary } from '../hooks/useAnalyticsSummary';
@@ -232,13 +238,15 @@ export function AnalyticsOverview({ tenantId, range }: { tenantId: string; range
 ```
 
 ## 9. Page Wrapper App Router
-`app/admin/analytics/page.tsx`
+**Example (app/admin/analytics/page.tsx):**
 ```tsx
 import { RoleGuard } from '@/shared/components/auth/RoleGuard';
 import { AnalyticsOverview } from '@/features/analytics';
 import { computeRange } from '@/features/analytics/utils/analyticsHelpers';
 import { getTenantContext } from '@/lib/server/tenantContext'; // giả định
 
+// ⏳ ADD HERE: Verify RoleGuard implementation and allowed roles
+// Canonical roles: OWNER, STAFF, KITCHEN (see docs/frontend/RBAC_GUIDE.md)
 export default async function AnalyticsPage() {
   // Server: lấy tenantId từ context/session (tuỳ thuộc vào middleware set cookie)
   const { tenantId } = await getTenantContext();
@@ -247,7 +255,7 @@ export default async function AnalyticsPage() {
   // const summary = await analyticsServiceServer.getSummary(tenantId, initialRange.from, initialRange.to);
 
   return (
-    <RoleGuard allowedRoles={['tenant-admin','manager']}>
+    <RoleGuard allowedRoles={['OWNER','STAFF']}>
       {/* Client component sẽ fetch realtime thay vì SSR prefetch ở ví dụ đơn giản này */}
       <AnalyticsOverview tenantId={tenantId} range={initialRange} />
     </RoleGuard>
@@ -256,9 +264,10 @@ export default async function AnalyticsPage() {
 ```
 
 ## 10. Thêm Navigation
-Ví dụ sửa `AdminSidebar.tsx` (giả định nằm `shared/components/layouts/AdminSidebar.tsx`):
+**Example pattern - AdminSidebar.tsx:**
 ```tsx
-// Thêm item
+// ⏳ ADD HERE: Verify actual sidebar component location and structure
+// Example: Add analytics link to sidebar navigation
 <Link href="/admin/analytics" className="sidebar-item">Analytics</Link>
 ```
 
@@ -267,8 +276,9 @@ Ví dụ sửa `AdminSidebar.tsx` (giả định nằm `shared/components/layout
 - Kiểm tra `RoleGuard` trả về trang lỗi nếu user role không phù hợp.
 
 ## 12. Testing (Ví dụ Hook)
-`useAnalyticsFilters.test.ts`
+**Example (useAnalyticsFilters.test.ts):**
 ```ts
+// ⏳ ADD HERE: Verify @testing-library/react in package.json
 import { renderHook, act } from '@testing-library/react';
 import { useAnalyticsFilters } from './useAnalyticsFilters';
 
@@ -290,7 +300,7 @@ describe('useAnalyticsFilters', () => {
 |----------|---------|
 | Dynamic import chart | Giảm bundle initial load |
 | Server fetch + no-store | Dữ liệu mới nhất KPI |
-| React Query caching | 1 phút stale tránh gọi lại quá nhiều |
+| React Query caching | 1 phút stale tránh gọi lại quá nhiều - ⏳ ADD HERE: verify @tanstack/react-query |
 | Memo hóa dữ liệu phức tạp | Dùng `useMemo` nếu transform lớn |
 | Batching state | Gộp setFilters nếu nhiều cập nhật |
 
@@ -328,4 +338,4 @@ describe('useAnalyticsFilters', () => {
 - `./ONBOARDING_CHECKLIST.md` (sẽ tạo)
 
 ---
-Last Updated: 2025-11-30
+Last Updated: 2026-01-20

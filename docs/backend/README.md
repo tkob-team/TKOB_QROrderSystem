@@ -1,10 +1,10 @@
-# Server - Backend API Documentation
+# Server - Tài liệu API Backend
 
-## 1. Giới thiệu (Introduction)
+## 1. Giới thiệu
 
 Backend API cho **Unified Restaurant Ordering Platform** - hệ thống đặt món QR-based cho nhà hàng. Dự án được xây dựng trên **NestJS** framework với kiến trúc module-based, cung cấp RESTful API và WebSocket cho real-time notifications.
 
-## 2. Quick Start
+## 2. Khởi động Nhanh
 
 ### Chạy Development Server
 ```bash
@@ -23,7 +23,7 @@ pnpm --filter @app/api db:seed
 pnpm --filter @app/api db:studio
 ```
 
-## 3. Module Structure
+## 3. Cấu trúc Module
 
 Dự án được tổ chức theo **domain-driven architecture**, mỗi module đảm nhận một business domain cụ thể:
 
@@ -69,13 +69,13 @@ Dự án được tổ chức theo **domain-driven architecture**, mỗi module 
 - Sales reports và metrics
 - Business intelligence queries
 
-## 4. Database
+## 4. Cơ sở Dữ liệu
 
 - **Database:** PostgreSQL
 - **ORM:** Prisma
 - **Schema Location:** `packages/api/prisma/schema.prisma`
 
-### Prisma Commands
+### Lệnh Prisma
 ```bash
 # Generate Prisma Client
 pnpm db:generate
@@ -84,7 +84,7 @@ pnpm db:generate
 pnpm db:studio
 ```
 
-## 5. Tài liệu liên quan
+## 5. Tài liệu Liên quan
 
 - [SETUP.md](../../SETUP.md) - Hướng dẫn setup chi tiết
 - [Project Kickoff Summary](../project-kickoff-summary.md) - Tổng quan dự án
