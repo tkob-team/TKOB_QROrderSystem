@@ -1,10 +1,38 @@
-# Kiến trúc Hệ thống – TKQR‑in Ordering Platform
+# Kiến trúc Hệ thống – TKOB_QROrderSystem
 
-> **Mục đích**: Mô tả kiến trúc tổng thể, các thành phần chính, luồng dữ liệu, công nghệ và quyết định thiết kế cho nền tảng gọi món QR đa tenant.
+> **Mục đích**: Mô tả kiến trúc tổng thể, các thành phần chính, luồng dữ liệu, công nghệ và quyết định thiết kế cho TKOB_QROrderSystem (Product name: TKQR-in Ordering Platform) - nền tảng gọi món QR đa tenant.
 
 - **Version**: 1.0  
 - **Created**: 2025‑01‑11  
 - **Last Updated**: 2026‑01‑20
+
+---
+
+## Document Navigation
+
+**Related Documentation:**
+- [Setup Guide](./SETUP.md) - Installation and development environment setup (ports: API 3000, Customer 3001, Tenant 3002)
+- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (150+ endpoints)
+- [User Guide](./USER_GUIDE.md) - End-user documentation for all roles
+- [Database Schema](../backend/database/description.md) - Detailed schema documentation
+- [ER Diagram](../backend/database/er_diagram.md) - Entity relationship diagram
+
+---
+
+## Table of Contents (Quick Navigation)
+
+**Status:** [0. Implementation Status](#0-implementation-status) - What's built vs planned  
+**Overview:** [1. Tổng quan Kiến trúc](#1-tổng-quan-kiến-trúc) - High-level architecture  
+**Components:** [2. Các Thành Phần Chính](#2-các-thành-phần-chính) - Client, backend, data layers  
+**Flows:** [3. Luồng Dữ liệu](#3-luồng-dữ-liệu) - Ordering, state transitions, QR generation  
+**Security:** [4. Security Architecture](#4-security-architecture) - Auth, multi-tenancy, encryption  
+**Scale:** [5. Scalability & Performance](#5-scalability--performance) - Scaling strategies  
+**Deploy:** [6. Deployment Architecture](#6-deployment-architecture) - Infrastructure (suggested)  
+**Observability:** [7. Monitoring & Observability](#7-monitoring--observability) - Logs, metrics (suggested)  
+**Tech Stack:** [8. Technology Stack Summary](#8-technology-stack-summary) - All technologies used  
+**NFRs:** [9. Non‑Functional Requirements](#9-nonfunctional-requirements) - Availability, reliability  
+**Future:** [10. Future Enhancements](#10-future-enhancements) - Planned features  
+**Decisions:** [11. Quyết định Kiến trúc (ADR)](#11-quyết-định-kiến-trúc-adr) - Architecture decisions
 
 ---
 
@@ -115,10 +143,10 @@
                     [HTTPS / WSS]
                            │
 ┌─────────────────────────────────────────────────────────────┐
-│            API GATEWAY / CDN (Planned/Suggested)            │
+│         API GATEWAY / CDN (⚠️ SUGGESTED, NOT IN MVP)        │
 │  - Rate Limiting (not implemented)                          │
 │  - SSL Termination (handled by deployment platform)         │
-│  - Request Routing (direct to backend)                      │
+│  - Request Routing (direct connection to backend in MVP)    │
 └─────────────────────────────────────────────────────────────┘
                            │
 ┌─────────────────────────────────────────────────────────────┐
@@ -211,18 +239,22 @@
 - Âm thanh thông báo đơn mới
 - Highlight đơn chờ lâu (priority thresholds: NORMAL ≤100%, HIGH 100-150%, URGENT >150%)
 
-### 2.2. API Gateway / CDN
+### 2.2. API Gateway / CDN (⚠️ Suggested for Production, Not in MVP)
 
-**Vai trò**:
+**Note:** MVP kết nối trực tiếp từ frontend đến backend API. API Gateway/CDN là đề xuất cho production deployment.
+
+**Vai trò (Planned):**
 - Load balancing
 - Rate limiting (chống abuse)
 - SSL termination
 - Caching tĩnh (menu images)
 - Request routing theo tenant
 
-**Công nghệ gợi ý**:
+**Công nghệ gợi ý:**
 - Cloudflare / AWS CloudFront
 - NGINX / Traefik
+
+**Current MVP:** Frontend apps (localhost:3001, localhost:3002) kết nối trực tiếp với API (localhost:3000).
 
 ### 2.3. Backend API Service
 
@@ -419,26 +451,25 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 #### 2.4.3. File Storage
 **Current Implementation**: ⚠️ **Local File System** (MVP)
 
-**Storage Location**:
-- `source/apps/api/uploads/menu-photos/` - Menu item photos
-- `source/apps/api/uploads/avatars/` - User profile avatars
-- Photos served directly by NestJS static file middleware
+**Photo Storage (Persistent):**
+- **Location:** `source/apps/api/uploads/menu-photos/`, `source/apps/api/uploads/avatars/`
+- **Served by:** NestJS static file middleware
+- **Upload:** Single or bulk (up to 10 per item)
+- **Formats:** JPEG, PNG, WebP, GIF
+- **Max size:** 5MB per photo
 
-**File Upload**:
-- Single photo upload endpoint
-- Bulk photo upload (up to 10 per item)
-- Supported formats: JPEG, PNG, WebP, GIF
-- Max file size: 5MB per photo
+**QR Code Generation (Dynamic, Not Stored):**
+- **Generation:** On-the-fly using `qrcode` library when requested
+- **Download formats:** PNG, SVG, PDF (single), ZIP/PDF (bulk)
+- **Storage:** NOT stored on disk - regenerated each time
+- **Token:** QR contains JWT token (signed payload with table/tenant info)
 
-**QR Codes**:
-- Generated on-the-fly (not stored)
-- Download formats: PNG, SVG, PDF
-- Bulk download: ZIP or multi-page PDF
+**Clarification:** QR codes are dynamically generated and NOT persisted to object storage. Only user-uploaded photos (menu items, avatars) are stored on disk.
 
-**Future Migration**:
-- ❌ **NOT IMPLEMENTED**: AWS S3 / Cloudflare R2
-- ❌ **NOT IMPLEMENTED**: CDN integration
-- Current setup suitable for MVP, needs cloud storage for production scale
+**Future Migration (Planned):**
+- ❌ **NOT IMPLEMENTED**: AWS S3 / Cloudflare R2 for photo storage
+- ❌ **NOT IMPLEMENTED**: CDN integration for faster delivery
+- **Note:** Current local file system setup is suitable for MVP, requires cloud storage for production scale
 
 ### 2.5. External Services
 
@@ -571,27 +602,72 @@ Each transition:
 
 ### 3.3. QR Code Generation Flow
 
+**Phase 1: Table Creation (One-time)**
 ```
 Admin → [Create Table]
            │
            ↓
-    Generate signed token
-    {tenantId, tableId, exp}
+    Generate signed JWT token
+    {tenantId, tableId, qrToken}
            │
            ↓
     Sign with secret key (HMAC)
            │
            ↓
-    Generate QR code image (PNG/SVG)
+    Store token hash in database
+    (TABLE.qr_token_hash)
            │
            ↓
-    Upload to Object Storage
-           │
-           ↓
-    Return public URL + download link
+    Return table metadata
 ```
 
-**Token Structure**:
+**Phase 2: QR Download (On-demand, Dynamic)**
+```
+Admin requests QR download
+    (GET /tables/{id}/qr/download?format=PNG/SVG/PDF)
+           │
+           ↓
+    Read JWT token from database
+           │
+           ↓
+    Generate QR code image ON-THE-FLY
+    using `qrcode` library
+    (PNG/SVG/PDF format)
+           │
+           ↓
+    Stream file to browser
+    (NOT stored to disk or object storage)
+           │
+           ↓
+    Download complete
+```
+
+**Bulk Download:**
+```
+Admin requests all QR codes
+    (GET /tables/qr/download-all?format=ZIP/PDF)
+           │
+           ↓
+    Loop through all tables
+           │
+           ↓
+    Generate each QR code dynamically
+           │
+           ↓
+    Combine into ZIP or multi-page PDF
+           │
+           ↓
+    Stream combined file to browser
+    (NOT stored to disk)
+```
+
+**Important Notes:**
+- ✅ **Token stored:** Only JWT token hash is persisted in database
+- ❌ **QR NOT stored:** Images are generated on-demand and streamed directly
+- ⚠️ **Object Storage:** Planned for future but NOT in current MVP
+- 🔄 **Regeneration:** When QR is regenerated, only token hash is updated in DB
+
+**Token Structure (JWT Payload):**
 ```json
 {
   "tid": "tenant123",
@@ -909,25 +985,27 @@ Deployment
 
 ---
 
-## 10. Future Enhancements
+## 10. Future Enhancements (Planned but Not Implemented)
 
-### 10.1. Phase 2 Features
-- **Real‑time Updates**: WebSocket/SSE cho order status
-- **Multi‑location**: Support chuỗi nhà hàng với nhiều địa điểm
-- **Advanced Analytics**: Cohort analysis, heatmaps
-- **Inventory Management**: Light inventory tracking
+**Phase 2 Features:**
+- Multi‑location support (chuỗi nhà hàng)
+- Advanced Analytics (cohort analysis, heatmaps)
+- Inventory Management (stock tracking)
+- Native mobile apps (iOS/Android)
 
-### 10.2. Technical Improvements
-- **Microservices**: Tách modules thành services độc lập
-- **Event‑Driven**: Message queue (RabbitMQ/Kafka) cho async tasks
-- **GraphQL**: Thay thế REST cho flexible queries
-- **Edge Computing**: Deploy logic gần user (Cloudflare Workers)
+**Technical Improvements:**
+- Microservices architecture (tách modules)
+- Event‑Driven with message queue (RabbitMQ/Kafka)
+- GraphQL API (thay thế REST)
+- Cloud storage (S3/R2) + CDN integration
 
-### 10.3. Integrations
-- **POS Systems**: Tích hợp với POS phổ biến (Square, Toast)
-- **Kitchen Printers**: In đơn tự động
-- **Loyalty Programs**: Tích điểm, rewards
-- **Third‑party Delivery**: Grab, Shopee Food
+**Integrations:**
+- POS Systems (Square, Toast)
+- Kitchen Printers (auto-print orders)
+- Loyalty Programs (points, rewards)
+- Third‑party Delivery (Grab, Shopee Food)
+
+**Full planned features list:** See [USER_GUIDE.md Section 7](./USER_GUIDE.md#7-faq--known-limitations) for detailed feature roadmap.
 
 ---
 

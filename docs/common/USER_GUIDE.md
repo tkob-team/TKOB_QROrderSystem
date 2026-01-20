@@ -1,16 +1,38 @@
 # USER GUIDE
 
 **Last updated:** 2026-01-20  
-**System:** TKQR-in Ordering Platform  
+**System:** TKOB_QROrderSystem (Product name: TKQR-in Ordering Platform)  
 **Version:** 1.0
+
+---
+
+## Document Navigation
+
+**Related Documentation:**
+- [Setup Guide](./SETUP.md) - Installation and development environment setup
+- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (150+ endpoints)
+- [Architecture](./ARCHITECTURE.md) - System architecture and technical design
+- [Backend Database](../backend/database/description.md) - Database schema details
+
+---
+
+## Table of Contents (Quick Navigation)
+
+**Getting Started:** [1. How to Access](#1-how-to-access) - URLs and login  
+**Customer:** [2. Customer Guide](#2-customer-guide) - QR scan, order, pay  
+**Admin:** [3. Tenant Owner/Admin Guide](#3-tenant-owneradmin-guide) - Dashboard, menu, staff  
+**Waiter:** [4. Staff/Waiter Guide](#4-staffwaiter-guide) - Table management, service  
+**Kitchen:** [5. Kitchen/KDS Guide](#5-kitchenkds-guide) - Order preparation, priorities  
+**Reference:** [6. Status Glossary](#6-status-glossary) - All order/table statuses  
+**Help:** [7. FAQ & Known Limitations](#7-faq--known-limitations) - Common questions  
 
 ---
 
 ## 0) Overview
 
-### What is TKQR-in?
+### What is TKOB_QROrderSystem?
 
-TKQR-in is a QR code-based restaurant ordering system that allows customers to scan a QR code at their table, browse the menu, place orders, and pay directly from their phone. Restaurant staff can manage menus, tables, orders, and view analytics through the tenant dashboard.
+TKOB_QROrderSystem (branded as TKQR-in) is a QR code-based restaurant ordering system that allows customers to scan a QR code at their table, browse the menu, place orders, and pay directly from their phone. Restaurant staff can manage menus, tables, orders, and view analytics through the tenant dashboard.
 
 ### Who is this guide for?
 
@@ -28,12 +50,16 @@ This guide is organized by user roles:
 ### Web Applications
 
 **Customer App:**
-- **Development:** ADD HERE (example: http://localhost:3001)
+- **Development:** http://localhost:3001 (verified from [SETUP.md](./SETUP.md))
 - **Production:** ADD HERE (example: https://order.yourrestaurant.com)
 
 **Tenant Dashboard:**
-- **Development:** ADD HERE (example: http://localhost:3000)
+- **Development:** http://localhost:3002 (verified from [SETUP.md](./SETUP.md))
 - **Production:** ADD HERE (example: https://admin.yourrestaurant.com)
+
+**API Server:**
+- **Development:** http://localhost:3000 (API + Swagger UI at /api-docs)
+- **Production:** ADD HERE (example: https://api.yourrestaurant.com)
 
 ### QR Code Usage Flow
 
@@ -112,7 +138,7 @@ ADD HERE - Contact your system administrator for demo credentials.
 **Step 3:** Select payment method:
 - **Bill to Table:** Pay cash when staff brings the bill
 - **SePay QR:** Pay now by scanning VietQR code
-- **Card Online:** Pay with credit/debit card (if enabled)
+- **Card Online:** ❌ Not implemented in current MVP (enum exists but no processor integration)
 
 **Step 4:** For QR payment:
 - Scan the payment QR code with your banking app
@@ -715,18 +741,23 @@ A: No, reviews are linked to completed orders. Only customers who ordered an ite
 
 ### Planned Features (Future Releases)
 
-These features are planned but not yet implemented:
-
+**High Priority:**
 - Order modification after checkout
 - Split bill by item
+- Kitchen printer integration
+- Customer order history
+
+**Medium Priority:**
 - Multi-restaurant management
 - Advanced inventory tracking
 - Loyalty and rewards program
 - Native mobile apps
+
+**Low Priority:**
 - Offline ordering mode
-- Kitchen printer integration
-- Customer order history
 - Gift cards and vouchers
+
+**For technical roadmap:** See [ARCHITECTURE.md Section 10](./ARCHITECTURE.md#10-future-enhancements-planned-but-not-implemented)
 
 ---
 
