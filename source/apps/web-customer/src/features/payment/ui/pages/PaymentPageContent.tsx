@@ -6,7 +6,6 @@ import { ArrowLeft } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { OrdersDataFactory } from '@/features/orders/data'
 import { orderQueryKeys } from '@/features/orders/data/cache/orderQueryKeys'
-import { CardPaymentPage } from './CardPaymentPage'
 import { SepayPaymentPage } from './SepayPaymentPage'
 import { useCheckoutStore } from '@/stores/checkout.store'
 import { log, logError } from '@/shared/logging/logger'
@@ -18,7 +17,7 @@ import { maskId } from '@/shared/logging/helpers'
  * 
  * Routes to appropriate payment page based on paymentMethod:
  * - SEPAY_QR: VietQR payment with polling
- * - BILL_TO_TABLE: Legacy card payment simulation
+ * - BILL_TO_TABLE: Redirects to /bill (handled there now)
  */
 export function PaymentPageContent() {
   const router = useRouter()
@@ -67,8 +66,8 @@ export function PaymentPageContent() {
     log('ui', 'Payment success navigation', { orderId: maskId(orderId), source, target: 'orders-list' }, { feature: 'payment' });
     
     // BUG-13 fix: After payment success, always go to orders list
-    // This allows user to see all their orders and continue ordering
-    router.push('/orders');
+    // Use replace() to prevent back navigation loop to payment page
+    router.replace('/orders');
   }
 
   const handlePaymentFailure = () => {
@@ -77,13 +76,8 @@ export function PaymentPageContent() {
   }
 
   const handleBack = () => {
-    // BUG-13 fix: Navigate to order detail instead of back()
-    // This allows user to track order and retry payment if needed
-    if (orderId) {
-      router.push(`/orders/${orderId}`)
-    } else {
-      router.push('/menu')
-    }
+    // Navigate to orders list (order detail page is hidden)
+    router.push('/orders')
   }
 
   const handleBackToCheckout = () => {
@@ -264,7 +258,7 @@ export function PaymentPageContent() {
             
             <div className="space-y-3">
               <button
-                onClick={() => router.push(`/orders/${orderId}`)}
+                onClick={() => router.push('/orders')}
                 className="w-full py-3 px-6 rounded-full transition-all hover:shadow-md active:scale-95"
                 style={{
                   backgroundColor: 'var(--orange-500)',
@@ -273,7 +267,7 @@ export function PaymentPageContent() {
                   fontSize: '15px',
                 }}
               >
-                Track Order Status
+                View My Orders
               </button>
               <button
                 onClick={handleBackToMenu}
@@ -299,14 +293,8 @@ export function PaymentPageContent() {
     return <SepayPaymentPage />
   }
 
-  // Default: Legacy card payment (BILL_TO_TABLE or fallback)
-  return (
-    <CardPaymentPage
-      orderId={orderId}
-      order={orderData}
-      onPaymentSuccess={handlePaymentSuccess}
-      onPaymentFailure={handlePaymentFailure}
-      onBack={handleBack}
-    />
-  )
+  // BILL_TO_TABLE: Redirect to bill page (payment is handled there now)
+  // This shouldn't normally be reached since BillPreviewPage handles BILL_TO_TABLE directly
+  router.replace('/bill')
+  return null
 }

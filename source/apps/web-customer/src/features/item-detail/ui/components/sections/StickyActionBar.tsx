@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus, Lock } from 'lucide-react'
 import { formatUSD } from '@/shared/utils/currency'
 
 interface StickyActionBarProps {
@@ -7,9 +7,19 @@ interface StickyActionBarProps {
   onIncrement: () => void
   onAddToCart: () => void
   total: number
+  disabled?: boolean
+  disabledMessage?: string
 }
 
-export function StickyActionBar({ quantity, onDecrement, onIncrement, onAddToCart, total }: StickyActionBarProps) {
+export function StickyActionBar({ 
+  quantity, 
+  onDecrement, 
+  onIncrement, 
+  onAddToCart, 
+  total,
+  disabled = false,
+  disabledMessage = 'Session Locked',
+}: StickyActionBarProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg" style={{ borderColor: 'var(--gray-200)' }}>
       <div className="max-w-120 mx-auto flex items-center gap-3">
@@ -34,15 +44,29 @@ export function StickyActionBar({ quantity, onDecrement, onIncrement, onAddToCar
 
         <button
           onClick={onAddToCart}
-          className="flex-1 py-3 px-4 rounded-full transition-all hover:shadow-md active:scale-98 flex items-center justify-between"
+          disabled={disabled}
+          className="flex-1 py-3 px-4 rounded-full transition-all flex items-center justify-between disabled:cursor-not-allowed"
           style={{
-            backgroundColor: 'var(--orange-500)',
+            backgroundColor: disabled ? 'var(--gray-400)' : 'var(--orange-500)',
             color: 'white',
             minHeight: '48px',
+            opacity: disabled ? 0.8 : 1,
           }}
         >
-          <span>Add to cart</span>
-          <span>{formatUSD(total)}</span>
+          {disabled ? (
+            <>
+              <span className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                {disabledMessage}
+              </span>
+              <span>{formatUSD(total)}</span>
+            </>
+          ) : (
+            <>
+              <span>Add to cart</span>
+              <span>{formatUSD(total)}</span>
+            </>
+          )}
         </button>
       </div>
     </div>

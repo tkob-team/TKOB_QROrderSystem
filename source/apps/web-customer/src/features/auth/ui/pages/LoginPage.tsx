@@ -4,6 +4,7 @@ import { Mail, ArrowRight, Loader2 } from 'lucide-react'
 import { useAuthController } from '../../hooks'
 import { AUTH_TEXT } from '../../model'
 import { LoginFormSection } from '../components/forms/LoginFormSection'
+import { GoogleLoginButton } from '../components/GoogleLoginButton'
 import { AppHeader } from '@/shared/components/layout/AppHeader'
 
 export function LoginPage() {
@@ -44,11 +45,23 @@ export function LoginPage() {
           }}
         />
 
+        {/* Divider */}
+        <div className="my-6 flex items-center">
+          <div className="flex-1 border-t" style={{ borderColor: 'var(--gray-300)' }} />
+          <span className="px-4 text-sm" style={{ color: 'var(--gray-500)' }}>
+            {AUTH_TEXT.orContinueWith}
+          </span>
+          <div className="flex-1 border-t" style={{ borderColor: 'var(--gray-300)' }} />
+        </div>
+
+        {/* Google Login Button */}
+        <GoogleLoginButton onClick={controller.handleGoogleLogin} />
+
         {/* Continue as Guest */}
         <div className="mt-4 text-center">
           <button
             type="button"
-            onClick={controller.navigateBack}
+            onClick={controller.navigateToHome}
             className="group inline-flex items-center gap-2 px-4 py-2 transition-colors hover:text-[var(--gray-700)]"
             style={{ color: 'var(--gray-600)', fontSize: '14px' }}
           >
@@ -80,3 +93,4 @@ export function LoginPage() {
     </div>
   )
 }
+

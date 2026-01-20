@@ -172,7 +172,7 @@ export function TableOrdersGroup({ tableGroup, onCloseTable, onMarkAsPaid }: Tab
           }}
         >
           <Receipt className="w-6 h-6" />
-          Close Table & Generate Bill
+          Close Table
         </button>
         
         {!allPaid && (

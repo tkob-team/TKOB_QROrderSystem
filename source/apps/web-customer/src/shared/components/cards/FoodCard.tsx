@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, Star } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { OptimizedImage } from '@packages/ui';
 import { ChefRecommendationIndicator } from '@/shared/components/indicators/ChefRecommendationIndicator';
@@ -124,6 +124,33 @@ export function FoodCard({ item, onAdd }: FoodCardProps) {
             </h3>
           </div>
           
+          {/* Rating display */}
+          {item.averageRating !== undefined && item.averageRating > 0 && !isUnavailable && (
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="flex items-center gap-0.5">
+                <Star 
+                  className="w-3.5 h-3.5" 
+                  fill="var(--orange-500)" 
+                  style={{ color: 'var(--orange-500)' }} 
+                />
+                <span 
+                  className="text-sm font-medium"
+                  style={{ color: colors.text.primary }}
+                >
+                  {item.averageRating.toFixed(1)}
+                </span>
+              </div>
+              {item.totalReviews !== undefined && item.totalReviews > 0 && (
+                <span 
+                  className="text-xs"
+                  style={{ color: colors.text.muted }}
+                >
+                  ({item.totalReviews})
+                </span>
+              )}
+            </div>
+          )}
+
           <p 
             className="line-clamp-2 text-sm mb-2" 
             style={{ 

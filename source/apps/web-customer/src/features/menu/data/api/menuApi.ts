@@ -24,7 +24,7 @@ import type { IMenuAdapter } from '../adapter.interface';
 /**
  * Transform backend DTO to frontend MenuItem model
  */
-function transformMenuItem(dto: any, categoryName: string = 'Unknown'): MenuItem {
+function transformMenuItem(dto: any, categoryName: string = 'Unknown', categoryId: string = ''): MenuItem {
   const rawPrice: any = dto.price;
   const numericPrice =
     typeof rawPrice === 'number'
@@ -54,6 +54,7 @@ function transformMenuItem(dto: any, categoryName: string = 'Unknown'): MenuItem
     name: dto.name,
     description: dto.description || '',
     category: categoryName,
+    categoryId, // Added for related items filtering
     basePrice: Number.isFinite(numericPrice) ? numericPrice : 0,
     imageUrl: dto.primaryPhoto?.url || dto.imageUrl || '',
     primaryPhoto: dto.primaryPhoto,
@@ -65,6 +66,9 @@ function transformMenuItem(dto: any, categoryName: string = 'Unknown'): MenuItem
     dietary: dto.tags as any,
     badge,
     availability,
+    // Rating stats from backend
+    averageRating: dto.averageRating,
+    totalReviews: dto.totalReviews,
   };
 }
 
@@ -81,8 +85,9 @@ export const menuApi: IMenuAdapter = {
     const response = await publicMenuControllerGetPublicMenu();
 
     // Transform backend response to frontend format
+    // Pass category ID along with name for proper related items filtering
     const items: MenuItem[] = response.categories.flatMap(cat =>
-      cat.items.map(item => transformMenuItem(item, cat.name))
+      cat.items.map(item => transformMenuItem(item, cat.name, cat.id))
     );
 
     const categories = response.categories.map(cat => cat.name);

@@ -8,6 +8,8 @@ const publicRoutes = [
   '/auth/signup', 
   '/auth/forgot-password', 
   '/auth/reset-password',
+  '/auth/google/callback', // Google OAuth callback
+  '/auth/onboarding-wizard', // Onboarding for new users
   // Marketing/Landing pages - accessible to everyone
   '/home',
   '/about',

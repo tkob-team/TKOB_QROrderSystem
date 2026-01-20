@@ -50,7 +50,15 @@ export class OrderService {
     tableId: string,
     dto: CheckoutDto,
   ): Promise<OrderResponseDto> {
-    // 0. Check subscription limits before creating order
+    // 0. Check if bill has been requested (locked session)
+    const billRequested = await this.isSessionBillRequested(sessionId);
+    if (billRequested) {
+      throw new BadRequestException(
+        'Bill has been requested. Please cancel the bill request first to add more orders.',
+      );
+    }
+
+    // 1. Check subscription limits before creating order
     const canCreateOrder = await this.subscriptionService.canPerformAction(tenantId, 'createOrder');
     if (!canCreateOrder.allowed) {
       throw new ForbiddenException({
@@ -62,8 +70,13 @@ export class OrderService {
       });
     }
 
-    // 1. Validate payment method with tenant configuration
-    if (dto.paymentMethod === 'SEPAY_QR') {
+    // 2. Default payment method to BILL_TO_TABLE if not specified
+    // New flow: Customer places order without selecting payment method
+    // Payment happens later via Request Bill → Pay at once
+    const paymentMethod = dto.paymentMethod || PaymentMethod.BILL_TO_TABLE;
+
+    // 3. Validate SEPAY_QR if explicitly selected
+    if (paymentMethod === 'SEPAY_QR') {
       const hasValidConfig = await this.paymentConfigService.hasValidConfig(tenantId);
       if (!hasValidConfig) {
         throw new BadRequestException(
@@ -72,7 +85,7 @@ export class OrderService {
       }
     }
 
-    // 2. Get cart by table
+    // 4. Get cart by table
     const cart = await this.cartService.getCartByTable(tenantId, tableId, sessionId);
 
     if (cart.items.length === 0) {
@@ -127,7 +140,7 @@ export class OrderService {
           serviceCharge: serviceChargeAmount,
           tip: tipAmount,
           total: total,
-          paymentMethod: dto.paymentMethod as PaymentMethod,
+          paymentMethod: paymentMethod,
           paymentStatus: initialPaymentStatus,
         },
       });
@@ -637,6 +650,8 @@ export class OrderService {
 
   /**
    * Request bill for order (customer)
+   * Customer can request bill at ANY time - even while orders are still being prepared
+   * This notifies staff and locks the session from adding new orders
    */
   async requestBill(orderId: string, tableId: string) {
     const order = await this.prisma.order.findUnique({
@@ -655,16 +670,13 @@ export class OrderService {
       throw new BadRequestException('You can only request bill for orders from your table');
     }
 
-    // Check if order is in a state where bill can be requested
-    const validStatuses: OrderStatus[] = [
-      OrderStatus.READY,
-      OrderStatus.SERVED,
-      OrderStatus.COMPLETED,
+    // Allow bill request for ANY active order status
+    // Customer might want to leave early or pay before all items are served
+    const invalidStatuses: OrderStatus[] = [
+      OrderStatus.CANCELLED,
     ];
-    if (!validStatuses.includes(order.status as OrderStatus)) {
-      throw new BadRequestException(
-        'Bill can only be requested after order is ready or served',
-      );
+    if (invalidStatuses.includes(order.status as OrderStatus)) {
+      throw new BadRequestException('Cannot request bill for cancelled orders');
     }
 
     // Check if already paid
@@ -686,11 +698,206 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Bill request sent. A server will assist you shortly.',
+      message: 'Bill request sent. A waiter will assist you shortly.',
       orderId: order.id,
       tableNumber: order.table.tableNumber,
       requestedAt: new Date(),
     };
+  }
+
+  /**
+   * Get consolidated bill preview for current session
+   * Returns all orders grouped by order number with totals
+   */
+  async getSessionBillPreview(sessionId: string, tableId: string, tenantId: string) {
+    // Get table info
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: { tableNumber: true },
+    });
+
+    if (!table) {
+      throw new NotFoundException('Table not found');
+    }
+
+    // Get session to check bill request status
+    const session = await this.prisma.tableSession.findUnique({
+      where: { id: sessionId },
+      select: { billRequestedAt: true },
+    });
+
+    // Get all orders in current session (excluding cancelled)
+    const orders = await this.prisma.order.findMany({
+      where: {
+        sessionId,
+        tenantId,
+        status: {
+          notIn: [OrderStatus.CANCELLED],
+        },
+      },
+      include: {
+        items: true,
+        table: {
+          select: { tableNumber: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Calculate totals
+    const summary = orders.reduce(
+      (acc, order) => {
+        acc.subtotal += Number(order.subtotal);
+        acc.tax += Number(order.tax);
+        acc.serviceCharge += Number(order.serviceCharge);
+        acc.tip += Number(order.tip);
+        acc.total += Number(order.total);
+        acc.itemCount += order.items.length;
+        return acc;
+      },
+      { subtotal: 0, tax: 0, serviceCharge: 0, tip: 0, total: 0, itemCount: 0 },
+    );
+
+    return {
+      sessionId,
+      tableNumber: table.tableNumber,
+      orders: orders.map((order) => this.toResponseDto(order)),
+      summary: {
+        ...summary,
+        orderCount: orders.length,
+      },
+      billRequestedAt: session?.billRequestedAt || null,
+    };
+  }
+
+  /**
+   * Request bill for entire session
+   * Locks session from new orders until cancelled or paid
+   */
+  async requestSessionBill(sessionId: string, tableId: string, tenantId: string) {
+    // Get table info
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: { tableNumber: true },
+    });
+
+    if (!table) {
+      throw new NotFoundException('Table not found');
+    }
+
+    // Get session
+    const session = await this.prisma.tableSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.billRequestedAt) {
+      throw new BadRequestException('Bill has already been requested for this session');
+    }
+
+    // Get all orders in session to calculate total
+    const orders = await this.prisma.order.findMany({
+      where: {
+        sessionId,
+        tenantId,
+        status: { notIn: [OrderStatus.CANCELLED] },
+      },
+      select: { total: true },
+    });
+
+    if (orders.length === 0) {
+      throw new BadRequestException('No orders to request bill for');
+    }
+
+    const totalAmount = orders.reduce((sum, order) => sum + Number(order.total), 0);
+
+    // Update session to mark bill as requested
+    await this.prisma.tableSession.update({
+      where: { id: sessionId },
+      data: { billRequestedAt: new Date() },
+    });
+
+    // Emit WebSocket event to notify staff
+    this.orderGateway.emitBillRequested(tenantId, {
+      orderId: sessionId, // Use sessionId for session-level bill request
+      orderNumber: `SESSION-${sessionId.slice(-6)}`,
+      tableId,
+      tableNumber: table.tableNumber,
+      totalAmount,
+      orderCount: orders.length,
+      requestedAt: new Date(),
+    });
+
+    this.logger.log(`Session bill requested for table ${table.tableNumber} (${orders.length} orders, $${totalAmount.toFixed(2)})`);
+
+    return {
+      success: true,
+      message: 'Bill request sent. A waiter will assist you shortly.',
+      sessionId,
+      tableNumber: table.tableNumber,
+      totalAmount,
+      orderCount: orders.length,
+      requestedAt: new Date(),
+    };
+  }
+
+  /**
+   * Cancel bill request for session
+   * Allows customer to add more orders
+   */
+  async cancelSessionBillRequest(sessionId: string, tenantId: string) {
+    // Get session
+    const session = await this.prisma.tableSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (!session.billRequestedAt) {
+      throw new BadRequestException('No bill request to cancel');
+    }
+
+    // Check if any order in session is already paid
+    const paidOrders = await this.prisma.order.count({
+      where: {
+        sessionId,
+        tenantId,
+        paymentStatus: PaymentStatus.COMPLETED,
+      },
+    });
+
+    if (paidOrders > 0) {
+      throw new BadRequestException('Cannot cancel bill request after payment has been made');
+    }
+
+    // Clear bill request
+    await this.prisma.tableSession.update({
+      where: { id: sessionId },
+      data: { billRequestedAt: null },
+    });
+
+    this.logger.log(`Bill request cancelled for session ${sessionId}`);
+
+    return {
+      success: true,
+      message: 'Bill request cancelled. You can now add more orders.',
+    };
+  }
+
+  /**
+   * Check if session has bill requested (for checkout blocking)
+   */
+  async isSessionBillRequested(sessionId: string): Promise<boolean> {
+    const session = await this.prisma.tableSession.findUnique({
+      where: { id: sessionId },
+      select: { billRequestedAt: true },
+    });
+    return !!session?.billRequestedAt;
   }
 
   /**
@@ -904,6 +1111,7 @@ export class OrderService {
       tableNumber: order.table.tableNumber,
       currentStatus: order.status,
       currentStatusMessage: statusMessages[order.status] || order.status,
+      paymentStatus: order.paymentStatus,
       timeline,
       estimatedTimeRemaining,
       elapsedMinutes,
@@ -1280,5 +1488,44 @@ export class OrderService {
       servedAt: order.servedAt,
       completedAt: order.completedAt,
     };
+  }
+
+  /**
+   * Get all orders for a specific session (used by waiter for bill printing)
+   */
+  async getOrdersBySession(
+    tenantId: string,
+    tableId: string,
+    sessionId: string,
+  ): Promise<OrderResponseDto[]> {
+    // Validate table belongs to tenant
+    const table = await this.prisma.table.findFirst({
+      where: { id: tableId, tenantId },
+    });
+
+    if (!table) {
+      throw new NotFoundException('Table not found');
+    }
+
+    // Get all non-cancelled orders for this session
+    const orders = await this.prisma.order.findMany({
+      where: {
+        sessionId,
+        tenantId,
+        tableId,
+        status: {
+          notIn: [OrderStatus.CANCELLED],
+        },
+      },
+      include: {
+        items: true,
+        table: {
+          select: { tableNumber: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return orders.map((order) => this.toResponseDto(order));
   }
 }

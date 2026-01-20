@@ -2,16 +2,20 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { OrderService } from '../services/order.service';
+import { BillPdfService } from '../services/bill-pdf.service';
 import { Session } from '@/common/decorators/session.decorator';
 import { SessionData } from '@/modules/table/services/table-session.service';
 import { CheckoutDto } from '../dtos/checkout.dto';
@@ -34,7 +38,10 @@ import { SkipTransform } from '@/common/interceptors/transform.interceptor';
 @ApiTags('Orders')
 @Controller()
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly billPdfService: BillPdfService,
+  ) {}
 
   // ==================== CUSTOMER ENDPOINTS ====================
 
@@ -159,6 +166,96 @@ export class OrderController {
     return this.orderService.getOrderTracking(orderId);
   }
 
+  @Get('orders/session/bill-preview')
+  @UseGuards(SessionGuard)
+  @Public()
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Get consolidated bill preview for current session',
+    description: 'Returns all orders in current session grouped for payment. Used for Request Bill flow.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string' },
+        tableNumber: { type: 'string' },
+        orders: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/OrderResponseDto' },
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            subtotal: { type: 'number' },
+            tax: { type: 'number' },
+            serviceCharge: { type: 'number' },
+            tip: { type: 'number' },
+            total: { type: 'number' },
+            orderCount: { type: 'number' },
+            itemCount: { type: 'number' },
+          },
+        },
+        billRequestedAt: { type: 'string', format: 'date-time', nullable: true },
+      },
+    },
+  })
+  async getSessionBillPreview(@Session() session: SessionData) {
+    return this.orderService.getSessionBillPreview(session.sessionId, session.tableId, session.tenantId);
+  }
+
+  @Post('orders/session/request-bill')
+  @UseGuards(SessionGuard)
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Request bill for entire session',
+    description: 'Request bill for ALL orders in current session. Notifies staff and locks session from new orders.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        sessionId: { type: 'string' },
+        tableNumber: { type: 'string' },
+        totalAmount: { type: 'number' },
+        orderCount: { type: 'number' },
+        requestedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async requestSessionBill(@Session() session: SessionData) {
+    return this.orderService.requestSessionBill(session.sessionId, session.tableId, session.tenantId);
+  }
+
+  @Post('orders/session/cancel-bill-request')
+  @UseGuards(SessionGuard)
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('table_session_id')
+  @ApiOperation({
+    summary: 'Cancel bill request for session',
+    description: 'Cancel pending bill request to allow adding more orders. Only works if not yet paid.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  async cancelSessionBillRequest(@Session() session: SessionData) {
+    return this.orderService.cancelSessionBillRequest(session.sessionId, session.tenantId);
+  }
+
   @Post('orders/:orderId/cancel')
   @UseGuards(SessionGuard)
   @Public()
@@ -276,6 +373,65 @@ export class OrderController {
     @Param('orderId') orderId: string,
   ): Promise<OrderResponseDto> {
     return this.orderService.markAsPaid(orderId);
+  }
+
+  // ==================== WAITER/STAFF ENDPOINTS ====================
+
+  @Get('admin/orders/:orderId/bill')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantOwnershipGuard)
+  @Roles(UserRole.STAFF, UserRole.OWNER)
+  @ApiBearerAuth()
+  @Header('Content-Type', 'application/pdf')
+  @SkipTransform()
+  @ApiOperation({
+    summary: 'Generate bill PDF for order (Waiter)',
+    description: 'Generate and download bill PDF for customer. Used by waiters after customer requests bill.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF bill generated successfully',
+    content: {
+      'application/pdf': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async generateBill(
+    @Param('orderId') orderId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const pdfBuffer = await this.billPdfService.generateBillPdf(orderId);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="bill-${orderId}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    
+    res.send(pdfBuffer);
+  }
+
+  /**
+   * Get all orders for a specific table session (waiter use)
+   * Used by waiter dashboard for printing bills
+   */
+  @Get('admin/tables/:tableId/session-orders')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantOwnershipGuard)
+  @Roles(UserRole.STAFF, UserRole.OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get orders for a table session (Waiter)',
+    description: 'Returns all orders for the specified session. Used for bill printing in waiter dashboard.',
+  })
+  @ApiResponse({ status: 200, type: [OrderResponseDto] })
+  async getSessionOrders(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('tableId') tableId: string,
+    @Query('sessionId') sessionId: string,
+  ): Promise<OrderResponseDto[]> {
+    return this.orderService.getOrdersBySession(user.tenantId, tableId, sessionId);
   }
 
   // ==================== KITCHEN ENDPOINTS ====================

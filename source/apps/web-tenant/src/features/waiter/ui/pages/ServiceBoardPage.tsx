@@ -17,6 +17,7 @@ import { ServiceTabsSection } from '../components/sections/ServiceTabsSection';
 import { ServiceEmptyStateSection } from '../components/sections/ServiceEmptyStateSection';
 import { WaiterOrderCard } from '../components/cards/WaiterOrderCard';
 import { TableOrdersGroup } from '../components/groups/TableOrdersGroup';
+import { BillRequestsDialog } from '../components/modals/BillRequestsDialog';
 
 interface ServiceBoardPageProps {
   userRole?: 'admin' | 'waiter' | 'kds';
@@ -58,13 +59,17 @@ export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps)
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <ServiceHeaderMobile
+          billRequestCount={state.billRequestCount}
+          onBillRequestClick={actions.openBillRequestsDialog}
           onLogout={actions.handleLogout}
         />
 
         {/* Desktop Header */}
         <ServiceHeaderDesktop
           userRole={userRole}
+          billRequestCount={state.billRequestCount}
           onManualOrder={actions.manualOrder}
+          onBillRequestClick={actions.openBillRequestsDialog}
           onLogout={actions.handleLogout}
         />
 
@@ -137,6 +142,14 @@ export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps)
           </div>
         </main>
       </div>
+
+      {/* Bill Requests Dialog */}
+      <BillRequestsDialog
+        isOpen={state.showBillRequestsDialog}
+        onClose={actions.closeBillRequestsDialog}
+        billRequests={state.billRequests}
+        onRequestHandled={actions.handleBillRequestHandled}
+      />
 
       {state.showSuccessToast && (
         <Toast 

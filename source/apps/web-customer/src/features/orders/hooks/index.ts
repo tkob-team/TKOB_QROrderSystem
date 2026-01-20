@@ -5,3 +5,5 @@
 export { useOrdersController } from './useOrdersController'
 export { useOrderTracking } from './useOrderTracking'
 export { useOrderRealtimeUpdates } from './useOrderRealtimeUpdates'
+export { useRequestBill } from './useRequestBill'
+export { useCancelBillRequest } from './useCancelBillRequest'

@@ -166,6 +166,16 @@ export class ReviewService {
           menuItemId: menuItemId,
         },
       },
+      include: {
+        orderItem: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     const ratingDistribution: Record<number, number> = {
@@ -185,12 +195,26 @@ export class ReviewService {
     const averageRating =
       reviews.length > 0 ? totalRating / reviews.length : 0;
 
+    // Map reviews to response format
+    const reviewResponses = reviews.map((review, index) => ({
+      id: review.id,
+      orderItemId: review.orderItemId,
+      sessionId: review.sessionId,
+      rating: review.rating,
+      comment: review.comment ?? undefined,
+      createdAt: review.createdAt,
+      itemName: review.orderItem.name,
+      // Generate anonymous reviewer name: "Guest 1", "Guest 2", etc.
+      reviewerName: `Guest ${index + 1}`,
+    }));
+
     return {
       menuItemId: menuItem.id,
       menuItemName: menuItem.name,
       averageRating: Math.round(averageRating * 10) / 10,
       totalReviews: reviews.length,
       ratingDistribution,
+      reviews: reviewResponses,
     };
   }
 

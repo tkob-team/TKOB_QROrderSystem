@@ -45,6 +45,11 @@ export const envSchema = z
     OTP_EXPIRY_SECONDS: z.coerce.number().default(300),
     REGISTRATION_DATA_EXPIRY_SECONDS: z.coerce.number().default(600),
 
+    // Google OAuth Config
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CALLBACK_URL: z.string().url().optional(),
+
     // CORS
     CORS_ORIGINS: z.string().optional(),
 

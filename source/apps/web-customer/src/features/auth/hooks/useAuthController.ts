@@ -146,7 +146,15 @@ export function useAuthController() {
     })
   }
 
+  // Google OAuth
+  const handleGoogleLogin = () => {
+    // Redirect to backend Google OAuth endpoint
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    window.location.href = `${apiUrl}/api/v1/auth/google`
+  }
+
   // Navigation helpers
+  const navigateToHome = () => router.push('/')
   const navigateToLogin = () => router.push('/login')
   const navigateToRegister = () => router.push('/register')
   const navigateToResetPassword = () => router.push('/reset-password')
@@ -166,6 +174,7 @@ export function useAuthController() {
     
     // Actions
     handleLogin,
+    handleGoogleLogin,
     handleLogout,
     handleRegister,
     handleRequestPasswordReset,
@@ -174,6 +183,7 @@ export function useAuthController() {
     handleResendVerification,
     
     // Navigation
+    navigateToHome,
     navigateToLogin,
     navigateToRegister,
     navigateToResetPassword,

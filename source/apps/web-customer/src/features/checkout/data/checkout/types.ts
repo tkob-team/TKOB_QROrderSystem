@@ -3,11 +3,12 @@
 /**
  * Checkout request
  * Creates order from current cart
+ * paymentMethod is optional - defaults to BILL_TO_TABLE
  */
 export interface CheckoutRequest {
   customerName?: string;
   customerNotes?: string;
-  paymentMethod: 'BILL_TO_TABLE' | 'SEPAY_QR';
+  paymentMethod?: 'BILL_TO_TABLE' | 'SEPAY_QR'; // Optional, defaults to BILL_TO_TABLE
   tipPercent?: number; // 0, 0.05, 0.10, 0.15
 }
 
@@ -52,6 +53,7 @@ export interface PaymentIntentRequest {
   orderId: string;
   returnUrl?: string;
   cancelUrl?: string;
+  tip?: number; // Tip amount in USD (optional)
 }
 
 /**
