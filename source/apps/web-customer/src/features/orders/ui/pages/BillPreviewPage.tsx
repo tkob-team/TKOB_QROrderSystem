@@ -88,6 +88,15 @@ export function BillPreviewPage() {
 
   // Calculate tip amount
   const tipAmount = useMemo(() => {
+    // Check if orders already have saved tip (payment was confirmed)
+    const savedTip = state.currentSessionOrders.reduce((sum, order) => sum + (order.tip || 0), 0)
+    
+    // If orders have tip, always use it (payment was already confirmed)
+    if (savedTip > 0) {
+      return savedTip
+    }
+    
+    // Otherwise, calculate from user selection
     if (showCustomTip && customTipAmount) {
       const custom = parseFloat(customTipAmount)
       return isNaN(custom) ? 0 : custom
@@ -103,9 +112,34 @@ export function BillPreviewPage() {
     const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0)
     const tax = orders.reduce((sum, order) => sum + order.tax, 0)
     const serviceCharge = orders.reduce((sum, order) => sum + order.serviceCharge, 0)
+    const totalItems = orders.reduce((sum, order) => sum + order.items.length, 0)
+    
+    // Check if orders have saved tip (payment was confirmed)
+    const hasSavedTip = orders.some(order => (order.tip || 0) > 0)
+    
+    // If orders have saved tip, use backend totals
+    if (hasSavedTip || billRequested) {
+      const total = orders.reduce((sum, order) => sum + order.total, 0)
+      
+      // Calculate discount from difference: discount = subtotal + tax + serviceCharge + tip - total
+      const savedDiscount = Math.max(0, subtotal + tax + serviceCharge + tipAmount - total)
+      
+      return {
+        orders,
+        subtotal,
+        tax,
+        serviceCharge,
+        tip: tipAmount, // Already calculated from saved tips
+        discount: savedDiscount, // Calculate discount from the difference
+        total,
+        totalItems,
+        orderCount: orders.length,
+      }
+    }
+    
+    // Otherwise, calculate from current UI selections
     const baseTotal = orders.reduce((sum, order) => sum + order.total, 0)
     const totalWithTip = baseTotal + tipAmount - voucherDiscount
-    const totalItems = orders.reduce((sum, order) => sum + order.items.length, 0)
 
     return {
       orders,
@@ -410,7 +444,8 @@ export function BillPreviewPage() {
             </div>
           </div>
 
-          {/* Tip Selection Section */}
+          {/* Tip Selection Section - Only show when payment NOT confirmed */}
+          {!billRequested ? (
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
             style={{ 
@@ -500,8 +535,33 @@ export function BillPreviewPage() {
               </p>
             )}
           </div>
+          ) : billSummary.tip > 0 ? (
+            /* Show confirmed tip as read-only */
+            <div 
+              className="mt-6 p-4 rounded-xl bg-white"
+              style={{ border: '1px solid var(--gray-200)' }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-5 h-5" style={{ color: 'var(--green-500)' }} />
+                <h4 className="font-semibold" style={{ color: 'var(--gray-900)' }}>Tip Added</h4>
+              </div>
+              <div 
+                className="flex items-center justify-between p-3 rounded-lg"
+                style={{ backgroundColor: 'var(--green-50)', border: '1px solid var(--green-200)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" style={{ color: 'var(--green-600)' }} />
+                  <span style={{ color: 'var(--green-700)' }}>Thank you for your generosity!</span>
+                </div>
+                <span className="font-semibold" style={{ color: 'var(--green-700)' }}>
+                  +${billSummary.tip.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ) : null}
 
-          {/* Tip Section - Always editable until payment is confirmed */}
+          {/* Voucher Section - Only show when payment NOT confirmed */}
+          {!billRequested ? (
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
             style={{ 
@@ -593,8 +653,33 @@ export function BillPreviewPage() {
               </div>
             )}
           </div>
+          ) : billSummary.discount > 0 ? (
+            /* Show confirmed discount as read-only */
+            <div 
+              className="mt-6 p-4 rounded-xl bg-white"
+              style={{ border: '1px solid var(--gray-200)' }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-5 h-5" style={{ color: 'var(--emerald-500)' }} />
+                <h4 className="font-semibold" style={{ color: 'var(--gray-900)' }}>Voucher Applied</h4>
+              </div>
+              <div 
+                className="flex items-center justify-between p-3 rounded-lg"
+                style={{ backgroundColor: 'var(--emerald-50)', border: '1px solid var(--emerald-200)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" style={{ color: 'var(--emerald-600)' }} />
+                  <span style={{ color: 'var(--emerald-700)' }}>Discount applied to your order</span>
+                </div>
+                <span className="font-semibold" style={{ color: 'var(--emerald-700)' }}>
+                  -${billSummary.discount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ) : null}
 
-          {/* Payment Method Selection - Always editable until payment is confirmed */}
+          {/* Payment Method Selection - Only show when payment NOT confirmed */}
+          {!billRequested && (
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
             style={{ 
@@ -702,6 +787,7 @@ export function BillPreviewPage() {
               </button>
             </div>
           </div>
+          )}
         </div>
 
         {/* Bottom Action Button */}

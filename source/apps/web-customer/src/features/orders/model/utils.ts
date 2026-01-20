@@ -89,7 +89,7 @@ export function toFeatureOrder(api: ApiOrder): Order {
   const mappedItems = (api.items || []).map(item => cartItemToOrderItem(item))
   
   if (process.env.NEXT_PUBLIC_USE_LOGGING) {
-    log('data', 'Converting API Order to Feature Order', { orderId: maskId(api.id), itemsCount: mappedItems.length }, { feature: 'orders' })
+    log('data', 'Converting API Order to Feature Order', { orderId: maskId(api.id), itemsCount: mappedItems.length, tip: api.tip }, { feature: 'orders' })
   }
   
   return {
@@ -103,6 +103,7 @@ export function toFeatureOrder(api: ApiOrder): Order {
     subtotal: api.subtotal,
     tax: api.tax,
     serviceCharge: api.serviceCharge,
+    tip: api.tip || 0,
     total: api.total,
     createdAt: typeof api.createdAt === 'string' ? api.createdAt : (api.createdAt as any).toISOString?.() || String(api.createdAt),
     updatedAt: typeof api.createdAt === 'string' ? api.createdAt : (api.createdAt as any).toISOString?.() || String(api.createdAt),
