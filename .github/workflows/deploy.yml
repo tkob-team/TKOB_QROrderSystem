@@ -3,6 +3,8 @@ name: Deploy to AWS EC2
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
@@ -85,6 +87,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
