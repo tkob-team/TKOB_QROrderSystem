@@ -22,8 +22,8 @@ export function GoogleCallbackPage() {
     }
 
     if (accessToken && refreshToken) {
-      // Store tokens in localStorage
-      localStorage.setItem('accessToken', accessToken)
+      // Store tokens in localStorage - use 'token' key to match API client
+      localStorage.setItem('token', accessToken)
       localStorage.setItem('refreshToken', refreshToken)
 
       if (isNewUser) {
@@ -33,7 +33,7 @@ export function GoogleCallbackPage() {
       }
 
       // Navigate to menu
-      router.push('/menu')
+      router.replace('/menu')
     } else {
       toast.error('Authentication failed')
       router.push('/login')

@@ -10,7 +10,9 @@ import { useOrdersController } from '../../hooks'
 import { useRequestBill } from '../../hooks/useRequestBill'
 import { useCancelBillRequest } from '../../hooks/useCancelBillRequest'
 import { useOrderRealtimeUpdates } from '../../hooks/useOrderRealtimeUpdates'
+import { useSubmitReviews } from '../../hooks/useSubmitReviews'
 import { useSession } from '@/features/tables/hooks'
+import { useCurrentUser } from '@/features/profile/hooks/queries/useCurrentUser'
 import { ORDERS_TEXT } from '../../model'
 import { InlineOrderTracking } from '../components/InlineOrderTracking'
 import { ReviewServedItemsModal } from '../components/modals/ReviewServedItemsModal'
@@ -19,12 +21,41 @@ export function OrderListPage() {
   const router = useRouter()
   const { state, handleLogin } = useOrdersController()
   const { session } = useSession()
+  const { data: userResponse } = useCurrentUser()
   const requestBillMutation = useRequestBill()
   const cancelBillMutation = useCancelBillRequest()
   
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [isSubmittingReviews, setIsSubmittingReviews] = useState(false)
+  
+  // Build item-to-order mapping for review submission
+  const itemToOrderMap = useMemo(() => {
+    const map = new Map<string, string>()
+    state.currentSessionOrders.forEach(order => {
+      order.items.forEach(item => {
+        map.set(item.id, order.id)
+      })
+    })
+    return map
+  }, [state.currentSessionOrders])
+  
+  // Track if we should navigate to bill after review submission
+  const [shouldNavigateToBill, setShouldNavigateToBill] = useState(false)
+  
+  // Use the real review submission hook
+  const submitReviewsMutation = useSubmitReviews({
+    tenantId: session?.tenantId || '',
+    sessionId: session?.sessionId || '',
+    reviewerName: userResponse?.data?.fullName || undefined, // Pass customer name for review
+    onSuccess: () => {
+      setShowReviewModal(false)
+      // Only navigate to bill if we're in the "request bill" flow
+      if (shouldNavigateToBill) {
+        setShouldNavigateToBill(false)
+        proceedToRequestBill()
+      }
+    },
+  })
   
   // Connect WebSocket at page level for real-time updates on all orders
   const { isRealtimeConnected, connectionStatus } = useOrderRealtimeUpdates({
@@ -83,12 +114,21 @@ export function OrderListPage() {
     )
     
     if (hasServedOrders) {
+      // Mark that we should navigate to bill after review
+      setShouldNavigateToBill(true)
       // Show review modal for served items
       setShowReviewModal(true)
     } else {
       // No served items, go directly to bill
       proceedToRequestBill()
     }
+  }
+  
+  // Handle Leave Review button (after bill already requested)
+  const handleLeaveReviewClick = () => {
+    // Don't navigate to bill after review since bill is already requested
+    setShouldNavigateToBill(false)
+    setShowReviewModal(true)
   }
   
   // Actually request the bill (called after review or skip)
@@ -108,30 +148,29 @@ export function OrderListPage() {
     }
   }
   
-  // Handle review submission
+  // Handle review submission - use real API
   const handleReviewSubmit = async (reviews: { itemId: string; rating: number; comment: string }[]) => {
-    setIsSubmittingReviews(true)
-    
-    try {
-      // TODO: Submit reviews to API
-      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
-        log('ui', 'Submitting reviews', { 
-          reviewCount: reviews.length,
-        }, { feature: 'orders' })
-      }
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+    if (reviews.length === 0) {
+      // No reviews to submit, just proceed
       setShowReviewModal(false)
-      
-      // Proceed to request bill
-      await proceedToRequestBill()
-    } catch (error) {
-      console.error('Failed to submit reviews:', error)
-    } finally {
-      setIsSubmittingReviews(false)
+      proceedToRequestBill()
+      return
     }
+
+    // Map reviews to include orderId
+    const reviewsWithOrderId = reviews.map(review => ({
+      ...review,
+      orderId: itemToOrderMap.get(review.itemId) || '',
+    })).filter(r => r.orderId) // Filter out reviews without valid orderId
+
+    if (reviewsWithOrderId.length === 0) {
+      setShowReviewModal(false)
+      proceedToRequestBill()
+      return
+    }
+
+    // Submit reviews via API
+    submitReviewsMutation.mutate(reviewsWithOrderId)
   }
   
   // Handle skip reviews
@@ -235,6 +274,20 @@ export function OrderListPage() {
                       <Receipt className="w-4 h-4" />
                       View Bill
                     </button>
+                    {/* Leave Review Button - Show when has served/completed orders */}
+                    {sessionSummary.hasServedOrders && (
+                      <button
+                        onClick={handleLeaveReviewClick}
+                        className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                        style={{ 
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          color: 'white',
+                          border: '1px solid rgba(255,255,255,0.3)'
+                        }}
+                      >
+                        ⭐ Leave Review
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -252,18 +305,31 @@ export function OrderListPage() {
                     </button>
                     {/* Print Bill Button - Only show for served/completed orders when bill not requested */}
                     {sessionSummary.hasServedOrders && (
-                      <button
-                        onClick={() => router.push('/bill?print=true')}
-                        className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
-                        style={{ 
-                          backgroundColor: 'rgba(255,255,255,0.2)',
-                          color: 'white',
-                          border: '1px solid rgba(255,255,255,0.3)'
-                        }}
-                      >
-                        <Printer className="w-4 h-4" />
-                        Print Bill
-                      </button>
+                      <>
+                        <button
+                          onClick={() => router.push('/bill?print=true')}
+                          className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                          style={{ 
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)'
+                          }}
+                        >
+                          <Printer className="w-4 h-4" />
+                          Print Bill
+                        </button>
+                        <button
+                          onClick={() => setShowReviewModal(true)}
+                          className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                          style={{ 
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)'
+                          }}
+                        >
+                          ⭐ Leave Review
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -327,6 +393,7 @@ export function OrderListPage() {
                   key={order.id} 
                   order={order}
                   defaultExpanded={index === 0} // Expand most recent order by default
+                  onReview={() => setShowReviewModal(true)}
                 />
               ))}
             </div>
@@ -339,59 +406,96 @@ export function OrderListPage() {
           )}
         </div>
 
-        {/* Order History - Simplified cards for past sessions */}
-        <div>
-          <h3 className="mb-3" style={{ color: 'var(--gray-900)', fontSize: '16px' }}>{ORDERS_TEXT.orderHistory}</h3>
-          {!state.isLoggedIn ? (
-            <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
-              <LogIn className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--gray-400)' }} />
-              <p className="mb-4" style={{ color: 'var(--gray-900)' }}>{ORDERS_TEXT.signInPrompt}</p>
+        {/* Order History - Only for logged-in users */}
+        {state.isLoggedIn && (
+          <div>
+            <h3 className="mb-3 flex items-center gap-2" style={{ color: 'var(--gray-900)', fontSize: '16px' }}>
+              {ORDERS_TEXT.orderHistory}
+              <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--orange-100)', color: 'var(--orange-600)' }}>
+                Logged in
+              </span>
+            </h3>
+            {state.orderHistory.length === 0 ? (
+              <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
+                <p style={{ color: 'var(--gray-600)' }}>{ORDERS_TEXT.noPastOrders}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {state.orderHistory
+                  .filter(order => !state.currentSessionOrders.some(curr => curr.id === order.id))
+                  .map((order) => (
+                  <div
+                    key={order.id}
+                    onClick={() => router.push(`/orders/${order.id}`)}
+                    className="w-full bg-white rounded-xl p-4 border cursor-pointer hover:shadow-md transition-shadow"
+                    style={{ borderColor: 'var(--gray-200)' }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium" style={{ color: 'var(--gray-900)' }}>
+                        Order #{order.id.slice(-8).toUpperCase()}
+                      </p>
+                      {/* Status Badge */}
+                      <span 
+                        className="px-2 py-0.5 rounded-full text-xs"
+                        style={{
+                          backgroundColor: order.status === 'Completed' || order.status === 'Ready' 
+                            ? 'var(--green-100)' 
+                            : 'var(--gray-100)',
+                          color: order.status === 'Completed' || order.status === 'Ready'
+                            ? 'var(--green-700)'
+                            : 'var(--gray-600)',
+                        }}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span style={{ color: 'var(--gray-500)' }}>
+                        {new Date(order.createdAt).toLocaleDateString('vi-VN', {
+                          day: '2-digit',
+                          month: '2-digit', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      <span style={{ color: 'var(--gray-900)', fontWeight: '500' }}>
+                        ${order.total.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: 'var(--gray-500)' }}>
+                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Login prompt for guests to see order history */}
+        {!state.isLoggedIn && (
+          <div>
+            <h3 className="mb-3" style={{ color: 'var(--gray-900)', fontSize: '16px' }}>{ORDERS_TEXT.orderHistory}</h3>
+            <div className="bg-white rounded-xl p-6 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
+              <LogIn className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--gray-400)' }} />
+              <p className="font-medium mb-1" style={{ color: 'var(--gray-900)' }}>Login to see your order history</p>
+              <p className="text-sm mb-4" style={{ color: 'var(--gray-500)' }}>
+                Track all your past orders across restaurants
+              </p>
               <button
                 onClick={handleLogin}
-                className="px-6 py-2 rounded-full"
-                style={{ backgroundColor: 'var(--orange-500)', color: 'white' }}
+                className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95"
+                style={{ 
+                  backgroundColor: 'var(--orange-500)',
+                  color: 'white'
+                }}
               >
-                {ORDERS_TEXT.signInButton}
+                Login
               </button>
             </div>
-          ) : state.orderHistory.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border" style={{ borderColor: 'var(--gray-200)' }}>
-              <p style={{ color: 'var(--gray-600)' }}>{ORDERS_TEXT.noPastOrders}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {state.orderHistory.map((order) => (
-                <div
-                  key={order.id}
-                  className="w-full bg-white rounded-xl p-4 border"
-                  style={{ borderColor: 'var(--gray-200)' }}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <p style={{ color: 'var(--gray-900)' }}>Order #{order.id.slice(-8).toUpperCase()}</p>
-                    {/* Status Badge */}
-                    <span 
-                      className="px-2 py-0.5 rounded-full text-xs"
-                      style={{
-                        backgroundColor: 'var(--gray-100)',
-                        color: 'var(--gray-600)',
-                      }}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span style={{ color: 'var(--gray-600)', fontSize: '14px' }}>
-                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                    </span>
-                    <span style={{ color: 'var(--gray-900)', fontWeight: '500' }}>
-                      ${order.total.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
     
@@ -402,7 +506,7 @@ export function OrderListPage() {
       onClose={() => setShowReviewModal(false)}
       onSkip={handleSkipReviews}
       onSubmit={handleReviewSubmit}
-      isSubmitting={isSubmittingReviews}
+      isSubmitting={submitReviewsMutation.isPending}
     />
     </PageTransition>
   )

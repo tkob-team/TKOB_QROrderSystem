@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useLogin } from './queries/useLogin'
 import { useRegister } from './queries/useRegister'
+import { useRegisterConfirm } from './queries/useRegisterConfirm'
 import { useLogout } from './queries/useLogout'
 import { useRequestPasswordReset } from './queries/useRequestPasswordReset'
 import { useResetPassword } from './queries/useResetPassword'
@@ -12,12 +13,17 @@ import { useVerifyEmail } from './queries/useVerifyEmail'
 import { useResendVerification } from './queries/useResendVerification'
 import type { LoginForm, RegisterForm, ResetPasswordRequestForm, ResetPasswordForm } from '../model'
 
+// Store registration token temporarily for OTP flow
+let pendingRegistrationToken: string | null = null
+let pendingRegistrationEmail: string | null = null
+
 export function useAuthController() {
   const router = useRouter()
   
   const loginMutation = useLogin()
   const logoutMutation = useLogout()
   const registerMutation = useRegister()
+  const registerConfirmMutation = useRegisterConfirm()
   const requestResetMutation = useRequestPasswordReset()
   const resetPasswordMutation = useResetPassword()
   const verifyEmailMutation = useVerifyEmail()
@@ -60,8 +66,11 @@ export function useAuthController() {
         } 
       },
       {
-        onSuccess: () => {
-          toast.success('Account created! Please verify your email.')
+        onSuccess: (response) => {
+          // Store registration token for OTP confirmation step
+          pendingRegistrationToken = response.registrationToken
+          pendingRegistrationEmail = data.email
+          toast.success('OTP sent to your email!')
           router.push('/verify-email')
         },
         onError: () => {
@@ -70,6 +79,45 @@ export function useAuthController() {
       }
     )
   }
+
+  // OTP confirmation after registration
+  const handleConfirmOTP = (otp: string) => {
+    if (!pendingRegistrationToken) {
+      toast.error('Registration session expired. Please register again.')
+      router.push('/register')
+      return
+    }
+
+    registerConfirmMutation.mutate(
+      {
+        data: {
+          registrationToken: pendingRegistrationToken,
+          otp,
+        }
+      },
+      {
+        onSuccess: (response) => {
+          // Clear pending data
+          pendingRegistrationToken = null
+          pendingRegistrationEmail = null
+          
+          // Store tokens
+          if (typeof window !== 'undefined' && response.accessToken) {
+            localStorage.setItem('token', response.accessToken)
+          }
+          
+          toast.success('Account verified successfully!')
+          router.push('/menu')
+        },
+        onError: () => {
+          toast.error('Invalid OTP code. Please try again.')
+        },
+      }
+    )
+  }
+
+  // Get pending registration email for display
+  const getPendingEmail = () => pendingRegistrationEmail
 
   // Password reset actions
   const handleRequestPasswordReset = (data: ResetPasswordRequestForm) => {
@@ -156,9 +204,10 @@ export function useAuthController() {
 
   // Google OAuth
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
+    // Redirect to backend Google OAuth endpoint with state=customer
+    // This tells the backend to create a Customer (not a User/Tenant)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-    window.location.href = `${apiUrl}/api/v1/auth/google`
+    window.location.href = `${apiUrl}/api/v1/auth/google?state=customer`
   }
 
   // Navigation helpers
@@ -174,6 +223,7 @@ export function useAuthController() {
     // State
     isLoginLoading: loginMutation.isPending,
     isRegisterLoading: registerMutation.isPending,
+    isConfirmOTPLoading: registerConfirmMutation.isPending,
     isResetRequestLoading: requestResetMutation.isPending,
     isResetPasswordLoading: resetPasswordMutation.isPending,
     isVerifyingEmail: verifyEmailMutation.isPending,
@@ -185,6 +235,8 @@ export function useAuthController() {
     handleGoogleLogin,
     handleLogout,
     handleRegister,
+    handleConfirmOTP,
+    getPendingEmail,
     handleRequestPasswordReset,
     handleResetPassword,
     handleVerifyEmail,

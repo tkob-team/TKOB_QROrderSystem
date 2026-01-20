@@ -1,7 +1,7 @@
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsArray, IsIn, IsEnum } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type, Transform, Expose } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
 
 export class OrderFiltersDto extends PaginationDto {
@@ -12,15 +12,25 @@ export class OrderFiltersDto extends PaginationDto {
     isArray: true,
   })
   @IsOptional()
-  @Transform(({ value }) => {
-    // Handle query param array format: status[]=VALUE or status=VALUE1,VALUE2
-    if (Array.isArray(value)) return value;
-    if (typeof value === 'string') return value.split(',').map(s => s.trim());
-    return value;
+  @Transform(({ value, obj }) => {
+    // Handle multiple query param formats:
+    // 1. status[]=VALUE (bracket notation - parsed as 'status[]' property)
+    // 2. status=VALUE1,VALUE2 (comma-separated)
+    // 3. status=VALUE&status=VALUE2 (repeated param)
+    const raw = value ?? obj?.['status[]'];
+    if (!raw) return undefined;
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') return raw.split(',').map(s => s.trim());
+    return raw;
   })
   @IsArray()
   @IsEnum(OrderStatus, { each: true })
   status?: OrderStatus[];
+
+  // Accept 'status[]' bracket notation from frontend and merge into status
+  @IsOptional()
+  @Transform(() => undefined) // Always transform to undefined - value is merged into 'status'
+  'status[]'?: any;
 
   @ApiPropertyOptional()
   @IsString()

@@ -3,7 +3,13 @@ import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
 import { MenuPhotoService } from '@/modules/menu/services/menu-photo.service';
 import { UnsplashService } from './unplash.service';
-import { SubscriptionTier, SubscriptionStatus, OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
+import {
+  SubscriptionTier,
+  SubscriptionStatus,
+  OrderStatus,
+  PaymentStatus,
+  PaymentMethod,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 /**
@@ -39,7 +45,7 @@ export class SeedService {
       const modifiers = await this.seedModifiers(tenantId);
       const items = await this.seedMenuItems(tenantId, categories, modifiers);
       const tables = await this.seedTables(tenantId);
-      
+
       // Seed demo orders và reviews (để có rating data)
       const { orders, reviews } = await this.seedOrdersAndReviews(tenantId, items, tables);
 
@@ -109,8 +115,8 @@ export class SeedService {
         maxChoices: 1,
         options: [
           { name: 'Small', priceDelta: 0, order: 0 },
-          { name: 'Medium', priceDelta: 0.50, order: 1 },
-          { name: 'Large', priceDelta: 1.00, order: 2 }, // $1.00
+          { name: 'Medium', priceDelta: 0.5, order: 1 },
+          { name: 'Large', priceDelta: 1.0, order: 2 }, // $1.00
         ],
       },
       {
@@ -135,11 +141,11 @@ export class SeedService {
         minChoices: 0,
         maxChoices: 5,
         options: [
-          { name: 'Extra Cheese', priceDelta: 0.60, order: 0 }, // $0.60
-          { name: 'Bacon', priceDelta: 0.80, order: 1 }, // $0.80
-          { name: 'Mushrooms', priceDelta: 0.40, order: 2 }, // $0.40
-          { name: 'Olives', priceDelta: 0.40, order: 3 }, // $0.40
-          { name: 'Jalapeños', priceDelta: 0.50, order: 4 }, // $0.50
+          { name: 'Extra Cheese', priceDelta: 0.6, order: 0 }, // $0.60
+          { name: 'Bacon', priceDelta: 0.8, order: 1 }, // $0.80
+          { name: 'Mushrooms', priceDelta: 0.4, order: 2 }, // $0.40
+          { name: 'Olives', priceDelta: 0.4, order: 3 }, // $0.40
+          { name: 'Jalapeños', priceDelta: 0.5, order: 4 }, // $0.50
         ],
       },
       {
@@ -150,9 +156,9 @@ export class SeedService {
         minChoices: 0,
         maxChoices: 3,
         options: [
-          { name: 'French Fries', priceDelta: 1.00, order: 0 }, // $1.00
-          { name: 'Salad', priceDelta: 0.80, order: 1 }, // $0.80
-          { name: 'Soup', priceDelta: 1.20, order: 2 }, // $1.20
+          { name: 'French Fries', priceDelta: 1.0, order: 0 }, // $1.00
+          { name: 'Salad', priceDelta: 0.8, order: 1 }, // $0.80
+          { name: 'Soup', priceDelta: 1.2, order: 2 }, // $1.20
         ],
       },
     ];
@@ -208,7 +214,7 @@ export class SeedService {
         categoryId: appetizers.id,
         name: 'Spring Rolls',
         description: 'Crispy Vietnamese spring rolls with sweet chili sauce',
-        price: 4.50,
+        price: 4.5,
         preparationTime: 10,
         tags: ['vegetarian', 'popular'],
         allergens: ['gluten'],
@@ -219,7 +225,7 @@ export class SeedService {
         categoryId: appetizers.id,
         name: 'Chicken Wings',
         description: 'Buffalo style chicken wings with ranch dressing',
-        price: 6.50,
+        price: 6.5,
         preparationTime: 15,
         tags: ['spicy', 'popular'],
         allergens: ['dairy'],
@@ -230,7 +236,7 @@ export class SeedService {
         categoryId: appetizers.id,
         name: 'Calamari Rings',
         description: 'Deep fried squid rings with tartar sauce',
-        price: 7.50,
+        price: 7.5,
         preparationTime: 12,
         tags: ['seafood'],
         allergens: ['seafood', 'gluten'],
@@ -243,7 +249,7 @@ export class SeedService {
         categoryId: mains.id,
         name: 'Grilled Beef Steak',
         description: 'Premium beef steak with mushroom sauce',
-        price: 25.00,
+        price: 25.0,
         preparationTime: 25,
         tags: ['signature', 'popular'],
         allergens: [],
@@ -255,7 +261,7 @@ export class SeedService {
         categoryId: mains.id,
         name: 'Grilled Salmon',
         description: 'Fresh Atlantic salmon with lemon butter',
-        price: 22.00,
+        price: 22.0,
         preparationTime: 20,
         tags: ['healthy', 'seafood'],
         allergens: ['fish'],
@@ -267,7 +273,7 @@ export class SeedService {
         categoryId: mains.id,
         name: 'Chicken Teriyaki',
         description: 'Grilled chicken with Japanese teriyaki sauce',
-        price: 12.00,
+        price: 12.0,
         preparationTime: 18,
         tags: ['japanese', 'popular'],
         allergens: ['soy'],
@@ -280,7 +286,7 @@ export class SeedService {
         categoryId: pasta.id,
         name: 'Spaghetti Carbonara',
         description: 'Classic Italian pasta with bacon and cream sauce',
-        price: 9.50,
+        price: 9.5,
         preparationTime: 15,
         tags: ['italian', 'popular'],
         allergens: ['dairy', 'gluten', 'eggs'],
@@ -291,7 +297,7 @@ export class SeedService {
         categoryId: pasta.id,
         name: 'Pad Thai',
         description: 'Thai stir-fried noodles with shrimp',
-        price: 8.50,
+        price: 8.5,
         preparationTime: 12,
         tags: ['thai', 'seafood'],
         allergens: ['seafood', 'peanuts'],
@@ -302,7 +308,7 @@ export class SeedService {
         categoryId: pasta.id,
         name: 'Pho Bo',
         description: 'Vietnamese beef noodle soup',
-        price: 7.50,
+        price: 7.5,
         preparationTime: 20,
         tags: ['vietnamese', 'popular'],
         allergens: [],
@@ -315,7 +321,7 @@ export class SeedService {
         categoryId: desserts.id,
         name: 'Tiramisu',
         description: 'Classic Italian coffee-flavored dessert',
-        price: 5.50,
+        price: 5.5,
         preparationTime: 5,
         tags: ['italian', 'coffee'],
         allergens: ['dairy', 'eggs', 'gluten'],
@@ -326,7 +332,7 @@ export class SeedService {
         categoryId: desserts.id,
         name: 'Chocolate Lava Cake',
         description: 'Warm chocolate cake with molten center',
-        price: 6.50,
+        price: 6.5,
         preparationTime: 15,
         tags: ['chocolate', 'popular'],
         allergens: ['dairy', 'eggs', 'gluten'],
@@ -339,7 +345,7 @@ export class SeedService {
         categoryId: beverages.id,
         name: 'Fresh Orange Juice',
         description: 'Freshly squeezed orange juice',
-        price: 3.50,
+        price: 3.5,
         preparationTime: 3,
         tags: ['fresh', 'healthy'],
         allergens: [],
@@ -350,7 +356,7 @@ export class SeedService {
         categoryId: beverages.id,
         name: 'Iced Vietnamese Coffee',
         description: 'Strong Vietnamese coffee with condensed milk',
-        price: 1.00,
+        price: 1.0,
         preparationTime: 5,
         tags: ['vietnamese', 'coffee', 'popular'],
         allergens: ['dairy'],
@@ -363,7 +369,7 @@ export class SeedService {
         categoryId: special.id,
         name: "Chef's Special Pizza",
         description: 'Our signature pizza with premium toppings',
-        price: 18.00,
+        price: 18.0,
         preparationTime: 30,
         tags: ['signature', 'popular'],
         allergens: ['dairy', 'gluten'],
@@ -389,27 +395,31 @@ export class SeedService {
         },
       });
 
-      // Step 2: Prepare mock files from a static URL
-      if (photoQuery) { // Hoặc bỏ check này nếu bạn muốn luôn luôn seed ảnh này
+      // Step 2: Fetch photo from Unsplash and upload
+      if (photoQuery) {
         try {
-          // 1. Link cố định
-          const sharedUrl = 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1c/2f/33/2d/healthy-bowl-frische.jpg?w=900&h=500&s=1';
+          // 1. Fetch photo URL from Unsplash using the query
+          const photoUrl = await this.unsplash.searchPhoto(photoQuery);
 
-          // 2. Tải buffer MỘT LẦN (Download once, reuse everywhere)
-          const sharedBuffer = await this.downloadPhotoToBuffer(sharedUrl);
-          
+          if (!photoUrl) {
+            this.logger.warn(`No photo found on Unsplash for query: "${photoQuery}"`);
+            continue;
+          }
+
+          // 2. Download the photo buffer once
+          const sharedBuffer = await this.downloadPhotoToBuffer(photoUrl);
+
           const mockFiles: Express.Multer.File[] = [];
-          const numberOfFiles = 3; // Số lượng file bạn muốn nhân bản
+          const numberOfFiles = 3; // Number of photos to create
 
-          // 3. Loop để tạo mảng object Multer
+          // 3. Create mock Multer files with the same buffer
           for (let i = 0; i < numberOfFiles; i++) {
             mockFiles.push({
               fieldname: 'files',
-              // Quan trọng: Thêm index i vào tên để tránh bị trùng tên file khi lưu
-              originalname: `${itemData.name}-${i}.jpg`, 
+              originalname: `${itemData.name}-${i}.jpg`,
               encoding: '7bit',
               mimetype: 'image/jpeg',
-              buffer: sharedBuffer, // <--- Xài chung buffer ở đây
+              buffer: sharedBuffer,
               size: sharedBuffer.length,
               stream: null as any,
               destination: '',
@@ -528,8 +538,6 @@ export class SeedService {
 
     return created;
   }
-
-
 
   /**
    * Seed Subscription Plans (run once on startup)
@@ -691,7 +699,7 @@ export class SeedService {
       'Excellent! Highly recommend.',
       'Amazing taste, will order again!',
       'Perfect portion size and flavor.',
-      'One of the best dishes I\'ve had.',
+      "One of the best dishes I've had.",
       'Fresh and delicious!',
       'Great value for money.',
       'Perfectly cooked!',
@@ -704,12 +712,26 @@ export class SeedService {
       'Pretty good overall.',
     ];
 
+    // Sample reviewer names
+    const reviewerNames = [
+      'John D.',
+      'Sarah M.',
+      'Mike T.',
+      'Emily L.',
+      'David K.',
+      'Lisa P.',
+      'James H.',
+      'Anna W.',
+      'Chris B.',
+      'Maria S.',
+    ];
+
     // Create 3-5 demo orders with reviews
     const numOrders = Math.min(5, tables.length);
-    
+
     for (let i = 0; i < numOrders; i++) {
       const table = tables[i % tables.length];
-      
+
       // Create a completed table session (clearedAt = ended)
       const pastDate = new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000);
       const session = await this.prisma.tableSession.create({
@@ -773,14 +795,20 @@ export class SeedService {
 
       // Create reviews for 50-100% of items in this order
       const itemsToReview = order.items.filter(() => Math.random() > 0.3);
-      
+
       for (const orderItem of itemsToReview) {
-        const rating = Math.random() > 0.3 
-          ? Math.floor(Math.random() * 2) + 4 // 4-5 stars (70%)
-          : Math.floor(Math.random() * 2) + 3; // 3-4 stars (30%)
+        const rating =
+          Math.random() > 0.3
+            ? Math.floor(Math.random() * 2) + 4 // 4-5 stars (70%)
+            : Math.floor(Math.random() * 2) + 3; // 3-4 stars (30%)
 
         const comments = rating >= 4 ? positiveComments : neutralComments;
         const comment = comments[Math.floor(Math.random() * comments.length)];
+        
+        // Pick a random reviewer name (70% chance to have a name)
+        const reviewerName = Math.random() > 0.3
+          ? reviewerNames[Math.floor(Math.random() * reviewerNames.length)]
+          : null;
 
         const review = await this.prisma.itemReview.create({
           data: {
@@ -789,6 +817,7 @@ export class SeedService {
             sessionId: session.id,
             rating,
             comment,
+            reviewerName,
           },
         });
 

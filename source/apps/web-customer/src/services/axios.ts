@@ -29,10 +29,19 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor - add logging
+// Request interceptor - add logging and customer auth token
 api.interceptors.request.use(
   (config) => {
     const safeUrl = config.url?.split('?')[0];
+    
+    // Add customer auth token if available (for logged-in customers)
+    if (typeof window !== 'undefined') {
+      // Check multiple possible token storage keys
+      const customerToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+      if (customerToken) {
+        config.headers.Authorization = `Bearer ${customerToken}`;
+      }
+    }
     
     if (logDataEnabled) {
       log('data', 'API Request', {

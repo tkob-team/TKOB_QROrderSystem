@@ -92,10 +92,14 @@ export function toFeatureOrder(api: ApiOrder): Order {
     log('data', 'Converting API Order to Feature Order', { orderId: maskId(api.id), itemsCount: mappedItems.length, tip: api.tip }, { feature: 'orders' })
   }
   
+  // Map API status (uppercase) to Feature status
+  // API uses: PENDING, RECEIVED, PREPARING, READY, SERVED, COMPLETED, CANCELLED
+  const apiStatus = (api.status as string)?.toUpperCase() || 'RECEIVED'
+  
   return {
     id: api.id,
     tableNumber: api.tableNumber ? parseInt(String(api.tableNumber), 10) : undefined,
-    status: 'Received',
+    status: apiStatus as Order['status'],
     paymentStatus: (api.paymentStatus as any) === 'Paid' ? 'Paid' : 'Unpaid',
     paymentMethod: api.paymentMethod as any,
     items: mappedItems,

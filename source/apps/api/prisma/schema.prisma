@@ -127,7 +127,7 @@ model User {
   avatarUrl    String? @map("avatar_url") // User profile avatar URL
 
   // OAuth fields
-  googleId     String? @unique @map("google_id") // Google OAuth ID
+  googleId String? @unique @map("google_id") // Google OAuth ID
 
   role   UserRole   @default(STAFF)
   status UserStatus @default(PENDING) // Pending cho đến khi verify email/admin duyệt
@@ -164,6 +164,49 @@ model UserSession {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("user_sessions")
+}
+
+// 5.1 Model CUSTOMER (Khách hàng đăng ký - không thuộc tenant)
+model Customer {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String? @map("password_hash") // Optional for OAuth users
+  fullName     String  @map("full_name")
+  avatarUrl    String? @map("avatar_url")
+  phone        String? // Optional phone number
+
+  // OAuth fields
+  googleId String? @unique @map("google_id")
+
+  status UserStatus @default(PENDING) // PENDING until email verified
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sessions CustomerSession[]
+  orders   Order[] // Customer's order history across all tenants
+
+  @@map("customers")
+}
+
+// 5.2 Model CUSTOMER_SESSION (Phiên đăng nhập của customer)
+model CustomerSession {
+  id String @id @default(uuid())
+
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String  @map("refresh_token_hash")
+  deviceInfo       String? @map("device_info")
+
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+  expiresAt  DateTime @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([customerId])
+  @@map("customer_sessions")
 }
 
 // Staff Invitation (Lời mời nhân viên)
@@ -433,6 +476,7 @@ model Order {
   tenantId    String  @map("tenant_id")
   tableId     String  @map("table_id")
   sessionId   String? @map("session_id") // Link to TableSession
+  customerId  String? @map("customer_id") // Link to logged-in Customer (optional for anonymous orders)
 
   // Customer info
   customerName  String? @map("customer_name")
@@ -475,6 +519,7 @@ model Order {
   // Relations
   tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   table         Table                @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  customer      Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
   payment       Payment? // Optional payment for online orders
@@ -484,6 +529,7 @@ model Order {
   @@index([tableId, status])
   @@index([orderNumber])
   @@index([sessionId])
+  @@index([customerId]) // For customer order history
   @@map("orders")
 }
 
@@ -629,12 +675,13 @@ model Payment {
 
 // Item Review (Customer ratings for order items)
 model ItemReview {
-  id          String  @id @default(uuid())
-  orderItemId String  @map("order_item_id")
-  sessionId   String  @map("session_id")
-  tenantId    String  @map("tenant_id")
-  rating      Int // 1-5 stars
-  comment     String? @db.Text
+  id           String  @id @default(uuid())
+  orderItemId  String  @map("order_item_id")
+  sessionId    String  @map("session_id")
+  tenantId     String  @map("tenant_id")
+  rating       Int // 1-5 stars
+  comment      String? @db.Text
+  reviewerName String? @map("reviewer_name") // Customer name at time of review
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -113,11 +113,13 @@ export class AuthService {
     const tokens = await this.session.createSessionWithTokens(user.id, deviceInfo);
 
     // 6. [FIRST LOGIN SEED] Check if this is first login and should seed demo data
-    try {
-      await this.seedDemoDataOnFirstLogin(user.id, user.tenantId);
-    } catch (seedError) {
-      // Don't fail login if seed fails
-      this.logger.error(`Failed to seed demo data for tenant ${user.tenantId}:`, seedError);
+    if (user.tenantId) {
+      try {
+        await this.seedDemoDataOnFirstLogin(user.id, user.tenantId);
+      } catch (seedError) {
+        // Don't fail login if seed fails
+        this.logger.error(`Failed to seed demo data for tenant ${user.tenantId}:`, seedError);
+      }
     }
 
     this.logger.log(`User logged in: ${user.email}`);
@@ -611,19 +613,11 @@ export class AuthService {
 
   /**
    * Seed demo data on first login (after registration)
-   * Only seeds if:
-   * 1. This is the ONLY user in the system (first tenant)
-   * 2. Tenant has no existing menu items (hasn't been seeded before)
+   * Only seeds if tenant has no existing menu items (hasn't been seeded before)
+   * For demo: Every new tenant gets seed data on first login
    */
   private async seedDemoDataOnFirstLogin(userId: string, tenantId: string): Promise<void> {
-    // Check 1: Only seed for FIRST tenant (1 user total)
-    const totalUsers = await this.prisma.user.count();
-    if (totalUsers !== 1) {
-      this.logger.debug(`Skipping seed: Multiple users exist (${totalUsers})`);
-      return;
-    }
-
-    // Check 2: Check if tenant already has data (avoid re-seeding)
+    // Check if tenant already has data (avoid re-seeding)
     const existingItems = await this.prisma.menuItem.count({ where: { tenantId } });
     if (existingItems > 0) {
       this.logger.debug(
@@ -632,8 +626,8 @@ export class AuthService {
       return;
     }
 
-    // All checks passed - seed demo data
-    this.logger.log(`🌱 Seeding demo data for first tenant: ${tenantId} (first login)`);
+    // Seed demo data for this tenant
+    this.logger.log(`🌱 Seeding demo data for tenant: ${tenantId} (first login)`);
     await this.seedService.seedTenantData(tenantId);
     this.logger.log(`✅ Demo data seeded successfully for tenant: ${tenantId}`);
   }
@@ -677,7 +671,8 @@ export class AuthService {
         });
         this.logger.log(`Linked Google account to existing user: ${email}`);
       } else {
-        // 3. Create new user with new tenant
+        // No existing user - this is a new tenant owner registration via Google
+        // Create tenant and user together
         isNewUser = true;
         const slug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -701,7 +696,7 @@ export class AuthService {
           },
           include: { tenant: true },
         });
-        this.logger.log(`Created new user via Google OAuth: ${email}`);
+        this.logger.log(`Created new tenant owner via Google OAuth: ${email}`);
       }
     }
 

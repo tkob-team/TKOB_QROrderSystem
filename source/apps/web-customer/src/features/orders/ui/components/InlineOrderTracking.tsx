@@ -16,6 +16,7 @@ import type { OrderTrackingTimelineStep } from '../../data/tracking'
 interface InlineOrderTrackingProps {
   order: Order
   defaultExpanded?: boolean
+  onReview?: () => void
 }
 
 // Status to progress mapping (0-100)
@@ -51,7 +52,7 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelled',
 }
 
-export function InlineOrderTracking({ order, defaultExpanded = false }: InlineOrderTrackingProps) {
+export function InlineOrderTracking({ order, defaultExpanded = false, onReview }: InlineOrderTrackingProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const { session } = useSession()
   
@@ -276,6 +277,23 @@ export function InlineOrderTracking({ order, defaultExpanded = false }: InlineOr
               ${order.total.toFixed(2)}
             </span>
           </div>
+          
+          {/* Leave Review Button - Show when order is SERVED or COMPLETED */}
+          {(currentStatus === 'SERVED' || currentStatus === 'COMPLETED') && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onReview?.()
+              }}
+              className="w-full mt-3 py-2.5 rounded-lg text-sm font-semibold transition-all hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+              style={{ 
+                backgroundColor: 'var(--orange-500)',
+                color: 'white',
+              }}
+            >
+              ⭐ Leave Review
+            </button>
+          )}
         </div>
       )}
       

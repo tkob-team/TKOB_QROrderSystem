@@ -11,6 +11,7 @@ export class LoginDto {
   password: string;
 
   @ApiProperty({ example: 'Chrome 120 on MacOS', required: false })
+  @IsOptional()
   @IsString()
   deviceInfo?: string;
 }

@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MenuModule } from '../menu/menu.module';
 import { TenantModule } from '../tenant/tenant.module';
+import { AuthModule } from '../auth/auth.module';
 import { CartController } from './controllers/cart.controller';
 import { CartService } from './services/cart.service';
 import { TableModule } from '../table/table.module';
@@ -18,6 +19,7 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module';
     forwardRef(() => MenuModule),
     forwardRef(() => TableModule),
     TenantModule,
+    AuthModule,
     forwardRef(() => SubscriptionModule),
     PaymentConfigModule,
   ],

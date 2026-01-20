@@ -49,6 +49,7 @@ export class OrderService {
     tenantId: string,
     tableId: string,
     dto: CheckoutDto,
+    customerId?: string | null,
   ): Promise<OrderResponseDto> {
     // 0. Check if bill has been requested (locked session)
     const billRequested = await this.isSessionBillRequested(sessionId);
@@ -132,6 +133,7 @@ export class OrderService {
           tenantId,
           tableId,
           sessionId,
+          customerId: customerId || undefined, // Link order to customer if logged in
           customerName: dto.customerName,
           customerNotes: dto.customerNotes,
           status: initialStatus,
@@ -1649,5 +1651,75 @@ export class OrderService {
     });
 
     return orders.map((order) => this.toResponseDto(order));
+  }
+
+  /**
+   * Get order history for a logged-in customer
+   * Fetches ALL orders linked to this customer across all tenants/restaurants
+   * Also matches orders by customerName (email or fullName) for legacy orders
+   */
+  async getCustomerOrderHistory(
+    customerId: string,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ orders: OrderResponseDto[]; total: number }> {
+    this.logger.log(`[getCustomerOrderHistory] Fetching order history for customer ${customerId}`);
+    
+    // First, get customer info to match legacy orders by name/email
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { email: true, fullName: true },
+    });
+
+    if (!customer) {
+      this.logger.warn(`[getCustomerOrderHistory] Customer ${customerId} not found`);
+      return { orders: [], total: 0 };
+    }
+
+    // Build OR conditions to find orders:
+    // 1. Orders with customerId set (new orders)
+    // 2. Orders where customerName matches customer's email or fullName (legacy orders)
+    const whereCondition = {
+      OR: [
+        { customerId },
+        { customerName: customer.email },
+        { customerName: customer.fullName },
+      ],
+      status: {
+        notIn: [OrderStatus.CANCELLED],
+      },
+    };
+
+    // Query orders
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: whereCondition,
+        include: {
+          items: true,
+          table: {
+            select: { tableNumber: true },
+          },
+          tenant: {
+            select: { name: true },
+          },
+          bill: {
+            select: { billNumber: true, paymentStatus: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.order.count({
+        where: whereCondition,
+      }),
+    ]);
+
+    this.logger.log(`[getCustomerOrderHistory] Found ${orders.length} orders for customer ${customerId} (email: ${customer.email}, total: ${total})`);
+
+    return {
+      orders: orders.map((order) => this.toResponseDto(order)),
+      total,
+    };
   }
 }
