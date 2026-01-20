@@ -90,4 +90,4 @@ A: Không để `features/*` import từ `app/`, không để `shared/*` import 
 | 5 | Merge sau khi được approve |
 
 ---
-Last Updated: 2025-11-30
+Last Updated: 2026-01-20

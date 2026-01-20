@@ -63,10 +63,10 @@ Accept: application/json
 
 > **🔍 Source of Truth:** The Swagger UI auto-generated from code decorators is the authoritative API reference. This markdown document provides conceptual overviews and workflows.
 
-### 1.5. API Overview (Auto-derived from OpenAPI Spec)
+### 1.5. Swagger Tag Index (Source: Swagger UI)
 
 > **Source of Truth:** Live Swagger UI at `http://localhost:3000/api-docs`  
-> **Total Operations:** 142 endpoints across 23 tags  
+> **Total Operations:** ~140+ (currently ~142; see openapi.exported.json for exact count) across multiple tags (see spec for exact tag count)  
 > **Last Verified:** 2026-01-20 (from `openapi.exported.json`)
 
 **Operations by Category:**
@@ -367,7 +367,7 @@ _Đối với Super Admin: Không cần registry (liên hệ bên cung cấp s�
 2. **Context Injection**: `tenantId` được gán vào `Request Context` (ví dụ: `req.user.tenantId`).
 3. **Database Query**: Mọi query xuống Postgres **bắt buộc** phải có mệnh đề `WHERE tenant_id = ...`. Sử dụng chiến lược Defense in Depth với 2 lớp bảo vệ:
     - Application Logic: Middleware của ORM sẽ tự động chèn điều kiện `WHERE tenant_id = <current_tenant>` vào tất cả các câu lệnh `find`, `update`, `delete` trước khi gửi xuống DB.
-    - Database RLS (Row-Level Security): Ngay cả khi tầng Application có lỗi (bug ở middleware, quên filter), Database sẽ chặn truy cập nếu`tenant_id` của dòng dữ liệu không khớp với session context hiện tại.
+    - (Optional/Planned) Database RLS (Row-Level Security): Ngay cả khi tầng Application có lỗi (bug ở middleware, quên filter), Database sẽ chặn truy cập nếu`tenant_id` của dòng dữ liệu không khớp với session context hiện tại.
 
 ## 3. Error Handling
 
@@ -471,7 +471,7 @@ X-RateLimit-Reset: 1704960060
 /api/v1/tenants
 ```
 
-### 1. Get Current Tenant Info
+### 5.1. Get Current Tenant Info
 
 ```
 GET /api/v1/tenants/me
@@ -643,9 +643,9 @@ Content-Type: application/json
 
 ---
 
-### 5.5. Configure Payment - Stripe Integration (Onboarding Step 4)
+### 5.5. Configure Payment Config (Onboarding Step 4 - Planned: Stripe)
 
-Dành cho bảng `TENANT_PAYMENT_CONFIG`. API này liên kết tài khoản Stripe của nhà hàng để nhận tiền.
+Dành cho bảng `TENANT_PAYMENT_CONFIG`. API này dự kiến liên kết tài khoản thanh toán (ví dụ: Stripe) của nhà hàng để nhận tiền.
 
 ```json
 PATCH /api/v1/tenants/payment-config
@@ -802,7 +802,7 @@ cd source/apps/web-customer && pnpm orval
 > **Module:** `SubscriptionModule` - Location: `source/apps/api/src/modules/subscription/`
 
 ### Overview
-Subscription management system supporting multi-tier plans (FREE, STARTER, PRO) with feature limits and usage tracking. Handles subscription upgrades via SePay payment gateway.
+Subscription management system supporting multi-tier plans (FREE, BASIC, PREMIUM) with feature limits and usage tracking. Handles subscription upgrades via SePay payment gateway.
 
 ### Base Path
 ```
@@ -811,7 +811,7 @@ Subscription management system supporting multi-tier plans (FREE, STARTER, PRO) 
 
 ### Endpoints
 
-#### 6.1. Get All Subscription Plans
+#### 8.1. Get All Subscription Plans
 ```http
 GET /api/v1/subscription/plans
 ```
@@ -819,7 +819,7 @@ GET /api/v1/subscription/plans
 - **Description:** Retrieve all available subscription tiers with pricing and feature details
 - **Controller:** `PublicSubscriptionController.getPlans()`
 
-#### 6.2. Get Current Tenant Subscription
+#### 8.2. Get Current Tenant Subscription
 ```http
 GET /api/v1/admin/subscription/current
 Authorization: Bearer {accessToken}
@@ -829,7 +829,7 @@ Authorization: Bearer {accessToken}
 - **Returns:** Current subscription tier, status, usage stats, and limits
 - **Controller:** `SubscriptionController.getCurrentSubscription()`
 
-#### 6.3. Get Usage Statistics
+#### 8.3. Get Usage Statistics
 ```http
 GET /api/v1/admin/subscription/usage
 Authorization: Bearer {accessToken}
@@ -838,7 +838,7 @@ Authorization: Bearer {accessToken}
 - **Returns:** Current usage vs limits for tables, menu items, orders/month, staff members
 - **Controller:** `SubscriptionController.getUsage()`
 
-#### 6.4. Check Action Limit
+#### 8.4. Check Action Limit
 ```http
 POST /api/v1/admin/subscription/check-limit
 Authorization: Bearer {accessToken}
@@ -852,14 +852,14 @@ Content-Type: application/json
 - **Description:** Check if tenant can perform an action based on subscription limits
 - **Controller:** `SubscriptionController.checkLimit()`
 
-#### 6.5. Create Upgrade Payment
+#### 8.5. Create Upgrade Payment
 ```http
 POST /api/v1/admin/subscription/upgrade
 Authorization: Bearer {accessToken}
 Content-Type: application/json
 
 {
-  "targetTier": "STARTER" | "PRO",
+  "targetTier": "BASIC" | "PREMIUM",
   "billingCycle": "MONTHLY" | "YEARLY"
 }
 ```
@@ -867,7 +867,7 @@ Content-Type: application/json
 - **Description:** Create SePay payment intent for subscription upgrade. Returns QR code for payment.
 - **Controller:** `SubscriptionController.createUpgradePayment()`
 
-#### 6.6. Check Upgrade Payment Status
+#### 8.6. Check Upgrade Payment Status
 ```http
 GET /api/v1/admin/subscription/upgrade/{paymentId}/status
 Authorization: Bearer {accessToken}
@@ -894,7 +894,7 @@ Staff invitation and management system. Supports email-based invitations with ti
 
 ### Endpoints
 
-#### 7.1. Invite Staff Member
+#### 9.1. Invite Staff Member
 ```http
 POST /api/v1/admin/staff/invite
 Authorization: Bearer {accessToken}
@@ -911,7 +911,7 @@ Content-Type: application/json
 - **Description:** Send email invitation with unique token
 - **Controller:** `StaffController.inviteStaff()`
 
-#### 7.2. List Staff Members
+#### 9.2. List Staff Members
 ```http
 GET /api/v1/admin/staff
 Authorization: Bearer {accessToken}
@@ -921,7 +921,7 @@ Authorization: Bearer {accessToken}
 - **Returns:** All active staff members for the tenant
 - **Controller:** `StaffController.listStaff()`
 
-#### 7.3. List Pending Invitations
+#### 9.3. List Pending Invitations
 ```http
 GET /api/v1/admin/staff/invitations
 Authorization: Bearer {accessToken}
@@ -931,7 +931,7 @@ Authorization: Bearer {accessToken}
 - **Returns:** Pending (unused) staff invitations
 - **Controller:** `StaffController.listPendingInvitations()`
 
-#### 7.4. Update Staff Role
+#### 9.4. Update Staff Role
 ```http
 PATCH /api/v1/admin/staff/{staffId}/role
 Authorization: Bearer {accessToken}
@@ -946,7 +946,7 @@ Content-Type: application/json
 - **Description:** Change staff member's role
 - **Controller:** `StaffController.updateStaffRole()` (exists in controller lines 99+)
 
-#### 7.5. Remove Staff Member
+#### 9.5. Remove Staff Member
 ```http
 DELETE /api/v1/admin/staff/{staffId}
 Authorization: Bearer {accessToken}
@@ -955,7 +955,7 @@ Authorization: Bearer {accessToken}
 - **Roles:** OWNER only
 - **Controller:** `StaffController.removeStaff()` (exists in controller)
 
-#### 7.6. Accept Invitation (Public)
+#### 9.6. Accept Invitation (Public)
 ```http
 POST /api/v1/staff/accept-invite
 Content-Type: application/json
@@ -988,7 +988,7 @@ Bill aggregation for tables. Groups multiple orders into a single bill for payme
 
 ### Endpoints
 
-#### 8.1. Get All Bills
+#### 10.1. Get All Bills
 ```http
 GET /api/v1/admin/bills?tableId={tableId}&paymentStatus={status}&startDate={date}&endDate={date}
 Authorization: Bearer {accessToken}
@@ -1002,7 +1002,7 @@ Authorization: Bearer {accessToken}
   - `endDate` (optional): ISO date
 - **Controller:** `BillController.getBills()`
 
-#### 8.2. Get Bill by ID
+#### 10.2. Get Bill by ID
 ```http
 GET /api/v1/admin/bills/{billId}
 Authorization: Bearer {accessToken}
@@ -1012,7 +1012,7 @@ Authorization: Bearer {accessToken}
 - **Returns:** Detailed bill with all associated orders
 - **Controller:** `BillController.getBillById()`
 
-#### 8.3. Create Bill (Implicit)
+#### 10.3. Create Bill (Implicit)
 Bills are typically created via order workflows. Check OrderModule for bill creation endpoints related to table checkout.
 
 **Evidence:** `source/apps/api/src/modules/order/controllers/bill.controller.ts`
@@ -1028,7 +1028,7 @@ Customer review system for menu items and orders. Supports 5-star ratings and te
 
 ### Endpoints
 
-#### 9.1. Create/Update Review (Customer)
+#### 11.1. Create/Update Review (Customer)
 ```http
 POST /api/v1/orders/{orderId}/items/{itemId}/review?sessionId={sessionId}&tenantId={tenantId}
 Content-Type: application/json
@@ -1042,7 +1042,7 @@ Content-Type: application/json
 - **Description:** Customer reviews a specific order item
 - **Controller:** `ReviewController.createReview()`
 
-#### 9.2. Get Order Reviews
+#### 11.2. Get Order Reviews
 ```http
 GET /api/v1/orders/{orderId}/reviews?tenantId={tenantId}
 ```
@@ -1050,7 +1050,7 @@ GET /api/v1/orders/{orderId}/reviews?tenantId={tenantId}
 - **Returns:** All reviews for an order with summary statistics
 - **Controller:** `ReviewController.getOrderReviews()`
 
-#### 9.3. Get Menu Item Reviews
+#### 11.3. Get Menu Item Reviews
 ```http
 GET /api/v1/menu-items/{menuItemId}/reviews?tenantId={tenantId}
 ```
@@ -1058,7 +1058,7 @@ GET /api/v1/menu-items/{menuItemId}/reviews?tenantId={tenantId}
 - **Returns:** Review statistics for a specific menu item (average rating, count)
 - **Controller:** `ReviewController.getMenuItemReviews()`
 
-#### 9.4. Get Tenant Review Stats (Admin)
+#### 11.4. Get Tenant Review Stats (Admin)
 ```http
 GET /api/v1/admin/reviews/stats
 Authorization: Bearer {accessToken}
@@ -1086,7 +1086,7 @@ Discount code management system. Supports percentage and fixed-amount discounts 
 
 ### Endpoints
 
-#### 10.1. Create Promotion
+#### 12.1. Create Promotion
 ```http
 POST /api/v1/admin/promotions
 Authorization: Bearer {accessToken}
@@ -1108,7 +1108,7 @@ Content-Type: application/json
 - **Guards:** `FeatureGuard` - requires "promotions" feature in subscription
 - **Controller:** `PromotionController.createPromotion()`
 
-#### 10.2. List Promotions
+#### 12.2. List Promotions
 ```http
 GET /api/v1/admin/promotions?active={true|false}
 Authorization: Bearer {accessToken}
@@ -1117,7 +1117,7 @@ Authorization: Bearer {accessToken}
 - **Roles:** OWNER, STAFF
 - **Controller:** `PromotionController.getPromotions()`
 
-#### 10.3. Get Promotion Details
+#### 12.3. Get Promotion Details
 ```http
 GET /api/v1/admin/promotions/{promotionId}
 Authorization: Bearer {accessToken}
@@ -1126,7 +1126,7 @@ Authorization: Bearer {accessToken}
 - **Roles:** OWNER, STAFF
 - **Controller:** `PromotionController.getPromotion()`
 
-#### 10.4. Update Promotion
+#### 12.4. Update Promotion
 ```http
 PUT /api/v1/admin/promotions/{promotionId}
 Authorization: Bearer {accessToken}
@@ -1142,7 +1142,7 @@ Content-Type: application/json
 - **Guards:** `FeatureGuard`
 - **Controller:** `PromotionController.updatePromotion()`
 
-#### 10.5. Delete Promotion
+#### 12.5. Delete Promotion
 ```http
 DELETE /api/v1/admin/promotions/{promotionId}
 Authorization: Bearer {accessToken}

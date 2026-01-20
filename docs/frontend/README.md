@@ -1,7 +1,7 @@
 # Frontend Documentation
 
 **Project:** TKOB_QROrderSystem  
-**Tech Stack:** Next.js 15, React 19, TypeScript, TailwindCSS v4  
+**Tech Stack:** Next.js 15, React (⏳ ADD HERE: verify version in source/apps/*/package.json), TypeScript, TailwindCSS (⏳ ADD HERE: verify version in source/apps/*/package.json)  
 **Architecture:** Monorepo with 2 Apps (web-tenant, web-customer)
 
 ## Overview
@@ -25,22 +25,24 @@ The frontend consists of **two distinct Next.js 15 applications** in a pnpm work
 pnpm install
 
 # Run web-tenant (Admin Portal)
-pnpm --filter web-tenant dev
-# Access: http://localhost:3002
-# (verified: source/apps/web-tenant/package.json line 6)
+cd source/apps/web-tenant
+pnpm dev
+# Port: 3002 (verify in source/apps/web-tenant/package.json dev script)
 
-# Run web-customer (Customer App)
-pnpm --filter web-customer dev
-# Access: http://localhost:3001
-# (verified: source/apps/web-customer/package.json line 6)
+# Run web-customer (Customer App) - in separate terminal
+cd source/apps/web-customer
+pnpm dev
+# Port: 3001 (verify in source/apps/web-customer/package.json dev script)
 ```
 
 ## Documentation Structure
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete architectural guide covering both apps, monorepo structure, Clean Architecture layers, routing patterns, and key flows
 - **[RBAC_GUIDE.md](./RBAC_GUIDE.md)** - Role-based access control for web-tenant
+- **[ORVAL.md](./ORVAL.md)** - API code generation with Orval (TypeScript client + React Query hooks)
 - **[guide/](./guide/)** - Developer guides (onboarding, patterns, Next.js 15 App Router, feature implementation examples)
 - **[web-customer/README.md](./web-customer/README.md)** - Web-customer specific details (see below)
+- **[web-tenant/README.md](./web-tenant/README.md)** - Web-tenant specific details (⏳ ADD HERE: create if doesn't exist)
 
 ## App-Specific Details
 
@@ -55,7 +57,7 @@ For web-customer implementation details, see [web-customer/README.md](./web-cust
 
 ### Web-Tenant App
 
-For web-tenant implementation details, see [ARCHITECTURE.md](./ARCHITECTURE.md) and [RBAC_GUIDE.md](./RBAC_GUIDE.md):
+For web-tenant implementation details, see [web-tenant/README.md](./web-tenant/README.md), [ARCHITECTURE.md](./ARCHITECTURE.md), and [RBAC_GUIDE.md](./RBAC_GUIDE.md):
 - Feature modules (auth, dashboard, menu-management, order-management, staff, tables)
 - Role-based route guards
 - Admin layout and navigation
@@ -73,3 +75,6 @@ Các tài liệu chi tiết nằm trong thư mục `docs/frontend/guide/` giúp 
 | [guide/FEATURE_IMPLEMENTATION_GUIDE.md](./guide/FEATURE_IMPLEMENTATION_GUIDE.md) | Ví dụ triển khai Analytics Dashboard |
 
 Liên kết nhanh: [Guide Index](./guide/README.md) · [Checklist](./guide/ONBOARDING_CHECKLIST.md) · [App Router](./guide/NEXTJS_15_APP_ROUTER_GUIDE.md) · [Patterns](./guide/PATTERNS_AND_CONVENTIONS.md) · [Feature Example](./guide/FEATURE_IMPLEMENTATION_GUIDE.md) · [Architecture](./ARCHITECTURE.md)
+
+---
+**Last Updated:** 2026-01-20

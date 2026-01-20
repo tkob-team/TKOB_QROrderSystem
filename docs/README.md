@@ -13,13 +13,13 @@
 1. [System Architecture](common/ARCHITECTURE.md#0-implementation-status) - **Section 0** lists what's implemented vs planned (evidence-based)
 2. [User Guide](common/USER_GUIDE.md) - User roles, features, and usage flows
 3. [Database Schema Overview](backend/database/description.md#1-schema-overview) - Multi-tenant design and domain models
-4. [API Overview](common/OPENAPI.md#15-swagger-tag-index-source-swagger-ui) - Approx. 142 REST endpoints across 12 API tags
+4. [API Overview](common/OPENAPI.md#15-swagger-tag-index-source-swagger-ui) - ~140+ REST operations across multiple API tags (see openapi.exported.json for exact count)
 
 **Quick Stats** (Based on OpenAPI export and Prisma schema):
 - **3 applications**: API service (NestJS), Web Tenant Dashboard (Next.js 15), Web Customer App (Next.js 15)
 - **Approx. 17 implemented modules**: Auth, Menu, Orders, Payments (SePay), KDS, Subscriptions, Staff, Analytics, etc.
 - **24 database tables**: See [Database Documentation Index](backend/database/README.md)
-- **Approx. 140+ API endpoints**: Documented in [openapi.exported.json](common/openapi.exported.json) (122KB)
+- **~140+ API operations**: Documented in [openapi.exported.json](common/openapi.exported.json) (see file for exact count)
 - **20+ migrations**: Full migration history in database docs
 
 ### Demos and Screenshots
@@ -30,7 +30,7 @@ ADD HERE - Please provide:
   - Tenant Owner: `owner@example.com` / `password123`
   - Staff: `staff@example.com` / `password123`
   - Kitchen: `kitchen@example.com` / `password123`
-- Screenshots folder: `docs/screenshots/` (landing, menu, cart, checkout, dashboard, KDS, etc.)
+- Screenshots folder (if provided): `docs/screenshots/` (landing, menu, cart, checkout, dashboard, KDS, etc.)
 - Demo video: YouTube/Google Drive link
 
 ### What is Implemented vs Planned
@@ -58,7 +58,7 @@ ADD HERE - Please provide:
 - Inventory management
 - Multi-location support
 - Native mobile apps
-- Redis caching (module exists but not used)
+- General Redis caching (Redis may be used for OTP/registration flow only)
 - Production deployment (currently dev-only)
 
 ---
@@ -68,7 +68,7 @@ ADD HERE - Please provide:
 ### Setup Guides
 
 - [Development Environment Setup](common/SETUP.md) - **Complete guide**:
-  - Prerequisites (Node.js 20+, Docker, pnpm)
+  - Prerequisites (Node.js 18+ (20 LTS recommended), Docker, pnpm)
   - Clone repository and install dependencies
   - Environment variables configuration
   - Database setup (Docker Compose)
@@ -86,7 +86,7 @@ ADD HERE - Please provide:
   - All API modules documented (Tenants, Menu, Orders, Payments, etc.)
   
 - **[OpenAPI Specification](common/openapi.exported.json)** - Machine-readable API spec (122KB):
-  - 142 endpoints across 12 API tags
+  - ~140+ operations (currently ~142; see openapi.exported.json for exact count) across ~20+ tags
   - Request/response schemas
   - Authentication requirements
   - OpenAPI 3.0 format
@@ -148,7 +148,6 @@ ADD HERE - Please provide:
   - State management (React Query + Zustand)
   
 - **[Frontend Guides](frontend/guide/)** - Developer guides:
-  - [Architecture Summary](frontend/guide/ARCHITECTURE_SUMMARY.md)
   - [Feature Implementation Guide](frontend/guide/FEATURE_IMPLEMENTATION_GUIDE.md)
   - [Next.js 15 App Router Guide](frontend/guide/NEXTJS_15_APP_ROUTER_GUIDE.md)
   - [Patterns and Conventions](frontend/guide/PATTERNS_AND_CONVENTIONS.md)
@@ -184,11 +183,12 @@ ADD HERE - Please provide:
 ```
 docs/
 ├── README.md                          # This file (grader entrypoint)
+├── screenshots/ (optional)            # Demo screenshots (if provided)
 │
 ├── common/                            # Cross-cutting documentation
 │   ├── ARCHITECTURE.md                # System architecture + implementation status
 │   ├── OPENAPI.md                     # API documentation overview
-│   ├── openapi.exported.json          # OpenAPI 3.0 spec (122KB, 150+ endpoints)
+│   ├── openapi.exported.json          # OpenAPI 3.0 spec (122KB, ~140+ operations)
 │   ├── USER_GUIDE.md                  # User documentation (all roles)
 │   ├── SETUP.md                       # Development environment setup
 │   ├── CONTRIBUTING.md                # Git workflow and team conventions
@@ -204,22 +204,16 @@ docs/
 │       ├── description.md             # Complete schema (24 models, 12 domains)
 │       └── er_diagram.md              # Entity-relationship diagram
 │
-├── frontend/                          # Frontend-specific documentation
-│   ├── README.md                      # Frontend overview (Next.js 15)
-│   ├── ARCHITECTURE.md                # Frontend architecture
-│   ├── ORVAL.md                       # API client code generation
-│   ├── RBAC_GUIDE.md                  # Role-based access control
-│   └── guide/                         # Developer guides
-│       ├── ARCHITECTURE_SUMMARY.md    # Architecture summary
-│       ├── FEATURE_IMPLEMENTATION_GUIDE.md
-│       ├── NEXTJS_15_APP_ROUTER_GUIDE.md
-│       ├── PATTERNS_AND_CONVENTIONS.md
-│       └── ONBOARDING_CHECKLIST.md
-│
-└── report/                            # Official reports (assignment deliverables)
-    ├── ARCHITECTURE_FINAL_CONSISTENCY_REPORT.md
-    ├── DATABASE_DOCS_UPDATE_REPORT.md
-    └── DATABASE_DOCS_CLEANUP_REPORT.md
+└── frontend/                          # Frontend-specific documentation
+    ├── README.md                      # Frontend overview (Next.js 15)
+    ├── ARCHITECTURE.md                # Frontend architecture
+    ├── ORVAL.md                       # API client code generation
+    ├── RBAC_GUIDE.md                  # Role-based access control
+    └── guide/                         # Developer guides
+        ├── FEATURE_IMPLEMENTATION_GUIDE.md
+        ├── NEXTJS_15_APP_ROUTER_GUIDE.md
+        ├── PATTERNS_AND_CONVENTIONS.md
+        └── ONBOARDING_CHECKLIST.md
 ```
 
 ---
@@ -231,7 +225,7 @@ docs/
 | Requirement | Status | Document Reference |
 |-------------|--------|-------------------|
 | **Setup Instructions** | ✅ Complete | [SETUP.md](common/SETUP.md) - Prerequisites, dependencies, environment config, Docker setup, dev server commands |
-| **API Endpoints** | ✅ Complete | [OPENAPI.md](common/OPENAPI.md) + [openapi.exported.json](common/openapi.exported.json) - 150+ endpoints documented |
+| **API Endpoints** | ✅ Complete | [OPENAPI.md](common/OPENAPI.md) + [openapi.exported.json](common/openapi.exported.json) - ~140+ operations (see openapi.exported.json for exact count) |
 | **Database Design** | ✅ Complete | [Database Docs](backend/database/) - Schema description (24 models), ER diagram, migration history |
 | **System Architecture** | ✅ Complete | [ARCHITECTURE.md](common/ARCHITECTURE.md) - Layered architecture, tech stack, data flows, deployment |
 | **User Guide** | ✅ Complete | [USER_GUIDE.md](common/USER_GUIDE.md) - All user roles (Customer, Owner, Staff, Kitchen) |
@@ -268,7 +262,7 @@ docs/
 ### I'm Setting Up Locally
 1. Read: [SETUP.md](common/SETUP.md)
 2. Check: [Database Quick Start](backend/database/README.md#quick-start)
-3. Troubleshoot: [SETUP.md Section 12](common/SETUP.md#12-troubleshooting)
+3. Troubleshoot: [SETUP.md Section 11](common/SETUP.md#11-troubleshooting)
 
 ### I'm Integrating with the API
 1. Review: [OPENAPI.md](common/OPENAPI.md)

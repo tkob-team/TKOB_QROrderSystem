@@ -53,8 +53,10 @@ app/
 - Dùng state, effect, event handlers, browser APIs
 - Chỉ import từ Server Components nếu server component không phụ thuộc client logic
 
+**Example patterns:**
 ```tsx
 // Server component (không cần 'use client')
+// ⏳ ADD HERE: Verify API_URL env var in .env.example
 export default async function AdminPage() {
   const data = await fetch(process.env.API_URL + '/stats', { cache: 'no-store' }).then(r => r.json());
   return <StatsView data={data} />; // StatsView có thể là client hoặc server component
@@ -76,7 +78,9 @@ export function Toggle() {
 
 ## 4. Data Fetching Patterns
 ### Trong Server Component
+**Example (pseudo-code):**
 ```tsx
+// ⏳ ADD HERE: Verify API_URL env var and endpoint paths in OpenAPI docs
 export default async function MenuPage({ params }) {
   const menu = await fetch(process.env.API_URL + `/tenants/${params.tenantId}/menu`, {
     cache: 'no-store'
@@ -90,7 +94,9 @@ export default async function MenuPage({ params }) {
 - `{ next: { revalidate: 3600 } }`: ISR (revalidate sau X giây)
 
 ### Trong Client Component (React Query + Axios)
+**Example pattern:**
 ```tsx
+// ⏳ ADD HERE: Verify apiClient path and endpoint in OpenAPI docs
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api/client';
@@ -204,7 +210,7 @@ export const config = {
 |------|-------|---------|
 | Server-only | `API_URL` | fetch trong Server Components |
 | Client-exposed | `NEXT_PUBLIC_API_URL` | Axios / React Query |
-
+**⏳ ADD HERE:** Verify actual environment variable names in source/apps/web-tenant/.env.example and source/apps/web-customer/.env.example
 Quy tắc:
 - Không lộ secret KEY ở client
 - Dùng `process.env.NEXT_PUBLIC_*` trong client code, `process.env.*` trong server component
@@ -212,7 +218,9 @@ Quy tắc:
 
 ## 9. RBAC & Guards (Tổng Quan Nhanh)
 - Trang trong `admin/` luôn được bọc bởi guard component hoặc middleware redirect
-- Client guard: `<RoleGuard allowedRoles={["tenant-admin","manager"]}>...</RoleGuard>`
+- Client guard example: `<RoleGuard allowedRoles={["OWNER","STAFF"]}>...</RoleGuard>`
+  - **Note:** Canonical roles are OWNER, STAFF, KITCHEN (see docs/frontend/RBAC_GUIDE.md)
+  - ⏳ ADD HERE: Verify actual RoleGuard implementation and role enum mapping
 - Middleware bảo đảm người không hợp lệ sẽ bị chuyển hướng trước khi render
 
 ## 10. Best Practices (Dự Án)
@@ -258,4 +266,4 @@ A: Không, React Query là client-state library.
 - `./ONBOARDING_CHECKLIST.md` – Checklist vào dự án
 
 ---
-Last Updated: 2025-11-30
+Last Updated: 2026-01-20

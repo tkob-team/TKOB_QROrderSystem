@@ -3,7 +3,7 @@
 - **Version**: 3.0
 - **Last Updated**: 2026-01-20
 - **Database**: PostgreSQL with Prisma ORM
-- **Migrations**: 20+ migrations applied (see [migrations folder](../../../source/apps/api/prisma/migrations/))
+- **Migrations**: 21 migrations applied (as of 2026-01-20) (see [migrations folder](../../../source/apps/api/prisma/migrations/))
 
 ---
 
@@ -759,8 +759,8 @@
 - `INACTIVE` - Table out of service
 
 ### OrderStatus
-- `PENDING` - Awaiting payment confirmation
-- `RECEIVED` - Order confirmed (paid or bill-to-table)
+- `PENDING` - Order created, waiting for staff/kitchen acknowledgement
+- `RECEIVED` - Kitchen acknowledged order
 - `PREPARING` - Kitchen preparing food
 - `READY` - Food ready to serve
 - `SERVED` - Food delivered to table

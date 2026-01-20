@@ -12,7 +12,7 @@
 
 **Related Documentation:**
 - [Setup Guide](./SETUP.md) - Installation and development environment setup (ports: API 3000, Customer 3001, Tenant 3002)
-- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (150+ endpoints)
+- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (~140+ operations; see openapi.exported.json for exact count)
 - [User Guide](./USER_GUIDE.md) - End-user documentation for all roles
 - [Database Schema](../backend/database/description.md) - Detailed schema documentation
 - [ER Diagram](../backend/database/er_diagram.md) - Entity relationship diagram
@@ -41,7 +41,7 @@
 ### 0.1. Implemented in Current Version (Evidence-Based)
 
 **Applications Deployed:**
-- ✅ **API Service** (`source/apps/api`) - NestJS backend with 150+ REST endpoints
+- ✅ **API Service** (`source/apps/api`) - NestJS backend with ~140+ REST operations (see openapi.exported.json)
 - ✅ **Web Tenant Dashboard** (`source/apps/web-tenant`) - Next.js 15 admin/staff/kitchen interface
 - ✅ **Web Customer App** (`source/apps/web-customer`) - Next.js 15 customer ordering interface
 
@@ -70,7 +70,7 @@
 **Database:**
 - ✅ **PostgreSQL** with Prisma ORM
 - ✅ Multi-tenant isolation via `tenantId` field (application-level)
-- ✅ 20+ migrations applied (see `prisma/migrations/`)
+- ✅ 21 migrations applied (as of 2026-01-20) (see `prisma/migrations/`)
 
 **Authentication & Security:**
 - ✅ JWT bearer tokens with refresh mechanism
@@ -80,7 +80,7 @@
 
 **API Documentation:**
 - ✅ Full OpenAPI 3.0 spec: [openapi.exported.json](./openapi.exported.json)
-- ✅ 150+ documented endpoints across 20 API tags
+- ✅ ~140+ documented operations across multiple API tags (see openapi.exported.json for exact count)
 - ✅ See also: [OPENAPI.md](./OPENAPI.md)
 
 **User Documentation:**
@@ -575,28 +575,39 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 ### 3.2. Order State Transition Flow
 
 ```
-Customer Order → [Received]
+Customer Order → [PENDING]
                       │
-                      │ Kitchen accepts
+                      │ Kitchen acknowledges
                       ↓
-                  [Preparing]
+                  [RECEIVED]
+                      │
+                      │ Kitchen starts preparation
+                      ↓
+                  [PREPARING]
                       │
                       │ Kitchen completes
                       ↓
-                   [Ready]
+                   [READY]
                       │
                       │ Waiter delivers
                       ↓
-                   [Served]
+                   [SERVED]
                       │
-                      │ Customer pays
+                      │ Customer finishes
                       ↓
-                   [Closed]
+                 [COMPLETED]
+                      │
+                      │ Payment processed
+                      ↓
+                   [PAID]
+
+Alternative flow at any point before SERVED:
+  - Order can transition to [CANCELLED]
 
 Each transition:
-  - Logged in audit_logs
+  - Logged in order_status_history
   - Timestamp recorded
-  - Actor identified (userId)
+  - Actor identified (userId or system)
   - WebSocket event emitted
 ```
 
@@ -917,7 +928,7 @@ Deployment
 | Runtime | **Node.js 20+** | ✅ Implemented |
 | Framework | **NestJS** | ✅ Implemented |
 | Language | **TypeScript** | ✅ Implemented |
-| API Docs | **OpenAPI 3.0 (Swagger)** - 150+ endpoints | ✅ Implemented |
+| API Docs | **OpenAPI 3.0 (Swagger)** - ~140+ operations (see openapi.exported.json) | ✅ Implemented |
 | Validation | **class-validator + class-transformer** | ✅ Implemented |
 | ORM | **Prisma** | ✅ Implemented |
 | File Upload | **Multer** | ✅ Implemented |
@@ -1048,7 +1059,7 @@ Deployment
 ## 12. Tài liệu Tham khảo
 
 ### 12.1. Internal Docs
-- ✅ [OpenAPI Specification](./openapi.exported.json) - Full API spec with 150+ endpoints
+- ✅ [OpenAPI Specification](./openapi.exported.json) - Full API spec with ~140+ operations (exact count in file)
 - ✅ [OpenAPI Documentation](./OPENAPI.md) - API usage guide
 - ✅ [User Guide](./USER_GUIDE.md) - End-user manual for all roles
 - ✅ [Database Schema](../backend/database/description.md) - Prisma schema documentation

@@ -4,16 +4,16 @@
 
 - **Version**: 2.0
 - **Last Updated**: 2026-01-20
-- **Prerequisites**: Node.js 18+, Docker, pnpm 8+
+- **Prerequisites**: Node.js 18+ (20 LTS recommended), Docker, pnpm 8+
 
 ---
 
 ## Quick Start (5 Minutes)
 
 ```bash
-# 1. Install prerequisites: Node.js 18+, pnpm 8+, Docker
+# 1. Install prerequisites: Node.js 18+ (20 LTS recommended), pnpm 8+, Docker
 # 2. Clone repository
-git clone ADD_HERE (example: git@github.com:your-org/TKOB_QROrderSystem.git)
+git clone TBD (repository URL)
 cd TKOB_QROrderSystem
 
 # 3. Install dependencies
@@ -23,14 +23,20 @@ pnpm install
 cd source/docker
 docker compose up -d
 
-# 5. Setup database (from api directory)
+# 5. Setup database
 cd ../apps/api
 cp .env.example .env
 # Edit .env with your configuration
+pnpm db:generate
 pnpm db:migrate
 # Optional: pnpm db:reset (seeds subscription plans)
 
-# 6. Start development servers
+cd ../../..  # back to repo root
+```
+
+**Stop here.** Now open 3 separate terminals from the repo root for the services below.
+
+```bash
 # Terminal 1 - API (port 3000)
 cd source/apps/api
 pnpm start:dev
@@ -45,7 +51,7 @@ cd source/apps/web-tenant
 cp .env.example .env
 pnpm dev
 
-# 7. Verify
+# Verify
 # API: http://localhost:3000/health
 # Swagger: http://localhost:3000/api-docs
 # Customer: http://localhost:3001
@@ -83,8 +89,8 @@ pnpm dev
 
 ### Software Prerequisites
 
-- **Node.js**: >= 18.0.0 (verified in package.json: `engines.node`)
-- **pnpm**: >= 8.0.0 (package manager: `pnpm@10.23.0`)
+- **Node.js**: >= 18.0.0 (20 LTS recommended)
+- **pnpm**: >= 8 (tested with pnpm 10.x)
 - **Docker**: >= 24.x with Docker Compose
 - **Git**: >= 2.30
 
@@ -106,7 +112,7 @@ nvm alias default 20
 # Windows: Download nvm-windows from GitHub
 # https://github.com/coreybutler/nvm-windows/releases
 
-# Verify
+# Verify (Node.js 18+ required, 20 LTS recommended)
 node --version  # v18.x.x or v20.x.x
 npm --version
 ```
@@ -151,7 +157,7 @@ docker compose version
 
 ```bash
 # Clone repository
-git clone ADD_HERE (example: git@github.com:your-org/TKOB_QROrderSystem.git)
+git clone TBD (repository URL)
 cd TKOB_QROrderSystem
 
 # Verify workspace structure
@@ -228,9 +234,10 @@ LOG_LEVEL=debug
 NODE_ENV=development
 
 # JWT
-JWT_SECRET=ADD_HERE (example: your-secret-key-min-32-chars)
+JWT_SECRET=your-secret-key-min-32-chars-CHANGE-THIS
 JWT_ACCESS_TOKEN_EXPIRES_IN=1h
 JWT_REFRESH_TOKEN_EXPIRES_IN=7d
+# NOTE: Set a strong secret (min 32 characters) for production
 
 # Redis
 REDIS_HOST=localhost
@@ -240,8 +247,9 @@ REDIS_DB=0
 
 # Email (SendGrid)
 EMAIL_PROVIDER=sendgrid
-SENDGRID_API_KEY=ADD_HERE (optional for dev)
-EMAIL_FROM=ADD_HERE (example: noreply@yourdomain.com)
+SENDGRID_API_KEY=optional-for-dev
+EMAIL_FROM=noreply@localhost
+# NOTE: Set real credentials for production email functionality
 
 # Storage
 STORAGE_DRIVER=local
@@ -283,14 +291,14 @@ NEXT_PUBLIC_CUSTOMER_APP_URL=http://localhost:3001
 # App
 NEXT_PUBLIC_APP_NAME=TKOB Tenant
 
-# Auth
-JWT_SECRET=ADD_HERE (same as API JWT_SECRET)
-
-# WebSocket (optional)
+# WebSocket (optional - verify actual path in backend implementation)
 NEXT_PUBLIC_WS_URL=ws://localhost:3000
 
 # Logging (dev only)
 NEXT_PUBLIC_USE_LOGGING=false
+
+# Note: Frontend uses access tokens issued by API
+# No JWT_SECRET needed in frontend environment
 ```
 
 ---
@@ -380,7 +388,7 @@ pnpm start:dev
 
 # Runs on: http://localhost:3000
 # API prefix: /api/v1
-# Swagger: http://localhost:3000/api-docs (from main.ts line 102: SwaggerModule.setup('api-docs', ...))
+# Swagger: http://localhost:3000/api-docs (see source/apps/api/src/main.ts: SwaggerModule.setup('api-docs', ...))
 ```
 
 **Terminal 2 - Customer App**:
@@ -409,7 +417,7 @@ pnpm dev
 ```bash
 curl http://localhost:3000/health
 
-# Note: /health is excluded from /api/v1 prefix (see main.ts line 34: exclude: ['/health', '/'])
+# Note: /health is excluded from /api/v1 prefix (see source/apps/api/src/main.ts - global prefix excludes /health and /)
 # Expected: {"status":"ok","timestamp":"..."}
 ```
 
@@ -430,12 +438,14 @@ docker exec -it qr-redis-dev redis-cli ping
 | **Backend API** | http://localhost:3000 | N/A |
 | **Swagger UI** | http://localhost:3000/api-docs | N/A |
 | **Customer App** | http://localhost:3001 | No login required |
-| **Tenant Dashboard** | http://localhost:3002 | ADD_HERE (create via API) |
+| **Tenant Dashboard** | http://localhost:3002 | Create via Auth API (see endpoints below) |
 | **Prisma Studio** | http://localhost:5555 | Run `pnpm db:studio` first |
 
 **Note**: No demo credentials are seeded. You must:
 1. Register a tenant via API: `POST /api/v1/auth/register/submit` → `POST /api/v1/auth/register/confirm`
 2. Login via: `POST /api/v1/auth/login`
+
+See [OPENAPI.md](./OPENAPI.md) for full API examples.
 
 ---
 
@@ -458,7 +468,7 @@ pnpm build:web-tenant         # Build tenant dashboard
 pnpm lint                     # Lint all
 pnpm lint:web-customer        # Lint customer app
 pnpm lint:web-tenant          # Lint tenant dashboard
-pnpm type-check              # Type check all
+pnpm type-check               # Type check all
 ```
 
 ### API Scripts (from `source/apps/api/package.json`)
@@ -581,14 +591,14 @@ DATABASE_PORT=5433
 cd source/docker
 docker compose ps
 
-# Check logs
-docker compose logs postgres
+# Check logs (replace <service-name> with actual service name from ps output)
+docker compose logs <service-name>
 
 # Restart database
-docker compose restart postgres
+docker compose restart <service-name>
 
 # Wait for health check, then retry
-cd ../apps/api
+cd ../apps/api  # from source/docker
 pnpm db:migrate
 ```
 
@@ -599,7 +609,7 @@ pnpm db:migrate
 curl http://localhost:3000/health
 
 # Check CORS configuration in API main.ts
-# Default allowed origins: http://localhost:3001, http://localhost:3002
+# Ensure http://localhost:3001 and http://localhost:3002 are allowed origins
 
 # Verify frontend .env has correct API_URL
 cat source/apps/web-customer/.env | grep API_URL
@@ -688,8 +698,8 @@ source/
 ## Support
 
 - **Documentation**: Check `docs/` folder
-- **Issues**: ADD_HERE (example: GitHub Issues URL)
-- **Contact**: ADD_HERE (example: dev@yourdomain.com)
+- **Issues**: TBD (team will fill later)
+- **Contact**: TBD (team will fill later)
 
 ---
 

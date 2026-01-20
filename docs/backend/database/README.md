@@ -221,7 +221,7 @@ View full migration history in [migrations folder](../../../source/apps/api/pris
 pg_dump -h localhost -U postgres -d qr_ordering_dev > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Backup specific schemas or tables:
-ADD HERE (example: pg_dump -t tenants -t users ...)
+# pg_dump -t tenants -t users ... (specify tables as needed)
 ```
 
 ### Restore Database

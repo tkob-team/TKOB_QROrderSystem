@@ -10,7 +10,7 @@
 
 **Related Documentation:**
 - [Setup Guide](./SETUP.md) - Installation and development environment setup
-- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (150+ endpoints)
+- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (~140+ operations; see openapi.exported.json for exact count)
 - [Architecture](./ARCHITECTURE.md) - System architecture and technical design
 - [Backend Database](../backend/database/description.md) - Database schema details
 
@@ -32,7 +32,9 @@
 
 ### What is TKOB_QROrderSystem?
 
-TKOB_QROrderSystem (branded as TKQR-in) is a QR code-based restaurant ordering system that allows customers to scan a QR code at their table, browse the menu, place orders, and pay directly from their phone. Restaurant staff can manage menus, tables, orders, and view analytics through the tenant dashboard.
+TKOB_QROrderSystem (product brand: **TKQR-in Ordering Platform**) is a QR code-based restaurant ordering system that allows customers to scan a QR code at their table, browse the menu, place orders, and pay directly from their phone. Restaurant staff can manage menus, tables, orders, and view analytics through the tenant dashboard.
+
+**Note:** TKOB_QROrderSystem is the technical repository name; TKQR-in is the customer-facing brand name.
 
 ### Who is this guide for?
 
@@ -51,15 +53,15 @@ This guide is organized by user roles:
 
 **Customer App:**
 - **Development:** http://localhost:3001 (verified from [SETUP.md](./SETUP.md))
-- **Production:** ADD HERE (example: https://order.yourrestaurant.com)
+- **Production:** TBD (not deployed in MVP submission)
 
 **Tenant Dashboard:**
 - **Development:** http://localhost:3002 (verified from [SETUP.md](./SETUP.md))
-- **Production:** ADD HERE (example: https://admin.yourrestaurant.com)
+- **Production:** TBD (not deployed in MVP submission)
 
 **API Server:**
 - **Development:** http://localhost:3000 (API + Swagger UI at /api-docs)
-- **Production:** ADD HERE (example: https://api.yourrestaurant.com)
+- **Production:** TBD (not deployed in MVP submission)
 
 ### QR Code Usage Flow
 
@@ -72,12 +74,11 @@ This guide is organized by user roles:
 
 ### Demo Accounts
 
-ADD HERE - Contact your system administrator for demo credentials.
+**No seeded demo accounts.** Create test accounts via the Auth API flow:
+1. Register: `POST /api/v1/auth/register/submit` → `POST /api/v1/auth/register/confirm`
+2. Login: `POST /api/v1/auth/login`
 
-**Example format:**
-- **Owner Account:** owner@restaurant.com / password123
-- **Staff Account:** staff@restaurant.com / password123
-- **Kitchen Account:** kitchen@restaurant.com / password123
+See [OPENAPI.md](./OPENAPI.md) for complete API documentation and [SETUP.md](./SETUP.md) for setup instructions.
 
 ---
 
@@ -99,8 +100,8 @@ ADD HERE - Contact your system administrator for demo credentials.
 - View menu by category (Appetizers, Main Course, Desserts, etc.)
 - See item details: name, description, price, preparation time, allergens
 - View photos of dishes
-- Filter by chef recommendations
-- Search for specific items
+- Filter by chef recommendations (if enabled by restaurant)
+- Search for specific items (if enabled)
 
 **To view item details:**
 1. Tap on any menu item
@@ -158,7 +159,7 @@ After checkout, you'll see order tracking with:
 
 - **Order number** and **table number**
 - **Current status:**
-  - PENDING - Order received, waiting for kitchen confirmation
+  - PENDING - Order created, waiting for staff/kitchen acknowledgement
   - RECEIVED - Kitchen acknowledged order
   - PREPARING - Food is being cooked
   - READY - Food is ready for serving
@@ -171,7 +172,7 @@ After checkout, you'll see order tracking with:
 **You can:**
 - View all orders for your table
 - Track multiple orders separately
-- Cancel order within 5 minutes if kitchen hasn't started
+- Cancel order (if allowed by restaurant policy and kitchen hasn't started preparation)
 
 [Screenshot Placeholder: Order Tracking Page]
 
@@ -298,9 +299,11 @@ Modifiers allow customers to customize items (size, toppings, extras).
 - **Group:** Drink Size
 - **Type:** Single Choice (required)
 - **Options:**
-  - Small: -$1
-  - Medium: $0
-  - Large: +$1.50
+  - Small: price adjustment (e.g., -10,000 VND or -$1)
+  - Medium: no adjustment
+  - Large: price adjustment (e.g., +15,000 VND or +$1.50)
+
+**Note:** Currency and amounts vary by restaurant configuration. Examples shown for illustration only.
 
 ### 3.5) Managing Tables & QR Codes
 
@@ -383,7 +386,7 @@ Modifiers allow customers to customize items (size, toppings, extras).
 - Print receipt
 
 **Order statuses used:**
-- PENDING - New order, not yet acknowledged
+- PENDING - Order created, waiting for staff/kitchen acknowledgement
 - RECEIVED - Kitchen acknowledged
 - PREPARING - Being cooked
 - READY - Food ready for pickup/serving
@@ -391,6 +394,8 @@ Modifiers allow customers to customize items (size, toppings, extras).
 - COMPLETED - Customer finished dining
 - PAID - Payment completed
 - CANCELLED - Order cancelled
+
+**Note:** The order of COMPLETED and PAID statuses may vary depending on payment method (SePay immediate payment vs Bill to Table pay-after-dining).
 
 [Screenshot Placeholder: Order Management Page]
 
