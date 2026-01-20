@@ -6,7 +6,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Clock, CheckCircle2, Circle, AlertCircle, Wifi, WifiOff, Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clock, CheckCircle2, Circle, AlertCircle, Wifi, WifiOff, Loader2, CreditCard, Banknote } from 'lucide-react'
 import { useOrderTracking } from '../../hooks/useOrderTracking'
 import { useOrderRealtimeUpdates } from '../../hooks/useOrderRealtimeUpdates'
 import { useSession } from '@/features/tables/hooks'
@@ -78,6 +78,13 @@ export function InlineOrderTracking({ order, defaultExpanded = false }: InlineOr
   const isTerminal = ['SERVED', 'COMPLETED', 'CANCELLED'].includes(currentStatus)
   const isCancelled = currentStatus === 'CANCELLED'
 
+  // Payment status info
+  const isPaid = order.paymentStatus === 'Paid'
+  const isVietQRPayment = order.paymentMethod === 'SEPAY_QR'
+  const isCashPayment = order.paymentMethod === 'BILL_TO_TABLE'
+  const billRequested = session?.billRequestedAt != null
+  const isNotFullyServed = !['SERVED', 'COMPLETED'].includes(currentStatus)
+
   // Format time ago
   const timeAgo = formatRelativeTime(order.createdAt)
   
@@ -114,6 +121,34 @@ export function InlineOrderTracking({ order, defaultExpanded = false }: InlineOr
               {statusLabel}
             </span>
             
+            {/* Payment Status Badge - Show for VietQR paid */}
+            {isPaid && isVietQRPayment && (
+              <span 
+                className="px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1"
+                style={{ 
+                  backgroundColor: 'var(--emerald-100)', 
+                  color: 'var(--emerald-700)' 
+                }}
+              >
+                <CreditCard className="w-3 h-3" />
+                Paid
+              </span>
+            )}
+            
+            {/* Waiting for bill badge - Cash payment after bill requested */}
+            {isCashPayment && billRequested && !isPaid && (
+              <span 
+                className="px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1"
+                style={{ 
+                  backgroundColor: 'var(--amber-100)', 
+                  color: 'var(--amber-700)' 
+                }}
+              >
+                <Banknote className="w-3 h-3" />
+                Pay at table
+              </span>
+            )}
+            
             {/* Real-time indicator when expanded */}
             {isExpanded && !isTerminal && (
               isRealtimeConnected ? (
@@ -146,6 +181,31 @@ export function InlineOrderTracking({ order, defaultExpanded = false }: InlineOr
                 backgroundColor: isTerminal ? 'var(--emerald-500)' : 'var(--orange-500)',
               }}
             />
+          </div>
+        )}
+        
+        {/* Payment Status Info Messages - New flow */}
+        {isPaid && isVietQRPayment && isNotFullyServed && (
+          <div 
+            className="mt-2 px-3 py-2 rounded-lg flex items-center gap-2"
+            style={{ backgroundColor: 'var(--emerald-50)' }}
+          >
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--emerald-600)' }} />
+            <span style={{ color: 'var(--emerald-700)', fontSize: '13px' }}>
+              Payment complete! Waiting for remaining food &amp; bill.
+            </span>
+          </div>
+        )}
+        
+        {isCashPayment && billRequested && !isPaid && (
+          <div 
+            className="mt-2 px-3 py-2 rounded-lg flex items-center gap-2"
+            style={{ backgroundColor: 'var(--amber-50)' }}
+          >
+            <Banknote className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--amber-600)' }} />
+            <span style={{ color: 'var(--amber-700)', fontSize: '13px' }}>
+              Bill requested. A waiter will bring your bill shortly.
+            </span>
           </div>
         )}
         

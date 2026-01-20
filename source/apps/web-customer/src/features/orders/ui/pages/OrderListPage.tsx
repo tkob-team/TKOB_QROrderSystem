@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ClipboardList, LogIn, Receipt, Package, UtensilsCrossed, Loader2, XCircle, Lock, Plus, Wifi, WifiOff } from 'lucide-react'
+import { ClipboardList, LogIn, Receipt, Package, UtensilsCrossed, Loader2, XCircle, Lock, Plus, Wifi, WifiOff, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { log } from '@/shared/logging/logger'
@@ -44,6 +44,31 @@ export function OrderListPage() {
     return session?.billRequestedAt != null
   }, [session?.billRequestedAt])
 
+  // Calculate payment status from orders
+  const paymentInfo = useMemo(() => {
+    const orders = state.currentSessionOrders
+    if (orders.length === 0) return { isPaid: false, isVietQR: false, isCash: false, allServed: false }
+    
+    // Check if any order is paid via VietQR
+    const paidVietQR = orders.some(
+      order => order.paymentStatus === 'Paid' && order.paymentMethod === 'SEPAY_QR'
+    )
+    // Check if cash payment method
+    const isCash = orders.some(order => order.paymentMethod === 'BILL_TO_TABLE')
+    // Check if all orders are fully served
+    const allServed = orders.every(order => {
+      const status = order.status?.toString().toUpperCase()
+      return status === 'SERVED' || status === 'COMPLETED'
+    })
+    
+    return {
+      isPaid: paidVietQR,
+      isVietQR: paidVietQR,
+      isCash: isCash && billRequested && !paidVietQR,
+      allServed,
+    }
+  }, [state.currentSessionOrders, billRequested])
+
   // Calculate session summary
   const sessionSummary = useMemo(() => {
     const orders = state.currentSessionOrders
@@ -85,22 +110,20 @@ export function OrderListPage() {
   }
   
   // Actually request the bill (called after review or skip)
+  // NEW FLOW: Navigate to bill preview page first, let customer choose payment options
+  // Bill request API will be called when customer confirms in BillPreviewPage
   const proceedToRequestBill = async () => {
-    try {
-      if (process.env.NEXT_PUBLIC_USE_LOGGING) {
-        log('ui', 'Requesting bill for session', { 
-          totalAmount: sessionSummary.totalAmount,
-          orderCount: sessionSummary.orderCount,
-        }, { feature: 'orders' })
-      }
-      
-      await requestBillMutation.mutateAsync()
-      
-      // Navigate to bill preview page
-      router.push('/bill')
-    } catch (error) {
-      console.error('Failed to request bill:', error)
+    if (process.env.NEXT_PUBLIC_USE_LOGGING) {
+      log('ui', 'Navigating to bill preview', { 
+        totalAmount: sessionSummary.totalAmount,
+        orderCount: sessionSummary.orderCount,
+      }, { feature: 'orders' })
     }
+    
+    // Navigate to bill preview page without calling API
+    // Customer will select tips, voucher, payment method first
+    // Then when they confirm payment, BillPreviewPage will call request bill API
+    router.push('/bill')
   }
   
   // Handle review submission
@@ -192,14 +215,24 @@ export function OrderListPage() {
           <div 
             className="rounded-2xl p-5"
             style={{ 
-              background: billRequested 
-                ? 'linear-gradient(135deg, var(--gray-600) 0%, var(--gray-700) 100%)' 
-                : 'linear-gradient(135deg, var(--orange-500) 0%, var(--orange-600) 100%)',
+              background: paymentInfo.isPaid 
+                ? 'linear-gradient(135deg, var(--emerald-500) 0%, var(--emerald-600) 100%)'
+                : billRequested 
+                  ? 'linear-gradient(135deg, var(--gray-600) 0%, var(--gray-700) 100%)' 
+                  : 'linear-gradient(135deg, var(--orange-500) 0%, var(--orange-600) 100%)',
               color: 'white'
             }}
           >
-            {/* Lock Icon when bill requested */}
-            {billRequested && (
+            {/* Payment Status Header */}
+            {paymentInfo.isPaid && (
+              <div className="flex items-center gap-2 mb-3 text-sm opacity-90">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Payment complete</span>
+              </div>
+            )}
+            
+            {/* Lock Icon when bill requested (not paid) */}
+            {billRequested && !paymentInfo.isPaid && (
               <div className="flex items-center gap-2 mb-3 text-sm opacity-90">
                 <Lock className="w-4 h-4" />
                 <span>Session locked - Bill requested</span>
@@ -230,24 +263,7 @@ export function OrderListPage() {
                       <Receipt className="w-4 h-4" />
                       View Bill
                     </button>
-                    
-                    {/* Cancel Bill Request */}
-                    <button
-                      onClick={handleCancelBillRequest}
-                      disabled={cancelBillMutation.isPending}
-                      className="px-4 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:bg-white/20 active:scale-95 disabled:opacity-50"
-                      style={{ 
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                        color: 'white'
-                      }}
-                    >
-                      {cancelBillMutation.isPending ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <XCircle className="w-3 h-3" />
-                      )}
-                      Cancel & Order More
-                    </button>
+
                   </>
                 ) : (
                   <button
@@ -286,14 +302,41 @@ export function OrderListPage() {
             </div>
             
             {/* Bill Request Info Message */}
-            {billRequested && (
+            {/* Payment Complete + Not Fully Served */}
+            {paymentInfo.isPaid && !paymentInfo.allServed && (
+              <div 
+                className="mt-3 p-3 rounded-xl text-sm flex items-start gap-2"
+                style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+              >
+                <UtensilsCrossed className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>
+                  Waiting for remaining food &amp; bill. Sit back and relax!
+                </span>
+              </div>
+            )}
+            
+            {/* Payment Complete + All Served */}
+            {paymentInfo.isPaid && paymentInfo.allServed && (
+              <div 
+                className="mt-3 p-3 rounded-xl text-sm flex items-start gap-2"
+                style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+              >
+                <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>
+                  All done! Thank you for dining with us.
+                </span>
+              </div>
+            )}
+            
+            {/* Cash payment - Waiting for bill */}
+            {billRequested && !paymentInfo.isPaid && (
               <div 
                 className="mt-3 p-3 rounded-xl text-sm flex items-start gap-2"
                 style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
               >
                 <Receipt className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>
-                  A server will bring your bill shortly. Want to order more? Tap &quot;Cancel &amp; Order More&quot; above.
+                  A waiter will bring your bill shortly.
                 </span>
               </div>
             )}

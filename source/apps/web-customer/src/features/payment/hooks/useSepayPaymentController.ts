@@ -191,12 +191,11 @@ export function useSepayPaymentController(): UseSepayPaymentResult {
     setTimeout(() => createPaymentIntent(), 100)
   }, [createPaymentIntent, stopPolling, resetPolling])
 
-  // Navigate to order tracking - use replace to prevent back to payment page
+  // Navigate to orders list - use replace to prevent back to payment page
+  // (Individual order tracking page is hidden, show orders list instead)
   const goToOrderTracking = useCallback(() => {
-    if (orderId) {
-      router.replace(`/orders/${orderId}`)
-    }
-  }, [orderId, router])
+    router.replace('/orders')
+  }, [router])
 
   // Go back - use replace to prevent back navigation loop
   const goBack = useCallback(() => {

@@ -147,6 +147,7 @@ export function useAuthController() {
   }
 
   // Navigation helpers
+  const navigateToHome = () => router.push('/')
   const navigateToLogin = () => router.push('/login')
   const navigateToRegister = () => router.push('/register')
   const navigateToResetPassword = () => router.push('/reset-password')
@@ -174,6 +175,7 @@ export function useAuthController() {
     handleResendVerification,
     
     // Navigation
+    navigateToHome,
     navigateToLogin,
     navigateToRegister,
     navigateToResetPassword,

@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, UtensilsCrossed, CreditCard, Receipt, Clock, Wallet, XCircle, Loader2, Heart, Tag, CheckCircle, AlertCircle, QrCode, Banknote } from 'lucide-react'
+import { ArrowLeft, UtensilsCrossed, CreditCard, Receipt, Clock, Wallet, XCircle, Loader2, Heart, Tag, CheckCircle, AlertCircle, QrCode, Banknote, Plus, ShoppingBag } from 'lucide-react'
 import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { useSession } from '@/features/tables/hooks/useSession'
 import { useOrdersController } from '../../hooks'
 import { usePaymentMethods } from '@/features/checkout/hooks/usePaymentMethods'
 import { useCancelBillRequest } from '../../hooks/useCancelBillRequest'
+import { useRequestBill } from '../../hooks/useRequestBill'
 
 // Tip percentage options
 const TIP_OPTIONS = [
@@ -71,10 +72,27 @@ export function BillPreviewPage() {
   const [voucherMessage, setVoucherMessage] = useState<string>('')
 
   // Payment method selection
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('SEPAY_QR')
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('BILL_TO_TABLE')
   
-  // Check if bill was already requested from session
-  const billRequested = session?.billRequestedAt != null
+  // Bill to table (pay at counter) success state
+  const [billToTableSuccess, setBillToTableSuccess] = useState(false)
+  
+  // Confirmation dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  
+  // Error state for friendly error messages
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  
+  // Request bill mutation for BILL_TO_TABLE
+  const requestBillMutation = useRequestBill()
+  
+  // Check if bill was already requested from session (on page load or after action)
+  const sessionBillRequested = session?.billRequestedAt != null
+  const billRequested = sessionBillRequested || billToTableSuccess
+  
+  // Determine if we should show the "bill already requested" success state
+  // This handles the case when user navigates back to this page after already requesting
+  const showBillRequestedState = sessionBillRequested || billToTableSuccess
 
   // Calculate tip amount
   const tipAmount = useMemo(() => {
@@ -151,20 +169,59 @@ export function BillPreviewPage() {
     router.push('/orders')
   }
 
-  const handlePayNow = () => {
-    // Navigate to payment page with first unpaid order
+  // Show confirmation dialog before proceeding with payment
+  const handlePayButtonClick = () => {
+    setShowConfirmDialog(true)
+  }
+  
+  // Navigate to menu to add more items
+  const handleOrderMore = () => {
+    setShowConfirmDialog(false)
+    router.push('/menu')
+  }
+
+  // Confirm and proceed with payment
+  const handleConfirmPay = async () => {
+    setShowConfirmDialog(false)
+    
+    // Clear any previous error
+    setErrorMessage(null)
+    
     const unpaidOrder = state.currentSessionOrders.find(
       order => order.paymentStatus?.toUpperCase() !== 'COMPLETED' && order.paymentStatus?.toUpperCase() !== 'PAID'
     )
     const targetOrderId = unpaidOrder?.id || state.currentSessionOrders[0]?.id
     
-    if (targetOrderId) {
-      // Use selected payment method
+    if (!targetOrderId) return
+    
+    // Both payment methods call request bill API first
+    // This locks the session and notifies waiter
+    try {
+      await requestBillMutation.mutateAsync()
+      
+      // BILL_TO_TABLE: Show success message, wait for waiter to bring bill
+      if (selectedPaymentMethod === 'BILL_TO_TABLE') {
+        setBillToTableSuccess(true)
+        return
+      }
+      
+      // SEPAY_QR: Navigate to payment page for QR code
       const tipParam = tipAmount > 0 ? `&tip=${tipAmount.toFixed(2)}` : ''
       const discountParam = voucherDiscount > 0 ? `&discount=${voucherDiscount.toFixed(2)}` : ''
       const voucherParam = voucherCode && voucherStatus === 'valid' ? `&voucher=${encodeURIComponent(voucherCode)}` : ''
       
       router.push(`/payment?orderId=${targetOrderId}&paymentMethod=${selectedPaymentMethod}&source=bill${tipParam}${discountParam}${voucherParam}`)
+    } catch (error: any) {
+      console.error('Failed to request bill:', error)
+      
+      // Handle 400 error (bill already requested)
+      if (error?.message?.includes('400') || error?.message?.includes('already')) {
+        // Bill was already requested - show the success state instead of error
+        setBillToTableSuccess(true)
+      } else {
+        // Other errors - show friendly message
+        setErrorMessage('Unable to request bill. Please try again or ask a waiter for assistance.')
+      }
     }
   }
 
@@ -662,50 +719,182 @@ export function BillPreviewPage() {
           className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t space-y-3"
           style={{ borderColor: 'var(--gray-200)' }}
         >
-          <button
-            onClick={handlePayNow}
-            className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all hover:shadow-lg active:scale-95"
-            style={{ 
-              backgroundColor: 'var(--orange-500)',
-              color: 'white',
-              fontSize: '16px'
-            }}
-          >
-            {selectedPaymentMethod === 'SEPAY_QR' ? (
-              <>
-                <QrCode className="w-5 h-5" />
-                Pay ${billSummary.total.toFixed(2)} with QR
-              </>
-            ) : (
-              <>
-                <Receipt className="w-5 h-5" />
-                Request Bill - ${billSummary.total.toFixed(2)}
-              </>
-            )}
-          </button>
+          {/* Error Message */}
+          {errorMessage && (
+            <div 
+              className="p-3 rounded-xl flex items-start gap-2"
+              style={{ backgroundColor: 'var(--red-50)', border: '1px solid var(--red-200)' }}
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--red-600)' }} />
+              <p style={{ color: 'var(--red-700)', fontSize: '14px' }}>{errorMessage}</p>
+            </div>
+          )}
           
-          {/* Cancel Bill Request - Allow ordering more */}
-          {billRequested && (
+          {/* Success State - Shows when bill already requested (from session or just now) */}
+          {showBillRequestedState ? (
+            <>
+              <div 
+                className="p-4 rounded-xl flex items-start gap-3"
+                style={{ backgroundColor: 'var(--emerald-50)', border: '1px solid var(--emerald-200)' }}
+              >
+                <CheckCircle className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--emerald-600)' }} />
+                <div>
+                  <p style={{ color: 'var(--emerald-900)', fontWeight: '600', fontSize: '15px' }}>
+                    Bill requested successfully!
+                  </p>
+                  <p style={{ color: 'var(--emerald-700)', fontSize: '14px', marginTop: '4px' }}>
+                    A waiter will bring your bill to the table. Please pay at counter or with the waiter.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push('/orders')}
+                className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all hover:shadow-lg active:scale-95"
+                style={{ 
+                  backgroundColor: 'var(--orange-500)',
+                  color: 'white',
+                  fontSize: '16px'
+                }}
+              >
+                View My Orders
+              </button>
+            </>
+          ) : (
             <button
-              onClick={handleCancelBillRequest}
-              disabled={cancelBillMutation.isPending}
-              className="w-full py-3 rounded-full flex items-center justify-center gap-2 font-medium transition-all disabled:opacity-50"
+              onClick={handlePayButtonClick}
+              disabled={requestBillMutation.isPending}
+              className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
               style={{ 
-                backgroundColor: 'var(--gray-100)',
-                color: 'var(--gray-700)',
-                fontSize: '14px'
+                backgroundColor: 'var(--orange-500)',
+                color: 'white',
+                fontSize: '16px'
               }}
             >
-              {cancelBillMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {requestBillMutation.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Requesting bill...
+                </>
+              ) : selectedPaymentMethod === 'SEPAY_QR' ? (
+                <>
+                  <QrCode className="w-5 h-5" />
+                  Pay with VietQR · ${billSummary.total.toFixed(2)}
+                </>
               ) : (
-                <XCircle className="w-4 h-4" />
+                <>
+                  <Banknote className="w-5 h-5" />
+                  Request Bill · ${billSummary.total.toFixed(2)}
+                </>
               )}
-              Changed your mind? Order more
             </button>
           )}
+          
         </div>
       </div>
+      
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={(e) => e.target === e.currentTarget && setShowConfirmDialog(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-sm overflow-hidden"
+            style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+          >
+            {/* Header */}
+            <div className="p-6 text-center">
+              <div 
+                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: 'var(--orange-100)' }}
+              >
+                <Receipt className="w-8 h-8" style={{ color: 'var(--orange-500)' }} />
+              </div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--gray-900)' }}>
+                Ready to pay?
+              </h3>
+              <p style={{ color: 'var(--gray-600)', fontSize: '14px', lineHeight: '1.5' }}>
+                Once you request the bill, your session will be locked. You won&apos;t be able to add more items.
+              </p>
+            </div>
+            
+            {/* Bill Summary */}
+            <div 
+              className="mx-6 mb-6 p-4 rounded-xl"
+              style={{ backgroundColor: 'var(--gray-50)' }}
+            >
+              <div className="flex justify-between items-center">
+                <span style={{ color: 'var(--gray-600)' }}>Total Amount</span>
+                <span className="text-xl font-bold" style={{ color: 'var(--orange-500)' }}>
+                  ${billSummary.total.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <span style={{ color: 'var(--gray-500)', fontSize: '13px' }}>
+                  {billSummary.orderCount} order{billSummary.orderCount !== 1 ? 's' : ''} · {billSummary.totalItems} item{billSummary.totalItems !== 1 ? 's' : ''}
+                </span>
+                <span 
+                  className="px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ 
+                    backgroundColor: selectedPaymentMethod === 'SEPAY_QR' ? 'var(--blue-100)' : 'var(--green-100)',
+                    color: selectedPaymentMethod === 'SEPAY_QR' ? 'var(--blue-700)' : 'var(--green-700)'
+                  }}
+                >
+                  {selectedPaymentMethod === 'SEPAY_QR' ? 'VietQR' : 'Cash'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--gray-200)' }}>
+              {/* Confirm Pay Button */}
+              <button
+                onClick={handleConfirmPay}
+                disabled={requestBillMutation.isPending}
+                className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all hover:shadow-lg active:scale-95 disabled:opacity-50"
+                style={{ 
+                  backgroundColor: 'var(--orange-500)',
+                  color: 'white',
+                  fontSize: '16px'
+                }}
+              >
+                {requestBillMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : selectedPaymentMethod === 'SEPAY_QR' ? (
+                  <>
+                    <QrCode className="w-5 h-5" />
+                    Proceed to Pay
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Confirm &amp; Request Bill
+                  </>
+                )}
+              </button>
+              
+              {/* Order More Button */}
+              <button
+                onClick={handleOrderMore}
+                disabled={requestBillMutation.isPending}
+                className="w-full py-3 rounded-full flex items-center justify-center gap-2 font-medium transition-all disabled:opacity-50"
+                style={{ 
+                  backgroundColor: 'var(--gray-100)',
+                  color: 'var(--gray-700)',
+                  fontSize: '15px'
+                }}
+              >
+                <Plus className="w-5 h-5" />
+                Wait, I want to order more
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageTransition>
   )
 }

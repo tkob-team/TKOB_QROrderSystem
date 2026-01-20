@@ -7,6 +7,7 @@ import { log, logError } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 import { useCheckoutStore } from '@/stores/checkout.store'
 import { useOrderStore } from '@/stores/order.store'
+import { useSession } from '@/features/tables/hooks'
 import { checkoutApi, type CheckoutRequest } from '@/features/checkout/data'
 
 /**
@@ -18,6 +19,10 @@ export function useCartCheckout() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { items: cartItems, clearCart } = useCart()
+  const { session } = useSession()
+  
+  // Check if bill has been requested (session is locked)
+  const isBillRequested = session?.billRequestedAt != null
   
   // Form state from checkout store
   const customerName = useCheckoutStore((state) => state.customerName)
@@ -34,6 +39,14 @@ export function useCartCheckout() {
   const [error, setError] = useState<string | null>(null)
 
   const handlePlaceOrder = async () => {
+    // Check if bill has been requested
+    if (isBillRequested) {
+      toast.error('Session Locked', {
+        description: 'Bill has been requested. Cancel the bill request to add more orders.',
+      })
+      return
+    }
+
     if (cartItems.length === 0) {
       toast.error('Your cart is empty')
       return
@@ -104,5 +117,6 @@ export function useCartCheckout() {
     handlePlaceOrder,
     isSubmitting,
     error,
+    isBillRequested,
   }
 }

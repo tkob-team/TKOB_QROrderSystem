@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, ShoppingBag, ChevronDown, Info, Loader2 } from 'lucide-react'
+import { ArrowLeft, ShoppingBag, ChevronDown, Info, Loader2, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { CartItemCard } from '@/shared/components/cards/CartItemCard'
@@ -28,7 +28,8 @@ export function CartPage() {
     setCustomerName, 
     setNotes, 
     handlePlaceOrder, 
-    isSubmitting 
+    isSubmitting,
+    isBillRequested,
   } = useCartCheckout()
   
   const [summaryExpanded, setSummaryExpanded] = useState(true)
@@ -40,7 +41,7 @@ export function CartPage() {
   }
 
   const handleMenu = () => {
-    router.push(`/menu}`)
+    router.push('/menu')
   }
 
   const handleEditItem = (item: CartItemResponse) => {
@@ -119,6 +120,40 @@ export function CartPage() {
           </div>
         ) : (
           <>
+            {/* Bill Requested Warning Banner */}
+            {isBillRequested && (
+              <div 
+                className="mx-4 mt-4 p-4 rounded-xl flex items-start gap-3"
+                style={{
+                  backgroundColor: colors.warning[50],
+                  border: `1px solid ${colors.warning[300]}`,
+                }}
+              >
+                <Lock className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.warning[600] }} />
+                <div>
+                  <p 
+                    style={{ 
+                      color: colors.warning[800],
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    Session Locked
+                  </p>
+                  <p 
+                    style={{ 
+                      color: colors.warning[700],
+                      fontSize: '13px',
+                      lineHeight: '1.5',
+                    }}
+                  >
+                    Bill has been requested. Cancel the bill request from Orders page to place more orders.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Cart Items */}
             <div className="flex-1 p-4 pb-28">
               <div className="space-y-3">
@@ -279,25 +314,25 @@ export function CartPage() {
             >
               <button
                 onClick={handlePlaceOrder}
-                disabled={isSubmitting || cartItems.length === 0}
-                className="w-full py-4 px-6 rounded-full flex items-center justify-center gap-2 disabled:opacity-50"
+                disabled={isSubmitting || cartItems.length === 0 || isBillRequested}
+                className="w-full py-4 px-6 rounded-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: colors.primary[600],
+                  backgroundColor: isBillRequested ? colors.neutral[400] : colors.primary[600],
                   color: 'white',
                   minHeight: '52px',
-                  boxShadow: shadows.button,
+                  boxShadow: isBillRequested ? 'none' : shadows.button,
                   transition: transitions.fast,
                   fontWeight: '600',
                   fontSize: '16px',
                 }}
                 onMouseEnter={(e) => {
-                  if (!isSubmitting) {
+                  if (!isSubmitting && !isBillRequested) {
                     e.currentTarget.style.backgroundColor = colors.primary[700];
                     e.currentTarget.style.transform = 'translateY(-1px)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.primary[600];
+                  e.currentTarget.style.backgroundColor = isBillRequested ? colors.neutral[400] : colors.primary[600];
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
@@ -305,6 +340,11 @@ export function CartPage() {
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Placing Order...</span>
+                  </>
+                ) : isBillRequested ? (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    <span>Session Locked</span>
                   </>
                 ) : (
                   <>

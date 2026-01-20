@@ -16,6 +16,9 @@ export function useItemDetailController(itemId: string): ItemDetailController {
   const { addItem } = useCart()
   const { session } = useSession()
   const tenantId = session?.tenantId
+  
+  // Check if bill has been requested (session is locked)
+  const isBillRequested = session?.billRequestedAt != null
 
   const { data: item, isLoading, error } = useItemDetailQuery(itemId)
   const { data: allMenuItems = [] } = useMenuItemsQuery(tenantId)
@@ -51,7 +54,18 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     const currentCategory = item.category
     const currentCategoryId = (item as any).categoryId
     
-    return allMenuItems
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[RelatedItems] Current item:', { 
+        id: item.id, 
+        name: item.name, 
+        category: currentCategory, 
+        categoryId: currentCategoryId 
+      })
+      console.log('[RelatedItems] All menu items count:', allMenuItems.length)
+    }
+    
+    const filtered = allMenuItems
       .filter((menuItem) => {
         // Don't include the current item
         if (menuItem.id === item.id) return false
@@ -67,6 +81,12 @@ export function useItemDetailController(itemId: string): ItemDetailController {
         return menuItem.availability === 'Available' || !menuItem.availability
       })
       .slice(0, 4)
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[RelatedItems] Filtered items:', filtered.map(i => ({ id: i.id, name: i.name, category: i.category, categoryId: (i as any).categoryId })))
+    }
+    
+    return filtered
   }, [allMenuItems, item])
 
   // FEAT-02: Use reviews from API query, fallback to item.reviews for mock mode
@@ -169,6 +189,14 @@ export function useItemDetailController(itemId: string): ItemDetailController {
 
   const addToCart = () => {
     if (!item) return
+    
+    // Check if bill has been requested
+    if (isBillRequested) {
+      toast.error('Session Locked', {
+        description: 'Bill has been requested. Cancel the bill request to add more items.',
+      })
+      return
+    }
 
     // Validate required modifier groups
     if (item.modifierGroups && item.modifierGroups.length > 0) {
@@ -224,6 +252,14 @@ export function useItemDetailController(itemId: string): ItemDetailController {
   }
 
   const quickAdd = (recommendedItem: MenuItem) => {
+    // Check if bill has been requested
+    if (isBillRequested) {
+      toast.error('Session Locked', {
+        description: 'Bill has been requested. Cancel the bill request to add more items.',
+      })
+      return
+    }
+    
     // Check if item has required modifiers - navigate to detail page
     if (recommendedItem.modifierGroups && recommendedItem.modifierGroups.length > 0) {
       const hasRequired = recommendedItem.modifierGroups.some(g => g.required)
@@ -296,6 +332,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     allReviews: reviews,
     ratingDistribution,
     showFullReviewList,
+    isBillRequested,
   }), [
     item,
     allMenuItems,
@@ -315,6 +352,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     reviews,
     ratingDistribution,
     showFullReviewList,
+    isBillRequested,
   ])
 
   return {

@@ -9,11 +9,9 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Wifi, WifiOff } from 'lucide-react';
 import { useOrderTracking } from '../../hooks/useOrderTracking';
-import { useRequestBill } from '../../hooks/useRequestBill';
 import { useOrderRealtimeUpdates } from '../../hooks/useOrderRealtimeUpdates';
 import { useSession } from '@/features/tables/hooks/useSession';
 import { log } from '@/shared/logging/logger';
@@ -26,7 +24,6 @@ interface OrderDetailPageProps {
 
 export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
   const router = useRouter();
-  const [billRequestSuccess, setBillRequestSuccess] = useState(false);
   
   // Get session for WebSocket connection
   const { session } = useSession();
@@ -51,9 +48,6 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
       }, { feature: 'order-detail' });
     },
   });
-
-  // Request bill mutation
-  const { mutate: requestBill, isPending: isRequestingBill, isError, error } = useRequestBill();
 
   if (!orderId) {
     return (
@@ -106,14 +100,10 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
   const isCancelled = tracking.currentStatus === 'CANCELLED';
   const canRequestBill = tracking.currentStatus === 'SERVED' && tracking.paymentStatus !== 'COMPLETED';
 
+  // Navigate to bill preview page instead of calling request bill API
+  // Customer will select tip/voucher/payment method there
   const handleRequestBill = () => {
-    if (!orderId) return;
-    requestBill(orderId, {
-      onSuccess: () => {
-        setBillRequestSuccess(true);
-        setTimeout(() => setBillRequestSuccess(false), 5000); // Hide after 5s
-      },
-    });
+    router.push('/bill');
   };
 
   return (
@@ -201,44 +191,15 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
             <div className="mt-6 space-y-3">
               <button
                 onClick={handleRequestBill}
-                disabled={isRequestingBill || billRequestSuccess}
-                className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
               >
-                {isRequestingBill ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Requesting...</span>
-                  </>
-                ) : billRequestSuccess ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Bill Requested</span>
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-5 h-5" />
-                    <span>Request Bill</span>
-                  </>
-                )}
+                <FileText className="w-5 h-5" />
+                <span>Request Bill</span>
               </button>
               
-              {billRequestSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm text-center">
-                  ✓ A server will bring your bill to the table shortly
-                </div>
-              )}
-              
-              {isError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm text-center">
-                  {error?.message || 'Failed to request bill. Please try again.'}
-                </div>
-              )}
-              
-              {!billRequestSuccess && !isError && (
-                <p className="text-sm text-gray-500 text-center">
-                  A server will bring your bill to the table
-                </p>
-              )}
+              <p className="text-sm text-gray-500 text-center">
+                Review your bill and select payment method
+              </p>
             </div>
           )}
         </div>
