@@ -1,27 +1,30 @@
-# OpenAPI Specification – TKQR‑in Ordering Platform
+# OpenAPI Specification – TKOB_QROrderSystem
 
-> Tài liệu này mô tả đầy đủ REST API của hệ thống TKQR-in Ordering Platform theo chuẩn **OpenAPI 3.0**.
+> Tài liệu này mô tả đầy đủ REST API của hệ thống TKOB_QROrderSystem theo chuẩn **OpenAPI 3.0**.
+>
+> **⚠️ NOTE:** This document is a high-level overview. For complete, up-to-date API documentation, refer to the **live Swagger UI** at `http://localhost:3000/api-docs` (development) or your deployed API's `/api-docs` endpoint.
 
 - **Version**: 1.0.0
-- **Base URL**: `https://api.qr-ordering.com/v1`
-- **Last Updated**: 2025-23-11
+- **Base URL**: ADD HERE (see section 1.2 for environment-specific URLs)
+- **Last Updated**: 2026-01-20
 
 ---
 
 ## Mục lục
 
 1. [Tổng quan API](#1-tổng-quan-api)
+   - [1.5. Swagger Tag Index](#15-swagger-tag-index-source-swagger-ui)
 2. [Authentication & Authorization](#2-authentication--authorization)
 3. [Error Handling](#3-error-handling)
 4. [Rate Limiting](#4-rate-limiting)
 5. [Tenants API](#5-tenants-api)
-<!-- 6. [Tables & QR API](#6-tables--qr-api)
-6. [Menu API](#7-menu-api)
-7. [Orders API](#8-orders-api)
-8. [Payments API](#9-payments-api)
-9. [Analytics API](#10-analytics-api)
-10. [Webhooks](#11-webhooks)
-11. [OpenAPI YAML Specification](#12-openapi-yaml-specification) -->
+6. [Legacy API Examples (Archived)](#6-legacy-api-examples-archived)
+7. [OpenAPI Export (Optional)](#7-openapi-export-optional)
+8. [Subscription Management API](#8-subscription-management-api)
+9. [Staff Management API](#9-staff-management-api)
+10. [Bill Management API](#10-bill-management-api)
+11. [Review System API](#11-review-system-api)
+12. [Promotion System API](#12-promotion-system-api)
 
 ---
 
@@ -31,7 +34,7 @@
 
 - **RESTful**: Tuân thủ nguyên tắc REST (Resources, HTTP Methods, Status Codes)
 - **Multi-tenant**: Mọi endpoint đều tenant-scoped
-- **Versioned**: API versioning qua URL path (`/v1`, `/v2`)
+- **Versioned**: API versioning qua URL path (`/api/v1`, `/api/v2`)
 - **JSON**: Request/Response format là JSON
 - **Idempotent**: POST/PUT với idempotency keys khi cần
 - **Pagination**: Cursor-based hoặc offset-based
@@ -40,9 +43,9 @@
 ### 1.2. Base URL
 
 ```
-Production:  https://api.qr-ordering.com/v1
-Staging:     https://api.staging.qr-ordering.com/v1
-Development: http://localhost:3000/v1
+Production:  ADD HERE (example: https://api.your-domain.com/api/v1)
+Staging:     ADD HERE (example: https://api.staging.your-domain.com/api/v1)
+Development: http://localhost:3000/api/v1
 ```
 
 ### 1.3. Content Type
@@ -54,9 +57,52 @@ Accept: application/json
 
 ### 1.4. API Documentation URL
 
-- **Swagger UI**: `https://api.qr-ordering.com/docs`
-- **ReDoc**: `https://api.qr-ordering.com/redoc`
-- **OpenAPI JSON**: `https://api.qr-ordering.com/openapi.json`
+- **Swagger UI (Development)**: `http://localhost:3000/api-docs`
+- **OpenAPI JSON**: ADD HERE (example: `http://localhost:3000/api-docs-json` for local, verify exact path in NestJS Swagger config)
+- **Production Swagger**: ADD HERE (replace with your deployed domain + `/api-docs`)
+
+> **🔍 Source of Truth:** The Swagger UI auto-generated from code decorators is the authoritative API reference. This markdown document provides conceptual overviews and workflows.
+
+### 1.5. API Overview (Auto-derived from OpenAPI Spec)
+
+> **Source of Truth:** Live Swagger UI at `http://localhost:3000/api-docs`  
+> **Total Operations:** 142 endpoints across 23 tags  
+> **Last Verified:** 2026-01-20 (from `openapi.exported.json`)
+
+**Operations by Category:**
+
+| Tag | Count | Representative Endpoints |
+|-----|-------|-------------------------|
+| **Authentication** | 15 | `POST /api/v1/auth/register/submit`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout` |
+| **Menu - Categories** | 6 | `POST /api/v1/menu/categories`, `GET /api/v1/menu/categories`, `PATCH /api/v1/menu/categories/{id}`, `DELETE /api/v1/menu/categories/{id}` |
+| **Menu - Items** | 7 | `POST /api/v1/menu/item`, `GET /api/v1/menu/item`, `PATCH /api/v1/menu/item/{id}`, `POST /api/v1/menu/item/{id}/publish` |
+| **Menu - Items (Public)** | 2 | `GET /api/v1/menu/item/public`, `GET /api/v1/menu/item/public/{id}` |
+| **Menu - Modifiers** | 5 | `POST /api/v1/menu/modifiers`, `GET /api/v1/menu/modifiers`, `PATCH /api/v1/menu/modifiers/{id}`, `DELETE /api/v1/menu/modifiers/{id}` |
+| **Menu - Photos** | 6 | `POST /api/v1/menu/items/{itemId}/photos`, `GET /api/v1/menu/items/{itemId}/photos`, `DELETE /api/v1/menu/items/{itemId}/photos/{photoId}` |
+| **Menu - Public** | 1 | `GET /api/v1/menu/public` (customer-facing menu with session/JWT auth) |
+| **Tables** | 15 | `POST /api/v1/admin/tables`, `GET /api/v1/admin/tables`, `POST /api/v1/admin/tables/{id}/qr/generate`, `GET /api/v1/admin/tables/{id}/qr/download` |
+| **Tables - Public** | 3 | `GET /api/v1/t/{qrToken}` (QR scan), `GET /api/v1/session`, `GET /api/v1/menu` |
+| **Cart** | 5 | `POST /api/v1/cart/items`, `GET /api/v1/cart`, `PATCH /api/v1/cart/items/{itemId}`, `DELETE /api/v1/cart` |
+| **Orders** | 14 | `POST /api/v1/checkout`, `GET /api/v1/orders/mergeable`, `POST /api/v1/orders/{orderId}/append-items`, `GET /api/v1/admin/orders` |
+| **KDS - Kitchen Display** | 2 | `GET /api/v1/admin/kds/orders/active`, `GET /api/v1/admin/kds/stats` |
+| **Bills** | 2 | `GET /api/v1/admin/bills`, `GET /api/v1/admin/bills/{id}` |
+| **Payments** | 6 | `POST /api/v1/payment/intent`, `GET /api/v1/payment/{paymentId}`, `POST /api/v1/payment/webhook`, `GET /api/v1/payment/poll` |
+| **Payment Config** | 6 | `GET /api/v1/admin/payment-config`, `PUT /api/v1/admin/payment-config`, `POST /api/v1/admin/payment-config/test` |
+| **Tenants** | 8 | `GET /api/v1/tenants/me`, `PATCH /api/v1/tenants/profile`, `PATCH /api/v1/tenants/settings`, `POST /api/v1/tenants/complete-onboarding` |
+| **Subscription** | 6 | `GET /api/v1/admin/subscription/current`, `GET /api/v1/admin/subscription/usage`, `POST /api/v1/admin/subscription/upgrade` |
+| **Subscription - Public** | 3 | `GET /api/v1/subscription/plans`, `GET /api/v1/subscription/plans/{tier}`, `GET /api/v1/subscription/features` |
+| **Promotions** | 6 | `POST /api/v1/admin/promotions`, `GET /api/v1/admin/promotions`, `POST /api/v1/checkout/validate-promo` |
+| **Reviews** | 5 | `POST /api/v1/orders/{orderId}/items/{itemId}/review`, `GET /api/v1/orders/{orderId}/reviews`, `GET /api/v1/admin/reviews/stats` |
+| **Analytics** | 6 | `GET /api/v1/admin/analytics/overview`, `GET /api/v1/admin/analytics/revenue`, `GET /api/v1/admin/analytics/popular-items` |
+| **Staff Management** | 9 | `POST /api/v1/admin/staff/invite`, `GET /api/v1/admin/staff`, `POST /api/v1/admin/staff/accept-invite` |
+| **Health** | 4 | `GET /health`, `GET /api/v1/health/detailed`, `GET /api/v1/health/ready`, `GET /api/v1/health/live` |
+
+**For complete endpoint details:**
+- Request/response schemas: Swagger UI → Expand any tag
+- Authentication requirements: Look for 🔒 icon in Swagger UI
+- Try endpoints live: Use "Try it out" button in Swagger UI
+
+**Evidence Source:** Verified via Python analysis of `docs/common/openapi.exported.json` (142 operations, 23 tags)
 
 ---
 
@@ -77,18 +123,18 @@ Hệ thống sử dụng cơ chế **Stateful Session with JWT**.
 
 User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng lặp (Duplicate Check) trước, nếu hợp lệ thì lưu tạm vào Redis và gửi OTP.
 
-- **Endpoint**: `POST /auth/register/submit`
+- **Endpoint**: `POST /api/v1/auth/register/submit`
 - **Content-Type**: `application/json`
 
 **Request Body**:
 
 ```json
 {
-  "email": "owner@new-restaurant.com",
-  "password": "StrongPassword!123",
-  "fullName": "Nguyen Van A",
-  "tenantName": "Pho Ngon 123",
-  "slug": "pho-ngon-123" // Optional, nếu không gửi backend sẽ tự generate từ name
+  "email": "ADD HERE (example: owner@example.com)",
+  "password": "ADD HERE (example: StrongPassword!123)",
+  "fullName": "ADD HERE (example: John Doe)",
+  "tenantName": "ADD HERE (example: Restaurant Name)",
+  "slug": "ADD HERE (example: restaurant-slug)"
 }
 ```
 
@@ -134,7 +180,7 @@ User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng l�
 
 User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chuyển từ Redis sang Postgres.
 
-- **Endpoint**: `POST /auth/register/confirm`
+- **Endpoint**: `POST /api/v1/auth/register/confirm`
 - **Content-Type**: `application/json`
 
 **Request Body**:
@@ -163,17 +209,17 @@ User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chu
 {
   "accessToken": "eyJhbGciOiJIUzI1Ni...",
   "refreshToken": "d792f321-...",
-  "expiresIn": 3600
+  "expiresIn": 3600,
   "user": {
-    "id": "uuid-user-1",
-    "email": "owner@new-restaurant.com",
+    "id": "ADD HERE (example: uuid-user-1)",
+    "email": "ADD HERE (example: owner@example.com)",
     "role": "OWNER",
-    "fullName": "Nguyen Van A"
+    "fullName": "ADD HERE (example: John Doe)"
   },
   "tenant": {
-    "id": "uuid-tenant-1",
-    "name": "Pho Ngon 123",
-    "slug": "pho-ngon-123",
+    "id": "ADD HERE (example: uuid-tenant-1)",
+    "name": "ADD HERE (example: Restaurant Name)",
+    "slug": "ADD HERE (example: restaurant-slug)",
     "status": "ACTIVE",
     "onboardingStep": 1
   }
@@ -185,31 +231,31 @@ User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chu
 Dành cho User đã tồn tại trong DB.
 
 ```json
-POST /auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "staff@restaurant.com",
-  "password": "user_password",
-  "deviceInfo": "Chrome 120 on MacOS" // Required for USER_SESSION tracking
+  "email": "ADD HERE (example: user@example.com)",
+  "password": "ADD HERE (example: user_password)",
+  "deviceInfo": "ADD HERE (example: Chrome 120 on MacOS)" // Required for USER_SESSION tracking
 }
 
 Response: 200 OK
 {
-  "accessToken": "eyJhbGciOiJIUzI1Ni...",
-  "refreshToken": "d792f321-...",
+  "accessToken": "ADD HERE (example: eyJhbGciOiJIUzI1Ni...)",
+  "refreshToken": "ADD HERE (example: d792f321-...)",
   "expiresIn": 3600,
   "user": {
-    "id": "uuid-user-1",
-    "email": "owner@restaurant.com",
-    "fullName": "Nguyen Van A",
+    "id": "ADD HERE (example: uuid-user-1)",
+    "email": "ADD HERE (example: user@example.com)",
+    "fullName": "ADD HERE (example: John Doe)",
     "role": "OWNER",
-    "tenantId": "uuid-tenant-1"
+    "tenantId": "ADD HERE (example: uuid-tenant-1)"
   },
   "tenant": {
-    "id": "uuid-tenant-1",
-    "name": "Pho Ngon 123",
-    "slug": "pho-ngon-123",
+    "id": "ADD HERE (example: uuid-tenant-1)",
+    "name": "ADD HERE (example: Restaurant Name)",
+    "slug": "ADD HERE (example: restaurant-slug)",
     "status": "ACTIVE",
     "onboardingStep": 1
   }
@@ -221,7 +267,7 @@ Response: 200 OK
 Dùng `refreshToken` để lấy `accessToken` mới. Backend sẽ check bảng `USER_SESSION`.
 
 ```json
-POST /auth/refresh
+POST /api/v1/auth/refresh
 Content-Type: application/json
 
 {
@@ -240,7 +286,7 @@ Response: 200 OK
 Dùng `refreshToken` để đăng xuất khỏi chính xác thiết bị thực hiện `logout` (bằng cách so sánh `refreshToken`)
 
 ```json
-POST /auth/logout
+POST /api/v1/auth/logout
 Content-Type: application/json
 
 {
@@ -255,7 +301,7 @@ Response: 200 OK
 Lấy thông tin user hiện tại từ access token. Yêu cầu gửi access token hợp lệ qua header `Authorization: Bearer <accessToken>`. Backend sẽ giải mã JWT và trả về thông tin user.
 
 ```http
-GET /auth/me
+GET /api/v1/auth/me
 Authorization: Bearer <accessToken>
 Accept: application/json
 ```
@@ -264,10 +310,10 @@ Accept: application/json
 ```json
 {
   "user": {
-    "id": "81aa5006-9ed9-401e-9b63-acca4d9ee5e8",
-    "email": "nphuchoang.itus@gmail.com",
+    "id": "ADD HERE (example: uuid-user-1)",
+    "email": "ADD HERE (example: owner@example.com)",
     "role": "OWNER",
-    "tenantId": "4782895c-79b7-445a-826a-5534af3b8589"
+    "tenantId": "ADD HERE (example: uuid-tenant-1)"
   }
 }
 ```
@@ -293,7 +339,7 @@ Payload của Access Token phản ánh trực tiếp dữ liệu từ bảng `US
 ```json
 {
   "sub": "uuid-user-1", // Mapping to USER.id
-  "email": "owner@rest.com", // Mapping to USER.email
+  "email": "ADD HERE (example: owner@example.com)", // Mapping to USER.email
   "role": "OWNER", // Mapping to USER.role (Enum)
   "tenantId": "uuid-tenant-1", // Mapping to USER.tenant_id
   "sid": "uuid-session-99", // Mapping to USER_SESSION.id (để support logout/revoke)
@@ -417,7 +463,7 @@ X-RateLimit-Reset: 1704960060
 
 ## 5. Tenants API
 
-> Lưu ý: Việc tạo Tenant mới (Create) đã được thực hiện tự động trong API /auth/register/create. Các API dưới đây dành cho OWNER để thiết lập thông tin nhà hàng (Onboarding) sau khi đã đăng nhập.
+> Lưu ý: Việc tạo Tenant mới (Create) đã được thực hiện tự động trong quy trình đăng ký 2 bước: `POST /api/v1/auth/register/submit` (Step 1: Submit & Challenge) → `POST /api/v1/auth/register/confirm` (Step 2: Confirm & Create). Các API dưới đây dành cho OWNER để thiết lập thông tin nhà hàng (Onboarding) sau khi đã đăng nhập.
 
 ### Base URL
 
@@ -477,10 +523,10 @@ Content-Type: application/json
 {
   "name": "Phở Ngon 123",
   "description": "Authentic Vietnamese Pho Restaurant",
-  "phone": "+84901234567",
-  "address": "123 Nguyen Hue, District 1, HCMC",
-  "logoUrl": "https://cdn.example.com/logo.png",
-  "slug": "new-pho-ngon-123",
+  "phone": "ADD HERE (example: +84901234567)",
+  "address": "ADD HERE (example: 123 Nguyen Hue, District 1, HCMC)",
+  "logoUrl": "ADD HERE (example: https://cdn.example.com/logo.png)",
+  "slug": "new-pho-ngon-123"
 }
 ```
 
@@ -492,9 +538,9 @@ Content-Type: application/json
   "name": "Phở Ngon 123",
   "slug": "new-pho-ngon-123",
   "description": "Authentic Vietnamese Pho Restaurant",
-  "phone": "+84901234567",
-  "address": "123 Nguyen Hue, District 1, HCMC",
-  "logoUrl": "https://cdn.example.com/logo.png",
+  "phone": "ADD HERE (example: +84901234567)",
+  "address": "ADD HERE (example: 123 Nguyen Hue, District 1, HCMC)",
+  "logoUrl": "ADD HERE (example: https://cdn.example.com/logo.png)",
   "onboardingStep": 2,
   "updatedAt": "2025-01-15T10:30:00Z"
 }
@@ -602,7 +648,7 @@ Content-Type: application/json
 Dành cho bảng `TENANT_PAYMENT_CONFIG`. API này liên kết tài khoản Stripe của nhà hàng để nhận tiền.
 
 ```json
-PUT /tenants/payment-config
+PATCH /api/v1/tenants/payment-config
 Authorization: Bearer {accessToken}
 Content-Type: application/json
 ```
@@ -611,7 +657,7 @@ Content-Type: application/json
 
 ```json
 {
-  "stripeAccountId": "acct_123456789", // ID tài khoản Stripe Connect của nhà hàng
+  "stripeAccountId": "acct_123456789"
 }
 ```
 
@@ -623,7 +669,7 @@ Content-Type: application/json
   "tenantId": "uuid-tenant-123",
   "stripeAccountId": "acct_123456789",
   "updatedAt": "2025-01-11T12:00:00Z",
-  "onboardingStep": 5,
+  "onboardingStep": 5
 }
 ```
 
@@ -676,1249 +722,449 @@ Content-Type: application/json
 
 ---
 
-<!--
-## 6. Tables & QR API
+## 6. Legacy API Examples (Archived)
 
-### 6.1. Create Table
+> **⚠️ DEPRECATED CONTENT:** Sections 6-11 contained conceptual API examples that are **not guaranteed** to match the actual implementation.
+>
+> These examples have been moved to: [**docs/appendix/legacy/OPENAPI_LEGACY_EXAMPLES.md**](../../appendix/legacy/OPENAPI_LEGACY_EXAMPLES.md)
+>
+> **For accurate API documentation, always use:**
+> - **Live Swagger UI:** `http://localhost:3000/api-docs`
+> - **OpenAPI JSON:** `http://localhost:3000/api-docs-json`
+> - **Controller Source Code:** `source/apps/api/src/modules/*/controllers/*.controller.ts`
 
-```http
-POST /tenants/{tenantId}/tables
-Authorization: Bearer <admin_token>
-Content-Type: application/json
+**Legacy Content Includes:**
+- Tables & QR API examples (create, generate QR, revoke, list)
+- Menu API examples (public menu, create category, create item, update, publish)
+- Orders API examples (create order, get details, list, update state, cancel)
+- Payments API examples (create session, webhooks, get status)
+- Analytics API examples (dashboard summary, kitchen performance)
+- Webhook examples (events, payload format, security)
 
-Request:
-{
-  "label": "Table 5",
-  "capacity": 4,
-  "zone": "outdoor",
-  "active": true
-}
-
-Response: 201 Created
-{
-  "id": "table_5",
-  "tenantId": "tenant_123",
-  "label": "Table 5",
-  "capacity": 4,
-  "zone": "outdoor",
-  "active": true,
-  "qrToken": null,
-  "createdAt": "2025-01-11T10:00:00Z"
-}
-```
-
-### 6.2. Generate QR Code
-
-```http
-POST /tenants/{tenantId}/tables/{tableId}/qr
-Authorization: Bearer <admin_token>
-Content-Type: application/json
-
-Request:
-{
-  "format": "png",        // png | svg
-  "size": 512,            // pixels
-  "expiresIn": "365d"     // Token expiry
-}
-
-Response: 201 Created
-{
-  "token": "eyJ0aWQiOiJ0ZW5hbnRfMTIzIiwidGJsIjoidGFibGVfNSIsImV4cCI6MTczNTY4OTYwMCwic2lnIjoiLi4uIn0",
-  "qrCodeUrl": "https://cdn.qr-ordering.com/qr/tenant_123/table_5.png",
-  "menuUrl": "https://app.qr-ordering.com/menu?token=eyJ0aWQi...",
-  "expiresAt": "2026-01-11T10:00:00Z",
-  "downloadUrl": "https://api.qr-ordering.com/v1/tenants/tenant_123/tables/table_5/qr/download"
-}
-```
-
-### 6.3. Revoke QR Token
-
-```http
-DELETE /tenants/{tenantId}/tables/{tableId}/qr
-Authorization: Bearer <admin_token>
-
-Response: 204 No Content
-```
-
-### 6.4. List Tables
-
-```http
-GET /tenants/{tenantId}/tables?active=true&zone=outdoor
-Authorization: Bearer <admin_token>
-
-Response: 200 OK
-{
-  "data": [
-    {
-      "id": "table_1",
-      "label": "Table 1",
-      "capacity": 2,
-      "zone": "indoor",
-      "active": true,
-      "hasQrCode": true
-    },
-    // ...more tables
-  ],
-  "pagination": {
-    "total": 20,
-    "page": 1,
-    "pageSize": 10,
-    "totalPages": 2
-  }
-}
-```
+**Migration Path:**
+1. Export current spec: `curl http://localhost:3000/api-docs-json > openapi.json`
+2. Compare legacy examples with actual spec
+3. Update client code to match Swagger-documented endpoints
+4. Test against development API at `http://localhost:3000/api/v1`
 
 ---
 
-## 7. Menu API
 
-### 7.1. Get Public Menu (Customer)
+## 7. OpenAPI Export (Optional)
 
-```http
-GET /menu
-X-QR-Token: <signed_qr_token>
+> **Note:** This project uses NestJS Swagger decorators to auto-generate OpenAPI documentation. The live Swagger UI at `http://localhost:3000/api-docs` is the authoritative source.
 
-Response: 200 OK
-{
-  "tenant": {
-    "id": "tenant_123",
-    "name": "The Golden Spoon",
-    "logo": "https://cdn.qr-ordering.com/tenants/tenant_123/logo.png"
-  },
-  "table": {
-    "id": "table_5",
-    "label": "Table 5"
-  },
-  "menu": {
-    "categories": [
-      {
-        "id": "cat_1",
-        "name": "Appetizers",
-        "displayOrder": 1,
-        "items": [
-          {
-            "id": "item_1",
-            "name": "Spring Rolls",
-            "description": "Fresh vegetable spring rolls",
-            "price": 50000,
-            "currency": "VND",
-            "image": "https://cdn.qr-ordering.com/menu/item_1.jpg",
-            "available": true,
-            "modifiers": [
-              {
-                "id": "mod_1",
-                "name": "Extra Sauce",
-                "priceDelta": 5000,
-                "type": "addon"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "publishedAt": "2025-01-11T09:00:00Z"
-}
-```
+### Auto-Generated JSON Endpoint
 
-### 7.2. Create Menu Category (Admin)
+NestJS Swagger automatically exposes a JSON endpoint at `/api-docs-json`:
 
-```http
-POST /tenants/{tenantId}/menu/categories
-Authorization: Bearer <admin_token>
-Content-Type: application/json
+- **Development**: `http://localhost:3000/api-docs-json`
+- **Production**: ADD HERE (replace with your deployed domain + `/api-docs-json`)
 
-Request:
-{
-  "name": "Main Courses",
-  "description": "Our signature main dishes",
-  "displayOrder": 2,
-  "active": true
-}
+**Evidence:** NestJS Swagger automatically creates this endpoint when calling `SwaggerModule.setup('api-docs', app, document)` in `source/apps/api/src/main.ts:102`
 
-Response: 201 Created
-{
-  "id": "cat_2",
-  "tenantId": "tenant_123",
-  "name": "Main Courses",
-  "description": "Our signature main dishes",
-  "displayOrder": 2,
-  "active": true,
-  "createdAt": "2025-01-11T10:00:00Z"
-}
-```
+### Exporting OpenAPI Spec to File
 
-### 7.3. Create Menu Item (Admin)
-
-```http
-POST /tenants/{tenantId}/menu/items
-Authorization: Bearer <admin_token>
-Content-Type: application/json
-
-Request:
-{
-  "categoryId": "cat_2",
-  "name": "Pho Bo",
-  "description": "Traditional Vietnamese beef noodle soup",
-  "price": 75000,
-  "currency": "VND",
-  "imageUrl": "https://cdn.qr-ordering.com/menu/pho-bo.jpg",
-  "available": true,
-  "modifiers": [
-    {
-      "name": "Extra Beef",
-      "priceDelta": 20000,
-      "type": "addon"
-    },
-    {
-      "name": "Size",
-      "type": "variant",
-      "options": [
-        { "name": "Small", "priceDelta": -10000 },
-        { "name": "Medium", "priceDelta": 0 },
-        { "name": "Large", "priceDelta": 15000 }
-      ]
-    }
-  ],
-  "tags": ["popular", "signature"],
-  "allergens": ["gluten"]
-}
-
-Response: 201 Created
-{
-  "id": "item_10",
-  "tenantId": "tenant_123",
-  "categoryId": "cat_2",
-  "name": "Pho Bo",
-  "slug": "pho-bo",
-  // ...other fields
-  "createdAt": "2025-01-11T10:00:00Z"
-}
-```
-
-### 7.4. Update Menu Item
-
-```http
-PATCH /tenants/{tenantId}/menu/items/{itemId}
-Authorization: Bearer <admin_token>
-Content-Type: application/json
-
-Request:
-{
-  "price": 80000,
-  "available": false
-}
-
-Response: 200 OK
-{
-  "id": "item_10",
-  "price": 80000,
-  "available": false,
-  "updatedAt": "2025-01-11T11:00:00Z"
-}
-```
-
-### 7.5. Publish Menu Changes
-
-```http
-POST /tenants/{tenantId}/menu/publish
-Authorization: Bearer <admin_token>
-
-Response: 200 OK
-{
-  "status": "published",
-  "version": 2,
-  "publishedAt": "2025-01-11T11:00:00Z",
-  "changesCount": 5
-}
-```
-
----
-
-## 8. Orders API
-
-### 8.1. Create Order (Customer)
-
-```http
-POST /orders
-X-QR-Token: <signed_qr_token>
-Content-Type: application/json
-Idempotency-Key: <unique_request_id>
-
-Request:
-{
-  "tableId": "table_5",
-  "customerInfo": {
-    "name": "Nguyen Van A",
-    "phone": "+84901234567",
-    "note": "Please prepare quickly"
-  },
-  "items": [
-    {
-      "itemId": "item_10",
-      "name": "Pho Bo",
-      "quantity": 2,
-      "price": 75000,
-      "modifiers": [
-        {
-          "id": "mod_1",
-          "name": "Extra Beef",
-          "priceDelta": 20000
-        }
-      ],
-      "note": "Less onions"
-    }
-  ],
-  "totals": {
-    "subtotal": 190000,
-    "tax": 0,
-    "serviceCharge": 0,
-    "total": 190000
-  }
-}
-
-Response: 201 Created
-{
-  "id": "order_abc123",
-  "orderNumber": "ORD-20250111-001",
-  "tenantId": "tenant_123",
-  "tableId": "table_5",
-  "state": "received",
-  "customerInfo": { /* ... */ },
-  "items": [ /* ... */ ],
-  "totals": { /* ... */ },
-  "createdAt": "2025-01-11T10:30:00Z",
-  "estimatedReadyAt": "2025-01-11T10:50:00Z"
-}
-```
-
-### 8.2. Get Order Details
-
-```http
-GET /orders/{orderId}
-Authorization: Bearer <staff_token>
-
-Response: 200 OK
-{
-  "id": "order_abc123",
-  "orderNumber": "ORD-20250111-001",
-  "tenantId": "tenant_123",
-  "tableId": "table_5",
-  "state": "preparing",
-  "customerInfo": { /* ... */ },
-  "items": [ /* ... */ ],
-  "totals": { /* ... */ },
-  "stateHistory": [
-    {
-      "state": "received",
-      "timestamp": "2025-01-11T10:30:00Z",
-      "actor": null
-    },
-    {
-      "state": "preparing",
-      "timestamp": "2025-01-11T10:32:00Z",
-      "actor": "user_kitchen_1"
-    }
-  ],
-  "createdAt": "2025-01-11T10:30:00Z",
-  "updatedAt": "2025-01-11T10:32:00Z"
-}
-```
-
-### 8.3. List Orders (Staff/Kitchen)
-
-```http
-GET /orders?state=preparing&sortBy=createdAt:asc&limit=20
-Authorization: Bearer <staff_token>
-
-Response: 200 OK
-{
-  "data": [
-    {
-      "id": "order_abc123",
-      "orderNumber": "ORD-20250111-001",
-      "tableLabel": "Table 5",
-      "state": "preparing",
-      "itemsCount": 2,
-      "total": 190000,
-      "createdAt": "2025-01-11T10:30:00Z",
-      "waitTime": "2m 30s"
-    },
-    // ...more orders
-  ],
-  "pagination": {
-    "cursor": "next_cursor_xyz",
-    "hasMore": true
-  }
-}
-```
-
-### 8.4. Update Order State (Kitchen/Waiter)
-
-```http
-PATCH /orders/{orderId}/state
-Authorization: Bearer <kitchen_token>
-Content-Type: application/json
-
-Request:
-{
-  "state": "ready",
-  "note": "All items prepared"
-}
-
-Response: 200 OK
-{
-  "id": "order_abc123",
-  "state": "ready",
-  "stateHistory": [
-    // ...previous states
-    {
-      "state": "ready",
-      "timestamp": "2025-01-11T10:45:00Z",
-      "actor": "user_kitchen_1",
-      "note": "All items prepared"
-    }
-  ],
-  "updatedAt": "2025-01-11T10:45:00Z"
-}
-```
-
-**Valid State Transitions**:
-
-```
-received → preparing
-preparing → ready
-ready → served
-served → closed
-```
-
-### 8.5. Cancel Order
-
-```http
-POST /orders/{orderId}/cancel
-Authorization: Bearer <admin_token>
-Content-Type: application/json
-
-Request:
-{
-  "reason": "Customer left",
-  "refund": false
-}
-
-Response: 200 OK
-{
-  "id": "order_abc123",
-  "state": "cancelled",
-  "cancelledAt": "2025-01-11T10:35:00Z",
-  "cancelReason": "Customer left"
-}
-```
-
----
-
-## 9. Payments API
-
-### 9.1. Create Payment Session (Redirect Flow)
-
-```http
-POST /orders/{orderId}/payment
-Authorization: Bearer <customer_token>
-Content-Type: application/json
-
-Request:
-{
-  "method": "stripe_checkout",
-  "successUrl": "https://app.qr-ordering.com/order/{orderId}/success",
-  "cancelUrl": "https://app.qr-ordering.com/order/{orderId}/cancel"
-}
-
-Response: 201 Created
-{
-  "sessionId": "cs_test_abc123",
-  "paymentUrl": "https://checkout.stripe.com/pay/cs_test_abc123",
-  "expiresAt": "2025-01-11T11:00:00Z"
-}
-```
-
-### 9.2. Payment Webhook (Stripe)
-
-```http
-POST /webhooks/stripe
-Stripe-Signature: <signature>
-Content-Type: application/json
-
-Request:
-{
-  "id": "evt_abc123",
-  "type": "checkout.session.completed",
-  "data": {
-    "object": {
-      "id": "cs_test_abc123",
-      "payment_status": "paid",
-      "amount_total": 190000,
-      "metadata": {
-        "orderId": "order_abc123",
-        "tenantId": "tenant_123"
-      }
-    }
-  }
-}
-
-Response: 200 OK
-{
-  "received": true
-}
-```
-
-### 9.3. Get Payment Status
-
-```http
-GET /orders/{orderId}/payment
-Authorization: Bearer <staff_token>
-
-Response: 200 OK
-{
-  "orderId": "order_abc123",
-  "status": "paid",
-  "method": "card",
-  "amount": 190000,
-  "currency": "VND",
-  "paidAt": "2025-01-11T10:40:00Z",
-  "transactionId": "txn_abc123"
-}
-```
-
----
-
-## 10. Analytics API
-
-### 10.1. Get Dashboard Summary
-
-```http
-GET /analytics/summary?startDate=2025-01-01&endDate=2025-01-11
-Authorization: Bearer <admin_token>
-
-Response: 200 OK
-{
-  "period": {
-    "startDate": "2025-01-01",
-    "endDate": "2025-01-11"
-  },
-  "metrics": {
-    "totalOrders": 150,
-    "totalRevenue": 28500000,
-    "averageOrderValue": 190000,
-    "qrScans": 500,
-    "conversionRate": 0.30,
-    "ordersByState": {
-      "received": 5,
-      "preparing": 8,
-      "ready": 3,
-      "served": 120,
-      "closed": 14
-    }
-  },
-  "trends": {
-    "ordersGrowth": "+15%",
-    "revenueGrowth": "+20%"
-  }
-}
-```
-
-### 10.2. Get Kitchen Performance
-
-```http
-GET /analytics/kitchen?startDate=2025-01-01&endDate=2025-01-11
-Authorization: Bearer <admin_token>
-
-Response: 200 OK
-{
-  "averagePrepTime": "18m 30s",
-  "p95PrepTime": "25m 00s",
-  "ordersByTimeSlot": {
-    "11:00-12:00": 25,
-    "12:00-13:00": 45,
-    "13:00-14:00": 30
-  },
-  "slowestItems": [
-    {
-      "itemId": "item_10",
-      "name": "Pho Bo",
-      "averagePrepTime": "22m"
-    }
-  ]
-}
-```
-
----
-
-## 11. Webhooks
-
-### 11.1. Webhook Events
-
-Hệ thống gửi webhook events đến URL được cấu hình trong tenant settings.
-
-**Event Types**:
-
-- `order.created`
-- `order.state_changed`
-- `order.cancelled`
-- `payment.succeeded`
-- `payment.failed`
-
-### 11.2. Webhook Payload Format
-
-```json
-{
-  "id": "evt_abc123",
-  "type": "order.state_changed",
-  "tenantId": "tenant_123",
-  "timestamp": "2025-01-11T10:32:00Z",
-  "data": {
-    "orderId": "order_abc123",
-    "previousState": "received",
-    "currentState": "preparing",
-    "actor": "user_kitchen_1"
-  }
-}
-```
-
-### 11.3. Webhook Security
-
-**Signature Verification**:
-
-```http
-X-Webhook-Signature: sha256=<hmac_signature>
-```
-
-**Verify**:
-
-```javascript
-const crypto = require("crypto");
-
-const signature = request.headers["x-webhook-signature"];
-const payload = JSON.stringify(request.body);
-const secret = process.env.WEBHOOK_SECRET;
-
-const expectedSignature =
-  "sha256=" + crypto.createHmac("sha256", secret).update(payload).digest("hex");
-
-if (signature !== expectedSignature) {
-  throw new Error("Invalid signature");
-}
-```
-
----
-
-## 12. OpenAPI YAML Specification
-
-```yaml
-# filepath: docs/openapi.yaml
-
-openapi: 3.0.3
-info:
-  title: TKQR-in Ordering Platform API
-  version: 1.0.0
-  description: |
-    REST API cho hệ thống TKQR-in Ordering Platform.
-    Multi-tenant platform cho phép nhà hàng quản lý menu, orders, và thanh toán.
-  contact:
-    email: dev@qr-ordering.com
-  license:
-    name: Proprietary
-    url: https://qr-ordering.com/license
-
-servers:
-  - url: https://api.qr-ordering.com/v1
-    description: Production
-  - url: https://api.staging.qr-ordering.com/v1
-    description: Staging
-  - url: http://localhost:3000/v1
-    description: Development
-
-security:
-  - bearerAuth: []
-
-tags:
-  - name: Tenants
-    description: Tenant management operations
-  - name: Tables & QR
-    description: Table and QR code management
-  - name: Menu
-    description: Menu catalog operations
-  - name: Orders
-    description: Order management
-  - name: Payments
-    description: Payment processing
-  - name: Analytics
-    description: Analytics and reporting
-  - name: Auth
-    description: Authentication operations
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT access token
-
-    qrToken:
-      type: apiKey
-      in: header
-      name: X-QR-Token
-      description: Signed QR token for customer access
-
-  schemas:
-    Error:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          type: object
-          required:
-            - code
-            - message
-          properties:
-            code:
-              type: string
-              example: RESOURCE_NOT_FOUND
-            message:
-              type: string
-              example: Resource not found
-            details:
-              type: object
-            timestamp:
-              type: string
-              format: date-time
-            requestId:
-              type: string
-
-    Tenant:
-      type: object
-      required:
-        - id
-        - name
-        - slug
-      properties:
-        id:
-          type: string
-          example: tenant_123
-        name:
-          type: string
-          example: The Golden Spoon
-        slug:
-          type: string
-          example: golden-spoon
-        email:
-          type: string
-          format: email
-        phone:
-          type: string
-        address:
-          $ref: "#/components/schemas/Address"
-        settings:
-          $ref: "#/components/schemas/TenantSettings"
-        plan:
-          type: string
-          enum: [basic, pro, enterprise]
-        status:
-          type: string
-          enum: [active, suspended, cancelled]
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    Address:
-      type: object
-      properties:
-        street:
-          type: string
-        city:
-          type: string
-        country:
-          type: string
-        postalCode:
-          type: string
-
-    TenantSettings:
-      type: object
-      properties:
-        currency:
-          type: string
-          example: VND
-        timezone:
-          type: string
-          example: Asia/Ho_Chi_Minh
-        locale:
-          type: string
-          example: vi-VN
-        operatingHours:
-          type: object
-          additionalProperties:
-            type: object
-            properties:
-              open:
-                type: string
-                example: "10:00"
-              close:
-                type: string
-                example: "22:00"
-
-    Table:
-      type: object
-      required:
-        - id
-        - label
-      properties:
-        id:
-          type: string
-          example: table_5
-        tenantId:
-          type: string
-        label:
-          type: string
-          example: Table 5
-        capacity:
-          type: integer
-          minimum: 1
-        zone:
-          type: string
-          example: outdoor
-        active:
-          type: boolean
-        qrToken:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    MenuItem:
-      type: object
-      required:
-        - id
-        - name
-        - price
-      properties:
-        id:
-          type: string
-        categoryId:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        price:
-          type: number
-          format: float
-        currency:
-          type: string
-        image:
-          type: string
-          format: uri
-        available:
-          type: boolean
-        modifiers:
-          type: array
-          items:
-            $ref: "#/components/schemas/Modifier"
-        tags:
-          type: array
-          items:
-            type: string
-        allergens:
-          type: array
-          items:
-            type: string
-
-    Modifier:
-      type: object
-      required:
-        - id
-        - name
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        priceDelta:
-          type: number
-        type:
-          type: string
-          enum: [addon, variant]
-        options:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-              priceDelta:
-                type: number
-
-    Order:
-      type: object
-      required:
-        - id
-        - orderNumber
-        - state
-      properties:
-        id:
-          type: string
-        orderNumber:
-          type: string
-        tenantId:
-          type: string
-        tableId:
-          type: string
-        state:
-          type: string
-          enum: [received, preparing, ready, served, closed, cancelled]
-        customerInfo:
-          $ref: "#/components/schemas/CustomerInfo"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderItem"
-        totals:
-          $ref: "#/components/schemas/OrderTotals"
-        stateHistory:
-          type: array
-          items:
-            $ref: "#/components/schemas/StateTransition"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    CustomerInfo:
-      type: object
-      properties:
-        name:
-          type: string
-        phone:
-          type: string
-        note:
-          type: string
-
-    OrderItem:
-      type: object
-      required:
-        - itemId
-        - name
-        - quantity
-        - price
-      properties:
-        itemId:
-          type: string
-        name:
-          type: string
-        quantity:
-          type: integer
-          minimum: 1
-        price:
-          type: number
-        modifiers:
-          type: array
-          items:
-            type: object
-        note:
-          type: string
-
-    OrderTotals:
-      type: object
-      properties:
-        subtotal:
-          type: number
-        tax:
-          type: number
-        serviceCharge:
-          type: number
-        discount:
-          type: number
-        total:
-          type: number
-
-    StateTransition:
-      type: object
-      properties:
-        state:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-        actor:
-          type: string
-        note:
-          type: string
-
-paths:
-  /health:
-    get:
-      summary: Health check
-      tags: [System]
-      security: []
-      responses:
-        "200":
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-
-  /auth/login:
-    post:
-      summary: User login
-      tags: [Auth]
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  format: password
-      responses:
-        "200":
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  accessToken:
-                    type: string
-                  refreshToken:
-                    type: string
-                  expiresIn:
-                    type: integer
-                  tokenType:
-                    type: string
-        "401":
-          description: Invalid credentials
-
-  /tenants:
-    post:
-      summary: Create tenant
-      tags: [Tenants]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Tenant"
-      responses:
-        "201":
-          description: Tenant created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Tenant"
-
-  /tenants/{tenantId}:
-    get:
-      summary: Get tenant details
-      tags: [Tenants]
-      parameters:
-        - name: tenantId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Tenant details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Tenant"
-
-  /tenants/{tenantId}/tables:
-    post:
-      summary: Create table
-      tags: [Tables & QR]
-      parameters:
-        - name: tenantId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Table"
-      responses:
-        "201":
-          description: Table created
-
-  /menu:
-    get:
-      summary: Get public menu
-      tags: [Menu]
-      security:
-        - qrToken: []
-      responses:
-        "200":
-          description: Menu data
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  tenant:
-                    type: object
-                  table:
-                    type: object
-                  menu:
-                    type: object
-
-  /orders:
-    post:
-      summary: Create order
-      tags: [Orders]
-      security:
-        - qrToken: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Order"
-      responses:
-        "201":
-          description: Order created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-
-    get:
-      summary: List orders
-      tags: [Orders]
-      parameters:
-        - name: state
-          in: query
-          schema:
-            type: string
-        - name: sortBy
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Order list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Order"
-                  pagination:
-                    type: object
-
-  /orders/{orderId}/state:
-    patch:
-      summary: Update order state
-      tags: [Orders]
-      parameters:
-        - name: orderId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - state
-              properties:
-                state:
-                  type: string
-                note:
-                  type: string
-      responses:
-        "200":
-          description: State updated
-```
-
----
-
-## 13. Testing & Examples
-
-### 13.1. Postman Collection
-
-Download Postman collection: [QR-Ordering-API.postman_collection.json](./QR-Ordering-API.postman_collection.json)
-
-### 13.2. cURL Examples
-
-**Create Order**:
+To export the OpenAPI specification for use with code generation tools (Orval, OpenAPI Generator, etc.):
 
 ```bash
-curl -X POST https://api.qr-ordering.com/v1/orders \
-  -H "X-QR-Token: eyJ0aWQi..." \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: $(uuidgen)" \
-  -d '{
-    "tableId": "table_5",
-    "customerInfo": {
-      "name": "John Doe",
-      "phone": "+84901234567"
-    },
-    "items": [
-      {
-        "itemId": "item_10",
-        "name": "Pho Bo",
-        "quantity": 2,
-        "price": 75000
-      }
-    ],
-    "totals": {
-      "subtotal": 150000,
-      "total": 150000
-    }
-  }'
+# Development (local API)
+curl http://localhost:3000/api-docs-json > docs/common/openapi.exported.json
+
+# Production (replace with your domain)
+curl ADD_YOUR_DOMAIN/api-docs-json > docs/common/openapi.exported.json
 ```
 
---- -->
+### Current Frontend Apps Usage
 
-**END OF OPENAPI DOCUMENTATION**
+The frontend apps currently reference local copies:
+- `source/apps/web-tenant/openapi-spec.json`
+- `source/apps/web-customer/openapi-spec.json`
+
+**Recommendation:** Export the latest spec and copy to frontend apps:
+```bash
+# Export from running API
+curl http://localhost:3000/api-docs-json > docs/common/openapi.exported.json
+
+# Copy to frontend apps for Orval
+cp docs/common/openapi.exported.json source/apps/web-tenant/openapi-spec.json
+cp docs/common/openapi.exported.json source/apps/web-customer/openapi-spec.json
+
+# Regenerate API clients
+cd source/apps/web-tenant && pnpm orval
+cd source/apps/web-customer && pnpm orval
+```
+
+---
+
+## 8. Subscription Management API
+
+> **Module:** `SubscriptionModule` - Location: `source/apps/api/src/modules/subscription/`
+
+### Overview
+Subscription management system supporting multi-tier plans (FREE, STARTER, PRO) with feature limits and usage tracking. Handles subscription upgrades via SePay payment gateway.
+
+### Base Path
+```
+/api/v1/admin/subscription
+```
+
+### Endpoints
+
+#### 6.1. Get All Subscription Plans
+```http
+GET /api/v1/subscription/plans
+```
+- **Authentication:** Public (customer-facing) or Bearer (admin)
+- **Description:** Retrieve all available subscription tiers with pricing and feature details
+- **Controller:** `PublicSubscriptionController.getPlans()`
+
+#### 6.2. Get Current Tenant Subscription
+```http
+GET /api/v1/admin/subscription/current
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Returns:** Current subscription tier, status, usage stats, and limits
+- **Controller:** `SubscriptionController.getCurrentSubscription()`
+
+#### 6.3. Get Usage Statistics
+```http
+GET /api/v1/admin/subscription/usage
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Returns:** Current usage vs limits for tables, menu items, orders/month, staff members
+- **Controller:** `SubscriptionController.getUsage()`
+
+#### 6.4. Check Action Limit
+```http
+POST /api/v1/admin/subscription/check-limit
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "action": "createTable" | "createMenuItem" | "createOrder" | "inviteStaff"
+}
+```
+- **Authentication:** Required (JWT)
+- **Description:** Check if tenant can perform an action based on subscription limits
+- **Controller:** `SubscriptionController.checkLimit()`
+
+#### 6.5. Create Upgrade Payment
+```http
+POST /api/v1/admin/subscription/upgrade
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "targetTier": "STARTER" | "PRO",
+  "billingCycle": "MONTHLY" | "YEARLY"
+}
+```
+- **Authentication:** Required (JWT)
+- **Description:** Create SePay payment intent for subscription upgrade. Returns QR code for payment.
+- **Controller:** `SubscriptionController.createUpgradePayment()`
+
+#### 6.6. Check Upgrade Payment Status
+```http
+GET /api/v1/admin/subscription/upgrade/{paymentId}/status
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Description:** Poll payment status. Auto-upgrades subscription when payment is confirmed.
+- **Controller:** `SubscriptionController.checkUpgradePaymentStatus()`
+
+**Evidence:** `source/apps/api/src/modules/subscription/subscription.controller.ts`
+
+---
+
+## 9. Staff Management API
+
+> **Module:** `StaffModule` - Location: `source/apps/api/src/modules/staff/`
+
+### Overview
+Staff invitation and management system. Supports email-based invitations with time-limited tokens (7-day expiry).
+
+### Base Path
+```
+/api/v1/admin/staff
+```
+
+### Endpoints
+
+#### 7.1. Invite Staff Member
+```http
+POST /api/v1/admin/staff/invite
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "email": "ADD HERE (example: staff@example.com)",
+  "role": "STAFF" | "KITCHEN"
+}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER only
+- **Guards:** `SubscriptionLimitsGuard` - checks if tenant can invite more staff
+- **Description:** Send email invitation with unique token
+- **Controller:** `StaffController.inviteStaff()`
+
+#### 7.2. List Staff Members
+```http
+GET /api/v1/admin/staff
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER
+- **Returns:** All active staff members for the tenant
+- **Controller:** `StaffController.listStaff()`
+
+#### 7.3. List Pending Invitations
+```http
+GET /api/v1/admin/staff/invitations
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER
+- **Returns:** Pending (unused) staff invitations
+- **Controller:** `StaffController.listPendingInvitations()`
+
+#### 7.4. Update Staff Role
+```http
+PATCH /api/v1/admin/staff/{staffId}/role
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "role": "STAFF" | "KITCHEN"
+}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER only
+- **Description:** Change staff member's role
+- **Controller:** `StaffController.updateStaffRole()` (exists in controller lines 99+)
+
+#### 7.5. Remove Staff Member
+```http
+DELETE /api/v1/admin/staff/{staffId}
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER only
+- **Controller:** `StaffController.removeStaff()` (exists in controller)
+
+#### 7.6. Accept Invitation (Public)
+```http
+POST /api/v1/staff/accept-invite
+Content-Type: application/json
+
+{
+  "token": "invitation-token-here",
+  "password": "user-password",
+  "fullName": "Staff Name"
+}
+```
+- **Authentication:** Public (token-based)
+- **Description:** Staff member accepts invitation and creates account
+- **Controller:** `StaffController.acceptInvite()` (public endpoint)
+
+**Evidence:** `source/apps/api/src/modules/staff/staff.controller.ts`
+
+---
+
+## 10. Bill Management API
+
+> **Module:** `BillModule` (part of OrderModule) - Location: `source/apps/api/src/modules/order/controllers/bill.controller.ts`
+
+### Overview
+Bill aggregation for tables. Groups multiple orders into a single bill for payment.
+
+### Base Path
+```
+/api/v1/admin/bills
+```
+
+### Endpoints
+
+#### 8.1. Get All Bills
+```http
+GET /api/v1/admin/bills?tableId={tableId}&paymentStatus={status}&startDate={date}&endDate={date}
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Query Parameters:**
+  - `tableId` (optional): Filter by table
+  - `paymentStatus` (optional): PENDING | COMPLETED | FAILED
+  - `startDate` (optional): ISO date
+  - `endDate` (optional): ISO date
+- **Controller:** `BillController.getBills()`
+
+#### 8.2. Get Bill by ID
+```http
+GET /api/v1/admin/bills/{billId}
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Returns:** Detailed bill with all associated orders
+- **Controller:** `BillController.getBillById()`
+
+#### 8.3. Create Bill (Implicit)
+Bills are typically created via order workflows. Check OrderModule for bill creation endpoints related to table checkout.
+
+**Evidence:** `source/apps/api/src/modules/order/controllers/bill.controller.ts`
+
+---
+
+## 11. Review System API
+
+> **Module:** `ReviewModule` - Location: `source/apps/api/src/modules/review/`
+
+### Overview
+Customer review system for menu items and orders. Supports 5-star ratings and text comments.
+
+### Endpoints
+
+#### 9.1. Create/Update Review (Customer)
+```http
+POST /api/v1/orders/{orderId}/items/{itemId}/review?sessionId={sessionId}&tenantId={tenantId}
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comment": "Excellent pho!"
+}
+```
+- **Authentication:** Public (session-based)
+- **Description:** Customer reviews a specific order item
+- **Controller:** `ReviewController.createReview()`
+
+#### 9.2. Get Order Reviews
+```http
+GET /api/v1/orders/{orderId}/reviews?tenantId={tenantId}
+```
+- **Authentication:** Public
+- **Returns:** All reviews for an order with summary statistics
+- **Controller:** `ReviewController.getOrderReviews()`
+
+#### 9.3. Get Menu Item Reviews
+```http
+GET /api/v1/menu-items/{menuItemId}/reviews?tenantId={tenantId}
+```
+- **Authentication:** Public
+- **Returns:** Review statistics for a specific menu item (average rating, count)
+- **Controller:** `ReviewController.getMenuItemReviews()`
+
+#### 9.4. Get Tenant Review Stats (Admin)
+```http
+GET /api/v1/admin/reviews/stats
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Returns:** Tenant-wide review statistics and top-rated items
+- **Controller:** `ReviewController.getTenantReviewStats()`
+
+**Evidence:** `source/apps/api/src/modules/review/review.controller.ts`
+
+---
+
+## 12. Promotion System API
+
+> **Module:** `PromotionModule` - Location: `source/apps/api/src/modules/promotion/`
+
+### Overview
+Discount code management system. Supports percentage and fixed-amount discounts with usage limits. Feature-gated by subscription tier.
+
+### Base Path
+```
+/api/v1/admin/promotions
+```
+
+### Endpoints
+
+#### 10.1. Create Promotion
+```http
+POST /api/v1/admin/promotions
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "code": "SUMMER2026",
+  "name": "Summer Sale",
+  "discountType": "PERCENTAGE" | "FIXED",
+  "discountValue": 20,
+  "minOrderAmount": 100000,
+  "maxUses": 100,
+  "startDate": "2026-06-01T00:00:00Z",
+  "endDate": "2026-08-31T23:59:59Z"
+}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Guards:** `FeatureGuard` - requires "promotions" feature in subscription
+- **Controller:** `PromotionController.createPromotion()`
+
+#### 10.2. List Promotions
+```http
+GET /api/v1/admin/promotions?active={true|false}
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Controller:** `PromotionController.getPromotions()`
+
+#### 10.3. Get Promotion Details
+```http
+GET /api/v1/admin/promotions/{promotionId}
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Controller:** `PromotionController.getPromotion()`
+
+#### 10.4. Update Promotion
+```http
+PUT /api/v1/admin/promotions/{promotionId}
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "active": false,
+  "maxUses": 150
+}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Guards:** `FeatureGuard`
+- **Controller:** `PromotionController.updatePromotion()`
+
+#### 10.5. Delete Promotion
+```http
+DELETE /api/v1/admin/promotions/{promotionId}
+Authorization: Bearer {accessToken}
+```
+- **Authentication:** Required (JWT)
+- **Roles:** OWNER, STAFF
+- **Controller:** `PromotionController.deletePromotion()` (line 100+)
+
+#### 12.6. Validate Promotion Code (Public/Customer)
+```http
+POST /api/v1/checkout/validate-promo
+Content-Type: application/json
+
+{
+  "code": "ADD HERE (example: SUMMER2026)",
+  "tenantId": "ADD HERE (example: tenant-uuid)",
+  "orderAmount": 150000
+}
+```
+- **Authentication:** Public
+- **Description:** Validate if promotion code is applicable to an order
+- **Returns:** Discount amount and validity status
+- **Controller:** `PromotionController.validatePromoCode()` (public endpoint)
+
+**Evidence:** `source/apps/api/src/modules/promotion/promotion.controller.ts`

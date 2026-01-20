@@ -30,7 +30,7 @@ Ví dụ cấu hình (đã có sẵn):
 import { defineConfig } from 'orval';
 export default defineConfig({
   customerApi: {
-    input: { target: '../../docs/common/openapi.yaml' },
+    input: { target: './openapi-spec.json' }, // Local copy of exported spec
     output: {
       mode: 'tags-split',
       target: 'src/services/api',
@@ -48,14 +48,29 @@ export default defineConfig({
 ```
 Tương tự cho web-tenant (`apps/web-tenant/orval.config.ts`).
 
+## Cập nhật OpenAPI Spec
+
+Trước khi chạy codegen, cần cập nhật `openapi-spec.json` từ API server đang chạy:
+
+```bash
+# Export latest spec from running API
+curl http://localhost:3000/api-docs-json > docs/common/openapi.exported.json
+
+# Copy to frontend apps
+cp docs/common/openapi.exported.json source/apps/web-tenant/openapi-spec.json
+cp docs/common/openapi.exported.json source/apps/web-customer/openapi-spec.json
+```
+
+**Lưu ý:** Đảm bảo API server đang chạy trước khi export (`pnpm dev` trong `source/apps/api`).
+
 ## Chạy codegen
 ```bash
 # Trong thư mục app tương ứng
 pnpm install
 pnpm orval
 ```
-- Orval sẽ đọc `../../docs/common/openapi.yaml` và sinh code vào `src/services/api`.
-- Nếu thay đổi file Swagger/OpenAPI, chạy lại `pnpm orval`.
+- Orval sẽ đọc `./openapi-spec.json` (local copy exported từ API) và sinh code vào `src/services/api`.
+- Nếu thay đổi API schema, cần export lại spec từ API server rồi chạy `pnpm orval`.
 
 ## Cách sử dụng trong Features
 - KHÔNG import trực tiếp trong `src/app`. Hãy tạo hooks/logic tại `src/features/*/hooks` và gọi hooks sinh từ Orval.

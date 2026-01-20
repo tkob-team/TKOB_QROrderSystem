@@ -4,7 +4,88 @@
 
 - **Version**: 1.0  
 - **Created**: 2025‑01‑11  
-- **Last Updated**: 2025‑01‑11
+- **Last Updated**: 2026‑01‑20
+
+---
+
+## 0. Implementation Status
+
+### 0.1. Implemented in Current Version (Evidence-Based)
+
+**Applications Deployed:**
+- ✅ **API Service** (`source/apps/api`) - NestJS backend with 150+ REST endpoints
+- ✅ **Web Tenant Dashboard** (`source/apps/web-tenant`) - Next.js 15 admin/staff/kitchen interface
+- ✅ **Web Customer App** (`source/apps/web-customer`) - Next.js 15 customer ordering interface
+
+**Implemented Modules (Verified from OpenAPI Spec & Codebase):**
+
+| Module | Status | Evidence |
+|--------|--------|----------|
+| **Authentication** | ✅ Implemented | 2-step OTP registration, JWT auth, refresh tokens, password reset |
+| **Tenants** | ✅ Implemented | Restaurant profile, settings, pricing config, onboarding flow |
+| **Menu Management** | ✅ Implemented | Categories, items, modifiers (SINGLE/MULTI choice), photos (bulk upload) |
+| **Tables & QR Codes** | ✅ Implemented | CRUD, QR generation/regeneration, download (PNG/SVG/PDF/ZIP), sessions |
+| **Cart** | ✅ Implemented | Session-based cart with modifiers, real-time pricing |
+| **Orders** | ✅ Implemented | Checkout, status tracking, cancellation (5min window), append items |
+| **Payments** | ✅ Implemented | SePay QR integration, webhook + polling fallback, bill-to-table |
+| **Payment Config** | ✅ Implemented | SePay API key, bank account, test QR generation |
+| **KDS (Kitchen Display)** | ✅ Implemented | Priority-based display (Normal/High/Urgent), real-time stats |
+| **Staff Management** | ✅ Implemented | Email invitations, role assignment (STAFF/KITCHEN), limits per plan |
+| **Subscriptions** | ✅ Implemented | FREE/BASIC/PREMIUM tiers, usage tracking, upgrade via SePay |
+| **Analytics** | ✅ Implemented | Revenue, orders, popular items, hourly distribution, table performance |
+| **Reviews & Ratings** | ✅ Implemented | 1-5 star ratings per order item, aggregated stats |
+| **Promotions** | ✅ Implemented | Discount codes (PERCENTAGE/FIXED), usage limits, validation |
+| **Bills** | ✅ Implemented | Bill generation when closing table session |
+| **WebSocket** | ✅ Implemented | Real-time order updates (order.gateway.ts) |
+| **Health Checks** | ✅ Implemented | Basic, detailed, readiness, liveness endpoints |
+
+**Database:**
+- ✅ **PostgreSQL** with Prisma ORM
+- ✅ Multi-tenant isolation via `tenantId` field (application-level)
+- ✅ 20+ migrations applied (see `prisma/migrations/`)
+
+**Authentication & Security:**
+- ✅ JWT bearer tokens with refresh mechanism
+- ✅ Role-based access control: OWNER, STAFF, KITCHEN
+- ✅ Session-based customer authentication (QR scan → table_session_id cookie)
+- ✅ Subscription-based feature gating
+
+**API Documentation:**
+- ✅ Full OpenAPI 3.0 spec: [openapi.exported.json](./openapi.exported.json)
+- ✅ 150+ documented endpoints across 20 API tags
+- ✅ See also: [OPENAPI.md](./OPENAPI.md)
+
+**User Documentation:**
+- ✅ Comprehensive user guide: [USER_GUIDE.md](./USER_GUIDE.md)
+
+### 0.2. Planned / Not in Current MVP
+
+**Features NOT Implemented:**
+- ❌ **Card Online Payments** - CARD_ONLINE enum exists but no processor integration
+- ❌ **Order Modification** - Cannot edit order after checkout (must cancel and reorder)
+- ❌ **Split Bills** - All orders at table combined into one bill
+- ❌ **Inventory Management** - No stock tracking or ingredient management
+- ❌ **Shift Management** - No staff clock-in/clock-out or shift reports
+- ❌ **Multi-Location** - Single restaurant per tenant (no chain support)
+- ❌ **Kitchen Printer Integration** - Screen-only KDS display
+- ❌ **Native Mobile Apps** - Web-only (no iOS/Android native)
+- ❌ **Offline Mode** - Internet required for all operations
+- ❌ **Advanced Analytics** - Cohort analysis, heatmaps, predictive analytics
+- ❌ **POS Integration** - No external POS system connectivity
+- ❌ **Loyalty/Rewards** - No points or rewards program
+
+**Infrastructure NOT Implemented:**
+- ❌ **Redis Cache** - Module exists but not actively used for caching
+- ❌ **Elasticsearch/Meilisearch** - No full-text search engine
+- ❌ **Message Queue** - No RabbitMQ/Kafka for async tasks
+- ❌ **Kubernetes** - Development uses Docker Compose only
+- ❌ **CDN** - No Cloudflare/CloudFront integration documented
+- ❌ **Object Storage** - Photos stored locally in `uploads/` directory
+
+**Deployment NOT Documented:**
+- ❌ Production deployment details
+- ❌ CI/CD pipeline configuration
+- ❌ Monitoring/observability setup (Grafana, Prometheus, etc.)
 
 ---
 
@@ -26,7 +107,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
 │  │  Customer   │  │   Waiter    │  │   Kitchen   │          │
-│  │  PWA/Web    │  │   Console   │  │     KDS     │          │
+  │  Web App    │  │   Console   │  │     KDS     │          │
 │  │  (Mobile)   │  │ (Responsive)│  │  (TV/Tab)   │          │
 │  └─────────────┘  └─────────────┘  └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
@@ -34,10 +115,10 @@
                     [HTTPS / WSS]
                            │
 ┌─────────────────────────────────────────────────────────────┐
-│                    API GATEWAY / CDN                        │
-│  - Rate Limiting                                            │
-│  - SSL Termination                                          │
-│  - Request Routing                                          │
+│            API GATEWAY / CDN (Planned/Suggested)            │
+│  - Rate Limiting (not implemented)                          │
+│  - SSL Termination (handled by deployment platform)         │
+│  - Request Routing (direct to backend)                      │
 └─────────────────────────────────────────────────────────────┘
                            │
 ┌─────────────────────────────────────────────────────────────┐
@@ -61,8 +142,8 @@
 ├─────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │  PostgreSQL  │  │    Redis     │  │  Object      │       │
-│  │  (Primary)   │  │    Cache     │  │  Storage     │       │
-│  │  + RLS       │  │  + Session   │  │  (Images)    │       │
+│  │  (Primary)   │  │   (Partial)  │  │  Storage     │       │
+│  │  + tenantId  │  │ Session+OTP  │  │  (Planned)   │       │
 │  └──────────────┘  └──────────────┘  └──────────────┘       │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -72,7 +153,7 @@
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │   Payment    │  │  SMS/Email   │  │  Monitoring  │       │
 │  │   Gateway    │  │  Notification│  │  & Logging   │       │
-│  │  (Stripe)    │  │   Service    │  │ (Grafana)    │       │
+│  │   (SePay)    │  │   Service    │  │  (Planned)   │       │
 │  └──────────────┘  └──────────────┘  └──────────────┘       │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -83,14 +164,14 @@
 
 ### 2.1. Client Layer
 
-#### 2.1.1. Customer PWA (Progressive Web App)
+#### 2.1.1. Customer Web Application
 **Mô tả**: Ứng dụng web tối ưu cho mobile, cho phép khách hàng quét QR và gọi món.
 
 **Đặc điểm**:
-- **Công nghệ**: React/Vite + Tailwind CSS
-- **Responsive**: Mobile‑first, hỗ trợ tablet
-- **Offline**: Service Worker cho trải nghiệm offline cơ bản
-- **PWA**: Có thể cài đặt, hoạt động như native app
+- **Công nghệ**: Next.js 15 App Router + Tailwind CSS + shadcn/ui
+- **Responsive**: Mobile‑first design, hỗ trợ tablet
+- **Internet Required**: Cần kết nối internet để sử dụng (PWA/offline mode chưa triển khai)
+- **Real-time Updates**: WebSocket cho cập nhật trạng thái đơn hàng
 
 **Tính năng chính**:
 - Quét QR code (hoặc nhập link)
@@ -100,12 +181,13 @@
 - Theo dõi trạng thái đơn hàng
 
 #### 2.1.2. Waiter Console
-**Mô tả**: Giao diện web responsive cho nhân viên phục vụ.
+**Mô tả**: Giao diện web responsive cho nhân viên phục vụ, tích hợp trong Tenant Dashboard.
 
 **Đặc điểm**:
-- **Công nghệ**: React + Responsive UI
+- **Công nghệ**: Next.js 15 App Router (route `/waiter` trong web-tenant)
 - **Thiết bị**: Tablet, điện thoại, PC
-- **Real‑time**: WebSocket cho cập nhật đơn hàng
+- **Real‑time**: WebSocket (Socket.IO) cho cập nhật đơn hàng
+- **Authentication**: JWT với OWNER/STAFF role
 
 **Tính năng chính**:
 - Xem danh sách đơn hàng theo trạng thái
@@ -114,18 +196,20 @@
 - Đánh dấu món đã giao
 
 #### 2.1.3. Kitchen Display System (KDS)
-**Mô tả**: Màn hình hiển thị cho bếp, tối ưu cho TV/màn hình lớn.
+**Mô tả**: Màn hình hiển thị cho bếp, tối ưu cho TV/màn hình lớn, tích hợp trong Tenant Dashboard.
 
 **Đặc điểm**:
-- **Công nghệ**: React + Large UI Components
+- **Công nghệ**: Next.js 15 App Router (route `/kds` trong web-tenant)
 - **Thiết bị**: TV, tablet lớn, màn hình PC
-- **Display**: Font lớn, dễ đọc từ xa
+- **Display**: Font lớn, dễ đọc từ xa, auto-refresh
+- **Real‑time**: WebSocket (Socket.IO) cho đơn mới
+- **Authentication**: JWT với KITCHEN role
 
 **Tính năng chính**:
 - Hàng đợi đơn hàng theo thời gian
 - Chuyển trạng thái: Received → Preparing → Ready
 - Âm thanh thông báo đơn mới
-- Highlight đơn chờ lâu
+- Highlight đơn chờ lâu (priority thresholds: NORMAL ≤100%, HIGH 100-150%, URGENT >150%)
 
 ### 2.2. API Gateway / CDN
 
@@ -151,50 +235,146 @@
 - **Language**: TypeScript
 - **API Style**: RESTful + OpenAPI 3.0
 
-**Modules**:
+**Implemented Modules (from `source/apps/api/src/modules/`):**
 
-##### Tenants Module
-- Quản lý thông tin nhà hàng
-- Cấu hình: giờ mở cửa, địa chỉ, branding
-- Subscription/pricing tiers
+##### Auth Module ✅
+- 2-step OTP registration (email verification)
+- JWT-based authentication with refresh tokens
+- Password reset flow with email tokens
+- Role-based access control: OWNER, STAFF, KITCHEN
+- Avatar upload support
 
-##### Tables & QR Module
-- CRUD tables
-- Sinh QR code (signed token)
-- Quản lý token lifecycle (revoke/regenerate)
+##### Tenant Module ✅
+- Restaurant profile management (name, slug, address, phone)
+- Opening hours configuration (per day)
+- Pricing settings (currency, tax, service charge, tip suggestions)
+- Onboarding flow (4 steps: profile, hours, settings, payment)
+- Currency: VND default (configurable)
 
-##### Menu Module
-- Quản lý categories, items, modifiers
-- Pricing và variants
-- Menu versioning (publish không downtime)
+##### Menu Module ✅
+- **Categories:** CRUD with display order, active/inactive
+- **Items:** CRUD with status (DRAFT/PUBLISHED/ARCHIVED), availability toggle
+- **Modifiers:** Groups (SINGLE_CHOICE/MULTI_CHOICE) with price deltas
+- **Photos:** Bulk upload (max 10), primary photo, display order, delete
+- **Public Menu:** Customer-facing endpoint with session/JWT auth
 
-##### Orders Module
-- Tạo đơn hàng từ customer
-- State machine: Received → Preparing → Ready → Served
-- Audit trail đầy đủ
+##### Table Module ✅
+- CRUD with table number, capacity, location, description
+- QR code generation with signed JWT tokens
+- QR regeneration (single or bulk)
+- QR download formats: PNG, SVG, PDF (single), ZIP/PDF (bulk)
+- Table status: AVAILABLE, OCCUPIED, RESERVED, INACTIVE
+- Session management (Haidilao-style QR scan → session → menu)
+- Close session & generate bill
 
-##### Payments Module
-- Tích hợp payment gateway (Stripe)
-- Redirect flow (MVP)
-- Webhook handling
+##### Cart Module ✅
+- Session-based cart (tied to table_session_id cookie)
+- Add items with modifiers and special notes
+- Update quantity, remove items, clear cart
+- Real-time pricing calculation (subtotal, tax, service charge, total)
 
-##### Auth Module
-- JWT‑based authentication
-- Tenant‑scoped authorization
-- Role‑based access control (Customer, Waiter, Kitchen, Admin)
+##### Order Module ✅
+- Checkout flow (create order from cart)
+- Payment methods: BILL_TO_TABLE, SEPAY_QR, CARD_ONLINE (enum only), CASH
+- Order status: PENDING → RECEIVED → PREPARING → READY → SERVED → COMPLETED → PAID
+- Customer self-cancel within 5 minutes (if kitchen hasn't started)
+- Append items to existing BILL_TO_TABLE order
+- Order tracking with timeline and ETA
+- Priority calculation for KDS: NORMAL (≤100%), HIGH (100-150%), URGENT (>150%)
+- Staff actions: update status, mark paid, cancel
+- Request bill notification
 
-##### Analytics Module
-- Tổng hợp metrics: đơn/ngày, conversion, AOV
-- Kitchen SLA: thời gian xử lý
-- Retention và funnel analysis
+##### Payment Module ✅
+- **SePay Integration:** VietQR payment with QR code generation
+- **Webhook:** Automatic payment confirmation from SePay
+- **Polling Fallback:** Manual check if webhook unavailable
+- **Exchange Rate:** USD to VND conversion
+- Payment status tracking: PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
+
+##### Payment Config Module ✅
+- SePay API key management (encrypted storage)
+- Bank account configuration (account number, name, bank code)
+- Webhook secret for verification
+- Test QR generation to validate config
+- Supported banks list
+- Public endpoint to check enabled payment methods
+
+##### KDS Module ✅
+- Active orders grouped by priority (normal, high, urgent)
+- Kitchen statistics: total active, avg prep time, orders completed today
+- Mark order items as prepared
+- Real-time order updates via WebSocket
+
+##### Bill Module ✅
+- Bill generation when closing table session
+- Includes all unpaid orders for the session
+- Subtotal, discount, tip, service charge, tax, total
+- Payment method and status tracking
+
+##### Staff Module ✅
+- Email invitation system with expiring tokens
+- Role assignment: STAFF (table/order management), KITCHEN (KDS only)
+- List staff members and pending invitations
+- Update role, remove staff, cancel invitations
+- Resend invitation emails
+- Accept invitation flow with account creation
+- Subscription-based limits (FREE: 1, BASIC: 5, PREMIUM: unlimited)
+
+##### Subscription Module ✅
+- **Plans:** FREE, BASIC, PREMIUM with different limits
+  - Tables: 1, 10, unlimited
+  - Menu Items: 10, 50, unlimited
+  - Orders/Month: 100, 500, unlimited
+  - Staff: 1, 5, unlimited
+- Current subscription and usage tracking
+- Upgrade via SePay payment
+- Feature gating (analytics, promotions)
+- Pricing: VND 0, 25000, 50000 (monthly)
+
+##### Analytics Module ✅
+- **Overview:** Dashboard stats (today's revenue, orders, active tables)
+- **Revenue:** By date range with grouping (day/week/month)
+- **Orders:** Statistics with filters
+- **Popular Items:** Top selling menu items
+- **Hourly Distribution:** Orders by hour of day
+- **Table Performance:** Revenue and turnover per table
+
+##### Review Module ✅
+- 1-5 star ratings per order item
+- Optional comment
+- Review statistics per menu item (avg rating, distribution)
+- Tenant-wide review stats
+- Recent reviews listing
+
+##### Promotion Module ✅
+- Discount codes (unique per tenant)
+- Types: PERCENTAGE (with max discount cap), FIXED
+- Minimum order value requirement
+- Usage limits and tracking
+- Start/expiry dates
+- Validation at checkout
+- Feature gated to BASIC+ plans
+
+##### WebSocket Module ✅
+- Real-time order updates (order.gateway.ts)
+- Tenant-scoped rooms
+- Order status change notifications
+- Used by KDS and staff dashboard
+
+##### Email Module ✅
+- Registration OTP emails
+- Password reset emails
+- Email verification
+- Staff invitation emails
 
 #### 2.3.2. Middleware Pipeline
 
 ```
-Request → Auth Check → Tenant Isolation → Rate Limit → Handler → Response
-                ↓              ↓              ↓           ↓
-              JWT        tenantId scope   Redis       Business
-            Verify       + RLS filter    Counter      Logic
+Request → Auth Check → Tenant Isolation → Handler → Response
+                ↓              ↓                      ↓
+              JWT        tenantId scope           Business
+            Verify       Application‑level         Logic
+                         Query Filtering
 ```
 
 ### 2.4. Data Layer
@@ -203,9 +383,9 @@ Request → Auth Check → Tenant Isolation → Rate Limit → Handler → Respo
 **Vai trò**: Lưu trữ dữ liệu chính, ACID transactions
 
 **Schema Design**:
-- **Tenant Isolation**: Field‑level `tenantId` + Row‑Level Security (RLS)
-- **Indexes**: Composite indexes trên `(tenantId, ...)`
-- **Audit**: Trigger hoặc application‑level logging
+- **Tenant Isolation**: Field‑level `tenantId` với application‑level enforcement (RLS chưa triển khai)
+- **Indexes**: Composite indexes trên `(tenantId, ...)` cho performance
+- **Audit**: Application‑level logging
 
 **Tables chính**:
 ```sql
@@ -222,43 +402,70 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 **Migrations**: Sử dụng migration tool (Prisma, TypeORM, Drizzle)
 
 #### 2.4.2. Redis
-**Vai trò**:
-- Session storage
-- Cache menu data (hot data)
-- Rate limiting counters
-- Real‑time pub/sub (optional)
+**Vai trò** (⚠️ **Partially Implemented**):
+- ✅ Session storage (table_session_id for customer QR sessions)
+- ✅ Registration OTP storage (2-step registration flow)
+- ⚠️ Cache menu data (module exists but not actively used in current version)
+- ❌ Rate limiting counters (not implemented)
+- ❌ Real‑time pub/sub (WebSocket used instead)
 
-**Data Types**:
-- **Strings**: Session tokens, cache
-- **Sets**: Active tables per tenant
-- **Sorted Sets**: Order queue by timestamp
-- **Pub/Sub**: Real‑time notifications
+**Current Usage**:
+- **Registration Flow**: Store temporary registration data + OTP (10 min TTL)
+- **Table Sessions**: Store session metadata for customer QR scans
+- **Password Reset**: Store reset tokens
 
-#### 2.4.3. Object Storage
-**Vai trò**: Lưu trữ assets (ảnh menu, QR codes)
+**Note**: Redis is set up but not fully utilized. WebSocket module (`order.gateway.ts`) handles real-time updates instead of Redis pub/sub.
 
-**Công nghệ**:
-- AWS S3 / Cloudflare R2 / MinIO (self‑hosted)
+#### 2.4.3. File Storage
+**Current Implementation**: ⚠️ **Local File System** (MVP)
 
-**Cấu trúc**:
-```
-/tenants/{tenantId}/menu/{itemId}.jpg
-/tenants/{tenantId}/qr/{tableId}.png
-```
+**Storage Location**:
+- `source/apps/api/uploads/menu-photos/` - Menu item photos
+- `source/apps/api/uploads/avatars/` - User profile avatars
+- Photos served directly by NestJS static file middleware
 
-**CDN**: Phục vụ qua CloudFront/Cloudflare để giảm latency
+**File Upload**:
+- Single photo upload endpoint
+- Bulk photo upload (up to 10 per item)
+- Supported formats: JPEG, PNG, WebP, GIF
+- Max file size: 5MB per photo
+
+**QR Codes**:
+- Generated on-the-fly (not stored)
+- Download formats: PNG, SVG, PDF
+- Bulk download: ZIP or multi-page PDF
+
+**Future Migration**:
+- ❌ **NOT IMPLEMENTED**: AWS S3 / Cloudflare R2
+- ❌ **NOT IMPLEMENTED**: CDN integration
+- Current setup suitable for MVP, needs cloud storage for production scale
 
 ### 2.5. External Services
 
 #### 2.5.1. Payment Gateway
-**Provider**: Stripe Checkout (MVP)
+**Provider**: **SePay** (VietQR - Vietnam bank transfer) ✅ **IMPLEMENTED**
 
 **Flow**:
-1. Customer checkout → Backend tạo Stripe session
-2. Redirect đến Stripe hosted page
-3. Webhook nhận kết quả → Cập nhật order status
+1. Customer checkout → Backend creates SePay payment intent
+2. Generate VietQR code with transfer content (order number)
+3. Customer scans QR with banking app → Makes transfer
+4. **Webhook** receives notification from SePay → Auto-confirm payment
+5. **Polling Fallback**: If webhook unavailable, manually check via SePay API
+6. Update order status to PAID
 
-**Post‑MVP**: Stripe Elements (native integration)
+**Supported Methods**:
+- ✅ **BILL_TO_TABLE**: Pay cash at end (mark paid by staff)
+- ✅ **SEPAY_QR**: VietQR instant payment
+- ⚠️ **CARD_ONLINE**: Enum exists but not integrated
+- ✅ **CASH**: For bill closing
+
+**Configuration**:
+- Tenant-level SePay API key (encrypted)
+- Bank account details (account number, name, bank code)
+- Webhook secret for verification
+- Test mode available
+
+**Note**: Original plan mentioned Stripe, but **SePay is actually implemented** for Vietnam market.
 
 #### 2.5.2. Notification Service
 **Channels**:
@@ -421,13 +628,22 @@ Admin → [Create Table]
 
 ### 4.2. Multi‑tenant Isolation
 
-**Strategies**:
-1. **Database Level**: Row‑Level Security (RLS) policies
-2. **Application Level**: Middleware kiểm tra `tenantId` trong mọi query
-3. **API Level**: Token phải chứa tenant scope
+**Current Implementation (✅ Application-Level)**:
+1. **Application Level**: Middleware tự động inject `tenantId` filter vào mọi Prisma query
+2. **API Level**: JWT token chứa `tenantId`, middleware verify và scope requests
+3. **Code Level**: Guards và decorators enforce tenant scope trong controllers
 
-**Example RLS Policy**:
+**Implementation Details**:
+```typescript
+// Example: Application-level isolation in Prisma
+await prisma.order.findMany({
+  where: { tenantId: user.tenantId }, // Auto-injected by middleware
+});
+```
+
+**Optional Future Enhancement (Database-Level RLS)**:
 ```sql
+-- NOT IMPLEMENTED: Example RLS policy for future consideration
 CREATE POLICY tenant_isolation ON orders
   USING (tenant_id = current_setting('app.current_tenant')::uuid);
 ```
@@ -438,12 +654,14 @@ CREATE POLICY tenant_isolation ON orders
 - **At Rest**: Database encryption (PostgreSQL + disk encryption)
 - **Sensitive Fields**: PII (phone, email) → AES‑256 encryption
 
-### 4.4. Rate Limiting
+### 4.4. Rate Limiting (❌ Not Implemented)
 
-**Levels**:
-- **API Gateway**: 1000 req/min per IP
-- **Application**: 100 req/min per user
-- **QR Scan**: 10 scans/min per QR code (chống spam)
+**Note**: Rate limiting chưa được triển khai trong MVP. Đây là các mức đề xuất cho production.
+
+**Suggested Levels**:
+- **API Gateway**: ADD HERE req/min per IP (khi API Gateway được deploy)
+- **Application**: ADD HERE req/min per user (cần implement với Redis)
+- **QR Scan**: ADD HERE scans/min per QR code (cần implement anti-spam logic)
 
 ---
 
@@ -483,7 +701,9 @@ CREATE POLICY tenant_isolation ON orders
 
 ---
 
-## 6. Deployment Architecture
+## 6. Deployment Architecture (⚠️ Suggested / Planned)
+
+**Note**: Section này mô tả các deployment strategies được đề xuất cho production. MVP hiện tại có thể deploy đơn giản hơn (e.g., Vercel for frontend, Railway/Render for backend).
 
 ### 6.1. Environment Strategy
 
@@ -540,11 +760,13 @@ Deployment
 
 ---
 
-## 7. Monitoring & Observability
+## 7. Monitoring & Observability (⚠️ Suggested / Planned)
 
-### 7.1. Logging
+**Note**: Section này mô tả observability best practices được đề xuất. MVP hiện tại có basic console logging và có thể mở rộng dần.
 
-**Structured Logs**:
+### 7.1. Logging (Suggested)
+
+**Structured Logs (Recommended Format)**:
 ```json
 {
   "timestamp": "2025-01-11T10:30:00Z",
@@ -558,34 +780,39 @@ Deployment
 }
 ```
 
-**Centralized**: Loki / ELK / CloudWatch Logs
+**Centralized (Planned)**: Loki / ELK / CloudWatch Logs  
+**Current MVP**: Console logging với NestJS Logger
 
-### 7.2. Metrics
+### 7.2. Metrics (Suggested)
 
-**Key Metrics**:
+**Key Metrics (Recommended)**:
 - Request rate, error rate, latency (RED)
 - Database connections, query time
 - Cache hit rate
 - Order conversion rate
 
-**Dashboards**: Grafana với alerts
+**Dashboards (Planned)**: Grafana với alerts  
+**Current MVP**: Có thể dùng platform metrics (Railway/Vercel dashboards)
 
-### 7.3. Tracing
+### 7.3. Tracing (Suggested)
 
-**Distributed Tracing**:
-- OpenTelemetry instrumentation
+**Distributed Tracing (Planned)**:
+- OpenTelemetry instrumentation (chưa implement)
 - Trace request từ frontend → backend → database
 - Visualize trong Jaeger
 
-### 7.4. Alerts
+**Current MVP**: Request ID correlation trong logs
 
-**Critical Alerts**:
+### 7.4. Alerts (Suggested)
+
+**Critical Alerts (Recommended)**:
 - API error rate > 5%
 - Database connection pool exhausted
 - Payment webhook failure
 - Disk usage > 80%
 
-**Channels**: PagerDuty, Slack, Email
+**Channels (Planned)**: PagerDuty, Slack, Email  
+**Current MVP**: Manual monitoring, platform alerts (Railway/Vercel)
 
 ---
 
@@ -593,35 +820,50 @@ Deployment
 
 ### 8.1. Frontend
 
-| Component | Technology |
-|-----------|-----------|
-| Customer App | React + Vite + TypeScript |
-| Waiter Console | React + TypeScript |
-| KDS | React + TypeScript |
-| UI Framework | Tailwind CSS + shadcn/ui |
-| State Management | Zustand / Jotai |
-| API Client | TanStack Query |
-| PWA | Workbox (Service Worker) |
+| Component | Technology | Status |
+|-----------|-----------|--------|
+| Customer App | **Next.js 15** App Router + TypeScript | ✅ Implemented |
+| Tenant Dashboard | **Next.js 15** App Router + TypeScript | ✅ Implemented |
+| Waiter Console | Integrated in Tenant Dashboard (`/waiter` route) | ✅ Implemented |
+| KDS | Integrated in Tenant Dashboard (`/kds` route) | ✅ Implemented |
+| UI Framework | Tailwind CSS + shadcn/ui | ✅ Implemented |
+| State Management | Zustand | ✅ Implemented |
+| API Client | TanStack Query | ✅ Implemented |
+| Code Generation | **Orval** (from OpenAPI spec) | ✅ Implemented |
+| PWA | ❌ Not implemented | Planned |
+
+**Note**: Original plan mentioned separate React apps, but **Next.js 15** with App Router is used for both customer and tenant applications.
 
 ### 8.2. Backend
 
-| Component | Technology |
-|-----------|-----------|
-| Runtime | Node.js 20+ / Bun |
-| Framework | NestJS |
-| Language | TypeScript |
-| API Docs | OpenAPI 3.0 (Swagger) |
-| Validation | class‑validator + class‑transformer |
-| ORM | Prisma / Drizzle ORM |
+| Component | Technology | Status |
+|-----------|-----------|--------|
+| Runtime | **Node.js 20+** | ✅ Implemented |
+| Framework | **NestJS** | ✅ Implemented |
+| Language | **TypeScript** | ✅ Implemented |
+| API Docs | **OpenAPI 3.0 (Swagger)** - 150+ endpoints | ✅ Implemented |
+| Validation | **class-validator + class-transformer** | ✅ Implemented |
+| ORM | **Prisma** | ✅ Implemented |
+| File Upload | **Multer** | ✅ Implemented |
+| QR Code | **qrcode** library | ✅ Implemented |
+| Email | Nodemailer (local SMTP for dev) | ✅ Implemented |
+| WebSocket | **Socket.IO** via NestJS | ✅ Implemented |
+| Password Hashing | **bcrypt** | ✅ Implemented |
+| JWT | **@nestjs/jwt** | ✅ Implemented |
 
 ### 8.3. Database & Storage
 
-| Component | Technology |
-|-----------|-----------|
-| Primary DB | PostgreSQL 16+ |
-| Cache | Redis 7+ |
-| Object Storage | AWS S3 / Cloudflare R2 |
-| Search (future) | Elasticsearch / Meilisearch |
+| Component | Technology | Status |
+|-----------|-----------|--------|
+| Primary DB | **PostgreSQL** (via Prisma) | ✅ Implemented |
+| ORM | **Prisma** | ✅ Implemented |
+| Migrations | **Prisma Migrate** - 20+ migrations | ✅ Implemented |
+| Cache | **Redis** (partial usage) | ⚠️ Partial |
+| File Storage | Local file system (`uploads/`) | ✅ Implemented |
+| Object Storage | ❌ AWS S3 / Cloudflare R2 | Planned |
+| Search | ❌ Elasticsearch / Meilisearch | Planned |
+
+**Database Schema**: See [docs/backend/database/description.md](../backend/database/description.md) and [ER diagram](../backend/database/er_diagram.md)
 
 ### 8.4. Infrastructure
 
@@ -696,34 +938,53 @@ Deployment
 **Lý do**: Đơn giản triển khai, dễ debug, đủ cho MVP.  
 **Trade‑off**: Khó scale độc lập từng module, nhưng có thể refactor sau.
 
-### ADR‑002: PostgreSQL + RLS
-**Quyết định**: Dùng PostgreSQL với Row‑Level Security cho multi‑tenant.  
-**Lý do**: ACID, mature, RLS built‑in, cost‑effective.  
-**Trade‑off**: Phức tạp hơn separate DBs, nhưng đủ cho SMB scale.
+### ADR‑002: PostgreSQL with Application-Level Isolation
+**Quyết định**: Dùng PostgreSQL với application-level `tenantId` filtering cho multi‑tenant.  
+**Lý do**: ACID, mature, đơn giản implementation cho MVP, cost‑effective.  
+**Trade‑off**: Phụ thuộc vào application logic (không có database-level RLS), nhưng đủ cho SMB scale và dễ debug.  
+**Future**: Có thể thêm Row-Level Security (RLS) policies khi scale lên.
 
 ### ADR‑003: JWT cho Auth
 **Quyết định**: JWT stateless cho staff/admin, token‑based cho customer.  
 **Lý do**: Không cần session server, scale dễ dàng.  
 **Trade‑off**: Không thể revoke JWT ngay lập tức (dùng short TTL + refresh token).
 
-### ADR‑004: Redirect Payment (MVP)
-**Quyết định**: Dùng Stripe Checkout redirect thay vì native integration.  
-**Lý do**: Nhanh triển khai, Stripe handle PCI compliance.  
-**Trade‑off**: UX không mượt bằng native, nhưng đủ cho MVP.
+### ADR‑004: SePay VietQR Payment (MVP) ✅
+**Quyết định**: Dùng **SePay** (VietQR - Vietnam bank transfer) thay vì Stripe.  
+**Lý do**: Target market là Vietnam, VietQR phổ biến, không cần credit card, instant confirmation.  
+**Implementation**: Webhook + polling fallback, QR code generation, tenant-level config.  
+**Trade‑off**: Chỉ support Vietnam banks, cần bank account setup per tenant.
+
+### ADR‑005: Next.js 15 App Router
+**Quyết định**: Dùng **Next.js 15** với App Router cho cả customer và tenant apps.  
+**Lý do**: SSR/SSG support, file-based routing, React Server Components, TypeScript first-class.  
+**Trade‑off**: Learning curve cao hơn Vite, nhưng SEO và performance tốt hơn cho customer app.
+
+### ADR‑006: Orval Code Generation
+**Quyết định**: Generate API client code từ OpenAPI spec bằng **Orval**.  
+**Lý do**: Type-safe API calls, sync giữa backend và frontend, giảm boilerplate.  
+**Trade‑off**: Dependency vào OpenAPI spec quality, cần regenerate khi API thay đổi.
 
 ---
 
 ## 12. Tài liệu Tham khảo
 
 ### 12.1. Internal Docs
-- [Product Readme](./readme.md)
-- [User Stories](./doca/01-product/06-USER_STORIES.md) *(TBD)*
-- [OpenAPI Specification](./doca/03-openapi.yaml) *(TBD)*
+- ✅ [OpenAPI Specification](./openapi.exported.json) - Full API spec with 150+ endpoints
+- ✅ [OpenAPI Documentation](./OPENAPI.md) - API usage guide
+- ✅ [User Guide](./USER_GUIDE.md) - End-user manual for all roles
+- ✅ [Database Schema](../backend/database/description.md) - Prisma schema documentation
+- ✅ [Database ER Diagram](../backend/database/er_diagram.md) - Entity relationship diagram
+- ✅ [Frontend Architecture - Tenant](../frontend/ARCHITECTURE.md) - Next.js app structure
+- ✅ [Orval Code Generation](../frontend/ORVAL.md) - API client generation
+- ✅ [RBAC Guide](../frontend/RBAC_GUIDE.md) - Role-based access control
 
 ### 12.2. External Resources
 - [NestJS Documentation](https://docs.nestjs.com/)
-- [PostgreSQL RLS Guide](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
-- [Stripe Checkout](https://stripe.com/docs/payments/checkout)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/current/)
+- [Next.js 15 Documentation](https://nextjs.org/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [SePay Documentation](https://docs.sepay.vn/)
 - [OpenTelemetry](https://opentelemetry.io/)
 
 ---
