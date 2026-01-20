@@ -89,7 +89,6 @@
 ### 0.2. Đã lên kế hoạch / Không có trong MVP hiện tại
 
 **Các tính năng CHƯA triển khai:**
-- ❌ **Card Online Payments** - CARD_ONLINE enum tồn tại nhưng không có tích hợp processor
 - ❌ **Order Modification** - Không thể chỉnh sửa đơn hàng sau khi thanh toán (phải hủy và đặt lại)
 - ❌ **Split Bills** - Tất cả đơn hàng ở bàn được gộp thành một hóa đơn
 - ❌ **Inventory Management** - Không có theo dõi kho hoặc quản lý nguyên liệu
@@ -103,7 +102,6 @@
 - ❌ **Loyalty/Rewards** - Không có chương trình điểm hoặc phần thưởng
 
 **Cơ sở hạ tầng CHƯA triển khai:**
-- ❌ **Redis Cache** - Module tồn tại nhưng không được sử dụng tích cực để lưu vào bộ nhớ cache
 - ❌ **Elasticsearch/Meilisearch** - Không có công cụ tìm kiếm toàn văn
 - ❌ **Message Queue** - Không có RabbitMQ/Kafka cho các tác vụ không đồng bộ
 - ❌ **Kubernetes** - Phát triển chỉ sử dụng Docker Compose
@@ -314,14 +312,65 @@
 - Order tracking with timeline and ETA
 - Priority calculation for KDS: NORMAL (≤100%), HIGH (100-150%), URGENT (>150%)
 - Staff actions: update status, mark paid, cancel
-- Request bill notification
+- **Bill Request** ✅ **IMPLEMENTED**:
+  - Customer calls `POST /orders/session/request-bill` → Staff notified in real-time
+  - Backend sets `table_sessions.bill_requested_at` timestamp
+  - Session transitions to read-only (blocks new order items)
+  - WebSocket event `order:bill_requested` emitted to staff room (staff/owner clients)
+  - Staff views pending bills and brings check/payment device to table
+  - Customer can cancel with `POST /orders/session/cancel-bill-request` (unlocks session)
+  - Idempotent: duplicate requests return success without side effects
 
-##### Mô-đun Thanh toán ✅
-- **Tích hợp SePay:** Thanh toán VietQR với tạo mã QR
-- **Webhook:** Xác nhận thanh toán tự động từ SePay
-- **Fallback Polling:** Kiểm tra thủ công nếu webhook không khả dụng
-- **Tỷ giá hối đoái:** Chuyển đổi USD sang VND
-- Theo dõi trạng thái thanh toán: PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
+##### Mô-đun Thanh toán ✅ **IMPLEMENTED** (Partial)
+
+**Phương thức Thanh toán hỗ trợ**:
+
+| Phương thức | Trạng thái | Chi tiết |
+|-----------|----------|---------|
+| **BILL_TO_TABLE** | ✅ Implemented | Thanh toán tiền mặt khi khách rời đi (nhân viên đánh dấu đã trả) |
+| **SEPAY_QR** | ✅ Implemented | VietQR – thanh toán qua chuyển khoản ngân hàng, webhook automatic confirmation |
+| **CARD_ONLINE** | ⚠️ Partial | DTO enum tồn tại, nhưng **CHƯA tích hợp payment processor** (chưa triển khai) |
+| **CASH** | ✅ Implemented | Để đóng hóa đơn, không xử lý thanh toán |
+
+**Chi tiết Triển khai**:
+
+**BILL_TO_TABLE** ✅:
+- Bàn được cộng các mục vào một đơn hàng chung
+- Khách không thanh toán ngay
+- Nhân viên cuối cùng chỉ mục lục và chọn thanh toán BILL_TO_TABLE
+- Nhân viên đánh dấu PAID (hoặc khách thanh toán qua app)
+
+**SEPAY_QR** ✅:
+- Tích hợp gateway thanh toán SePay (VietQR)
+- Tạo VietQR (mã QR thanh toán) → Khách quét qua app ngân hàng
+- **Webhook**: SePay gửi thông báo thanh toán → Backend auto-confirm
+- **Fallback Polling**: Nếu webhook không khả dụng, backend kiểm tra thủ công
+- Trạng thái: PENDING → PROCESSING → COMPLETED (hoặc FAILED)
+- Yêu cầu: SePay API key + thông tin tài khoản ngân hàng (per tenant)
+
+**CARD_ONLINE** ⚠️ **INCOMPLETE**:
+- Enum `CARD_ONLINE` hiện tại trong DTO checkout
+- **KHÔNG có tích hợp processor thực tế** (chưa triển khai)
+- Frontend component `CardPaymentPage.tsx` bị thiếu (xem Audit Report)
+- **Hiện tại**: Nếu chọn CARD_ONLINE, sẽ gây lỗi hoặc không hoạt động
+- **Lộ trình**: Dự kiến Q2 2026 (tích hợp Stripe/Adyen)
+
+**Trạng thái Thanh toán**:
+- `PENDING`: Chờ thanh toán
+- `PROCESSING`: Xử lý (SePay trả lời)
+- `COMPLETED`: Thanh toán thành công
+- `FAILED`: Thanh toán thất bại
+- `REFUNDED`: Hoàn tiền
+
+**Webhook**:
+- SePay webhook endpoint: `/webhooks/sepay`
+- HMAC verification để đảm bảo legitimacy
+- Retry logic nếu webhook handler thất bại
+
+**Tài khoản Ngân hàng**:
+- Quản lý per tenant
+- Thông tin bí mật được mã hóa trước khi lưu
+- Hỗ trợ các ngân hàng Vietnam (xem danh sách from SePay)
 
 ##### Mô-đun Cấu hình Thanh toán ✅
 - Quản lý khóa API SePay (lưu trữ được mã hóa)
@@ -389,9 +438,14 @@
 
 ##### WebSocket Module ✅
 - Real-time order updates (order.gateway.ts)
-- Tenant-scoped rooms
-- Order status change notifications
-- Used by KDS and staff dashboard
+- Tenant-scoped rooms (namespace per tenant)
+- **Events emitted** ✅:
+  - `order:created` → New order (audience: kitchen, staff)
+  - `order:status_changed` → State transition (audience: customer, kitchen, staff)
+  - `order:bill_requested` → Customer requests bill (audience: staff, owner) — **sets `table_sessions.bill_requested_at`, session becomes read-only**
+  - `order:completed` → Order finished (audience: customer)
+  - `order:cancelled` → Order cancelled (audience: kitchen, staff)
+- Used by KDS, staff console, and customer app (order tracking)
 
 ##### Email Module ✅
 - Registration OTP emails
@@ -437,9 +491,7 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 **Vai trò** (⚠️ **Một phần được triển khai**):
 - ✅ Session storage (table_session_id for customer QR sessions)
 - ✅ Registration OTP storage (2-step registration flow)
-- ⚠️ Cache menu data (module exists but not actively used in current version)
-- ❌ Rate limiting counters (chưa triển khai)
-- ❌ Real‑time pub/sub (WebSocket used instead)
+- ✅ Cache menu data
 
 **Current Usage**:
 - **Registration Flow**: Store temporary registration data + OTP (10 min TTL)
@@ -593,7 +645,14 @@ Customer Order → [PENDING]
                       ↓
                    [SERVED]
                       │
-                      │ Customer finishes
+                      │ Customer finishes & requests bill (OR staff marks paid)
+                      ├─→ [Bill Requested]
+                      │   ↓
+                      │   table_sessions.bill_requested_at = NOW()
+                      │   → WebSocket event order:bill_requested → staff/owner
+                      │   → Session locked (blocks new items)
+                      │   → Waiter brings bill to table
+                      │
                       ↓
                  [COMPLETED]
                       │
@@ -604,11 +663,17 @@ Customer Order → [PENDING]
 Alternative flow at any point before SERVED:
   - Order can transition to [CANCELLED]
 
+Alternative: Bill Request Cancellation:
+  - Customer calls cancel-bill-request
+  - table_sessions.bill_requested_at = NULL
+  - Session unlocked (allows new items again)
+  - Waiter notified to cancel bill delivery
+
 Each transition:
   - Logged in order_status_history
   - Timestamp recorded
   - Actor identified (userId or system)
-  - WebSocket event emitted
+  - WebSocket event emitted (tenant-scoped room)
 ```
 
 ### 3.3. QR Code Generation Flow
@@ -699,12 +764,53 @@ Admin yêu cầu tất cả mã QR
 - **No registration**: Nhập thông tin tối thiểu (tên, SĐT)
 - **Session**: Short‑lived session trong Redis
 
-#### 4.1.2. Staff Flow
+#### 4.1.2. Staff Flow (Email/Password)
 - **JWT‑based**: Login → Nhận JWT token
 - **Refresh token**: Stored in httpOnly cookie
 - **Claims**: `{userId, tenantId, roles[]}`
 
-#### 4.1.3. Role‑Based Access Control (RBAC)
+#### 4.1.3. Google OAuth 2.0 (Web-Tenant Only) ✅ **IMPLEMENTED**
+
+**Scope**: Đăng nhập cho Tenant Dashboard (`web-tenant`) - chỉ dành cho admin/owner
+
+**Luồng OAuth**:
+```
+1. Admin truy cập http://localhost:3002 → Nhấp "Sign in with Google"
+                ↓
+2. Frontend redirect → Backend Google Auth endpoint
+                ↓
+3. Backend khởi tạo Google OAuth flow (Passport Strategy)
+                ↓
+4. Admin login qua Google account
+                ↓
+5. Google redirect callback → Backend (với authorization code)
+                ↓
+6. Backend verify code với Google, nhận user profile
+                ↓
+7. Backend check nếu user đã tồn tại:
+   - YES: Cấp JWT tokens
+   - NO: Tạo user mới + tạo tenant + assign OWNER role
+                ↓
+8. Backend redirect → Frontend callback page (với tokens qua query params)
+                ↓
+9. Frontend lưu tokens (localStorage + cookie)
+                ↓
+10. Nếu user mới → Redirect /auth/onboarding-wizard
+    Nếu user cũ → Redirect /admin/dashboard
+```
+
+**Yêu cầu Cấu hình**:
+- `GOOGLE_CLIENT_ID` (bắt buộc nếu bật OAuth)
+- `GOOGLE_CLIENT_SECRET` (bắt buộc nếu bật OAuth)
+- `GOOGLE_CALLBACK_URL` (bắt buộc nếu bật OAuth)
+
+**Ghi chú**: Tất cả 3 biến phải cung cấp. Nếu thiếu, tính năng sẽ vô hiệu.
+
+**Not Supported**: 
+- ❌ Google OAuth cho Customer App (`web-customer`) – sử dụng QR-based auth
+- ❌ Google OAuth cho staff invitation – chỉ email-based invitations
+
+#### 4.1.4. Role‑Based Access Control (RBAC)
 
 | Role | Permissions |
 |------|------------|

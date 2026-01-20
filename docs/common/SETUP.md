@@ -73,6 +73,9 @@ pnpm dev
 9. [Scripts có sẵn](#9-scripts-có-sẵn)
 10. [Setup IDE](#10-setup-ide)
 11. [Khắc phục sự cố](#11-khắc-phục-sự-cố)
+12. [Triển khai (Production)](#12-triển-khai-production)
+13. [Tham chiếu Port](#13-tham-chiếu-port)
+14. [Các Bước Tiếp theo](#14-các-bước-tiếp-theo)
 
 ---
 
@@ -195,6 +198,10 @@ pnpm list --depth=0
 
 ## 5. Cấu hình Environment
 
+**Lưu ý**: 
+- Bỏ qua phần "Google OAuth" nếu không cần tính năng đăng nhập qua Google
+- Tất cả các phần khác (**bắt buộc**) phải được cấu hình
+
 ### 5.1. Docker Environment
 
 ```bash
@@ -255,6 +262,15 @@ EMAIL_FROM=noreply@localhost
 STORAGE_DRIVER=local
 MAX_FILE_SIZE=5242880
 ALLOWED_MIME_TYPES=image/jpeg,image/png,image/webp,image/gif
+
+# Google OAuth (Tùy chọn - chỉ dành cho web-tenant)
+# ⚠️ QUAN TRỌNG: Tính năng Google OAuth là TUỲCHỌN
+# Nếu bật Google OAuth, phải cung cấp CẢ 3 biến dưới đây cùng lúc
+# Nếu thiếu hoặc chỉ cấu hình một phần, tính năng sẽ không hoạt động (silent failure)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+# Lưu ý: Để lấy credentials, xem "5.4. Google OAuth (Tùy chọn)" bên dưới
 ```
 
 ### 5.3. Frontend Environments
@@ -300,6 +316,102 @@ NEXT_PUBLIC_USE_LOGGING=false
 # Lưu ý: Frontend sử dụng access tokens do API cấp
 # Không cần JWT_SECRET trong frontend environment
 ```
+
+### 5.4. Google OAuth Setup (Tùy chọn)
+
+> ⚠️ **QUAN TRỌNG**: Google OAuth là tính năng **TUỲCHỌN**. 
+> 
+> - **Nếu KHÔNG dùng**: Để các biến trống hoặc không đặt chúng. Ứng dụng sẽ chạy bình thường.
+> - **Nếu dùng**: Phải cung cấp **CẢ ba** biến dưới đây, nếu không nút "Sign in with Google" sẽ vô hiệu.
+> 
+> **Lỗi phổ biến**: Cấu hình chỉ 1-2 biến → Nút vẫn hiển thị nhưng khi click sẽ lỗi "Invalid redirect_uri". Đây là lỗi silent (không báo cáo rõ ràng).
+
+#### Bước 1: Tạo Google OAuth Credentials
+
+1. **Truy cập Google Cloud Console**:
+   - Đi tới https://console.cloud.google.com/
+   - Tạo project mới hoặc chọn project hiện tại
+
+2. **Bật Google+ API**:
+   - Tìm "Google+ API" trong API Library
+   - Nhấn "Enable"
+
+3. **Tạo OAuth 2.0 Credentials**:
+   - Đi tới "Credentials" (Thông tin xác thực)
+   - Nhấn "Create Credentials" → "OAuth Client ID"
+   - Chọn "Web Application"
+   - Thêm Authorized redirect URIs:
+     ```
+     http://localhost:3000/api/v1/auth/google/callback
+     ```
+   - Nhấn "Create"
+
+4. **Sao chép Credentials**:
+   - Sao chép **Client ID** và **Client Secret**
+   - Lưu trữ an toàn (không commit vào git)
+
+#### Bước 2: Cấu hình Environment Variables
+
+Thêm vào `source/apps/api/.env`:
+
+```bash
+# Google OAuth (tất cả 3 phải có)
+GOOGLE_CLIENT_ID=<your-client-id-từ-Google-Cloud>
+GOOGLE_CLIENT_SECRET=<your-client-secret-từ-Google-Cloud>
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+```
+
+**Template cho Development**:
+```bash
+GOOGLE_CLIENT_ID=123456789-abc123def456ghi789jkl012mno345pqr.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-abcDEF123ghiJKL456mnoPQR
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+```
+
+#### Bước 3: Xác minh
+
+1. Khởi động API server:
+   ```bash
+   cd source/apps/api
+   pnpm start:dev
+   ```
+
+2. Truy cập Tenant Dashboard: http://localhost:3002
+
+3. Nút **"Sign in with Google"** trên trang login sẽ hoạt động
+
+4. Nhấn nút → Chuyển hướng tới Google → Google OAuth callback → Cấp token → Đăng nhập thành công
+
+#### Production Callback URL
+
+Khi deploy lên production, cần cập nhật:
+
+1. **Google Cloud Console**:
+   - Thêm authorized redirect URI:
+     ```
+     https://<your-production-domain>/api/v1/auth/google/callback
+     ```
+
+2. **Environment (.env production)**:
+   ```bash
+   GOOGLE_CALLBACK_URL=https://<your-production-domain>/api/v1/auth/google/callback
+   ```
+
+#### Troubleshooting Google OAuth
+
+| Vấn đề | Nguyên nhân | Giải pháp |
+|--------|-----------|----------|
+| Nút "Sign in with Google" không hiển thị | Env vars không được load | Khởi động lại API server |
+| "Invalid redirect_uri" khi click nút | Callback URL không khớp Google config | Kiểm tra GOOGLE_CALLBACK_URL, làm trùng khớp |
+| Silent failure (nút click nhưng không gì xảy ra) | Chỉ cấu hình 1-2 biến | Đặt CẢ 3 biến: CLIENT_ID, CLIENT_SECRET, CALLBACK_URL |
+| "Invalid Client" error | Client ID hoặc Secret không chính xác | Kiểm tra lại từ Google Cloud Console |
+
+#### Lưu ý Bảo mật
+
+- ❌ **KHÔNG** commit `source/apps/api/.env` vào git
+- ❌ **KHÔNG** chia sẻ Client Secret công khai
+- ✅ Sử dụng `.env.example` làm template (không có values thực)
+- ✅ Lưu trữ secrets trong `.env` (local) hoặc CI/CD secrets (production)
 
 ---
 
@@ -650,7 +762,58 @@ pnpm start:dev  # API
 
 ---
 
-## 12. Tham chiếu Port
+## 12. Triển khai (Production)
+
+### 12.1. CI/CD via GitHub Actions
+
+Hệ thống hiện tại sử dụng **GitHub Actions** để tự động build, test, và deploy ứng dụng:
+
+**Workflow**:
+- **Trigger**: Push tới nhánh `release`
+- **Build**: Docker image → Push tới GHCR (GitHub Container Registry)
+- **Deploy**: SSH tới AWS EC2 → Chạy `docker-compose.prod.yml`
+
+**Yêu cầu**:
+- GitHub Secrets: `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`, `ENV_FILE`
+- AWS EC2 instance với Docker Compose
+- `docker-compose.prod.yml` trong repo root
+
+**Chi tiết**: Xem `.github/workflows/deploy.yml`
+
+### 12.2. Environment Variables cho Production
+
+Khi deploy, cấu hình tất cả env vars để phản ánh production environment:
+
+```bash
+# source/apps/api/.env (production)
+NODE_ENV=production
+LOG_LEVEL=info
+
+# Database (production instance)
+DATABASE_URL=postgresql://user:pass@prod-db:5432/qr_ordering_prod
+
+# Redis (production instance)
+REDIS_HOST=prod-redis
+REDIS_PASSWORD=<strong-password>
+
+# JWT (strong secret!)
+JWT_SECRET=<generate-with-32+-random-chars>
+
+# Email (SendGrid production)
+SENDGRID_API_KEY=<production-key>
+EMAIL_FROM=noreply@yourdomain.com
+
+# Google OAuth (nếu sử dụng)
+GOOGLE_CLIENT_ID=<prod-client-id>
+GOOGLE_CLIENT_SECRET=<prod-client-secret>
+GOOGLE_CALLBACK_URL=https://yourdomain.com/api/v1/auth/google/callback
+```
+
+**Lưu ý**: Đưa ENV_FILE vào GitHub Secrets, không commit `.env` production.
+
+---
+
+## 13. Tham chiếu Port
 
 | Dịch vụ | Port | Nguồn |
 |---------|------|--------|
@@ -663,7 +826,7 @@ pnpm start:dev  # API
 
 ---
 
-## 13. Các Bước Tiếp theo
+## 14. Các Bước Tiếp theo
 
 ### Khám phá Codebase
 
@@ -691,6 +854,7 @@ source/
 - [Kiến trúc](./ARCHITECTURE.md) - Kiến trúc hệ thống
 - [Database Schema](../backend/database/description.md) - Tài liệu schema đầy đủ
 - [Tài liệu API](http://localhost:3000/api-docs) - Swagger UI (khi API đang chạy)
+- [Tài liệu Audit](../report/AUDIT_REPORT_2026-01-20.md) - Thay đổi gần đây
 - [Contributing](./CONTRIBUTING.md) - Hướng dẫn đóng góp
 
 ---

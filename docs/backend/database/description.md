@@ -120,9 +120,10 @@
 | ------------- | -------- | ----------------------- | --------------------------------------- |
 | id            | UUID     | PK                      | Khóa chính                             |
 | email         | String   | Duy nhất toàn cầu         | Email đăng nhập                             |
-| password_hash | String   | Bắt buộc                | Mật khẩu được mã hóa Bcrypt                  |
+| password_hash | String   | Có thể rỗng                | Mật khẩu được mã hóa Bcrypt (null khi dùng OAuth Google)                  |
 | full_name     | String   | Bắt buộc                | Tên đầy đủ của người dùng                          |
 | avatar_url    | String   | Có thể rỗng                | URL hình đại diện người dùng                 |
+| google_id     | String   | Duy nhất toàn cầu, Có thể rỗng | ID tài khoản Google (OAuth 2.0)                 |
 | role          | Enum     | Mặc định: STAFF          | UserRole: OWNER, STAFF, KITCHEN         |
 | status        | Enum     | Mặc định: PENDING        | UserStatus: ACTIVE, INACTIVE, PENDING, LOCKED |
 | tenant_id     | UUID     | FK                      | Liên kết đến tenant                         |
@@ -138,6 +139,8 @@
 - Trạng thái PENDING cho đến khi email được xác minh hoặc quản trị viên phê duyệt
 - Vai trò OWNER có quyền truy cập đầy đủ, STAFF có quyền truy cập hạn chế, KITCHEN chỉ xem KDS
 - Xoá dây chuyền các phiên khi người dùng bị xoá
+- **OAuth Google**: `google_id` được đặt khi đăng ký/đăng nhập qua Google; `password_hash` có thể null cho người dùng OAuth
+- Người dùng có thể chuyển đổi giữa đăng nhập email+mật khẩu và Google (nếu cả hai được liên kết)
 
 #### USER_SESSION
 
@@ -233,6 +236,7 @@
 | active     | Boolean  | Mặc định: true | Trạng thái phiên hoạt động                     |
 | cleared_at | DateTime | Có thể rỗng    | Khi nhân viên xóa/đóng phiên           |
 | cleared_by | UUID     | Có thể rỗng    | ID người dùng nhân viên đã xóa phiên           |
+| bill_requested_at | DateTime | Có thể rỗng | Dấu thời gian khi khách hàng yêu cầu hóa đơn |
 
 **Chỉ mục**: `(table_id, active)`, `(tenant_id, active)`, `(active, created_at)`
 
@@ -240,6 +244,8 @@
 - Một phiên hoạt động trên mỗi bàn (kiểu Haidilao)
 - Nhân viên điều khiển khi bàn trống (cleared_at)
 - Theo dõi lịch sử phiên để phân tích
+- **Yêu cầu hóa đơn**: `bill_requested_at` được ghi lại khi khách hàng gửi yêu cầu hóa đơn qua ứng dụng khách hàng
+- Nhân viên sử dụng dấu thời gian này để xác nhận và xử lý yêu cầu thanh toán theo bàn
 
 ---
 

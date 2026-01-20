@@ -22,6 +22,8 @@
 - ✅ WebSocket thời gian thực cho cập nhật đơn hàng
 - ✅ Tích hợp thanh toán SePay QR + webhook
 - ✅ RBAC (Role-Based Access Control): OWNER, STAFF, KITCHEN
+- ✅ Xác thực Google OAuth cho chủ nhà hàng/nhân viên
+- ✅ Yêu cầu hóa đơn từ khách hàng + thông báo thời gian thực cho nhân viên
 - ✅ Hệ thống đánh giá & xếp hạng, khuyến mãi
 - ✅ Analytics: doanh thu, đơn hàng, mục phổ biến
 - ✅ Database audit logs, hóa đơn
@@ -68,8 +70,8 @@ Monorepo **pnpm workspace** với 3 ứng dụng chính + 1 UI package dùng chu
 
 ### Yêu cầu
 
-- **Node.js**: ≥18.0.0 (khuyến nghị 20 LTS)
-- **pnpm**: ≥8.0.0 (tested with 10.x)
+- **Node.js**: ≥20.0.0 (khuyến nghị 20 LTS, matched with CI/CD)
+- **pnpm**: ≥8.0.0 (CI sử dụng v4 action, works with pnpm v8+)
 - **Docker**: ≥24.x với Docker Compose
 - **Git**: ≥2.30
 
@@ -199,11 +201,13 @@ pnpm type-check
 | Module | Trạng thái |
 |--------|-----------|
 | Xác thực (JWT + OTP) | ✅ |
+| Google OAuth (Owner/Staff) | ✅ |
 | Multi-tenant | ✅ |
 | Quản lý menu & danh mục | ✅ |
 | Bàn & QR Code (tạo/tạo lại/tải xuống) | ✅ |
 | Giỏ hàng & checkout | ✅ |
 | Đơn hàng (tạo, hủy, theo dõi) | ✅ |
+| Yêu cầu hóa đơn + thông báo staff | ✅ |
 | Thanh toán (SePay QR) | ✅ |
 | WebSocket (real-time updates) | ✅ |
 | KDS (Kitchen Display System) | ✅ |
@@ -213,6 +217,9 @@ pnpm type-check
 | Đánh giá & Xếp hạng | ✅ |
 | Khuyến mãi & Mã giảm giá | ✅ |
 | Hóa đơn | ✅ |
+| CI/CD Pipeline (GitHub Actions) | ⚠️ Không hoàn chỉnh* |
+
+*Xem [CI_CD.md](docs/common/CI_CD.md) cho chi tiết. Blocker: `docker-compose.prod.yml` bị thiếu.
 
 ### 📋 Dự định (Planned)
 

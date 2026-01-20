@@ -73,7 +73,7 @@ Accept: application/json
 
 | Tag | Số lượng | Các Endpoints Tiêu biểu |
 |-----|-------|-------------------------|
-| **Authentication** | 15 | `POST /api/v1/auth/register/submit`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout` |
+| **Authentication** | 19 | `POST /api/v1/auth/register/submit`, `POST /api/v1/auth/register/confirm`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/google`, `GET /api/v1/auth/google/callback` |
 | **Menu - Categories** | 6 | `POST /api/v1/menu/categories`, `GET /api/v1/menu/categories`, `PATCH /api/v1/menu/categories/{id}`, `DELETE /api/v1/menu/categories/{id}` |
 | **Menu - Items** | 7 | `POST /api/v1/menu/item`, `GET /api/v1/menu/item`, `PATCH /api/v1/menu/item/{id}`, `POST /api/v1/menu/item/{id}/publish` |
 | **Menu - Items (Public)** | 2 | `GET /api/v1/menu/item/public`, `GET /api/v1/menu/item/public/{id}` |
@@ -85,7 +85,7 @@ Accept: application/json
 | **Cart** | 5 | `POST /api/v1/cart/items`, `GET /api/v1/cart`, `PATCH /api/v1/cart/items/{itemId}`, `DELETE /api/v1/cart` |
 | **Orders** | 14 | `POST /api/v1/checkout`, `GET /api/v1/orders/mergeable`, `POST /api/v1/orders/{orderId}/append-items`, `GET /api/v1/admin/orders` |
 | **KDS - Kitchen Display** | 2 | `GET /api/v1/admin/kds/orders/active`, `GET /api/v1/admin/kds/stats` |
-| **Bills** | 2 | `GET /api/v1/admin/bills`, `GET /api/v1/admin/bills/{id}` |
+| **Bills** | 6 | `GET /api/v1/admin/bills`, `GET /api/v1/admin/bills/{id}`, `GET /api/v1/orders/session/bill-preview`, `POST /api/v1/orders/session/request-bill`, `POST /api/v1/orders/session/cancel-bill-request` |
 | **Payments** | 6 | `POST /api/v1/payment/intent`, `GET /api/v1/payment/{paymentId}`, `POST /api/v1/payment/webhook`, `GET /api/v1/payment/poll` |
 | **Payment Config** | 6 | `GET /api/v1/admin/payment-config`, `PUT /api/v1/admin/payment-config`, `POST /api/v1/admin/payment-config/test` |
 | **Tenants** | 8 | `GET /api/v1/tenants/me`, `PATCH /api/v1/tenants/profile`, `PATCH /api/v1/tenants/settings`, `POST /api/v1/tenants/complete-onboarding` |
@@ -329,6 +329,52 @@ Accept: application/json
 **Chú thích:**  
 - Endpoint này dùng để lấy thông tin user đang đăng nhập, thường dùng cho trang profile hoặc kiểm tra trạng thái đăng nhập.  
 - Không cần truyền thêm tham số nào ngoài access token.
+
+#### 2.1.6. Google OAuth - Khởi tạo
+
+```http
+GET /api/v1/auth/google
+```
+
+- **Xác thực**: Public (redirect-based)
+- **Scope**: Web-Tenant only (chủ sở hữu/admin đăng nhập bảng điều khiển)
+- **Mô tả**: Khởi tạo quy trình xác thực Google OAuth 2.0. Chuyển hướng người dùng đến Google Sign-In.
+- **Guard**: `GoogleAuthGuard` (Passport Google OAuth 2.0)
+- **Trả về**: HTTP 302 Redirect tới Google login page (`https://accounts.google.com/o/oauth2/v2/auth`)
+- **Yêu cầu**: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` phải được cấu hình trong `.env`
+- **Lưu ý**: 
+  - Chỉ hỗ trợ cho Tenant Dashboard (web-tenant)
+  - Ứng dụng khách (web-customer) sử dụng xác thực dựa trên token QR
+  - Nếu thiếu bất kỳ env var nào, endpoint sẽ trả về lỗi
+
+#### 2.1.7. Google OAuth - Callback
+
+```http
+GET /api/v1/auth/google/callback?code={authorizationCode}&state={state}
+```
+
+- **Xác thực**: Public (callback từ Google, protected by CSRF state token)
+- **Tham số Query**:
+  - `code`: Authorization code từ Google (bắt buộc)
+  - `state`: CSRF protection token từ Google (bắt buộc)
+- **Mô tả**: Điểm kết thúc callback sau khi người dùng ủy quyền với Google. Trao đổi authorization code để nhận ID token và tạo/cập nhật phiên người dùng.
+- **Guard**: `GoogleAuthGuard` (xác minh code với Google, tạo/cập nhật user)
+- **Luồng Xác thực**:
+  1. Google gửi `authorization code` + `state` trở lại endpoint này
+  2. Backend xác minh `state` (CSRF protection)
+  3. Backend trao đổi code lấy Google ID token
+  4. Backend xác minh/tạo người dùng với `google_id` trong bảng `USER`
+  5. Tạo phiên JWT (USER_SESSION)
+  6. Tạo Access Token + Refresh Token
+  7. Chuyển hướng tới frontend với tokens (hoặc lỗi)
+- **Trả về**: 
+  - Thành công (302 Redirect): Chuyển hướng tới web-tenant dashboard với token trong URL query hoặc cookie
+  - Thất bại: Chuyển hướng tới trang lỗi đăng nhập
+- **Lưu ý**: 
+  - Yêu cầu `GOOGLE_CLIENT_SECRET` để trao đổi authorization code (không bao giờ phơi bày cho client)
+  - Callback URL phải khớp chính xác với `GOOGLE_CALLBACK_URL` được đăng ký tại Google Cloud Console
+  - Người dùng được tự động tạo nếu `google_id` chưa tồn tại, bằng cách extract `email` + `name` từ Google profile
+  - Xác minh email được tự động nếu Google cung cấp `email_verified: true`
 
 ### 2.2. Token Claims & Phân quyền
 
@@ -1014,6 +1060,124 @@ Authorization: Bearer {accessToken}
 
 #### 10.3. Tạo Hóa đơn (Ngầm)
 Hóa đơn thường được tạo thông qua các quy trình đơn hàng. Kiểm tra OrderModule để tìm các endpoint tạo hóa đơn liên quan đến thanh toán bảng.
+
+#### 10.4. Yêu cầu Hóa đơn (Customer)
+```http
+POST /api/v1/orders/session/request-bill
+Cookie: table_session_id={sessionId}
+Content-Type: application/json
+```
+- **Xác thực**: Session-based (table_session_id cookie) hoặc Bearer token
+- **Guard**: `SessionGuard` (xác thực session bàn hoặc JWT)
+- **Public**: Đúng (khách hàng có thể gọi qua trình duyệt)
+- **Mô tả**: Khách hàng yêu cầu hóa đơn cho tất cả đơn hàng trong phiên hiện tại. Cập nhật `bill_requested_at` timestamp và gửi thông báo real-time tới staff qua WebSocket.
+- **Quy trình**:
+  1. Khách hàng yêu cầu hóa đơn từ ứng dụng web-customer
+  2. Backend cập nhật `table_sessions.bill_requested_at` = now
+  3. Backend gửi thông báo WebSocket `order:bill_requested` tới staff room
+  4. Staff nhận được thông báo để chuẩn bị hóa đơn/thanh toán
+  5. Phiên bàn bị "khóa" (không thêm đơn hàng mới được)
+- **Trả về**: 200 OK
+  ```json
+  {
+    "success": true,
+    "message": "Bill request sent successfully",
+    "sessionId": "uuid-session-123",
+    "tableNumber": "Bàn 5",
+    "totalAmount": 450000,
+    "orderCount": 3,
+    "requestedAt": "2026-01-20T10:30:00Z"
+  }
+  ```
+- **Lỗi**: 
+  - 400 Bad Request: Bill đã được yêu cầu (duplicate request)
+  - 404 Not Found: Session hoặc bàn không tồn tại
+- **Lưu ý**:
+  - Idempotent: Gọi lại endpoint không làm gì (trả về success nếu bill đã được request)
+  - Session bị khóa: Sau khi bill request, không thể thêm đơn hàng mới (cart sẽ từ chối)
+  - Có thể hủy bằng `POST /api/v1/orders/session/cancel-bill-request`
+
+#### 10.5. Hủy Yêu cầu Hóa đơn (Customer)
+```http
+POST /api/v1/orders/session/cancel-bill-request
+Cookie: table_session_id={sessionId}
+Content-Type: application/json
+```
+- **Xác thực**: Session-based (table_session_id cookie) hoặc Bearer token
+- **Guard**: `SessionGuard`
+- **Public**: Đúng (khách hàng có thể gọi qua trình duyệt)
+- **Mô tả**: Khách hàng hủy yêu cầu hóa đơn đã gửi trước đó. Xóa `bill_requested_at` timestamp và cho phép thêm đơn hàng mới.
+- **Trả về**: 200 OK
+  ```json
+  {
+    "success": true,
+    "message": "Bill request cancelled",
+    "sessionId": "uuid-session-123"
+  }
+  ```
+- **Lỗi**:
+  - 400 Bad Request: Không có bill request nào để hủy
+  - 404 Not Found: Session hoặc bàn không tồn tại
+- **Lưu ý**:
+  - Phiên bàn được "mở khóa" lại, khách hàng có thể tiếp tục đặt hàng
+  - Thông báo WebSocket được gửi tới staff để cập nhật UI
+
+#### 10.6. Xem trước Hóa đơn Phiên (Customer)
+```http
+GET /api/v1/orders/session/bill-preview
+Cookie: table_session_id={sessionId}
+```
+- **Xác thực**: Session-based (table_session_id cookie) hoặc Bearer token
+- **Guard**: `SessionGuard`
+- **Public**: Đúng (khách hàng có thể xem)
+- **Mô tả**: Lấy xem trước hóa đơn tổng hợp cho phiên hiện tại, bao gồm tất cả đơn hàng được nhóm cho thanh toán.
+- **Query Parameters**:
+  - Không có
+- **Trả về**: 200 OK
+  ```json
+  {
+    "sessionId": "uuid-session-123",
+    "tableId": "uuid-table-456",
+    "tableNumber": "Bàn 5",
+    "orderCount": 3,
+    "itemCount": 8,
+    "subtotal": 400000,
+    "tax": 40000,
+    "serviceCharge": 0,
+    "tip": 0,
+    "total": 440000,
+    "billRequestedAt": "2026-01-20T10:30:00Z",
+    "orders": [
+      {
+        "id": "order-1",
+        "orderNumber": "ORD-20260120-0001",
+        "status": "SERVED",
+        "items": [
+          {
+            "id": "item-1",
+            "name": "Phở Bò",
+            "quantity": 2,
+            "unitPrice": 80000,
+            "modifiers": [
+              {
+                "name": "Medium",
+                "priceAdjust": 0
+              }
+            ],
+            "itemTotal": 160000
+          }
+        ],
+        "subtotal": 160000
+      }
+    ]
+  }
+  ```
+- **Lỗi**:
+  - 404 Not Found: Session hoặc bàn không tồn tại
+- **Lưu ý**:
+  - Không bao gồm tip (được thêm sau khi thanh toán)
+  - Thường được gọi trước `POST /api/v1/orders/session/request-bill` để xem tổng tiền
+  - Hữu ích cho customer app hiển thị tóm tắt thanh toán
 
 **Bằng chứng:** `source/apps/api/src/modules/order/controllers/bill.controller.ts`
 
