@@ -58,8 +58,6 @@ ADD HERE - Please provide:
 - Inventory management
 - Multi-location support
 - Native mobile apps
-- General Redis caching (Redis may be used for OTP/registration flow only)
-- Production deployment (currently dev-only)
 
 ---
 

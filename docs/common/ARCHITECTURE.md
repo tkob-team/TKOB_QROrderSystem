@@ -108,11 +108,6 @@
 - ❌ **CDN** - Không có tích hợp Cloudflare/CloudFront được ghi chép
 - ❌ **Object Storage** - Ảnh được lưu trữ cục bộ trong thư mục `uploads/`
 
-**Triển khai CHƯA được Ghi chép:**
-- ❌ Chi tiết triển khai sản xuất
-- ❌ Cấu hình pipeline CI/CD
-- ❌ Thiết lập giám sát/quan sát (Grafana, Prometheus, v.v.)
-
 ---
 
 ## 1. Tổng quan Kiến trúc
