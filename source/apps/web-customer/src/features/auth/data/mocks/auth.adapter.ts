@@ -30,4 +30,32 @@ export class MockAuthAdapter implements IAuthAdapter {
   async logout(): Promise<ApiResponse<{ message: string }>> {
     return authHandlers.logout();
   }
+
+  async register(data: {
+    email: string;
+    password: string;
+    fullName?: string;
+  }): Promise<ApiResponse<{ message: string }>> {
+    // Mock implementation - just return success
+    return { success: true, data: { message: 'Registration successful. Please verify your email.' } };
+  }
+
+  async verifyEmail(data: { token: string }): Promise<ApiResponse<{ message: string }>> {
+    return { success: true, data: { message: 'Email verified successfully.' } };
+  }
+
+  async resendVerification(data: { email: string }): Promise<ApiResponse<{ message: string }>> {
+    return { success: true, data: { message: 'Verification email resent.' } };
+  }
+
+  async requestPasswordReset(data: { email: string }): Promise<ApiResponse<{ message: string }>> {
+    return { success: true, data: { message: 'Password reset email sent.' } };
+  }
+
+  async resetPassword(data: {
+    token: string;
+    password: string;
+  }): Promise<ApiResponse<{ message: string }>> {
+    return { success: true, data: { message: 'Password reset successfully.' } };
+  }
 }

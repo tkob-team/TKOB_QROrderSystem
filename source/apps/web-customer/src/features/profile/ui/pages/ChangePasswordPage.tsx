@@ -6,7 +6,7 @@ import { PROFILE_TEXT } from '../../model'
 
 export function ChangePasswordPage() {
   const controller = useChangePasswordController()
-  const t = PROFILE_TEXT.EN // Static for now
+  const t = PROFILE_TEXT // Static text constant
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--gray-50)' }}>

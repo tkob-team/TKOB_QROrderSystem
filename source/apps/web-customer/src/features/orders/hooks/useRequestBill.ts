@@ -6,17 +6,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { log } from '@/shared/logging/logger';
-import { orderApi } from '../data';
-
-interface RequestBillResponse {
-  success: boolean;
-  message: string;
-  sessionId: string;
-  tableNumber: string;
-  requestedAt: string;
-  totalAmount: number;
-  orderCount: number;
-}
+import { orderApi, RequestBillResponse } from '../data';
 
 export function useRequestBill() {
   const queryClient = useQueryClient();

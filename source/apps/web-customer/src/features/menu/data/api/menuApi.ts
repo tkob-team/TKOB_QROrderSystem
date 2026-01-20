@@ -10,12 +10,10 @@
 
 import {
   publicMenuControllerGetPublicMenu,
-  type PublicMenuResponseDto,
 } from '@/services/generated/menu-public/menu-public';
 
 import {
   menuItemsControllerFindOne,
-  type MenuItemResponseDto,
 } from '@/services/generated/menu-items/menu-items';
 
 import type { MenuItem, ApiResponse } from '@/types';
