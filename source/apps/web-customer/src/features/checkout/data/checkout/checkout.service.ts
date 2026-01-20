@@ -73,6 +73,9 @@ export class CheckoutApiService {
   async createPaymentIntent(request: PaymentIntentRequest): Promise<PaymentIntentResponse> {
     log('data', 'Creating payment intent', { 
       orderId: maskId(request.orderId),
+      hasTip: !!request.tip,
+      hasDiscount: !!request.discount,
+      hasVoucher: !!request.voucherCode,
     }, { feature: 'payment' });
 
     const intent = await paymentControllerCreatePaymentIntent(request as any);

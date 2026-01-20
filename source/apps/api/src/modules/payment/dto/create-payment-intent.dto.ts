@@ -34,4 +34,23 @@ export class CreatePaymentIntentDto {
   @Min(0)
   @IsOptional()
   tip?: number;
+
+  @ApiProperty({
+    description: 'Discount amount in USD (optional, from voucher)',
+    example: 10.00,
+    required: false,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  discount?: number;
+
+  @ApiProperty({
+    description: 'Voucher code used for discount (optional)',
+    example: 'SUMMER2024',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  voucherCode?: string;
 }
