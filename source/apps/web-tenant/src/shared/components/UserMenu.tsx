@@ -23,11 +23,11 @@ export function UserMenu({ onNavigate, variant = 'light' }: UserMenuProps) {
   const { user, logout } = useAuth();
 
   const userName = user?.name || 'Admin User';
-  const userRole = user?.role === 'OWNER' || user?.role === 'admin'
+  const userRole = user?.role === 'admin'
     ? 'Admin'
-    : user?.role === 'KITCHEN' || user?.role === 'kds'
+    : user?.role === 'kds'
     ? 'Kitchen Staff'
-    : user?.role === 'STAFF' || user?.role === 'waiter'
+    : user?.role === 'waiter'
     ? 'Waiter'
     : 'Staff';
   const initials = userName

@@ -457,11 +457,6 @@ export function useTablesController(): TablesControllerState {
       onClose: () => setShowSuccessToast(false),
     },
 
-    subscription: {
-      showLimitModal: showSubscriptionLimitModal,
-      closeLimitModal: () => setShowSubscriptionLimitModal(false),
-    },
-
     qrPrintRef: qrActions.qrPrintRef,
 
     handlers: {

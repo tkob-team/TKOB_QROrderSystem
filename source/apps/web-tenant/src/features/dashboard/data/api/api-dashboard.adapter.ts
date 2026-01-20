@@ -77,7 +77,7 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
       
       // Backend returns: { period: {from, to}, groupBy: string, data: [{period: string, revenue: number, orders: number}] }
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const dataPoints = responseData.data || [];
       
       // Map to RevenueDataPoint format
@@ -131,7 +131,7 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
       
       // Backend returns: { period: {from, to}, items: [{rank, menuItemId, name, totalQuantity, totalRevenue}] }
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const items = responseData.items || [];
       
       // Map to TopSellingItem format
@@ -165,7 +165,7 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
       
       // Backend returns: { period: {from, to}, items: [{rank, menuItemId, name, totalQuantity, totalRevenue}] }
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const items = responseData.items || [];
       
       // Map to PopularItemData format
@@ -194,7 +194,7 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
       const response = await orderControllerGetOrders({
         page: 1,
         limit: 5, // 5 most recent
-        status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED,PAID', // Exclude CANCELLED
+        status: ['PENDING', 'RECEIVED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'PAID'], // Exclude CANCELLED
         // Add sortBy: 'createdAt', sortOrder: 'DESC' if backend supports
       });
       
@@ -235,12 +235,12 @@ export class ApiDashboardAdapter implements IDashboardAdapter {
       // Fetch overview data
       const overviewResponse = await analyticsControllerGetOverview();
       // Axios interceptor already unwrapped { success, data } wrapper
-      const overview = overviewResponse || {};
+      const overview = (overviewResponse as any) || {};
       
       // Fetch order stats for trend (also used for Yesterday data)
       const statsResponse = await analyticsControllerGetOrderStats({ from, to });
       // Axios interceptor already unwrapped { success, data } wrapper
-      const stats = statsResponse || {};
+      const stats = (statsResponse as any) || {};
       
       // Extract data based on period and rangeFilter
       // Note: TimePeriod type uses 'Today', 'This Week', 'This Month' (capitalized)

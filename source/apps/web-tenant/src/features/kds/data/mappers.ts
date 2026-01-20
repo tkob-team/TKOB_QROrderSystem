@@ -54,7 +54,7 @@ function mapOrderItem(apiItem: OrderResponse['items'][0]): OrderItem {
         ? parsedModifiers.map((m: any) => m.optionName || m.name || '').filter(Boolean)
         : []
     } catch (e) {
-      console.error('[KDS_DEBUG] Failed to parse modifiers:', apiItem.modifiers, e)
+      // Failed to parse modifiers
       modifiers = []
     }
   }
@@ -97,20 +97,12 @@ export function mapOrderToKds(apiOrder: OrderResponse): KdsOrder {
 export function flattenPriorityOrders(
   orders: { normal: OrderResponse[]; high: OrderResponse[]; urgent: OrderResponse[] }
 ): KdsOrder[] {
-  console.log('[FLATTEN_DEBUG] Input orders:', orders)
-  console.log('[FLATTEN_DEBUG] orders.urgent:', orders.urgent)
-  console.log('[FLATTEN_DEBUG] orders.high:', orders.high)
-  console.log('[FLATTEN_DEBUG] orders.normal:', orders.normal)
-  
   // Urgent first, then high, then normal
   const result = [
     ...orders.urgent.map(mapOrderToKds),
     ...orders.high.map(mapOrderToKds),
     ...orders.normal.map(mapOrderToKds),
   ]
-  
-  console.log('[FLATTEN_DEBUG] Result length:', result.length)
-  console.log('[FLATTEN_DEBUG] Result:', result)
   
   return result
 }

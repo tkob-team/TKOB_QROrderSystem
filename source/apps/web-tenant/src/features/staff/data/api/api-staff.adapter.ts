@@ -47,7 +47,6 @@ export class ApiStaffAdapter implements IStaffAdapter {
       const response = await api.get<{ success: boolean; data: { staff: StaffMember[]; total: number } }>('/api/v1/admin/staff');
       return response.data?.data?.staff || [];
     } catch (error) {
-      console.error('[staff] Failed to fetch staff members:', error);
       return [];
     }
   }
@@ -61,10 +60,8 @@ export class ApiStaffAdapter implements IStaffAdapter {
       const response = await api.get<{ success: boolean; data: { invitations: PendingInvitation[]; total: number } }>(
         '/api/v1/admin/staff/invitations'
       );
-      console.log('[staff] getPendingInvitations response:', JSON.stringify(response.data, null, 2));
       return response.data?.data?.invitations || [];
     } catch (error) {
-      console.error('[staff] Failed to fetch pending invitations:', error);
       return [];
     }
   }

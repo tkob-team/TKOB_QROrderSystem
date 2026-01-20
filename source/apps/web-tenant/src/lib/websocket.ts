@@ -197,7 +197,7 @@ export async function initializeAudio(): Promise<boolean> {
     audioInitialized = true;
     return true;
   } catch (error) {
-    console.error('[audio] Failed to initialize AudioContext:', error);
+    // Failed to initialize AudioContext
     return false;
   }
 }
@@ -211,14 +211,13 @@ export function playNewOrderSound(): void {
   try {
     // Check if audio is initialized
     if (!audioContext || !audioInitialized) {
-      console.warn('[audio] AudioContext not initialized. Call initializeAudio() from user gesture first.');
       return;
     }
 
     // Resume if suspended (can happen on page visibility change)
     if (audioContext.state === 'suspended') {
-      audioContext.resume().catch((err) => {
-        console.error('[audio] Failed to resume AudioContext:', err);
+      audioContext.resume().catch(() => {
+        // Failed to resume AudioContext
       });
     }
 

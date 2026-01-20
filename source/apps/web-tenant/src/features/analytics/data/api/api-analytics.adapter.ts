@@ -32,9 +32,9 @@ export class ApiAnalyticsAdapter implements IAnalyticsAdapter {
     try {
       logger.debug('[api-analytics] GET_OVERVIEW_ATTEMPT');
       
-      const response = await analyticsControllerGetOverview();
+      const response = (await analyticsControllerGetOverview()) as any;
       // Axios interceptor already unwrapped { success, data } wrapper
-      const data = response || {};
+      const data = (response as any) || {};
       
       const overview: KPIOverview = {
         thisMonth: {
@@ -69,13 +69,13 @@ export class ApiAnalyticsAdapter implements IAnalyticsAdapter {
       const { from, to } = this.getDateRangeForTimeRange(range);
       
       // Use revenue API which returns daily breakdown including orders count
-      const response = await analyticsControllerGetRevenue({ 
+      const response = (await analyticsControllerGetRevenue({ 
         from, 
         to, 
         groupBy: AnalyticsControllerGetRevenueGroupBy.day 
-      });
+      })) as any;
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const dataPoints = responseData.data || [];
       
       // Backend returns: { period: {from, to}, groupBy: string, data: [{period: string, revenue: number, orders: number}] }
@@ -111,9 +111,9 @@ export class ApiAnalyticsAdapter implements IAnalyticsAdapter {
     try {
       logger.debug('[api-analytics] GET_PEAK_HOURS_ATTEMPT');
       
-      const response = await analyticsControllerGetHourlyDistribution();
+      const response = (await analyticsControllerGetHourlyDistribution()) as any;
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const distribution = responseData.distribution || [];
       
       // Backend returns: { period: {from, to}, distribution: [{hour, orders, revenue}] }
@@ -140,12 +140,12 @@ export class ApiAnalyticsAdapter implements IAnalyticsAdapter {
     try {
       logger.debug('[api-analytics] GET_TOP_SELLING_ATTEMPT');
       
-      const response = await analyticsControllerGetPopularItems({
+      const response = (await analyticsControllerGetPopularItems({
         limit: 10, // Top 10 items
-      });
+      })) as any;
       
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const items = responseData.items || [];
       
       // Backend returns: { period: {from, to}, items: [{rank, menuItemId, name, totalQuantity, totalRevenue}] }
@@ -178,14 +178,14 @@ export class ApiAnalyticsAdapter implements IAnalyticsAdapter {
       
       const { from, to, groupBy } = this.getDateRangeForRevenuePeriod(period);
       
-      const response = await analyticsControllerGetRevenue({
+      const response = (await analyticsControllerGetRevenue({
         from,
         to,
         groupBy,
-      });
+      })) as any;
       
       // Axios interceptor already unwrapped { success, data } wrapper
-      const responseData = response || {};
+      const responseData = (response as any) || {};
       const dataPoints = responseData.data || [];
       
       // Backend returns: { period: {from, to}, groupBy: string, data: [{period: string, revenue: number, orders: number}] }

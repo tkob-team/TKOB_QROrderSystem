@@ -55,8 +55,6 @@ class OrdersApiAdapter implements IOrdersAdapter {
         totalPages: meta.totalPages || Math.ceil(orders.length / 20),
       }
     } catch (error: any) {
-      // Log error for debugging
-      console.error('[OrdersAPI] Failed to fetch orders:', error?.response?.data || error?.message || error);
       // Return empty result instead of throwing to prevent UI crash
       return {
         data: [],

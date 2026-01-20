@@ -10,7 +10,7 @@ import React from 'react';
 import { Card, Badge } from '@/shared/components';
 import { StatusPill, PAYMENT_STATUS_CONFIG } from '@/shared/patterns';
 import { Clock, ChevronDown, ChevronUp, QrCode, Banknote } from 'lucide-react';
-import type { ServiceOrder, OrderStatus } from '../../../model/types';
+import type { ServiceOrder, OrderStatus, CloseTableData } from '../../../model/types';
 import { ORDER_ACTION_CONFIG, BUTTON_HEIGHT } from '../../../model/constants';
 import { OrderItemList } from './OrderItemList';
 
@@ -29,7 +29,7 @@ interface WaiterOrderCardProps {
   onMarkServed: (order: ServiceOrder) => void;
   onMarkCompleted: (order: ServiceOrder) => void;
   onMarkPaid: (order: ServiceOrder) => void;
-  onCloseTable: (order: ServiceOrder) => void;
+  onCloseTable: (data: CloseTableData) => Promise<void>;
 }
 
 /**
@@ -50,24 +50,6 @@ function PaymentMethodBadge({ method }: { method: ServiceOrder['paymentMethod'] 
       <span className="text-[10px]">Cash</span>
     </Badge>
   );
-}
-
-
-/**
- * WaiterOrderCard Props
- */
-interface WaiterOrderCardProps {
-  order: ServiceOrder;
-  activeTab: OrderStatus;
-  isExpanded: boolean;
-  onToggleExpanded: (orderId: string) => void;
-  onAcceptOrder: (order: ServiceOrder) => void;
-  onRejectOrder: (order: ServiceOrder) => void;
-  onCancelOrder: (order: ServiceOrder) => void;
-  onMarkServed: (order: ServiceOrder) => void;
-  onMarkCompleted: (order: ServiceOrder) => void;
-  onMarkPaid: (order: ServiceOrder) => void;
-  onCloseTable: (order: ServiceOrder) => void;
 }
 
 /**
@@ -255,7 +237,11 @@ export function WaiterOrderCard({
             {/* For QR payments: they are auto-paid via webhook, just show close table */}
             {order.paymentMethod === 'SEPAY_QR' && order.paymentStatus === 'paid' && (
               <button
-                onClick={() => onCloseTable(order)}
+                onClick={() => onCloseTable({
+                  tableId: order.tableId,
+                  sessionId: order.sessionId || '',
+                  paymentMethod: order.paymentMethod,
+                })}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${ORDER_ACTION_CONFIG.completed.paid.className}`}
                 style={{
                   fontSize: '15px',
@@ -289,7 +275,11 @@ export function WaiterOrderCard({
             {/* For cash payments: after marked paid, show close table */}
             {order.paymentMethod === 'BILL_TO_TABLE' && order.paymentStatus === 'paid' && (
               <button
-                onClick={() => onCloseTable(order)}
+                onClick={() => onCloseTable({
+                  tableId: order.tableId,
+                  sessionId: order.sessionId || '',
+                  paymentMethod: order.paymentMethod,
+                })}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${ORDER_ACTION_CONFIG.completed.paid.className}`}
                 style={{
                   fontSize: '15px',

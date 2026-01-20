@@ -43,16 +43,16 @@ export class ApiAuthAdapter implements IAuthAdapter {
    */
   private handleError(error: unknown, context: string, defaultMessage: string): never {
     const errorMessage = this.isAxiosError(error) 
-      ? error.response?.data?.message || error.message 
+      ? ((error as any).response?.data?.message || (error as any).message) 
       : String(error);
     
     logger.error(`[auth] ${context}_ERROR`, { 
-      code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+      code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', 
       message: errorMessage 
     });
 
-    if (this.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data?.message || defaultMessage);
+    if (this.isAxiosError(error) && (error as any).response) {
+      throw new Error((error as any).response.data?.message || defaultMessage);
     }
 
     throw new Error('Network error. Please try again.');
@@ -134,11 +134,11 @@ export class ApiAuthAdapter implements IAuthAdapter {
         expiresIn,
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] SIGNUP_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.error('[auth] SIGNUP_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
 
-      if (this.isAxiosError(error) && error.response) {
-        const errorData = error.response.data as any;
+      if (this.isAxiosError(error) && (error as any).response) {
+        const errorData = (error as any).response.data as any;
         const message = errorData?.error?.message || errorData?.message || 'Signup failed';
         
         throw new Error(message);
@@ -166,13 +166,13 @@ export class ApiAuthAdapter implements IAuthAdapter {
         message: response?.message || 'Reset link sent',
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] FORGOT_PASSWORD_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.error('[auth] FORGOT_PASSWORD_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
 
-      if (this.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && (error as any).response) {
         return {
           success: false,
-          message: error.response.data?.message || 'Request failed',
+          message: (error as any).response.data?.message || 'Request failed',
         };
       }
 
@@ -204,13 +204,13 @@ export class ApiAuthAdapter implements IAuthAdapter {
         message: response?.message || 'Password reset successful',
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] RESET_PASSWORD_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.error('[auth] RESET_PASSWORD_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
 
-      if (this.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && (error as any).response) {
         return {
           success: false,
-          message: error.response.data?.message || 'Reset failed',
+          message: (error as any).response.data?.message || 'Reset failed',
         };
       }
 
@@ -239,8 +239,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
         email: response?.email,
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] VERIFY_RESET_TOKEN_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.error('[auth] VERIFY_RESET_TOKEN_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
 
       // Return invalid if API fails
       return {
@@ -311,13 +311,13 @@ export class ApiAuthAdapter implements IAuthAdapter {
         message: response?.message || 'OTP sent',
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] RESEND_OTP_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.error('[auth] RESEND_OTP_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
 
-      if (this.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && (error as any).response) {
         return {
           success: false,
-          message: error.response.data?.message || 'Failed to send OTP',
+          message: (error as any).response.data?.message || 'Failed to send OTP',
         };
       }
 
@@ -345,13 +345,13 @@ export class ApiAuthAdapter implements IAuthAdapter {
         message: response?.message,
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.error('[auth] CHECK_SLUG_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.error('[auth] CHECK_SLUG_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
 
-      if (this.isAxiosError(error) && error.response) {
+      if (this.isAxiosError(error) && (error as any).response) {
         return {
           available: false,
-          message: error.response.data?.message || 'Check failed',
+          message: (error as any).response.data?.message || 'Check failed',
         };
       }
 
@@ -382,8 +382,8 @@ export class ApiAuthAdapter implements IAuthAdapter {
 
       logger.info('[auth] LOGOUT_SUCCESS');
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
-      logger.warn('[auth] LOGOUT_ERROR', { code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', message: errorMessage });
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
+      logger.warn('[auth] LOGOUT_ERROR', { code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', message: errorMessage });
       // Still clear local storage even if API call fails
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
@@ -460,9 +460,9 @@ export class ApiAuthAdapter implements IAuthAdapter {
 
       logger.info('[auth] LOGOUT_ALL_SUCCESS');
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
       logger.warn('[auth] LOGOUT_ALL_ERROR', { 
-        code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+        code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', 
         message: errorMessage 
       });
 
@@ -527,9 +527,9 @@ export class ApiAuthAdapter implements IAuthAdapter {
       logger.info('[auth] CHANGE_PASSWORD_SUCCESS');
       return { success: true };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
       logger.error('[auth] CHANGE_PASSWORD_ERROR', { 
-        code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+        code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', 
         message: errorMessage 
       });
       
@@ -559,16 +559,16 @@ export class ApiAuthAdapter implements IAuthAdapter {
       logger.info('[auth] UPDATE_PROFILE_SUCCESS');
       
       // Handle both wrapped (data.data) and unwrapped (data) responses
-      const userData = response.data?.data?.user || response.data?.user;
+      const userData = (response as any).data?.data?.user || (response as any).data?.user;
       
       return { 
         success: true,
         user: userData 
       };
     } catch (error: unknown) {
-      const errorMessage = this.isAxiosError(error) ? error.response?.data?.message || error.message : String(error);
+      const errorMessage = this.isAxiosError(error) ? (error as any).response?.data?.message || (error as any).message : String(error);
       logger.error('[auth] UPDATE_PROFILE_ERROR', { 
-        code: this.isAxiosError(error) ? error.response?.status : 'NETWORK', 
+        code: this.isAxiosError(error) ? (error as any).response?.status : 'NETWORK', 
         message: errorMessage 
       });
       

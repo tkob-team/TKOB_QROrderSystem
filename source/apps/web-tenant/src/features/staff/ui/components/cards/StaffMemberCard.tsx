@@ -86,7 +86,7 @@ export function StaffMemberCard({
               {roleConfig.label}
             </span>
           </div>
-          <Badge variant={isActive ? 'success' : member.status === 'PENDING' ? 'warning' : 'destructive'}>
+          <Badge variant={isActive ? 'success' : member.status === 'PENDING' ? 'warning' : 'error'}>
             {isActive ? 'Active' : member.status === 'PENDING' ? 'Pending' : 'Inactive'}
           </Badge>
         </div>

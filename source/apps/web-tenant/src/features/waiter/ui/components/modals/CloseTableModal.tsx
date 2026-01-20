@@ -5,7 +5,7 @@ import { X, Receipt, Printer, CreditCard, Banknote, Loader2 } from 'lucide-react
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api } from '@/services/axios'
-import { printBill, type BillData } from '../../utils/billPdf'
+import { printBill, type BillData } from '../../../utils/billPdf'
 
 interface Order {
   id: string

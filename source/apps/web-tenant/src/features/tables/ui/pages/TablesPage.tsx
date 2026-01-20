@@ -65,18 +65,6 @@ export function TablesPage() {
       {controller.toast.show && (
         <Toast message={controller.toast.message} type={controller.toast.type} onClose={controller.toast.onClose} />
       )}
-
-      {/* Subscription Limit Modal */}
-      {controller.subscription.showLimitModal && (
-        <PlanLimitWarning
-          currentCount={currentUsage?.tablesUsed || 0}
-          maxAllowed={limits?.maxTables || 0}
-          resourceType="tables"
-          planName={planName}
-          variant="modal"
-          onDismiss={controller.subscription.closeLimitModal}
-        />
-      )}
     </>
   );
 }

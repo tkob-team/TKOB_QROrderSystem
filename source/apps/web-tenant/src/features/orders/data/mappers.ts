@@ -23,7 +23,6 @@ function mapOrderStatus(apiStatus: ApiOrderStatus): OrderStatus {
   
   const mapped = statusMap[apiStatus];
   if (!mapped) {
-    console.error(`[orders/mapper] Unknown status from API: ${apiStatus}`);
     return 'cancelled'; // Treat unknown statuses as cancelled instead of placed
   }
   return mapped;

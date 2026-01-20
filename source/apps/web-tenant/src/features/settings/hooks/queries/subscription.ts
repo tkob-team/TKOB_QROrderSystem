@@ -7,7 +7,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logger } from '@/shared/utils/logger';
 import { subscriptionAdapter } from '../../data/factory';
-import type { UpgradeSubscriptionDto } from '@/services/generated/models';
 
 /**
  * Get all available subscription plans (public)
@@ -108,7 +107,7 @@ export const useUpgradePlan = (options?: { mutation?: any }) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: UpgradeSubscriptionDto) => {
+    mutationFn: async (data: any) => {
       logger.info('[subscription] UPGRADE_ATTEMPT', { targetPlan: data.targetPlan });
       try {
         const result = await subscriptionAdapter.upgradePlan(data);

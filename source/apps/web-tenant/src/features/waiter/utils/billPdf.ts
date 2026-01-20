@@ -302,7 +302,6 @@ export function printBill(bill: BillData): void {
       }, 250)
     }
   } else {
-    console.error('Could not open print window. Please enable popups.')
     alert('Could not open print window. Please enable popups for this site.')
   }
 }

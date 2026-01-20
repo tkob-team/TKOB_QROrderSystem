@@ -160,12 +160,12 @@ export function useTableGridController(): UseTableGridControllerReturn {
     const table = tables.find(t => t.id === tableId);
     if (!table) return;
     
-    logger.info('[waiter] START_MANUAL_ORDER', { tableId, tableNumber: table.tableNumber });
+    logger.info('[waiter] START_MANUAL_ORDER', { tableId, tableName: table.name });
     
     // Navigate to manual order page with table context
     // Note: Manual order page should be created at /admin/waiter/orders/new
     if (typeof window !== 'undefined') {
-      window.location.href = `/admin/waiter/orders/new?tableId=${tableId}&tableNumber=${table.tableNumber}`;
+      window.location.href = `/admin/waiter/orders/new?tableId=${tableId}&tableName=${table.name}`;
     }
   }, [tables]);
 

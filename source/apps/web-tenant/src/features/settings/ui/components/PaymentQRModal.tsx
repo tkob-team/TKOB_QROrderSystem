@@ -270,12 +270,8 @@ export function PaymentQRModal({
           ) : status === 'timeout' || status === 'error' ? (
             <button
               onClick={handleStartPolling}
-              disabled={status === 'polling'}
-              className="px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center"
             >
-              {status === 'polling' && (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              )}
               Retry Verification
             </button>
           ) : (

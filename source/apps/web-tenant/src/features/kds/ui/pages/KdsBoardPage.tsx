@@ -43,13 +43,11 @@ export function KdsBoardPage({
         initialized = true;
         try {
           const success = await initializeAudio();
-          if (success) {
-            console.log('[kds] Audio initialized on user interaction');
-          } else {
-            console.warn('[kds] Audio init failed');
+          if (!success) {
+            // Audio init failed, will retry on sound enable
           }
         } catch (err) {
-          console.error('[kds] Audio init error:', err);
+          // Audio init error, will retry on sound enable
         }
         // Remove listener after first successful init
         document.removeEventListener('click', handleFirstClick);
@@ -67,7 +65,9 @@ export function KdsBoardPage({
   // ========== RE-INITIALIZE AUDIO WHEN SOUND IS ENABLED ==========
   useEffect(() => {
     if (controller.soundEnabled) {
-      initializeAudio().catch(console.error);
+      initializeAudio().catch(() => {
+        // Initialization error, will retry on next enable
+      });
     }
   }, [controller.soundEnabled]);
 
@@ -117,7 +117,6 @@ export function KdsBoardPage({
       if (overdueOrders.length > 0) {
         // Play urgent alert for overdue orders
         playNotificationSound('kds-overdue', 2);
-        console.log(`[kds] ${overdueOrders.length} overdue orders detected, playing alert`);
       }
     };
 

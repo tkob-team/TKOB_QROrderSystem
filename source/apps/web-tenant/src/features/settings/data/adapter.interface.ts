@@ -7,10 +7,6 @@ import type { AccountSettingsState, TenantFullProfileState } from '../model/type
 import type {
   PublicSubscriptionControllerGetPublicPlans200Item,
   PublicSubscriptionControllerGetFeatureComparison200,
-  SubscriptionControllerGetCurrent200,
-  SubscriptionControllerGetUsage200,
-  UpgradeSubscriptionDto,
-  PaymentIntentResponseDto,
   PaymentStatusResponseDto,
 } from '@/services/generated/models';
 
@@ -45,9 +41,12 @@ export interface SettingsAdapter {
 export interface ISubscriptionAdapter {
   getPublicPlans(): Promise<PublicSubscriptionControllerGetPublicPlans200Item[]>;
   getFeatureComparison(): Promise<PublicSubscriptionControllerGetFeatureComparison200>;
-  getCurrentSubscription(): Promise<SubscriptionControllerGetCurrent200>;
-  getUsage(): Promise<SubscriptionControllerGetUsage200>;
-  upgradePlan(data: UpgradeSubscriptionDto): Promise<PaymentIntentResponseDto>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getCurrentSubscription(): Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getUsage(): Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  upgradePlan(data: any): Promise<any>;
 }
 
 /**

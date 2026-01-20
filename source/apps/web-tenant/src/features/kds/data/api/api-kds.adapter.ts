@@ -22,11 +22,7 @@ class KdsApiAdapter implements IKdsAdapter {
    */
   async getKdsOrders(): Promise<KdsOrder[]> {
     const response = await api.get<{ data: KdsOrdersResponse }>(`${this.baseUrl}/orders/active`)
-    console.log('[KDS_DEBUG] Raw response:', response)
-    console.log('[KDS_DEBUG] response.data:', response.data)
-    console.log('[KDS_DEBUG] response.data.data:', response.data.data)
     const flattened = flattenPriorityOrders(response.data.data)
-    console.log('[KDS_DEBUG] Flattened orders:', flattened)
     return flattened
   }
 

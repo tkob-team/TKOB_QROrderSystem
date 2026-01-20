@@ -74,7 +74,7 @@ function mapToServiceOrder(order: OrderResponseDto): ServiceOrder | null {
             ? parsed.map((m: any) => m.optionName || m.name || String(m)) 
             : [];
         } catch (e) {
-          console.warn('[waiter] Failed to parse modifiers for item:', item.name, e);
+          // Failed to parse modifiers for item
         }
       }
       
@@ -96,10 +96,10 @@ function mapToServiceOrder(order: OrderResponseDto): ServiceOrder | null {
 export const waiterApi = {
   async getServiceOrders(): Promise<ServiceOrder[]> {
     try {
-      // Backend expects comma-separated string for status filter
+      // Backend expects array for status filter
       // Exclude PAID (closed tables) and CANCELLED orders
       const response = await orderControllerGetOrders({
-        status: 'PENDING,RECEIVED,PREPARING,READY,SERVED,COMPLETED',
+        status: ['PENDING', 'RECEIVED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED'],
         page: 1,
         limit: 100,
       });
@@ -113,7 +113,6 @@ export const waiterApi = {
         .map(mapToServiceOrder)
         .filter((order): order is ServiceOrder => order !== null);
     } catch (error) {
-      console.error('[waiter] Failed to fetch service orders:', error);
       throw error;
     }
   },

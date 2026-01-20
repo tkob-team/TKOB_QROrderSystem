@@ -26,7 +26,16 @@ export const apiSettingsAdapter: SettingsAdapter = {
         displayName: userData.user?.fullName || '',
         email: userData.user?.email || '',
         avatarColor: '#3B82F6', // Default color, could be stored in user preferences
-        is2FAEnabled: false, // 2FA not implemented yet
+        avatarInitials: (userData.user?.fullName || '').split(' ').map((n: string) => n[0]).join('').toUpperCase(),
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        showCurrent: false,
+        showNew: false,
+        showConfirm: false,
+        twoFactorEnabled: false, // 2FA not implemented yet
+        verificationCode: '',
+        activeTab: 'profile',
       };
     } catch (error) {
       logger.warn('[api-settings] getAccountSettings failed, using mock', error);

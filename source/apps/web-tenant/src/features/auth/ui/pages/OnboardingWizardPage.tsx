@@ -178,9 +178,10 @@ export function OnboardingWizard({ onNavigate }: OnboardingWizardProps) {
         await tenantControllerUpdateProfile({
           name: formData.name,
           slug: formData.slug || generateSlug(formData.name),
-          description: formData.description || undefined,
-          phone: formData.phone || undefined,
-          address: formData.address || undefined,
+          description: formData.description || '',
+          phone: formData.phone || '',
+          address: formData.address || '',
+          logoUrl: '', // Optional: will be set later in settings
         });
 
         // Step 2: Update opening hours

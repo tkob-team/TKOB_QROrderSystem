@@ -7,12 +7,12 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, CreditCard, Receipt } from 'lucide-react';
-import type { TableOrdersGroup as TableOrdersGroupType } from '../../../model/types';
+import type { TableOrdersGroup as TableOrdersGroupType, CloseTableData } from '../../../model/types';
 import { Card } from '@packages/ui';
 
 interface TableOrdersGroupProps {
   tableGroup: TableOrdersGroupType;
-  onCloseTable: (tableGroup: TableOrdersGroupType) => void;
+  onCloseTable: (data: CloseTableData) => Promise<void>;
   onMarkAsPaid: (tableGroup: TableOrdersGroupType) => void;
 }
 
@@ -160,7 +160,14 @@ export function TableOrdersGroup({ tableGroup, onCloseTable, onMarkAsPaid }: Tab
         
         {/* Close Table Button */}
         <button
-          onClick={() => onCloseTable(tableGroup)}
+          onClick={() => {
+            const paymentMethod = tableGroup.orders[0]?.paymentMethod || 'BILL_TO_TABLE';
+            onCloseTable({
+              tableId: tableGroup.tableId,
+              sessionId: tableGroup.sessionId,
+              paymentMethod,
+            });
+          }}
           disabled={!allPaid}
           className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg font-bold text-lg transition-all ${
             allPaid

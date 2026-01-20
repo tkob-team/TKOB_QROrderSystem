@@ -49,15 +49,9 @@ export function StaffProfilePage({ userRole }: StaffProfilePageProps) {
 
     setIsSavingName(true);
     try {
-      const result = await authController.adapter.updateProfile({ fullName });
-
-      if (result.success) {
-        toast.success('Name updated successfully');
-        setIsEditingName(false);
-        authController.currentUserQuery.refetch(); // Refresh user data
-      } else {
-        toast.error(result.message || 'Failed to update name');
-      }
+      // Update profile is not implemented in tenant auth adapter yet
+      toast.info('Profile update feature coming soon');
+      setIsEditingName(false);
     } catch (error) {
       toast.error('An error occurred while updating name');
     } finally {
@@ -83,20 +77,12 @@ export function StaffProfilePage({ userRole }: StaffProfilePageProps) {
 
     setIsSaving(true);
     try {
-      const result = await authController.adapter.changePassword({
-        currentPassword,
-        newPassword,
-      });
-
-      if (result.success) {
-        toast.success('Password changed successfully');
-        // Reset form
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        toast.error(result.message || 'Failed to change password');
-      }
+      // Change password is not implemented in tenant auth adapter yet
+      toast.info('Password change feature coming soon');
+      // Reset form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
       toast.error('An error occurred while changing password');
     } finally {

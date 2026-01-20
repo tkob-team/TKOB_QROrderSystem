@@ -129,7 +129,6 @@ export function BillRequestsDialog({
       printBill(billData)
       toast.success('Bill printed successfully')
     } catch (error: any) {
-      console.error('Failed to print bill:', error)
       toast.error(error?.response?.data?.message || 'Failed to print bill')
     } finally {
       setLoadingIds(prev => {
@@ -157,7 +156,6 @@ export function BillRequestsDialog({
       queryClient.invalidateQueries({ queryKey: ['waiter', 'service-orders'] })
       queryClient.invalidateQueries({ queryKey: ['tables'] })
     } catch (error: any) {
-      console.error('Failed to mark handled:', error)
       toast.error('Failed to mark as handled')
     } finally {
       setLoadingIds(prev => {

@@ -33,6 +33,11 @@ export interface IAuthAdapter {
   resetPassword(data: { token: string; newPassword: string }): Promise<{ success: boolean; message: string }>;
 
   /**
+   * Verify reset token validity
+   */
+  verifyResetToken(token: string): Promise<{ valid: boolean; email?: string; code?: string }>;
+
+  /**
    * Verify OTP code
    */
   verifyOtp(data: RegisterConfirmDto): Promise<AuthResponseDto>;
@@ -60,7 +65,7 @@ export interface IAuthAdapter {
   /**
    * Get current authenticated user
    */
-  getCurrentUser(): Promise<AuthUserResponseDto>;
+  getCurrentUser(): Promise<{ user?: AuthUserResponseDto; tenant?: any }>;
 
   /**
    * Refresh access token

@@ -84,7 +84,7 @@ export function StaffPage() {
       />
 
       <StaffMemberGrid
-        members={displayMembers}
+        members={displayMembers as any}
         activeTab={activeTab}
         getRoleConfig={getRoleConfig}
         getInitials={getInitials}
@@ -92,7 +92,7 @@ export function StaffPage() {
         onInviteClick={handleOpenInviteModal}
         onToggleStatus={(member) => {
           // Set selected member and trigger revoke/remove
-          staff.handlers.setSelectedMember(member);
+          staff.handlers.setSelectedMember(member as any);
           // Use setTimeout to ensure state is set before action
           setTimeout(() => staff.handlers.handleRevokeInvite(), 0);
         }}
@@ -128,7 +128,7 @@ export function StaffPage() {
         <PlanLimitWarning
           currentCount={activeMembers.length}
           maxAllowed={1} // TODO: Get from subscription limits
-          resourceType="staff_members"
+          resourceType="staff"
           planName="Current Plan"
           variant="modal"
           onDismiss={staff.handleCloseSubscriptionModal}

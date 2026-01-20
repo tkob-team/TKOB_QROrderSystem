@@ -112,6 +112,22 @@ export class MockAuthAdapter implements IAuthAdapter {
     };
   }
 
+  async verifyResetToken(token: string): Promise<{ valid: boolean; email?: string; code?: string }> {
+    logger.debug('[auth:mock] VERIFY_RESET_TOKEN_ATTEMPT');
+    await this.delay(300);
+
+    if (token === 'expired' || token === 'invalid') {
+      logger.debug('[auth:mock] VERIFY_RESET_TOKEN_RESULT', { valid: false });
+      return { valid: false };
+    }
+
+    logger.debug('[auth:mock] VERIFY_RESET_TOKEN_SUCCESS');
+    return {
+      valid: true,
+      email: 'user@test.com',
+    };
+  }
+
   async verifyOtp(data: RegisterConfirmDto): Promise<AuthResponseDto> {
     logger.debug('[auth:mock] VERIFY_OTP_ATTEMPT');
     await this.delay(1500);
@@ -204,18 +220,25 @@ export class MockAuthAdapter implements IAuthAdapter {
     logger.debug('[auth:mock] LOGOUT_ALL_SUCCESS');
   }
 
-  async getCurrentUser(): Promise<AuthUserResponseDto> {
+  async getCurrentUser(): Promise<{ user?: AuthUserResponseDto; tenant?: any }> {
     logger.debug('[auth:mock] GET_CURRENT_USER_ATTEMPT');
     await this.delay(300);
     
     // Mock current user - return generated DTO format
     logger.debug('[auth:mock] GET_CURRENT_USER_SUCCESS');
     return {
-      id: 'mock-user-id',
-      email: 'admin@tkqr.com',
-      fullName: 'Mock Admin User',
-      role: 'OWNER',
-      tenantId: 'mock-tenant-id',
+      user: {
+        id: 'mock-user-id',
+        email: 'admin@tkqr.com',
+        fullName: 'Mock Admin User',
+        role: 'OWNER',
+        tenantId: 'mock-tenant-id',
+      },
+      tenant: {
+        id: 'mock-tenant-id',
+        name: 'Mock Restaurant',
+        slug: 'mock-restaurant',
+      },
     };
   }
 }

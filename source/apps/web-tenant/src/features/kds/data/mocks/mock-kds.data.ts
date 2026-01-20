@@ -9,6 +9,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   // Pending orders
   {
     id: '#1247',
+    orderNumber: '1247',
     table: 'Table 7',
     time: 2,
     items: [
@@ -29,6 +30,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   },
   {
     id: '#1248',
+    orderNumber: '1248',
     table: 'Table 2',
     time: 1,
     items: [
@@ -45,6 +47,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   },
   {
     id: '#1249',
+    orderNumber: '1249',
     table: 'Table 12',
     time: 0,
     items: [
@@ -62,6 +65,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   // Preparing orders
   {
     id: '#1245',
+    orderNumber: '1245',
     table: 'Table 5',
     time: 8,
     items: [
@@ -78,6 +82,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   },
   {
     id: '#1244',
+    orderNumber: '1244',
     table: 'Table 3',
     time: 16,
     items: [
@@ -95,6 +100,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   // Ready orders
   {
     id: '#1243',
+    orderNumber: '1243',
     table: 'Table 8',
     time: 2,
     items: [
@@ -111,6 +117,7 @@ export const MOCK_KDS_ORDERS: KdsOrder[] = [
   },
   {
     id: '#1242',
+    orderNumber: '1242',
     table: 'Table 1',
     time: 4,
     items: [

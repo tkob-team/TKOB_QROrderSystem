@@ -33,7 +33,7 @@ export function getOrderCountByStatus(
  * Get badge variant for order status
  * BUG-13 Fix: Handle all status types from API mapping
  */
-export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'info' | 'primary' | 'default' | 'destructive' {
+export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'info' | 'primary' | 'default' | 'error' {
   switch (status) {
     case 'completed':
     case 'COMPLETED':
@@ -54,7 +54,7 @@ export function getStatusBadgeVariant(status: string): 'success' | 'warning' | '
       return 'primary';
     case 'cancelled':
     case 'CANCELLED':
-      return 'destructive';
+      return 'error';
     default:
       // INVARIANT: Unexpected order status value
       if (typeof window !== 'undefined') {

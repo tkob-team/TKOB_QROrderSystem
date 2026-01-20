@@ -28,7 +28,6 @@ export function playNotificationSound(type: SoundType, repeatCount = 3) {
   
   // Prevent spam - enforce cooldown
   if (now - lastPlayTime < MIN_INTERVAL_MS) {
-    console.log('[sound] Skipping - cooldown active (last played', Math.round((now - lastPlayTime) / 1000), 's ago)');
     return;
   }
   
@@ -40,8 +39,8 @@ export function playNotificationSound(type: SoundType, repeatCount = 3) {
   const playNext = () => {
     if (played < repeatCount) {
       audio.currentTime = 0;
-      audio.play().catch(err => {
-        console.warn('[sound] Failed to play audio:', err);
+      audio.play().catch(() => {
+        // Failed to play audio
       });
       played++;
       
@@ -52,7 +51,6 @@ export function playNotificationSound(type: SoundType, repeatCount = 3) {
     }
   };
   
-  console.log(`[sound] Playing ${type} (${repeatCount} beeps)`);
   playNext();
 }
 
@@ -60,6 +58,5 @@ export function playNotificationSound(type: SoundType, repeatCount = 3) {
  * Test function for development
  */
 export function testSound(type: SoundType) {
-  console.log('[sound] Testing sound:', type);
   playNotificationSound(type, 1);
 }

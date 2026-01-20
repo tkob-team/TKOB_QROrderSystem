@@ -36,11 +36,11 @@ export function ServiceBoardPage({ userRole = 'waiter' }: ServiceBoardPageProps)
         initialized = true;
         try {
           const success = await initializeAudio();
-          if (success) {
-            console.log('[waiter] Audio initialized on user interaction');
+          if (!success) {
+            // Audio init failed, will retry on sound enable
           }
         } catch (err) {
-          console.error('[waiter] Audio init error:', err);
+          // Audio init error, will retry on sound enable
         }
         document.removeEventListener('click', handleFirstClick);
       }
