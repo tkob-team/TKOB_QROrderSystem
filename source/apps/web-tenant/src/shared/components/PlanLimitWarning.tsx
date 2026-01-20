@@ -52,7 +52,7 @@ export function PlanLimitWarning({
   }
 
   const handleUpgrade = () => {
-    router.push('/settings/subscription#plans')
+    router.push('/admin/settings')
   }
 
   // Colors based on state

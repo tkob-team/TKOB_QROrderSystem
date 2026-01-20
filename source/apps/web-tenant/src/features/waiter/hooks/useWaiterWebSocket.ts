@@ -19,6 +19,7 @@ import {
   playNewOrderSound,
   type NewOrderPayload,
   type OrderStatusChangedPayload,
+  type BillRequestedPayload,
 } from '@/lib/websocket';
 import { logger } from '@/shared/utils/logger';
 import { getStoredAuthToken } from '@/features/auth/data/tokenStorage';
@@ -61,6 +62,10 @@ interface UseWaiterWebSocketOptions {
    * Callback when table status changes
    */
   onTableStatusChanged?: (data: TableStatusPayload) => void;
+  /**
+   * Callback when customer requests bill
+   */
+  onBillRequested?: (data: BillRequestedPayload) => void;
 }
 
 interface UseWaiterWebSocketReturn {
@@ -81,6 +86,10 @@ interface UseWaiterWebSocketReturn {
    */
   readyOrderCount: number;
   /**
+   * Count of bill requests from customers
+   */
+  billRequestCount: number;
+  /**
    * Reset new order count
    */
   resetNewOrderCount: () => void;
@@ -88,6 +97,10 @@ interface UseWaiterWebSocketReturn {
    * Reset ready order count
    */
   resetReadyOrderCount: () => void;
+  /**
+   * Reset bill request count
+   */
+  resetBillRequestCount: () => void;
   /**
    * Manually connect
    */
@@ -124,10 +137,12 @@ export function useWaiterWebSocket({
   onNewOrder,
   onOrderStatusChanged,
   onTableStatusChanged,
+  onBillRequested,
 }: UseWaiterWebSocketOptions): UseWaiterWebSocketReturn {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [newOrderCount, setNewOrderCount] = useState(0);
   const [readyOrderCount, setReadyOrderCount] = useState(0);
+  const [billRequestCount, setBillRequestCount] = useState(0);
   
   const socketRef = useRef<Socket | null>(null);
   const queryClient = useQueryClient();
@@ -136,6 +151,7 @@ export function useWaiterWebSocket({
     onNewOrder, 
     onOrderStatusChanged, 
     onTableStatusChanged,
+    onBillRequested,
     soundEnabled 
   });
   
@@ -144,9 +160,10 @@ export function useWaiterWebSocket({
       onNewOrder, 
       onOrderStatusChanged, 
       onTableStatusChanged,
+      onBillRequested,
       soundEnabled 
     };
-  }, [onNewOrder, onOrderStatusChanged, onTableStatusChanged, soundEnabled]);
+  }, [onNewOrder, onOrderStatusChanged, onTableStatusChanged, onBillRequested, soundEnabled]);
 
   const setupEventListeners = useCallback((socket: Socket) => {
     // Connection events
@@ -247,6 +264,32 @@ export function useWaiterWebSocket({
       queryClient.invalidateQueries({ queryKey: ['tables'] });
     });
 
+    // Bill requested by customer
+    socket.on(SocketEvents.BILL_REQUESTED, (payload: BillRequestedPayload) => {
+      logger.info('[websocket] Waiter: bill requested', {
+        orderId: payload.orderId,
+        orderNumber: payload.orderNumber,
+        tableNumber: payload.tableNumber,
+        totalAmount: payload.totalAmount,
+      });
+
+      // Play notification sound (4 beeps for bill request - urgent attention)
+      if (callbacksRef.current.soundEnabled) {
+        playNotificationSound('waiter-new-order', 4);
+      }
+
+      // Increment badge count
+      setBillRequestCount((prev) => prev + 1);
+
+      // Invalidate service orders and tables queries
+      queryClient.invalidateQueries({ queryKey: ['waiter', 'service-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['tables', 'overview'] });
+      queryClient.invalidateQueries({ queryKey: ['tables'] });
+
+      // Call user callback
+      callbacksRef.current.onBillRequested?.(payload);
+    });
+
   }, [queryClient]);
 
   const connect = useCallback(() => {
@@ -295,6 +338,10 @@ export function useWaiterWebSocket({
     setReadyOrderCount(0);
   }, []);
 
+  const resetBillRequestCount = useCallback(() => {
+    setBillRequestCount(0);
+  }, []);
+
   // Auto-connect on mount
   useEffect(() => {
     if (autoConnect && tenantId) {
@@ -311,8 +358,10 @@ export function useWaiterWebSocket({
     isConnected: status === 'connected',
     newOrderCount,
     readyOrderCount,
+    billRequestCount,
     resetNewOrderCount,
     resetReadyOrderCount,
+    resetBillRequestCount,
     connect,
     disconnect,
   };

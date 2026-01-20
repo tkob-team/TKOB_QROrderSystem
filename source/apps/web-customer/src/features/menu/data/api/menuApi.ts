@@ -65,6 +65,9 @@ function transformMenuItem(dto: any, categoryName: string = 'Unknown'): MenuItem
     dietary: dto.tags as any,
     badge,
     availability,
+    // Rating stats from backend
+    averageRating: dto.averageRating,
+    totalReviews: dto.totalReviews,
   };
 }
 
