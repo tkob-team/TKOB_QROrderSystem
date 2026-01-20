@@ -109,7 +109,7 @@ export function useOrdersController() {
   }
 
   const handleLogin = () => {
-    router.push('/auth/login')
+    router.push('/login')
   }
 
   const handlePayOrder = (order: Order) => {

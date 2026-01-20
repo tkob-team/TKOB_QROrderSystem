@@ -7,3 +7,5 @@ export { EmailVerificationSuccessPage } from './EmailVerificationSuccessPage'
 export { EmailVerificationFailedPage } from './EmailVerificationFailedPage'
 export { ResetPasswordSuccessPage } from './ResetPasswordSuccessPage'
 export { EmailVerifiedPage } from './EmailVerifiedPage'
+export { GoogleCallbackPage } from './GoogleCallbackPage'
+

@@ -37,6 +37,7 @@ export interface MenuItem {
   name: string;
   description: string;
   category: string;
+  categoryId?: string; // Added for proper related items filtering
   basePrice: number;
   imageUrl: string;
   primaryPhoto?: PhotoDto;
@@ -51,6 +52,9 @@ export interface MenuItem {
   sizes?: MenuItemSize[];
   toppings?: MenuItemTopping[];
   reviews?: Review[];
+  // Rating stats from reviews
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface MenuItemSize {

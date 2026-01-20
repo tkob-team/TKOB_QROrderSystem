@@ -29,6 +29,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
   const [specialInstructions, setSpecialInstructions] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [reviewPage, setReviewPage] = useState(1)
+  const [showFullReviewList, setShowFullReviewList] = useState(false)
 
   // Initialize selected size when item loads
   useEffect(() => {
@@ -40,16 +41,31 @@ export function useItemDetailController(itemId: string): ItemDetailController {
   // Reset review page when item changes
   useEffect(() => {
     setReviewPage(1)
+    setShowFullReviewList(false)
   }, [item])
 
   const relatedItems = useMemo(() => {
     if (!item) return [] as MenuItem[]
+    
+    // Get current item's category - could be string (mock) or from backend (categoryId)
+    const currentCategory = item.category
+    const currentCategoryId = (item as any).categoryId
+    
     return allMenuItems
-      .filter((menuItem) =>
-        menuItem.id !== item.id &&
-        menuItem.category === item.category &&
-        (menuItem.availability === 'Available' || !menuItem.availability)
-      )
+      .filter((menuItem) => {
+        // Don't include the current item
+        if (menuItem.id === item.id) return false
+        
+        // Match by category string (mock data) or categoryId (backend data)
+        const categoryMatch = 
+          (currentCategory && menuItem.category === currentCategory) ||
+          (currentCategoryId && (menuItem as any).categoryId === currentCategoryId)
+        
+        if (!categoryMatch) return false
+        
+        // Filter by availability
+        return menuItem.availability === 'Available' || !menuItem.availability
+      })
       .slice(0, 4)
   }, [allMenuItems, item])
 
@@ -60,6 +76,9 @@ export function useItemDetailController(itemId: string): ItemDetailController {
   const reviewStartIndex = (reviewPage - 1) * REVIEWS_PER_PAGE
   const reviewEndIndex = reviewStartIndex + REVIEWS_PER_PAGE
   const currentReviews = reviews.slice(reviewStartIndex, reviewEndIndex)
+  
+  // Use rating distribution from API (accurate counts), fallback to client-side calculation
+  const ratingDistribution = reviewsData?.ratingDistribution || null
 
   // Use API average rating if available, otherwise calculate
   const averageRating = reviewsData?.averageRating 
@@ -247,6 +266,17 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     setReviewPage((prev) => Math.min(totalReviewPages, prev + 1))
   }
 
+  const toggleFullReviewList = () => {
+    setShowFullReviewList((prev) => !prev)
+    if (!showFullReviewList) {
+      setReviewPage(1) // Reset to page 1 when opening full list
+    }
+  }
+
+  const scrollToReviews = () => {
+    setShowFullReviewList(true)
+  }
+
   const state = useMemo(() => ({
     item: item || null,
     allMenuItems,
@@ -263,6 +293,9 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     totalReviews,
     totalReviewPages,
     currentReviews,
+    allReviews: reviews,
+    ratingDistribution,
+    showFullReviewList,
   }), [
     item,
     allMenuItems,
@@ -279,6 +312,9 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     totalReviews,
     totalReviewPages,
     currentReviews,
+    reviews,
+    ratingDistribution,
+    showFullReviewList,
   ])
 
   return {
@@ -299,6 +335,8 @@ export function useItemDetailController(itemId: string): ItemDetailController {
       openItem,
       previousReview,
       nextReview,
+      toggleFullReviewList,
+      scrollToReviews,
     },
   }
 }

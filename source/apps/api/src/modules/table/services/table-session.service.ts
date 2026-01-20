@@ -19,6 +19,7 @@ export interface SessionData {
   tableNumber: string;
   restaurantName: string;
   scannedAt: Date;
+  billRequestedAt: Date | null;
 }
 
 export interface ScanQrResult {
@@ -143,6 +144,7 @@ export class TableSessionService {
       tableNumber: table.tableNumber,
       restaurantName: tenant?.name || 'Restaurant',
       scannedAt: session.scannedAt,
+      billRequestedAt: session.billRequestedAt,
     };
   }
 

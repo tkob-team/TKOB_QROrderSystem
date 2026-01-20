@@ -54,7 +54,12 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
       <ItemHeroSection imageUrl={state.item.imageUrl} name={state.item.name} onBack={actions.goBack} />
 
       <div className="flex-1 overflow-y-auto pb-24">
-        <ItemInfoSection item={state.item} />
+        <ItemInfoSection 
+          item={state.item} 
+          averageRating={state.averageRating}
+          totalReviews={state.totalReviews}
+          onViewReviews={actions.scrollToReviews}
+        />
 
         {/* Backend modifier groups (new) */}
         {state.item.modifierGroups && state.item.modifierGroups.length > 0 && (
@@ -83,12 +88,13 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
           />
         )}
 
-        <RelatedItemsSection items={state.relatedItems} onOpenItem={actions.openItem} />
-
         <SpecialInstructionsSection
           value={state.specialInstructions}
           onChange={actions.setSpecialInstructions}
         />
+
+        {/* Related Items - from same category */}
+        <RelatedItemsSection items={state.relatedItems} onOpenItem={actions.openItem} />
 
         <PeopleUsuallyAdd
           item={state.item}
@@ -100,10 +106,14 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
           averageRating={state.averageRating}
           totalReviews={state.totalReviews}
           currentReviews={state.currentReviews}
+          allReviews={state.allReviews}
+          ratingDistribution={state.ratingDistribution}
           reviewPage={state.reviewPage}
           totalReviewPages={state.totalReviewPages}
           onPrevious={actions.previousReview}
           onNext={actions.nextReview}
+          showFullList={state.showFullReviewList}
+          onToggleFullList={actions.toggleFullReviewList}
         />
       </div>
 
@@ -113,6 +123,8 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
         onIncrement={actions.incrementQuantity}
         onAddToCart={actions.addToCart}
         total={derivedTotal}
+        disabled={state.isBillRequested}
+        disabledMessage="Session Locked"
       />
 
       <style>{`

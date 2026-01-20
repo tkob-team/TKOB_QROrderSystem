@@ -90,7 +90,7 @@ export function RequestBillButton({
       
       setIsRequested(true)
       setBillRequestedInStorage(orderId)
-      toast.success(response.message || 'Bill requested. A server will assist you shortly.')
+      toast.success(response.message || 'Bill requested. A waiter will assist you shortly.')
       
       log('ui', 'Bill request successful', { orderId: maskId(orderId) }, { feature: 'orders' });
       

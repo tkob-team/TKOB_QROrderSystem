@@ -52,7 +52,7 @@ export function useItemReviewsQuery(menuItemId: string | undefined, tenantId: st
     queryKey: ['menu-item-reviews', menuItemId, tenantId],
     enabled: Boolean(menuItemId) && Boolean(tenantId),
     queryFn: async () => {
-      if (!menuItemId || !tenantId) return { reviews: [], averageRating: 0, totalReviews: 0 }
+      if (!menuItemId || !tenantId) return { reviews: [], averageRating: 0, totalReviews: 0, ratingDistribution: null }
       
       try {
         log('data', 'Fetching item reviews', { menuItemId: maskId(menuItemId) }, { feature: 'item-detail' })
@@ -81,11 +81,12 @@ export function useItemReviewsQuery(menuItemId: string | undefined, tenantId: st
           reviews,
           averageRating: data?.averageRating || 0,
           totalReviews: data?.totalReviews || reviews.length,
+          ratingDistribution: data?.ratingDistribution || null,
         }
       } catch (error) {
         logError('data', 'Reviews fetch error', error, { feature: 'item-detail' })
         // Return empty on error - don't break the UI
-        return { reviews: [], averageRating: 0, totalReviews: 0 }
+        return { reviews: [], averageRating: 0, totalReviews: 0, ratingDistribution: null }
       }
     },
     // Don't refetch on window focus for reviews

@@ -122,9 +122,12 @@ model Tenant {
 model User {
   id           String  @id @default(uuid())
   email        String  @unique
-  passwordHash String  @map("password_hash")
+  passwordHash String? @map("password_hash") // Optional for OAuth users
   fullName     String  @map("full_name")
   avatarUrl    String? @map("avatar_url") // User profile avatar URL
+
+  // OAuth fields
+  googleId     String? @unique @map("google_id") // Google OAuth ID
 
   role   UserRole   @default(STAFF)
   status UserStatus @default(PENDING) // Pending cho đến khi verify email/admin duyệt
@@ -403,6 +406,9 @@ model TableSession {
   // Session lifecycle
   scannedAt DateTime @default(now()) @map("scanned_at")
   active    Boolean  @default(true)
+
+  // Bill request tracking (for "Request Bill" flow)
+  billRequestedAt DateTime? @map("bill_requested_at")
 
   // Cleared by staff (staff control when table is free)
   clearedAt DateTime? @map("cleared_at")

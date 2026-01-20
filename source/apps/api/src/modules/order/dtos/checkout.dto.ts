@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
 
 export class CheckoutDto {
@@ -12,12 +12,15 @@ export class CheckoutDto {
   @IsOptional()
   customerNotes?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: ['BILL_TO_TABLE', 'CARD_ONLINE', 'SEPAY_QR'],
     example: 'BILL_TO_TABLE',
+    description: 'Payment method. Defaults to BILL_TO_TABLE if not specified.',
+    default: 'BILL_TO_TABLE',
   })
   @IsString()
-  paymentMethod: 'BILL_TO_TABLE' | 'CARD_ONLINE' | 'SEPAY_QR';
+  @IsOptional()
+  paymentMethod?: 'BILL_TO_TABLE' | 'CARD_ONLINE' | 'SEPAY_QR';
 
   @ApiPropertyOptional({ example: 5.00, description: 'Tip amount in USD' })
   @IsNumber()

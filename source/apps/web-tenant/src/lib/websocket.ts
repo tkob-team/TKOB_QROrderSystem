@@ -19,6 +19,12 @@ export const SocketEvents = {
   ORDER_LIST_UPDATE: 'order:list_update',
   PAYMENT_COMPLETED: 'payment:completed',
   ORDER_CANCELLED: 'order:cancelled',
+  BILL_REQUESTED: 'order:bill_requested',
+  
+  // Table events
+  TABLE_STATUS_CHANGED: 'table.status_changed',
+  TABLE_SESSION_STARTED: 'table.session_started',
+  TABLE_SESSION_ENDED: 'table.session_ended',
   
   // Table events
   TABLE_STATUS_CHANGED: 'table.status_changed',
@@ -76,6 +82,15 @@ export interface OrderCancelledPayload {
   orderNumber: string;
   reason?: string;
   timestamp: Date;
+}
+
+export interface BillRequestedPayload {
+  orderId: string;
+  orderNumber: string;
+  tableId: string;
+  tableNumber: string;
+  totalAmount: number;
+  requestedAt: Date;
 }
 
 // ==================== CONNECTION MANAGEMENT ====================

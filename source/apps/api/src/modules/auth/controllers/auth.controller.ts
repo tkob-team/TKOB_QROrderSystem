@@ -6,10 +6,14 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -36,9 +40,11 @@ import {
 import { ChangePasswordDto, ChangePasswordResponseDto } from '../dto/change-password.dto';
 import { UpdateUserProfileDto, UpdateProfileResponseDto } from '../dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
 import { SkipTransform } from '../../../common/interceptors/transform.interceptor';
+import { EnvConfig } from '../../../config/env.validation';
 
 /**
  * Auth Controller
@@ -49,7 +55,10 @@ import { SkipTransform } from '../../../common/interceptors/transform.intercepto
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService<EnvConfig, true>,
+  ) {}
 
   // ==================== REGISTRATION ====================
 
@@ -312,6 +321,7 @@ export class AuthController {
 
   // ==================== PASSWORD RESET ====================
 
+
   @Post('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
@@ -406,5 +416,55 @@ export class AuthController {
     @Body() dto: ResendVerificationDto,
   ): Promise<ResendVerificationResponseDto> {
     return this.authService.resendVerification(dto);
+  }
+
+  // ==================== GOOGLE OAUTH ====================
+
+  @Get('google')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects to Google login page',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to Google' })
+  async googleAuth() {
+    // Guard handles redirect to Google
+  }
+
+  @Get('google/callback')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @SkipTransform()
+  @ApiOperation({
+    summary: 'Google OAuth callback',
+    description: 'Handle callback from Google after authentication',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to frontend with tokens' })
+  async googleAuthCallback(@Req() req: any, @Res() res: Response) {
+    try {
+      const result = await this.authService.googleAuth(req.user);
+      
+      // Determine which frontend to redirect to based on user role
+      // OWNER/STAFF users go to tenant app, customers go to customer app
+      const userRole = result.user.role;
+      const isTenantUser = ['OWNER', 'STAFF', 'KDS', 'WAITER'].includes(userRole);
+      
+      const frontendUrl = isTenantUser
+        ? this.configService.get('TENANT_APP_URL', { infer: true })
+        : this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      
+      // Redirect to frontend with tokens as query params
+      const redirectUrl = new URL(`${frontendUrl}/auth/google/callback`);
+      redirectUrl.searchParams.set('accessToken', result.accessToken);
+      redirectUrl.searchParams.set('refreshToken', result.refreshToken);
+      redirectUrl.searchParams.set('isNewUser', String(result.isNewUser));
+      
+      return res.redirect(redirectUrl.toString());
+    } catch (error) {
+      // Default to customer app on error
+      const frontendUrl = this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+    }
   }
 }

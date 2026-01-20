@@ -1,4 +1,10 @@
-import { Injectable, Logger, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { RegistrationService } from './registration.service';
 import { SessionService } from './session.service';
@@ -11,7 +17,10 @@ import { AuthResponseDto, RegisterSubmitResponseDto } from '../dto/auth-response
 import { ForgotPasswordDto, ForgotPasswordResponseDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto, ResetPasswordResponseDto } from '../dto/reset-password.dto';
 import { VerifyEmailDto, VerifyEmailResponseDto } from '../dto/verify-email.dto';
-import { ResendVerificationDto, ResendVerificationResponseDto } from '../dto/resend-verification.dto';
+import {
+  ResendVerificationDto,
+  ResendVerificationResponseDto,
+} from '../dto/resend-verification.dto';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { EmailService } from '../../email/email.service';
@@ -82,21 +91,28 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // 2. Verify password
+    // 2. Check if user has a password (may be null for Google OAuth users)
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        'This account was created with Google. Please sign in with Google.',
+      );
+    }
+
+    // 3. Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // 3. Check user status
+    // 4. Check user status
     if (user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Account is not active. Please contact support.');
     }
 
-    // 4. Create session and generate tokens
+    // 5. Create session and generate tokens
     const tokens = await this.session.createSessionWithTokens(user.id, deviceInfo);
 
-    // 5. [FIRST LOGIN SEED] Check if this is first login and should seed demo data
+    // 6. [FIRST LOGIN SEED] Check if this is first login and should seed demo data
     try {
       await this.seedDemoDataOnFirstLogin(user.id, user.tenantId);
     } catch (seedError) {
@@ -106,7 +122,7 @@ export class AuthService {
 
     this.logger.log(`User logged in: ${user.email}`);
 
-    // 5. Return auth response
+    // 7. Return auth response
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -271,10 +287,10 @@ export class AuthService {
     const fs = await import('fs/promises');
     const path = await import('path');
     const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
-    
+
     // Ensure directory exists
     await fs.mkdir(uploadDir, { recursive: true });
-    
+
     // Write file
     const filePath = path.join(process.cwd(), 'uploads', filename);
     await fs.writeFile(filePath, file.buffer);
@@ -308,7 +324,7 @@ export class AuthService {
       select: { passwordHash: true },
     });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       return false;
     }
 
@@ -322,6 +338,22 @@ export class AuthService {
    * @param newPassword - New password
    */
   async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    // Check if user has a password (Google OAuth users may not)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.passwordHash) {
+      throw new BadRequestException(
+        'Cannot change password for Google OAuth account. Please set a password first.',
+      );
+    }
+
     // Verify old password
     const isValid = await this.verifyPassword(userId, oldPassword);
     if (!isValid) {
@@ -388,7 +420,8 @@ export class AuthService {
     if (!user) {
       this.logger.warn(`Password reset requested for non-existent email: ${email}`);
       return {
-        message: 'If an account exists with this email, you will receive a password reset link shortly.',
+        message:
+          'If an account exists with this email, you will receive a password reset link shortly.',
         email,
       };
     }
@@ -417,7 +450,8 @@ export class AuthService {
     }
 
     return {
-      message: 'If an account exists with this email, you will receive a password reset link shortly.',
+      message:
+        'If an account exists with this email, you will receive a password reset link shortly.',
       email,
     };
   }
@@ -550,11 +584,7 @@ export class AuthService {
     // Store in Redis with 24 hour expiry
     const redisKey = `email-verification:${verificationToken}`;
     const ttl = 24 * 60 * 60; // 24 hours
-    await this.redis.set(
-      redisKey,
-      JSON.stringify({ userId: user.id, email: user.email }),
-      ttl,
-    );
+    await this.redis.set(redisKey, JSON.stringify({ userId: user.id, email: user.email }), ttl);
 
     // Generate verification link
     const frontendUrl = this.config.get('CUSTOMER_APP_URL', { infer: true });
@@ -596,7 +626,9 @@ export class AuthService {
     // Check 2: Check if tenant already has data (avoid re-seeding)
     const existingItems = await this.prisma.menuItem.count({ where: { tenantId } });
     if (existingItems > 0) {
-      this.logger.debug(`Skipping seed: Tenant ${tenantId} already has ${existingItems} menu items`);
+      this.logger.debug(
+        `Skipping seed: Tenant ${tenantId} already has ${existingItems} menu items`,
+      );
       return;
     }
 
@@ -604,5 +636,115 @@ export class AuthService {
     this.logger.log(`🌱 Seeding demo data for first tenant: ${tenantId} (first login)`);
     await this.seedService.seedTenantData(tenantId);
     this.logger.log(`✅ Demo data seeded successfully for tenant: ${tenantId}`);
+  }
+
+  // ==================== GOOGLE OAUTH ====================
+
+  /**
+   * Handle Google OAuth callback
+   * - Find or create user based on Google profile
+   * - Create session and return tokens
+   */
+  async googleAuth(googleUser: {
+    googleId: string;
+    email: string;
+    fullName: string;
+    avatarUrl?: string;
+  }): Promise<AuthResponseDto & { isNewUser: boolean }> {
+    const { googleId, email, fullName, avatarUrl } = googleUser;
+
+    // 1. Try to find user by Google ID first
+    let user = await this.prisma.user.findUnique({
+      where: { googleId },
+      include: { tenant: true },
+    });
+
+    let isNewUser = false;
+
+    if (!user) {
+      // 2. Check if user exists with this email (link accounts)
+      user = await this.prisma.user.findFirst({
+        where: { email },
+        include: { tenant: true },
+      });
+
+      if (user) {
+        // Link Google account to existing user
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { googleId, avatarUrl: user.avatarUrl || avatarUrl },
+          include: { tenant: true },
+        });
+        this.logger.log(`Linked Google account to existing user: ${email}`);
+      } else {
+        // 3. Create new user with new tenant
+        isNewUser = true;
+        const slug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        const tenant = await this.prisma.tenant.create({
+          data: {
+            name: `${fullName}'s Restaurant`,
+            slug: `${slug}-${Date.now()}`,
+            status: 'DRAFT',
+          },
+        });
+
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            fullName,
+            googleId,
+            avatarUrl,
+            role: 'OWNER',
+            status: 'ACTIVE', // Google already verified email
+            tenantId: tenant.id,
+          },
+          include: { tenant: true },
+        });
+        this.logger.log(`Created new user via Google OAuth: ${email}`);
+      }
+    }
+
+    // 4. Check user status
+    if (user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Account is not active. Please contact support.');
+    }
+
+    // 5. Create session
+    const tokens = await this.session.createSessionWithTokens(user.id);
+
+    // 6. Seed demo data if new user
+    if (isNewUser && user.tenantId) {
+      try {
+        await this.seedDemoDataOnFirstLogin(user.id, user.tenantId);
+      } catch (seedError) {
+        this.logger.error(`Failed to seed demo data:`, seedError);
+      }
+    }
+
+    this.logger.log(`User logged in via Google: ${user.email}`);
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: this.token.getAccessTokenExpirySeconds(),
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        tenantId: user.tenantId,
+      },
+      tenant: user.tenant
+        ? {
+            id: user.tenant.id,
+            name: user.tenant.name,
+            slug: user.tenant.slug,
+            status: user.tenant.status,
+            onboardingStep: user.tenant.onboardingStep,
+          }
+        : undefined,
+      isNewUser,
+    };
   }
 }

@@ -3,7 +3,8 @@ import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
 import { MenuPhotoService } from '@/modules/menu/services/menu-photo.service';
 import { UnsplashService } from './unplash.service';
-import { SubscriptionTier, SubscriptionStatus } from '@prisma/client';
+import { SubscriptionTier, SubscriptionStatus, OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 /**
  * Seed Service - Tạo dữ liệu demo cho tenant mới
@@ -38,12 +39,17 @@ export class SeedService {
       const modifiers = await this.seedModifiers(tenantId);
       const items = await this.seedMenuItems(tenantId, categories, modifiers);
       const tables = await this.seedTables(tenantId);
+      
+      // Seed demo orders và reviews (để có rating data)
+      const { orders, reviews } = await this.seedOrdersAndReviews(tenantId, items, tables);
 
       this.logger.log(`✅ Seed completed for tenant ${tenantId}:
         - ${categories.length} categories
         - ${modifiers.length} modifier groups
         - ${items.length} menu items
         - ${tables.length} tables
+        - ${orders.length} demo orders
+        - ${reviews.length} demo reviews
       `);
     } catch (error) {
       this.logger.error(`❌ Seed failed for tenant ${tenantId}:`, error);
@@ -658,5 +664,150 @@ export class SeedService {
     });
 
     this.logger.log(`✅ Created FREE subscription for tenant ${tenantId}`);
+  }
+
+  /**
+   * SEED DEMO ORDERS AND REVIEWS
+   * Tạo orders hoàn thành với reviews để hiển thị rating trên menu
+   */
+  private async seedOrdersAndReviews(
+    tenantId: string,
+    menuItems: { id: string; name: string; price: Decimal }[],
+    tables: { id: string; tableNumber: string }[],
+  ): Promise<{
+    orders: { id: string }[];
+    reviews: { id: string }[];
+  }> {
+    const orders: { id: string }[] = [];
+    const reviews: { id: string }[] = [];
+
+    if (menuItems.length === 0 || tables.length === 0) {
+      this.logger.warn('No menu items or tables to create demo orders');
+      return { orders, reviews };
+    }
+
+    // Sample review comments
+    const positiveComments = [
+      'Excellent! Highly recommend.',
+      'Amazing taste, will order again!',
+      'Perfect portion size and flavor.',
+      'One of the best dishes I\'ve had.',
+      'Fresh and delicious!',
+      'Great value for money.',
+      'Perfectly cooked!',
+    ];
+
+    const neutralComments = [
+      'Good food, nice presentation.',
+      'Decent portion, tasty.',
+      'Solid choice.',
+      'Pretty good overall.',
+    ];
+
+    // Create 3-5 demo orders with reviews
+    const numOrders = Math.min(5, tables.length);
+    
+    for (let i = 0; i < numOrders; i++) {
+      const table = tables[i % tables.length];
+      
+      // Create a completed table session (clearedAt = ended)
+      const pastDate = new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000);
+      const session = await this.prisma.tableSession.create({
+        data: {
+          tenantId,
+          tableId: table.id,
+          scannedAt: pastDate,
+          active: false, // Session is done
+          clearedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      // Select 2-4 random menu items for this order
+      const numItems = Math.floor(Math.random() * 3) + 2;
+      const selectedItems = this.shuffleArray([...menuItems]).slice(0, numItems);
+
+      // Calculate total
+      let subtotal = new Decimal(0);
+      const orderItemsData = selectedItems.map((item) => {
+        const quantity = Math.floor(Math.random() * 2) + 1;
+        const itemTotal = item.price.mul(quantity);
+        subtotal = subtotal.add(itemTotal);
+        return {
+          menuItemId: item.id,
+          name: item.name,
+          quantity,
+          price: item.price,
+          itemTotal,
+          notes: null,
+          modifiers: [],
+        };
+      });
+
+      const total = subtotal.mul(1.1); // 10% tax
+
+      // Create completed order (PAID status, COMPLETED payment)
+      const order = await this.prisma.order.create({
+        data: {
+          tenantId,
+          tableId: table.id,
+          sessionId: session.id,
+          orderNumber: `DEMO-${Date.now()}-${i}`,
+          status: OrderStatus.PAID,
+          paymentStatus: PaymentStatus.COMPLETED,
+          paymentMethod: PaymentMethod.CASH,
+          subtotal,
+          tax: subtotal.mul(0.1),
+          tip: new Decimal(0),
+          total,
+          paidAt: session.clearedAt,
+          items: {
+            create: orderItemsData,
+          },
+        },
+        include: {
+          items: true,
+        },
+      });
+
+      orders.push({ id: order.id });
+
+      // Create reviews for 50-100% of items in this order
+      const itemsToReview = order.items.filter(() => Math.random() > 0.3);
+      
+      for (const orderItem of itemsToReview) {
+        const rating = Math.random() > 0.3 
+          ? Math.floor(Math.random() * 2) + 4 // 4-5 stars (70%)
+          : Math.floor(Math.random() * 2) + 3; // 3-4 stars (30%)
+
+        const comments = rating >= 4 ? positiveComments : neutralComments;
+        const comment = comments[Math.floor(Math.random() * comments.length)];
+
+        const review = await this.prisma.itemReview.create({
+          data: {
+            tenantId,
+            orderItemId: orderItem.id,
+            sessionId: session.id,
+            rating,
+            comment,
+          },
+        });
+
+        reviews.push({ id: review.id });
+      }
+    }
+
+    return { orders, reviews };
+  }
+
+  /**
+   * Utility: Shuffle array (Fisher-Yates)
+   */
+  private shuffleArray<T>(array: T[]): T[] {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
   }
 }
