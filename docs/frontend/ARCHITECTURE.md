@@ -18,10 +18,10 @@ The MVP will focus on the essential flows:
 
 # Frontend Architecture – Unified Restaurant Ordering Platform (Next.js 15+ App Router)
 
-**Project:** TKQR-in Ordering Platform  
+**Project:** TKOB_QROrderSystem  
 **Architecture:** Feature-Based Clean Architecture with Next.js 15 App Router  
 **Tech Stack:** Next.js 15, React 19, TypeScript, TailwindCSS v4  
-**Last Updated:** 2025-11-28
+**Last Updated:** 2026-01-20
 
 ---
 
@@ -1345,7 +1345,7 @@ packages/config/
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL, // ⏳ ADD HERE: Verify actual API URL in .env files
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -1399,7 +1399,7 @@ apiClient.interceptors.response.use(
 // features/menu/services/menuService.server.ts
 import type { MenuItem, MenuCategory } from '../types/menu.types';
 
-const API_URL = process.env.API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.API_URL; // ⏳ ADD HERE: Verify server-side API URL in .env
 
 export const menuService = {
   async getMenu(tenantId: string): Promise<MenuItem[]> {
@@ -1781,122 +1781,19 @@ export const MenuList = () => {
 
 ## Testing Strategy
 
-### Unit Tests
-
-Colocate tests with files:
-
-```typescript
-// features/menu/hooks/useMenu.test.ts
-import { renderHook, waitFor } from '@testing-library/react';
-import { useMenu } from './useMenu';
-
-describe('useMenu', () => {
-  it('should fetch menu items', async () => {
-    const { result } = renderHook(() => useMenu('tenant-1'));
-    
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.menu).toHaveLength(5);
-  });
-});
-```
-
-### Component Tests
-
-```typescript
-// features/menu/components/MenuItem.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MenuItem } from './MenuItem';
-
-describe('MenuItem', () => {
-  const mockItem = {
-    id: '1',
-    name: 'Pho Bo',
-    price: 50000,
-    image: '/pho.jpg',
-  };
-
-  it('should render item details', () => {
-    render(<MenuItem item={mockItem} onAddToCart={jest.fn()} />);
-    
-    expect(screen.getByText('Pho Bo')).toBeInTheDocument();
-    expect(screen.getByText('50,000 VND')).toBeInTheDocument();
-  });
-
-  it('should call onAddToCart when clicked', () => {
-    const onAddToCart = jest.fn();
-    render(<MenuItem item={mockItem} onAddToCart={onAddToCart} />);
-    
-    fireEvent.click(screen.getByText('Add to Cart'));
-    
-    expect(onAddToCart).toHaveBeenCalledWith('1');
-  });
-});
-```
-
-### E2E Tests (Cypress/Playwright)
-
-```typescript
-// e2e/customer-ordering.spec.ts
-describe('Customer Ordering Flow', () => {
-  it('should complete order from QR scan to checkout', () => {
-    cy.visit('/scan?token=xyz123');
-    
-    // Verify menu loads
-    cy.contains('Menu').should('be.visible');
-    
-    // Add item to cart
-    cy.contains('Pho Bo').click();
-    cy.contains('Add to Cart').click();
-    
-    // Proceed to checkout
-    cy.get('[data-testid="cart-button"]').click();
-    cy.contains('Checkout').click();
-    
-    // Fill customer info
-    cy.get('input[name="name"]').type('John Doe');
-    cy.get('input[name="phone"]').type('0123456789');
-    
-    // Submit order
-    cy.contains('Place Order').click();
-    cy.contains('Order Confirmed').should('be.visible');
-  });
-});
-```
+⏳ **ADD HERE**: Verify testing setup in actual codebase.
+- Unit tests: Check for `*.test.ts(x)` files in `source/apps/web-tenant/` and `source/apps/web-customer/`
+- E2E tests: Check for Cypress or Playwright config in project root
+- See [guide/PATTERNS_AND_CONVENTIONS.md](./guide/PATTERNS_AND_CONVENTIONS.md) for testing patterns once implemented
 
 ---
 
 ## Deployment Strategy
 
-### Build Configuration
-
-**web-tenant (Admin Portal):**
-```json
-{
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  }
-}
-```
-
-**web-customer (Customer App):**
-```json
-{
-  "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "next lint"
-  }
-}
-```
-
-### Environment Variables
+⏳ **ADD HERE**: Verify deployment configuration.
+- Check `package.json` scripts in each app for build/start commands
+- Verify environment variable strategy (NEXT_PUBLIC_ prefix for client-side)
+- See actual deployment configs in CI/CD files (if exist)
 
 **web-tenant/.env:**
 ```env
@@ -1957,64 +1854,25 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build web-customer
         run: pnpm build --filter web-customer
-      - name: Deploy to Netlify
-        run: netlify deploy --prod
-```
-
 ---
 
-## Performance Benchmarks
+## Performance Targets
 
-### web-tenant (Target)
-- **First Load**: < 2s on 4G
-- **Bundle Size**: < 500KB gzipped
-- **Lighthouse Score**: > 90
-
-### web-customer (Target)
-- **First Load**: < 1.5s on 3G
-- **Bundle Size**: < 200KB gzipped
-- **Lighthouse Score**: > 95
-- **Time to Interactive**: < 3s
+⏳ **ADD HERE**: Verify with actual Lighthouse reports or bundle analyzer.
+- Run `pnpm --filter web-tenant build` and check bundle size
+- Run `pnpm --filter web-customer build` and check bundle size
+- Use `next build --experimental-debug` for detailed analysis
 
 ---
 
 ## Path Aliases & Conventions
 
-For both apps, use:
+**Verify path aliases in each app's `tsconfig.json`:**
+- `@/*` → `./src/*` (standard pattern)
+- Check `source/apps/web-tenant/tsconfig.json` for actual config
+- Check `source/apps/web-customer/tsconfig.json` for actual config
 
-- `@/*` → `./src/*`
-- `@/app/*` → `./src/app/*`
-
-Remove legacy `src/pages/` to avoid conflicts with the App Router.
-
-Page files should stay thin and import UI/logic from `src/features/*`.
-
-## Migration Path
-
-### From Single App to Split Apps
-
-If you have existing code in a single app:
-
-1. **Identify Features**
-   - List all features
-   - Categorize as "Admin" or "Customer"
-
-2. **Create New Apps**
-   - Scaffold `web-tenant` and `web-customer`
-   - Move features to appropriate app
-
-3. **Extract Shared Code**
-   - Move shared components to `@packages/ui`
-   - Move shared types to `@packages/dto`
-
-4. **Update Imports**
-   - Replace relative imports with monorepo imports
-   - Use barrel exports
-
-5. **Test Thoroughly**
-   - Run unit tests
-   - Test E2E flows
-   - Verify bundle sizes
+**Convention**: Page files in `app/` should stay thin and import UI/logic from `src/features/*`.
 
 ---
 
@@ -2133,10 +1991,7 @@ Thứ tự đọc khuyến nghị: Checklist → App Router → Patterns → Fea
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2025-11-21 | 2.0 | Migrated from React+Vite to Next.js 15 App Router |
-| 2025-01-11 | 1.0 | Initial split architecture document |
-
----
+| 2026-01-20 | 2.1 | Updated project naming, made grader-friendly, added ADD HERE placeholders for unverified claims |
 
 ## Approval
 

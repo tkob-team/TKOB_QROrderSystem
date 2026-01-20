@@ -1,6 +1,7 @@
 # Role-Based Access Control (RBAC) System
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-20  
+**Applies to:** `source/apps/web-tenant` (tenant/restaurant admin dashboard)
 
 ---
 
@@ -57,7 +58,7 @@ enum UserRole {
 - **Quyền truy cập**:
   - ✅ Kitchen Display System (`/admin/kds`)
   - ✅ View orders assigned to kitchen
-  - ✅ Update order status: `PREPARING` → `READY`
+  - ⏳ Update order status: ADD HERE (verify backend guards in `source/apps/api/src/modules/order/` for PREPARING → READY permissions)
   - ❌ Dashboard, Menu, Tables, Analytics (không có quyền truy cập)
 
 ### 3. **STAFF** (Backend) / "Waiter" (Frontend Display)
@@ -66,45 +67,38 @@ enum UserRole {
 - **Frontend Display:** May show as "Waiter" or "Staff" in UI
 - **Quyền truy cập**:
   - ✅ Service Board (`/admin/service-board`)
-  - ✅ Order Management (`/admin/orders`) - View & update status
+  - ✅ Order Management (`/admin/orders`) - View orders
+  - ⏳ Update order status: ADD HERE (verify specific status transitions allowed for STAFF role in backend guards)
   - ✅ View menu (read-only)
   - ✅ Manage table orders
   - ❌ Menu Management, Table Management, Settings (không có quyền truy cập)
 
-## Dev Mode Login
+## Dev Mode Login (DEV ONLY)
 
-> **⚠️ Note:** Dev mode may use frontend display names. When integrating with real backend, ensure you send the correct backend enum values (`OWNER`, `STAFF`, `KITCHEN`).
+> **⚠️ DEVELOPMENT ONLY:** This feature is for local testing and should be removed/disabled in production builds.
 
-Trong môi trường development, bạn có thể login nhanh với các role khác nhau:
+**File:** `source/apps/web-tenant/src/features/auth/ui/pages/LoginPage.tsx` (lines ~150-160)
 
-1. Mở trang Login (`/login`)
-2. Tại phần "Dev mode shortcuts", click vào button tương ứng:
-   - 🔐 **Login as Admin** → Đăng nhập với quyền OWNER
-   - 👨‍🍳 **Login as KDS** → Đăng nhập với quyền KITCHEN
-   - 🧑‍💼 **Login as Waiter** → Đăng nhập với quyền STAFF
+In development environment, you can bypass authentication with quick role selection:
 
-### Dev Login Code
+1. Open Login page (`/auth/login`)
+2. Use dev mode shortcuts (if NODE_ENV=development):
+   - 🔐 **Login as Admin** → Logs in with OWNER role
+   - 👨‍🍳 **Login as KDS** → Logs in with KITCHEN role
+   - 🧑‍💼 **Login as Waiter** → Logs in with STAFF role
+
+### Dev Login Implementation (Reference)
 ```typescript
-// In Login.tsx
-// Note: Frontend may use display names, but send backend enums to API
-const handleDevLogin = (displayRole: 'admin' | 'kds' | 'waiter') => {
-  // Map frontend display to backend enum
-  const backendRoleMap = {
-    'admin': 'OWNER',
-    'kds': 'KITCHEN',
-    'waiter': 'STAFF'
-  };
-  
-  devLogin(backendRoleMap[displayRole]);
-  
-  // Auto navigate to appropriate dashboard
-  if (displayRole === 'admin') {
-    onNavigate?.('/admin/dashboard');
-  } else if (displayRole === 'kds') {
-    onNavigate?.('/admin/kds');
-  } else if (displayRole === 'waiter') {
-    onNavigate?.('/admin/service-board');
+// Reference from: LoginPage.tsx line ~150
+// ⚠️ DEV ONLY - Remove in production
+const handleDevLogin = (role: 'admin' | 'kds' | 'waiter') => {
+  logger.debug('[auth] LOGIN_PAGE_DEV_LOGIN', { role });
+  if (typeof window !== 'undefined') {
+    localStorage.clear();
   }
+  devLogin(role); // Calls AuthContext's devLogin function
+  
+  // Note: Navigation handled by AuthContext after successful dev login
 };
 ```
 
@@ -137,7 +131,9 @@ const inviteStaffWrong = async (email: string, role: 'waiter' | 'kds') => {
 ## Implementation Details
 
 ### AuthContext
-File: `src/shared/context/AuthContext.tsx`
+File: `source/apps/web-tenant/src/shared/context/AuthContext.tsx` (re-exports from `features/auth`)
+
+**Note:** Actual auth types defined in `features/auth/domain/types.ts`
 
 ```typescript
 // Backend roles (from Prisma)
@@ -166,9 +162,9 @@ export function getRoleDisplayName(role: UserRole): UserRoleDisplay {
 ```
 
 ### RoleGuard Component
-File: `src/shared/components/auth/RoleGuard.tsx`
+File: `source/apps/web-tenant/src/shared/guards/RoleGuard.tsx`
 
-Wrap pages với `RoleGuard` để bảo vệ routes. **Use backend role enums:**
+Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
 
 ```tsx
 <RoleGuard allowedRoles={['OWNER']}>
@@ -201,40 +197,58 @@ Wrap pages với `RoleGuard` để bảo vệ routes. **Use backend role enums:*
 
 ## Route Structure
 
+**Verified routes** from `source/apps/web-tenant/src/app/`:
+
 ```
 /admin
-├── /dashboard          → OWNER only
-├── /menu               → OWNER only
-├── /tables             → OWNER only
-├── /orders             → OWNER + STAFF
-├── /kds                → KITCHEN only
-└── /service-board      → STAFF only
+├── /dashboard          → OWNER only (verified: app/admin/dashboard/)
+├── /menu               → OWNER only (verified: app/admin/menu/)
+├── /tables             → OWNER only (verified: app/admin/tables/)
+├── /orders             → OWNER + STAFF (verified: app/admin/orders/)
+├── /kds                → KITCHEN only (verified: app/admin/kds/)
+├── /service-board      → STAFF only (verified: app/admin/service-board/)
+├── /analytics          → OWNER only (verified: app/admin/analytics/)
+├── /staff              → OWNER only (verified: app/admin/staff/)
+├── /settings           → OWNER only (verified: app/admin/settings/)
+├── /subscription       → OWNER only (verified: app/admin/subscription/)
+└── /payment-settings   → OWNER only (verified: app/admin/payment-settings/)
+
+/kds                    → Standalone KDS route (verified: app/kds/)
+/waiter                 → Standalone waiter route (verified: app/waiter/)
+/staff                  → Standalone staff route (verified: app/staff/)
 ```
 
 ## Testing
 
-### Test Different Roles
-1. Login với role khác nhau sử dụng dev mode buttons
-2. Thử truy cập các routes không được phép
-3. Verify rằng RoleGuard hiển thị "Access Denied" page
+### Test Different Roles (DEV ONLY)
+1. Use dev mode login buttons to switch between roles
+2. Try accessing routes not allowed for current role
+3. Verify that RoleGuard shows "Access Denied" page (unauthorized page)
 
 ### Expected Behavior
-- ✅ User với role đúng: Xem được nội dung page
-- ❌ User với role sai: Hiển thị "Access Denied" message
-- ⏳ Chưa login: Redirect về `/login`
+- ✅ User with correct role: View page content
+- ❌ User with wrong role: Show "Access Denied" page with countdown, then redirect to role-appropriate page
+  - Evidence: `RoleGuard.tsx` lines 110-122 (shows Access Denied UI + countdown)
+  - Redirect destinations (lines 43-50): `kds` → `/kds`, `waiter` → `/waiter`, `admin` → `/waiter`, fallback → `/auth/login`
+- ⏳ Not authenticated: Redirect to `/auth/login`
+  - Evidence: `RoleGuard.tsx` line 44: `router.push('/auth/login')`
 
-## Future Enhancements
+---
 
-### TODO for Production
-- [ ] Remove dev mode login buttons
-- [ ] Implement real JWT authentication
-- [ ] Add API integration for user roles
-- [ ] Add role permissions for specific actions (not just pages)
-- [ ] Implement fine-grained permissions (CRUD operations)
-- [ ] Add audit logging for role changes
+## Production Checklist
 
-### Potential Additional Roles
-- `cashier` → Would map to backend: `CASHIER` (if added to Prisma enum)
-- `manager` → Would map to backend: `MANAGER` (if added to Prisma enum)
+### Before Deploying to Production:
+- [ ] Remove or disable dev mode login shortcuts (check NODE_ENV guards)
+- [ ] Implement real JWT authentication with backend API
+- [ ] Verify all RoleGuard protections are in place
+- [ ] Test role-based redirects after login
+- [ ] Add audit logging for authentication events
+- [ ] Configure proper session management
 
-> **Note:** Any new roles must be added to the Prisma schema first (`source/apps/api/prisma/schema.prisma`), then frontend can use them.
+### Current Implementation Status:
+- ✅ Role enum definitions (from Prisma schema)
+- ✅ RoleGuard component for route protection
+- ✅ AuthContext for auth state management
+- ✅ Dev mode login (for development only)
+- ⏳ Backend JWT integration (ADD HERE: verify with API team)
+- ⏳ Fine-grained action permissions (beyond route access)
