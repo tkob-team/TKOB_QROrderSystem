@@ -52,7 +52,7 @@
 
 ### Key Constraints
 
-- **Uniqueness**: `slug` unique globally, `email` unique per tenant, table `number` unique per tenant
+- **Uniqueness**: `slug` unique globally, `email` unique globally, table `number` unique per tenant
 - **Cascade Deletes**: Child records deleted when parent tenant is deleted
 - **Restrict Deletes**: Foreign keys to MenuItem, MenuCategory use RESTRICT to prevent accidental deletion
 
@@ -134,7 +134,7 @@
 **Relations**: sessions, tenant
 
 **Business Rules**:
-- Email unique globally across all tenants
+- Email unique globally (enforced by @unique constraint in schema)
 - Status PENDING until email verified or admin approved
 - OWNER role has full access, STAFF has limited access, KITCHEN sees only KDS
 - Cascade delete sessions when user deleted
@@ -473,9 +473,9 @@
 
 **Business Rules**:
 - `order_number` generated per tenant (format: ORD-YYYYMMDD-####)
-- Order lifecycle: PENDING → RECEIVED → PREPARING → READY → SERVED → COMPLETED
+- Order lifecycle: PENDING → RECEIVED → PREPARING → READY → SERVED → COMPLETED → PAID (or jump to CANCELLED)
 - Status can jump to CANCELLED at any point before SERVED
-- PAID is a `payment_status` value, not part of the order status flow
+- PAID status (in OrderStatus enum) marks order as payment completed; separate `payment_status` field tracks payment provider state
 - Priority auto-calculated based on elapsed time vs estimated prep time
 - RESTRICT on table FK prevents table deletion with active orders
 - ✅ **Implemented**: 5-minute cancellation window (in order.service.ts)
@@ -771,7 +771,7 @@
 ### PaymentMethod
 - `BILL_TO_TABLE` - Pay at table after eating (default for Vietnam)
 - `SEPAY_QR` - SePay VietQR banking (✅ implemented)
-- `CARD_ONLINE` - Online card payment (❌ planned)
+- `CARD_ONLINE` - Online card payment (❌ enum exists in schema, NOT integrated in MVP)
 - `CASH` - Cash payment recorded by staff
 
 ### PaymentStatus

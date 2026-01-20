@@ -1,6 +1,6 @@
 # Database Documentation Index
 
-Welcome to the database documentation for the TKQR-in Ordering Platform.
+Welcome to the database documentation for the **TKOB_QROrderSystem** project.
 
 ---
 
@@ -21,7 +21,7 @@ Welcome to the database documentation for the TKQR-in Ordering Platform.
   - All models, enums, and relations
 
 - **[Migrations](../../../source/apps/api/prisma/migrations/)** - Database migration history
-  - 20+ migrations applied
+  - 21 migrations applied (as of 2026-01-20)
   - Migration lock file
 
 ---
@@ -39,8 +39,8 @@ Welcome to the database documentation for the TKQR-in Ordering Platform.
 
 ### Prerequisites
 
-- Node.js 20+
-- PostgreSQL 14+ installed locally or via Docker
+- Node.js >=18.0.0 (source: root package.json engines field)
+- PostgreSQL 16+ (source: docker-compose.yaml image tag postgres:16-alpine)
 - pnpm package manager
 
 ### Option 1: Docker Compose (Recommended)
@@ -51,7 +51,8 @@ cd source/docker
 docker compose up -d postgres
 
 # Wait for PostgreSQL to be ready
-# Database will be available at: postgresql://postgres:postgres@localhost:5432/tkqr_dev
+# Database will be available at: postgresql://postgres:postgres@localhost:5432/qr_ordering_dev
+# (Defaults from docker-compose.yaml: user=postgres, password=postgres, db=qr_ordering_dev)
 ```
 
 ### Option 2: Local PostgreSQL
@@ -59,7 +60,7 @@ docker compose up -d postgres
 ```bash
 # Ensure PostgreSQL is running locally
 # Update .env file with your database URL:
-DATABASE_URL="postgresql://your_user:your_password@localhost:5432/your_database"
+DATABASE_URL="ADD HERE (example: postgresql://user:password@localhost:5432/dbname)"
 ```
 
 ### Apply Migrations
@@ -69,29 +70,38 @@ DATABASE_URL="postgresql://your_user:your_password@localhost:5432/your_database"
 cd source/apps/api
 
 # Apply all pending migrations
-pnpm prisma migrate deploy
+pnpm prisma:migrate:deploy
+# OR: npx prisma migrate deploy --config=./prisma/prisma.config.ts
 
 # OR for development (creates new migrations)
-pnpm prisma migrate dev
+pnpm db:migrate
+# OR: npx prisma migrate dev --config=./prisma/prisma.config.ts
 
 # Generate Prisma Client
-pnpm prisma generate
+pnpm db:generate
+# OR: npx prisma generate --config=./prisma/prisma.config.ts
 ```
 
-### Seed Database (Optional)
+### Reset Database with Seed Data
 
 ```bash
-# Seed with default data (subscription plans, sample tenant)
+# Reset database and re-seed subscription plans (deletes ALL data)
 cd source/apps/api
-ADD HERE
+pnpm db:reset
+# Runs: ts-node scripts/reset-db.ts
+# Seeds: FREE, BASIC, PREMIUM subscription plans
+# ⚠️ WARNING: Deletes all tenant data, users, orders, etc.
 ```
+
+**Note:** No official seed script for demo tenant/menu data. Use `db:reset` only to clear database and re-seed subscription plans (source: package.json line 26, scripts/reset-db.ts).
 
 ### View Database in Prisma Studio
 
 ```bash
 # Open Prisma Studio GUI
 cd source/apps/api
-pnpm prisma studio
+pnpm db:studio
+# OR: npx prisma studio --config=./prisma/prisma.config.ts
 
 # Opens at: http://localhost:5555
 ```
@@ -104,15 +114,18 @@ pnpm prisma studio
 
 ```bash
 cd source/apps/api
-pnpm prisma migrate dev --name describe_your_changes
+pnpm db:migrate
+# OR with custom migration name:
+npx prisma migrate dev --name describe_your_changes --config=./prisma/prisma.config.ts
 ```
 
 ### Reset Database (⚠️ Destructive)
 
 ```bash
 cd source/apps/api
-pnpm prisma migrate reset
-# This will drop the database, recreate it, and apply all migrations
+pnpm db:reset
+# Deletes ALL data (tenants, users, orders, etc.) and re-seeds subscription plans
+# Source: package.json line 26, scripts/reset-db.ts
 ```
 
 ### Check Migration Status
@@ -138,11 +151,11 @@ pnpm prisma format
 Configure these in your `.env` file:
 
 ```env
-# PostgreSQL connection string
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tkqr_dev"
+# PostgreSQL connection string (Docker default from docker-compose.yaml)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
 
 # Optional: Direct connection for Prisma Studio
-DATABASE_URL_DIRECT="postgresql://postgres:postgres@localhost:5432/tkqr_dev"
+DATABASE_URL_DIRECT="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
 ```
 
 ### Connection Pool Settings
@@ -179,7 +192,7 @@ DATABASE_URL_DIRECT="postgresql://postgres:postgres@localhost:5432/tkqr_dev"
 ## Migration History
 
 **Latest Migration**: `20260119060909_add_user_avatar`  
-**Total Migrations**: 20+
+**Total Migrations**: 21 (as of 2026-01-20)
 
 ### Key Milestones
 
@@ -204,44 +217,35 @@ View full migration history in [migrations folder](../../../source/apps/api/pris
 ### Backup Database
 
 ```bash
-# Backup with pg_dump
-pg_dump -h localhost -U postgres -d tkqr_dev > backup_$(date +%Y%m%d_%H%M%S).sql
+# Backup with pg_dump (replace DB name with your actual database)
+pg_dump -h localhost -U postgres -d qr_ordering_dev > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# Backup specific schemas
-ADD HERE
+# Backup specific schemas or tables:
+ADD HERE (example: pg_dump -t tenants -t users ...)
 ```
 
 ### Restore Database
 
 ```bash
-# Restore from backup
-psql -h localhost -U postgres -d tkqr_dev < backup_file.sql
-
-# Or use Prisma migrate
-ADD HERE
+# Restore from backup (replace DB name with your actual database)
+psql -h localhost -U postgres -d qr_ordering_dev < backup_file.sql
 ```
 
 ---
 
 ## Performance Tips
 
-1. **Indexes**: Critical indexes already defined on:
+1. **Indexes**: Critical indexes defined in schema.prisma:
    - `(tenant_id, ...)` for all tenant-scoped queries
    - Foreign keys for join performance
    - Status fields for filtering
 
 2. **Query Optimization**:
-   - Always filter by `tenant_id` first
+   - Always filter by `tenant_id` first (multi-tenant pattern)
    - Use `select` to limit returned fields
-   - Use `include` judiciously (avoid N+1 queries)
+   - Use `include` carefully to avoid N+1 queries
 
-3. **Connection Pooling**:
-   - Use PgBouncer in production
-   - Configure pool size based on load
-
-4. **Caching**:
-   - Redis for frequently accessed data (menu items, tenant settings)
-   - See [ARCHITECTURE.md](../../common/ARCHITECTURE.md) for caching strategy
+3. **Caching**: See [ARCHITECTURE.md](../../common/ARCHITECTURE.md) for Redis caching strategy
 
 ---
 
@@ -272,7 +276,8 @@ pnpm prisma db pull
 ```bash
 # Regenerate Prisma Client
 cd source/apps/api
-pnpm prisma generate
+pnpm db:generate
+# OR: npx prisma generate --config=./prisma/prisma.config.ts
 
 # If types are not recognized, restart TypeScript server in your IDE
 ```
