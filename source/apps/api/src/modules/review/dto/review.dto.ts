@@ -12,6 +12,11 @@ export class CreateReviewDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiPropertyOptional({ description: 'Reviewer name (from customer profile)' })
+  @IsOptional()
+  @IsString()
+  reviewerName?: string;
 }
 
 export class ReviewResponseDto {

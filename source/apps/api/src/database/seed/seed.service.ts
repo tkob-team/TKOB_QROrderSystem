@@ -712,6 +712,20 @@ export class SeedService {
       'Pretty good overall.',
     ];
 
+    // Sample reviewer names
+    const reviewerNames = [
+      'John D.',
+      'Sarah M.',
+      'Mike T.',
+      'Emily L.',
+      'David K.',
+      'Lisa P.',
+      'James H.',
+      'Anna W.',
+      'Chris B.',
+      'Maria S.',
+    ];
+
     // Create 3-5 demo orders with reviews
     const numOrders = Math.min(5, tables.length);
 
@@ -790,6 +804,11 @@ export class SeedService {
 
         const comments = rating >= 4 ? positiveComments : neutralComments;
         const comment = comments[Math.floor(Math.random() * comments.length)];
+        
+        // Pick a random reviewer name (70% chance to have a name)
+        const reviewerName = Math.random() > 0.3
+          ? reviewerNames[Math.floor(Math.random() * reviewerNames.length)]
+          : null;
 
         const review = await this.prisma.itemReview.create({
           data: {
@@ -798,6 +817,7 @@ export class SeedService {
             sessionId: session.id,
             rating,
             comment,
+            reviewerName,
           },
         });
 

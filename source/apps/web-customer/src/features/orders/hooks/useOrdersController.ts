@@ -87,11 +87,12 @@ export function useOrdersController() {
       if (!userResponse?.data?.id) return []
       
       // Call the new /orders/history endpoint
-      const response = await apiClient.get<{ data: ApiOrder[], pagination: any }>('/orders/history', {
+      const response = await apiClient.get<{ data: { orders: ApiOrder[], total: number } }>('/orders/history', {
         params: { limit: 50 }
       })
       
-      const list = response.data?.data || []
+      // Backend returns { success, data: { orders: [...], total: N } }
+      const list = response.data?.data?.orders || response.data?.orders || []
       log('data', 'Fetched customer order history', { count: list.length }, { feature: 'orders' })
       
       return list.map(toFeatureOrder)

@@ -19,11 +19,12 @@ interface ReviewSubmission {
 interface UseSubmitReviewsOptions {
   tenantId: string
   sessionId: string
+  reviewerName?: string // Customer name for the review
   onSuccess?: () => void
   onError?: (error: Error) => void
 }
 
-export function useSubmitReviews({ tenantId, sessionId, onSuccess, onError }: UseSubmitReviewsOptions) {
+export function useSubmitReviews({ tenantId, sessionId, reviewerName, onSuccess, onError }: UseSubmitReviewsOptions) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -36,6 +37,7 @@ export function useSubmitReviews({ tenantId, sessionId, onSuccess, onError }: Us
         reviewCount: reviews.length,
         tenantId: maskId(tenantId),
         sessionId: maskId(sessionId),
+        reviewerName: reviewerName || 'Guest',
       }, { feature: 'orders' })
 
       // Submit all reviews in parallel
@@ -47,7 +49,9 @@ export function useSubmitReviews({ tenantId, sessionId, onSuccess, onError }: Us
             {
               rating: review.rating,
               comment: review.comment || undefined,
-            },
+              // Include reviewerName if available (will be added to DTO after codegen)
+              ...(reviewerName ? { reviewerName } : {}),
+            } as any, // Type assertion until codegen updates
             {
               tenantId,
               sessionId,

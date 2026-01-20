@@ -52,10 +52,11 @@ export class ReviewService {
       );
     }
 
-    // Check if order is completed (only allow reviews after payment)
-    if (orderItem.order.status !== 'PAID' && orderItem.order.status !== 'COMPLETED') {
+    // Check if order is eligible for review (SERVED, READY, COMPLETED, or PAID)
+    const reviewableStatuses = ['SERVED', 'READY', 'COMPLETED', 'PAID'];
+    if (!reviewableStatuses.includes(orderItem.order.status)) {
       throw new BadRequestException(
-        'You can only review items after payment is completed',
+        'You can only review items after they have been served',
       );
     }
 
@@ -70,10 +71,12 @@ export class ReviewService {
         tenantId: tenantId,
         rating: dto.rating,
         comment: dto.comment,
+        reviewerName: dto.reviewerName,
       },
       update: {
         rating: dto.rating,
         comment: dto.comment,
+        reviewerName: dto.reviewerName,
         updatedAt: new Date(),
       },
     });
@@ -86,6 +89,7 @@ export class ReviewService {
       comment: review.comment ?? undefined,
       createdAt: review.createdAt,
       itemName: orderItem.name,
+      reviewerName: review.reviewerName ?? undefined,
     };
   }
 
@@ -170,6 +174,11 @@ export class ReviewService {
         orderItem: {
           select: {
             name: true,
+            order: {
+              select: {
+                customerName: true,
+              },
+            },
           },
         },
       },
@@ -204,8 +213,8 @@ export class ReviewService {
       comment: review.comment ?? undefined,
       createdAt: review.createdAt,
       itemName: review.orderItem.name,
-      // Generate anonymous reviewer name: "Guest 1", "Guest 2", etc.
-      reviewerName: `Guest ${index + 1}`,
+      // Use saved reviewerName first, fallback to order customerName, then "Guest N"
+      reviewerName: review.reviewerName || review.orderItem.order?.customerName || `Guest ${index + 1}`,
     }));
 
     return {

@@ -675,12 +675,13 @@ model Payment {
 
 // Item Review (Customer ratings for order items)
 model ItemReview {
-  id          String  @id @default(uuid())
-  orderItemId String  @map("order_item_id")
-  sessionId   String  @map("session_id")
-  tenantId    String  @map("tenant_id")
-  rating      Int // 1-5 stars
-  comment     String? @db.Text
+  id           String  @id @default(uuid())
+  orderItemId  String  @map("order_item_id")
+  sessionId    String  @map("session_id")
+  tenantId     String  @map("tenant_id")
+  rating       Int // 1-5 stars
+  comment      String? @db.Text
+  reviewerName String? @map("reviewer_name") // Customer name at time of review
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
