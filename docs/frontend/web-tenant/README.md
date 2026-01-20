@@ -1,21 +1,21 @@
-# Web-Tenant App (Admin/Staff Portal)
+# Ứng dụng Web-Tenant (Cổng quản lý Admin/Nhân viên)
 
-**App Location:** `source/apps/web-tenant/`  
-**Purpose:** Restaurant management dashboard for OWNER, STAFF, and KITCHEN roles  
+**Vị trí Ứng dụng:** `source/apps/web-tenant/`  
+**Mục đích:** Bảng điều khiển quản lý nhà hàng cho vai trò OWNER, STAFF, và KITCHEN  
 **Tech Stack:** Next.js 15 (App Router), React 19, TailwindCSS v4
 
-## Overview
+## Tổng quan
 
-Frontend Next.js 15 application for restaurant owners and staff to manage menus, orders, tables, analytics, and staff accounts. Includes role-based access control (RBAC) for OWNER, STAFF, and KITCHEN roles.
+Ứng dụng Next.js 15 frontend để chủ nhà hàng và nhân viên quản lý menu, đơn hàng, bàn, phân tích, và tài khoản nhân viên. Bao gồm kiểm soát truy cập dựa trên vai trò (RBAC) cho các vai trò OWNER, STAFF, và KITCHEN.
 
-## Quick Start
+## Khởi động Nhanh
 
 ```bash
 pnpm --filter web-tenant dev
 ```
 
-**Access:** http://localhost:3002  
-**Evidence:** `source/apps/web-tenant/package.json` line 6: `"dev": "next dev -p 3002"`
+**Truy cập:** http://localhost:3002  
+**Bằng chứng:** `source/apps/web-tenant/package.json` dòng 6: `"dev": "next dev -p 3002"`
 
 ## Tech Stack
 
@@ -25,119 +25,119 @@ pnpm --filter web-tenant dev
 - **API:** Orval code generation from OpenAPI spec
 - **Auth:** Role-based access control (OWNER/STAFF/KITCHEN)
 
-## Folder Structure
+## Cấu trúc Thư mục
 
-**Verified via `ls source/apps/web-tenant/src/`:**
+**Xác thực qua `ls source/apps/web-tenant/src/`:**
 
 ```
 web-tenant/
-├── public/                    # Static assets (images, sounds)
+├── public/                    # Tài sản tĩnh (hình ảnh, âm thanh)
 ├── src/
 │   ├── app/                   # Next.js App Router (routes)
-│   │   ├── (authenticated)/   # Protected routes group
-│   │   ├── (marketing)/       # Marketing/public routes
-│   │   ├── admin/             # Admin dashboard routes
-│   │   ├── auth/              # Authentication routes
-│   │   ├── kds/               # Kitchen Display System
-│   │   ├── menu/              # Menu-related routes
-│   │   ├── staff/             # Staff-specific routes
-│   │   ├── waiter/            # Waiter-specific routes
-│   │   ├── unauthorized/      # Access denied page
+│   │   ├── (authenticated)/   # Nhóm routes được bảo vệ
+│   │   ├── (marketing)/       # Routes marketing/public
+│   │   ├── admin/             # Routes bảng điều khiển admin
+│   │   ├── auth/              # Routes xác thực
+│   │   ├── kds/               # Hệ thống hiển thị bếp
+│   │   ├── menu/              # Routes liên quan menu
+│   │   ├── staff/             # Routes dành cho nhân viên
+│   │   ├── waiter/            # Routes dành cho phục vụ viên
+│   │   ├── unauthorized/      # Trang từ chối truy cập
 │   │   ├── layout.tsx         # Root layout
-│   │   ├── page.tsx           # Home page
+│   │   ├── page.tsx           # Trang chủ
 │   │   └── providers.tsx      # Client providers
 │   │
-│   ├── features/              # Feature modules (business logic)
-│   │   ├── analytics/         # Analytics & reports
-│   │   ├── auth/              # Authentication
-│   │   ├── dashboard/         # Dashboard overview
-│   │   ├── kds/               # Kitchen Display System
-│   │   ├── marketing/         # Marketing campaigns
-│   │   ├── menu/              # Menu management
-│   │   ├── menu-preview/      # Menu preview
-│   │   ├── orders/            # Order management
-│   │   ├── promotions/        # Promotions
-│   │   ├── settings/          # Settings
-│   │   ├── staff/             # Staff management
-│   │   ├── tables/            # Table management
-│   │   └── waiter/            # Waiter features
+│   ├── features/              # Các module tính năng (logic kinh doanh)
+│   │   ├── analytics/         # Phân tích & báo cáo
+│   │   ├── auth/              # Xác thực
+│   │   ├── dashboard/         # Tổng quan bảng điều khiển
+│   │   ├── kds/               # Hệ thống hiển thị bếp
+│   │   ├── marketing/         # Các chiến dịch marketing
+│   │   ├── menu/              # Quản lý menu
+│   │   ├── menu-preview/      # Xem trước menu
+│   │   ├── orders/            # Quản lý đơn hàng
+│   │   ├── promotions/        # Khuyến mãi
+│   │   ├── settings/          # Cài đặt
+│   │   ├── staff/             # Quản lý nhân viên
+│   │   ├── tables/            # Quản lý bàn
+│   │   └── waiter/            # Tính năng phục vụ viên
 │   │
-│   ├── shared/                # Shared components/hooks/utils
-│   ├── services/              # External services
-│   ├── store/                 # Global state (Zustand)
-│   ├── lib/                   # Utilities & helpers
-│   ├── config/                # App configuration
-│   ├── assets/                # Images, fonts
-│   ├── styles/                # Global styles
+│   ├── shared/                # Các thành phần/hook/utils được chia sẻ
+│   ├── services/              # Các dịch vụ ngoài
+│   ├── store/                 # Trạng thái toàn cục (Zustand)
+│   ├── lib/                   # Các tiện ích & helper
+│   ├── config/                # Cấu hình ứng dụng
+│   ├── assets/                # Hình ảnh, fonts
+│   ├── styles/                # Kiểu toàn cục
 │   └── middleware.ts          # Next.js middleware (RBAC)
 │
 ├── package.json
 ├── next.config.mjs
-├── orval.config.ts            # API code generation config
+├── orval.config.ts            # Cấu hình tạo mã API
 ├── tsconfig.json
-└── LOGGING_GUIDE.md           # Logging conventions
+└── LOGGING_GUIDE.md           # Quy ước ghi nhật ký
 ```
 
-## Key Features (Verified from src/features/)
+## Các Tính năng Chính (Xác thực từ src/features/)
 
-- **Authentication** - Login, role assignment
-- **Dashboard** - Overview with analytics
-- **Menu Management** - CRUD for menu items, categories, modifiers
-- **Order Management** - View/track orders, update status
-- **Kitchen Display System (KDS)** - Kitchen order view
-- **Table Management** - Create/edit tables, generate QR codes
-- **Staff Management** - Manage staff accounts and roles
-- **Analytics** - Revenue reports, popular items
-- **Waiter Module** - Order taking interface
-- **Settings** - Restaurant settings, subscription management
+- **Authentication** - Đăng nhập, gán vai trò
+- **Dashboard** - Tổng quan với phân tích
+- **Menu Management** - CRUD cho các mục menu, danh mục, bộ chỉnh sửa
+- **Order Management** - Xem/theo dõi đơn hàng, cập nhật trạng thái
+- **Kitchen Display System (KDS)** - Xem đơn hàng bếp
+- **Table Management** - Tạo/chỉnh sửa bàn, tạo mã QR
+- **Staff Management** - Quản lý tài khoản và vai trò nhân viên
+- **Analytics** - Báo cáo doanh thu, mục phổ biến
+- **Waiter Module** - Giao diện lấy đơn hàng
+- **Settings** - Cài đặt nhà hàng, quản lý đăng ký
 
-## Role-Based Access Control (RBAC)
+## Kiểm soát Truy cập dựa trên Vai trò (RBAC)
 
-See [RBAC_GUIDE.md](../RBAC_GUIDE.md) for complete role permissions and route guards.
+Xem [RBAC_GUIDE.md](../RBAC_GUIDE.md) để biết đầy đủ quyền hạn vai trò và route guards.
 
-**Roles:**
-- **OWNER** - Full access to all features
-- **STAFF** - Order management, menu viewing
-- **KITCHEN** - Kitchen Display System only
+**Vai trò:**
+- **OWNER** - Truy cập đầy đủ tất cả các tính năng
+- **STAFF** - Quản lý đơn hàng, xem menu
+- **KITCHEN** - Chỉ hệ thống hiển thị bếp
 
-**Middleware:** `src/middleware.ts` enforces RBAC for protected routes.
+**Middleware:** `src/middleware.ts` thực thi RBAC cho các routes được bảo vệ.
 
-## API Code Generation (Orval)
+## Tạo Mã API (Orval)
 
-This app uses Orval to generate TypeScript API clients from OpenAPI spec.
+Ứng dụng này sử dụng Orval để tạo clients API TypeScript từ spec OpenAPI.
 
-**Commands:**
+**Lệnh:**
 ```bash
-# Sync OpenAPI spec from backend
+# Đồng bộ spec OpenAPI từ backend
 pnpm --filter web-tenant sync-spec
 
-# Generate API client code
+# Tạo mã client API
 pnpm --filter web-tenant orval
 
-# Sync + Generate (combined)
+# Đồng bộ + Tạo (kết hợp)
 pnpm --filter web-tenant codegen
 ```
 
-See [ORVAL.md](../ORVAL.md) for detailed Orval configuration and usage.
+Xem [ORVAL.md](../ORVAL.md) để biết cấu hình Orval chi tiết và cách sử dụng.
 
-## Related Documentation
+## Tài liệu Liên quan
 
-- **Parent Docs:** [Frontend Overview](../README.md) - Frontend architecture overview
-- **RBAC Guide:** [RBAC_GUIDE.md](../RBAC_GUIDE.md) - Role-based access control details
-- **API Integration:** [ORVAL.md](../ORVAL.md) - Orval code generation guide
-- **Architecture:** [ARCHITECTURE.md](../ARCHITECTURE.md) - Complete monorepo architecture
-- **Logging:** `source/apps/web-tenant/LOGGING_GUIDE.md` - Logging conventions
-- **Developer Guides:** [guide/](../guide/) - Onboarding, patterns, conventions
+- **Parent Docs:** [Frontend Overview](../README.md) - Tổng quan kiến trúc frontend
+- **RBAC Guide:** [RBAC_GUIDE.md](../RBAC_GUIDE.md) - Chi tiết kiểm soát truy cập dựa trên vai trò
+- **API Integration:** [ORVAL.md](../ORVAL.md) - Hướng dẫn tạo mã Orval
+- **Architecture:** [ARCHITECTURE.md](../ARCHITECTURE.md) - Kiến trúc monorepo hoàn chỉnh
+- **Logging:** `source/apps/web-tenant/LOGGING_GUIDE.md` - Quy ước ghi nhật ký
+- **Developer Guides:** [guide/](../guide/) - Onboarding, patterns, quy ước
 
-## Development Notes
+## Ghi chú Phát triển
 
-### Environment Variables
+### Biến Môi trường
 
-⏳ **ADD HERE:** Document required environment variables.
-- Check `.env.example` in `source/apps/web-tenant/.env.example`
-- Common vars: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`
+⏳ **ADD HERE:** Tài liệu các biến môi trường bắt buộc.
+- Kiểm tra `.env.example` trong `source/apps/web-tenant/.env.example`
+- Các biến phổ biến: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`
 
-**Verification:**
+**Xác thực:**
 ```bash
 cat source/apps/web-tenant/.env.example
 ```
@@ -145,19 +145,19 @@ cat source/apps/web-tenant/.env.example
 ### Build & Deploy
 
 ```bash
-# Development
+# Phát triển
 pnpm --filter web-tenant dev
 
 # Production build
 pnpm --filter web-tenant build
 
-# Start production server
+# Khởi động server production
 pnpm --filter web-tenant start
 ```
 
-**Evidence:** Commands verified in `source/apps/web-tenant/package.json` lines 6-9.
+**Bằng chứng:** Các lệnh được xác thực trong `source/apps/web-tenant/package.json` dòng 6-9.
 
-## Additional Resources
+## Tài nguyên Bổ sung
 
-- **Features README:** `source/apps/web-tenant/src/features/README.md` - Feature structure guide
-- **Logging Guide:** `source/apps/web-tenant/LOGGING_GUIDE.md` - Logging best practices
+- **Features README:** `source/apps/web-tenant/src/features/README.md` - Hướng dẫn cấu trúc tính năng
+- **Logging Guide:** `source/apps/web-tenant/LOGGING_GUIDE.md` - Các thực tiễn tốt nhất ghi nhật ký

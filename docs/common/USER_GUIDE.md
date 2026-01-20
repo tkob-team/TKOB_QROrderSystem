@@ -1,853 +1,853 @@
-# USER GUIDE
+# HƯỚNG DẪN SỬ DỤNG
 
-**Last updated:** 2026-01-20  
-**System:** TKOB_QROrderSystem (Product name: TKQR-in Ordering Platform)  
-**Version:** 1.0
-
----
-
-## Document Navigation
-
-**Related Documentation:**
-- [Setup Guide](./SETUP.md) - Installation and development environment setup
-- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (~140+ operations; see openapi.exported.json for exact count)
-- [Architecture](./ARCHITECTURE.md) - System architecture and technical design
-- [Backend Database](../backend/database/description.md) - Database schema details
+**Cập nhật lần cuối:** 2026-01-20  
+**Hệ thống:** TKOB_QROrderSystem (Tên sản phẩm: TKQR-in Ordering Platform)  
+**Phiên bản:** 1.0
 
 ---
 
-## Table of Contents (Quick Navigation)
+## Danh sách tài liệu liên quan
 
-**Getting Started:** [1. How to Access](#1-how-to-access) - URLs and login  
-**Customer:** [2. Customer Guide](#2-customer-guide) - QR scan, order, pay  
-**Admin:** [3. Tenant Owner/Admin Guide](#3-tenant-owneradmin-guide) - Dashboard, menu, staff  
-**Waiter:** [4. Staff/Waiter Guide](#4-staffwaiter-guide) - Table management, service  
-**Kitchen:** [5. Kitchen/KDS Guide](#5-kitchenkds-guide) - Order preparation, priorities  
-**Reference:** [6. Status Glossary](#6-status-glossary) - All order/table statuses  
-**Help:** [7. FAQ & Known Limitations](#7-faq--known-limitations) - Common questions  
+**Tài liệu liên quan:**
+- [Hướng dẫn cài đặt](./SETUP.md) - Cài đặt và thiết lập môi trường phát triển
+- [Đặc tả OpenAPI](./OPENAPI.md) - Tham chiếu API hoàn chỉnh (~140+ hoạt động; xem openapi.exported.json để biết số lượng chính xác)
+- [Kiến trúc](./ARCHITECTURE.md) - Kiến trúc hệ thống và thiết kế kỹ thuật
+- [Cơ sở dữ liệu phía sau](../backend/database/description.md) - Chi tiết lược đồ cơ sở dữ liệu
 
 ---
 
-## 0) Overview
+## Mục lục (Điều hướng nhanh)
 
-### What is TKOB_QROrderSystem?
-
-TKOB_QROrderSystem (product brand: **TKQR-in Ordering Platform**) is a QR code-based restaurant ordering system that allows customers to scan a QR code at their table, browse the menu, place orders, and pay directly from their phone. Restaurant staff can manage menus, tables, orders, and view analytics through the tenant dashboard.
-
-**Note:** TKOB_QROrderSystem is the technical repository name; TKQR-in is the customer-facing brand name.
-
-### Who is this guide for?
-
-This guide is organized by user roles:
-
-- **Customers** - Diners who scan QR codes to order
-- **Tenant Owner/Admin** - Restaurant owners and managers
-- **Staff/Waiter** - Service staff managing tables and orders
-- **Kitchen/KDS** - Kitchen staff viewing and preparing orders
+**Bắt đầu:** [1. Cách truy cập](#1-cách-truy-cập) - URL và đăng nhập  
+**Khách hàng:** [2. Hướng dẫn khách hàng](#2-hướng-dẫn-khách-hàng) - Quét QR, đặt hàng, thanh toán  
+**Quản trị:** [3. Hướng dẫn chủ nhà hàng/Quản trị viên](#3-hướng-dẫn-chủ-nhà-hàng-quản-trị-viên) - Bảng điều khiển, menu, nhân viên  
+**Phục vụ:** [4. Hướng dẫn nhân viên/Phục vụ](#4-hướng-dẫn-nhân-viên-phục-vụ) - Quản lý bàn, dịch vụ  
+**Bếp:** [5. Hướng dẫn bếp/KDS](#5-hướng-dẫn-bếp-kds) - Chuẩn bị đơn hàng, ưu tiên  
+**Tham khảo:** [6. Từ điển trạng thái](#6-từ-điển-trạng-thái) - Tất cả trạng thái đơn hàng/bàn  
+**Trợ giúp:** [7. Câu hỏi thường gặp & Những hạn chế](#7-câu-hỏi-thường-gặp--những-hạn-chế) - Câu hỏi phổ biến  
 
 ---
 
-## 1) How to Access
+## 0) Tổng quan
 
-### Web Applications
+### TKOB_QROrderSystem là gì?
 
-**Customer App:**
-- **Development:** http://localhost:3001 (verified from [SETUP.md](./SETUP.md))
-- **Production:** TBD (not deployed in MVP submission)
+TKOB_QROrderSystem (thương hiệu sản phẩm: **TKQR-in Ordering Platform**) là một hệ thống đặt hàng qua mã QR cho nhà hàng cho phép khách hàng quét mã QR ở bàn của họ, duyệt menu, đặt hàng và thanh toán trực tiếp từ điện thoại của họ. Nhân viên nhà hàng có thể quản lý menu, bàn, đơn hàng và xem phân tích thông qua bảng điều khiển nhà hàng.
 
-**Tenant Dashboard:**
-- **Development:** http://localhost:3002 (verified from [SETUP.md](./SETUP.md))
-- **Production:** TBD (not deployed in MVP submission)
+**Ghi chú:** TKOB_QROrderSystem là tên kho lưu trữ kỹ thuật; TKQR-in là tên thương hiệu hướng đến khách hàng.
 
-**API Server:**
-- **Development:** http://localhost:3000 (API + Swagger UI at /api-docs)
-- **Production:** TBD (not deployed in MVP submission)
+### Hướng dẫn này dành cho ai?
 
-### QR Code Usage Flow
+Hướng dẫn này được tổ chức theo vai trò người dùng:
 
-1. **Scan QR code** at your table using your phone camera
-2. Automatically redirected to restaurant menu
-3. **Browse menu** and add items to cart
-4. **Checkout** and select payment method
-5. **Track order status** in real-time
-6. **Rate and review** items after dining
-
-### Demo Accounts
-
-**No seeded demo accounts.** Create test accounts via the Auth API flow:
-1. Register: `POST /api/v1/auth/register/submit` → `POST /api/v1/auth/register/confirm`
-2. Login: `POST /api/v1/auth/login`
-
-See [OPENAPI.md](./OPENAPI.md) for complete API documentation and [SETUP.md](./SETUP.md) for setup instructions.
+- **Khách hàng** - Những người ăn uống quét mã QR để đặt hàng
+- **Chủ nhà hàng/Quản trị viên** - Chủ sở hữu và quản lý viên nhà hàng
+- **Nhân viên/Phục vụ** - Nhân viên dịch vụ quản lý bàn và đơn hàng
+- **Bếp/KDS** - Nhân viên bếp xem và chuẩn bị đơn hàng
 
 ---
 
-## 2) Customer Guide
+## 1) Cách truy cập
 
-### 2.1) Scanning QR Code & Starting a Session
+### Ứng dụng web
 
-**Step 1:** Use your phone camera to scan the QR code on your table.
+**Ứng dụng khách hàng:**
+- **Phát triển:** http://localhost:3001 (được xác minh từ [SETUP.md](./SETUP.md))
+- **Sản xuất:** TBD (không được triển khai trong bài nộp MVP)
 
-**Step 2:** You'll be automatically redirected to the restaurant's menu page. A session will be created and linked to your table.
+**Bảng điều khiển nhà hàng:**
+- **Phát triển:** http://localhost:3002 (được xác minh từ [SETUP.md](./SETUP.md))
+- **Sản xuất:** TBD (không được triển khai trong bài nộp MVP)
 
-**What you'll see:** Menu categories with available dishes, prices, and photos.
+**Máy chủ API:**
+- **Phát triển:** http://localhost:3000 (API + Swagger UI tại /api-docs)
+- **Sản xuất:** TBD (không được triển khai trong bài nộp MVP)
 
-> **Note:** Each QR code is unique to a specific table. If the table is already occupied, you'll see an error message.
+### Quy trình sử dụng mã QR
 
-### 2.2) Browsing the Menu
+1. **Quét mã QR** ở bàn của bạn bằng máy ảnh điện thoại
+2. Tự động chuyển hướng sang trang menu của nhà hàng
+3. **Duyệt menu** và thêm mục vào giỏ hàng
+4. **Thanh toán** và chọn phương thức thanh toán
+5. **Theo dõi trạng thái đơn hàng** theo thời gian thực
+6. **Đánh giá và đánh dấu** các mục sau khi ăn xong
 
-**Available features:**
-- View menu by category (Appetizers, Main Course, Desserts, etc.)
-- See item details: name, description, price, preparation time, allergens
-- View photos of dishes
-- Filter by chef recommendations (if enabled by restaurant)
-- Search for specific items (if enabled)
+### Tài khoản Demo
 
-**To view item details:**
-1. Tap on any menu item
-2. See full description, modifiers (size, toppings, etc.), and photos
-3. Read allergen information if available
+**Không có tài khoản demo được hạt giống.** Tạo tài khoản kiểm tra thông qua quy trình API xác thực:
+1. Đăng ký: `POST /api/v1/auth/register/submit` → `POST /api/v1/auth/register/confirm`
+2. Đăng nhập: `POST /api/v1/auth/login`
 
-[Screenshot Placeholder: Customer Menu Page]
-
-### 2.3) Adding Items to Cart
-
-**Step 1:** From the menu, tap on an item you want to order.
-
-**Step 2:** Select modifiers (if available):
-- **Single Choice:** Choose one option (e.g., Small/Medium/Large)
-- **Multiple Choice:** Choose multiple options (e.g., toppings)
-
-**Step 3:** Add special instructions in the "Notes" field (e.g., "No ice", "Extra spicy").
-
-**Step 4:** Choose quantity and tap "Add to Cart".
-
-**To modify cart:**
-- View cart by tapping the cart icon
-- Update quantities or remove items
-- Total automatically updates with tax and service charge
-
-[Screenshot Placeholder: Item Detail with Modifiers]  
-[Screenshot Placeholder: Cart View]
-
-### 2.4) Checkout & Payment
-
-**Step 1:** Review your cart and tap "Checkout".
-
-**Step 2:** Enter your name (optional) and any table-wide notes.
-
-**Step 3:** Select payment method:
-- **Bill to Table:** Pay cash when staff brings the bill
-- **SePay QR:** Pay now by scanning VietQR code
-- **Card Online:** ❌ Not implemented in current MVP (enum exists but no processor integration)
-
-**Step 4:** For QR payment:
-- Scan the payment QR code with your banking app
-- Enter transfer content exactly as shown
-- Payment confirms automatically within seconds
-
-**Step 5:** Order is sent to kitchen after successful checkout.
-
-> **Important:** If you choose "Bill to Table", multiple orders can be combined on one bill at the end of your meal.
-
-[Screenshot Placeholder: Checkout Page]  
-[Screenshot Placeholder: Payment QR Code]
-
-### 2.5) Tracking Your Order
-
-After checkout, you'll see order tracking with:
-
-- **Order number** and **table number**
-- **Current status:**
-  - PENDING - Order created, waiting for staff/kitchen acknowledgement
-  - RECEIVED - Kitchen acknowledged order
-  - PREPARING - Food is being cooked
-  - READY - Food is ready for serving
-  - SERVED - Food delivered to your table
-  - COMPLETED - Order finished
-
-- **Estimated time remaining** (in minutes)
-- **Order timeline** showing progress
-
-**You can:**
-- View all orders for your table
-- Track multiple orders separately
-- Cancel order (if allowed by restaurant policy and kitchen hasn't started preparation)
-
-[Screenshot Placeholder: Order Tracking Page]
-
-### 2.6) Requesting the Bill
-
-When you're ready to pay (for Bill to Table orders):
-
-1. Go to your order details
-2. Tap "Request Bill" button
-3. Staff will be notified and bring your bill
-
-### 2.7) Rating & Reviewing
-
-After your meal, you can rate individual items:
-
-1. Go to your completed order
-2. Tap on an item to rate it (1-5 stars)
-3. Add an optional comment
-4. Submit review
-
-**Reviews help:**
-- Restaurant improve menu items
-- Other customers make better choices
+Xem [OPENAPI.md](./OPENAPI.md) để biết tài liệu API hoàn chỉnh và [SETUP.md](./SETUP.md) để biết hướng dẫn cài đặt.
 
 ---
 
-## 3) Tenant Owner/Admin Guide
-
-### 3.1) Account Setup & Login
-
-**First-time registration:**
-1. Visit tenant dashboard URL
-2. Click "Sign Up"
-3. Enter:
-   - Email address
-   - Password
-   - Full name
-   - Restaurant name
-   - Restaurant slug (URL identifier)
-4. Verify email via OTP code
-5. Complete onboarding steps
-
-**Login:**
-1. Go to tenant dashboard
-2. Enter email and password
-3. Click "Login"
-
-**Roles:**
-- **OWNER:** Full access to all features
-- **STAFF:** Table and order management
-- **KITCHEN:** Kitchen display system only
-
-### 3.2) Dashboard Overview
-
-After login, you'll see:
-
-- Total orders today
-- Revenue summary
-- Active tables
-- Pending orders
-- Recent reviews
-- Analytics charts
-
-[Screenshot Placeholder: Admin Dashboard]
-
-### 3.3) Managing Menu
-
-**Access:** Menu → Menu Management
-
-#### Creating Categories
-
-1. Click "Add Category"
-2. Enter category name (e.g., "Appetizers")
-3. Add description (optional)
-4. Set display order (lower numbers appear first)
-5. Click "Save"
-
-#### Adding Menu Items
+## 2) Hướng dẫn khách hàng
 
-1. Select a category
-2. Click "Add Item"
-3. Fill in details:
-   - Name
-   - Description
-   - Price (in tenant currency, typically VND)
-   - Preparation time (minutes)
-   - Tags (e.g., "vegetarian", "spicy")
-   - Allergens (e.g., "gluten", "nuts")
-4. Upload photos (ADD HERE: photo limit not confirmed, example: up to 10 per item)
-5. Save as "Draft" or "Publish" immediately
-
-**Item Status:**
-- **DRAFT:** Not visible to customers
-- **PUBLISHED:** Visible on customer menu
-- **ARCHIVED:** Soft-deleted, can be restored
-
-**Availability Toggle:**
-- Mark items as unavailable temporarily (e.g., sold out)
-- Item stays published but grayed out for customers
-
-[Screenshot Placeholder: Menu Item Editor]
-
-### 3.4) Managing Modifiers
-
-Modifiers allow customers to customize items (size, toppings, extras).
-
-**Access:** Menu → Modifiers
-
-**Creating a modifier group:**
-
-1. Click "Add Modifier Group"
-2. Enter name (e.g., "Size")
-3. Choose type:
-   - **Single Choice:** Customer must pick one (radio buttons)
-   - **Multiple Choice:** Customer can pick many (checkboxes)
-4. Set if required or optional
-5. Add options:
-   - Option name (e.g., "Small", "Medium", "Large")
-   - Price delta (+ or - from base price)
-6. Save modifier group
-7. Assign to menu items
-
-**Example:**
-- **Group:** Drink Size
-- **Type:** Single Choice (required)
-- **Options:**
-  - Small: price adjustment (e.g., -10,000 VND or -$1)
-  - Medium: no adjustment
-  - Large: price adjustment (e.g., +15,000 VND or +$1.50)
+### 2.1) Quét mã QR & Bắt đầu một phiên
 
-**Note:** Currency and amounts vary by restaurant configuration. Examples shown for illustration only.
+**Bước 1:** Sử dụng máy ảnh điện thoại của bạn để quét mã QR trên bàn của bạn.
 
-### 3.5) Managing Tables & QR Codes
+**Bước 2:** Bạn sẽ được tự động chuyển hướng sang trang menu của nhà hàng. Một phiên sẽ được tạo và liên kết với bàn của bạn.
 
-**Access:** Tables → Table Management
-
-#### Creating Tables
+**Những gì bạn sẽ thấy:** Các danh mục menu với các món ăn có sẵn, giá cả và ảnh.
 
-1. Click "Add Table"
-2. Enter:
-   - Table number (e.g., "Table 1", "VIP-A")
-   - Capacity (number of seats)
-   - Location (e.g., "Main Hall", "Terrace")
-   - Description (optional)
-3. QR code is automatically generated
-4. Click "Save"
+> **Ghi chú:** Mỗi mã QR là duy nhất cho một bàn cụ thể. Nếu bàn đã được sử dụng, bạn sẽ thấy thông báo lỗi.
 
-**Table Status:**
-- **AVAILABLE:** Ready for customers
-- **OCCUPIED:** Currently in use
-- **RESERVED:** Pre-booked
-- **INACTIVE:** Temporarily unavailable
-
-#### Downloading QR Codes
-
-**Single table:**
-1. Click table row
-2. Click "Download QR"
-3. Choose format: PNG, SVG, or PDF
-
-**All tables:**
-1. Click "Download All QR Codes"
-2. Choose ZIP (individual files) or PDF (multi-page)
-3. Print and place on tables
-
-**Regenerating QR codes:**
-- Use if QR codes are compromised
-- Old QR codes become invalid
-- Can regenerate individual tables or all at once
-
-[Screenshot Placeholder: Table Management]
-
-### 3.6) Managing Staff
-
-**Access:** Settings → Staff Management
-
-**Subscription limits apply** (Free: 1 staff, Basic: 5, Premium: unlimited)
-
-#### Inviting Staff Members
-
-1. Click "Invite Staff"
-2. Enter email address
-3. Select role:
-   - **STAFF:** Can manage tables, orders, service board
-   - **KITCHEN:** Can only access KDS
-4. Send invitation
-5. Staff receives email with signup link
-6. They create password and join your restaurant
-
-**Managing existing staff:**
-- View all staff members
-- Change roles
-- Remove staff (they lose access immediately)
-- Resend invitations if expired
-
-### 3.7) Viewing & Managing Orders
-
-**Access:** Orders → All Orders
-
-**Filter orders by:**
-- Status (Pending, Preparing, Completed, etc.)
-- Table
-- Date range
-- Search by order number or customer name
-
-**Order actions:**
-- View order details
-- Update order status manually
-- Mark as paid (for cash/bill to table)
-- Cancel order (with reason)
-- Print receipt
-
-**Order statuses used:**
-- PENDING - Order created, waiting for staff/kitchen acknowledgement
-- RECEIVED - Kitchen acknowledged
-- PREPARING - Being cooked
-- READY - Food ready for pickup/serving
-- SERVED - Delivered to table
-- COMPLETED - Customer finished dining
-- PAID - Payment completed
-- CANCELLED - Order cancelled
-
-**Note:** The order of COMPLETED and PAID statuses may vary depending on payment method (SePay immediate payment vs Bill to Table pay-after-dining).
-
-[Screenshot Placeholder: Order Management Page]
-
-### 3.8) Subscription Management
-
-**Access:** Settings → Subscription
-
-**View current plan:**
-- Plan tier (Free, Basic, Premium)
-- Limits: tables, menu items, orders per month, staff
-- Features enabled
-- Usage statistics
-
-**Upgrading:**
-1. Click "Upgrade Plan"
-2. Choose target tier
-3. Review pricing
-4. Pay via SePay QR code
-5. Subscription upgrades automatically after payment
-
-**Subscription tiers:**
-
-| Feature | Free | Basic | Premium |
-|---------|------|-------|---------|
-| Tables | 1 | 10 | Unlimited |
-| Menu Items | 10 | 50 | Unlimited |
-| Orders/Month | 100 | 500 | Unlimited |
-| Staff | 1 | 5 | Unlimited |
-| Analytics | No | Yes | Yes |
-| Promotions | No | Yes | Yes |
-| Priority Support | No | No | Yes |
-
-### 3.9) Payment Configuration
-
-**Access:** Settings → Payment Settings
-
-**Setup SePay integration:**
-1. Enter SePay API key
-2. Enter bank account details:
-   - Account number
-   - Account holder name
-   - Bank code (e.g., VCB, ACB, MB)
-3. Set webhook secret (optional, for automatic payment confirmation)
-4. Test configuration
-5. Enable SePay for customers
-
-**Payment methods available to customers:**
-- Bill to Table: Always available
-- SePay QR: Only if configured
-- Card Online: Not in current MVP
-
-### 3.10) Restaurant Settings
-
-**Access:** Settings → Restaurant Profile
-
-**Configurable settings:**
-
-- **Basic Info:** Name, slug, description, address, phone
-- **Opening Hours:** Set hours for each day of the week
-- **Pricing:**
-  - Currency (VND default, configurable per tenant)
-  - Tax rate and label (e.g., 10% VAT)
-  - Service charge (e.g., 5%)
-  - Tip suggestions (e.g., 10%, 15%, 20%)
-- **Language & Timezone**
-
-### 3.11) Analytics & Reports
-
-**Access:** Analytics → Dashboard
-
-**Available reports:**
-
-- **Revenue:** Daily, weekly, monthly totals
-- **Order statistics:** Count, average order value, completion rate
-- **Popular items:** Top-selling dishes
-- **Hourly distribution:** Peak ordering times
-- **Table performance:** Revenue and turnover by table
-- **Reviews:** Rating trends and customer feedback
-
-[Screenshot Placeholder: Analytics Dashboard]
+### 2.2) Duyệt menu
+
+**Các tính năng có sẵn:**
+- Xem menu theo danh mục (Khai vị, Món chính, Tráng miệng, v.v.)
+- Xem chi tiết mục: tên, mô tả, giá, thời gian chuẩn bị, chất gây dị ứng
+- Xem ảnh của các món ăn
+- Lọc theo đề xuất của đầu bếp (nếu nhà hàng bật)
+- Tìm kiếm các mục cụ thể (nếu bật)
+
+**Để xem chi tiết mục:**
+1. Nhấn vào bất kỳ mục menu nào
+2. Xem mô tả đầy đủ, bộ sửa đổi (kích thước, topping, v.v.) và ảnh
+3. Đọc thông tin chất gây dị ứng nếu có
+
+[Ảnh chụp màn hình: Trang menu khách hàng]
+
+### 2.3) Thêm mục vào giỏ hàng
+
+**Bước 1:** Từ menu, nhấn vào mục bạn muốn đặt hàng.
+
+**Bước 2:** Chọn các bộ sửa đổi (nếu có sẵn):
+- **Lựa chọn duy nhất:** Chọn một tùy chọn (ví dụ: Nhỏ/Vừa/Lớn)
+- **Lựa chọn nhiều:** Chọn nhiều tùy chọn (ví dụ: topping)
+
+**Bước 3:** Thêm hướng dẫn đặc biệt trong trường "Ghi chú" (ví dụ: "Không nước đá", "Cay thêm").
+
+**Bước 4:** Chọn số lượng và nhấn "Thêm vào giỏ hàng".
+
+**Để sửa đổi giỏ hàng:**
+- Xem giỏ hàng bằng cách nhấn biểu tượng giỏ hàng
+- Cập nhật số lượng hoặc xóa các mục
+- Tổng cộng tự động cập nhật với thuế và phí dịch vụ
+
+[Ảnh chụp màn hình: Chi tiết mục với bộ sửa đổi]  
+[Ảnh chụp màn hình: Xem giỏ hàng]
+
+### 2.4) Thanh toán & Thanh toán
+
+**Bước 1:** Xem lại giỏ hàng của bạn và nhấn "Thanh toán".
+
+**Bước 2:** Nhập tên của bạn (tùy chọn) và bất kỳ ghi chú nào liên quan đến toàn bộ bàn.
+
+**Bước 3:** Chọn phương thức thanh toán:
+- **Thanh toán theo bàn:** Trả tiền mặt khi nhân viên mang hóa đơn
+- **SePay QR:** Trả ngay bằng cách quét mã QR VietQR
+- **Thanh toán trực tuyến bằng thẻ:** ❌ Chưa triển khai trong MVP hiện tại (enum tồn tại nhưng không có tích hợp bộ xử lý)
+
+**Bước 4:** Đối với thanh toán QR:
+- Quét mã QR thanh toán bằng ứng dụng ngân hàng của bạn
+- Nhập nội dung chuyển khoản chính xác như hiển thị
+- Thanh toán được xác nhận tự động trong vòng vài giây
+
+**Bước 5:** Đơn hàng được gửi đến bếp sau khi thanh toán thành công.
+
+> **Quan trọng:** Nếu bạn chọn "Thanh toán theo bàn", nhiều đơn hàng có thể được kết hợp trên một hóa đơn ở cuối bữa ăn của bạn.
+
+[Ảnh chụp màn hình: Trang thanh toán]  
+[Ảnh chụp màn hình: Mã QR thanh toán]
+
+### 2.5) Theo dõi đơn hàng của bạn
+
+Sau khi thanh toán, bạn sẽ thấy theo dõi đơn hàng với:
+
+- **Số đơn hàng** và **số bàn**
+- **Trạng thái hiện tại:**
+  - PENDING - Đơn hàng được tạo, chờ xác nhận từ nhân viên/bếp
+  - RECEIVED - Bếp đã xác nhận đơn hàng
+  - PREPARING - Thức ăn đang được nấu
+  - READY - Thức ăn sẵn sàng để phục vụ
+  - SERVED - Thức ăn được giao tới bàn của bạn
+  - COMPLETED - Đơn hàng hoàn tất
+
+- **Thời gian còn lại ước tính** (tính bằng phút)
+- **Dòng thời gian đơn hàng** hiển thị tiến độ
+
+**Bạn có thể:**
+- Xem tất cả đơn hàng cho bàn của bạn
+- Theo dõi nhiều đơn hàng riêng biệt
+- Hủy đơn hàng (nếu được phép bởi chính sách nhà hàng và bếp chưa bắt đầu chuẩn bị)
+
+[Ảnh chụp màn hình: Trang theo dõi đơn hàng]
+
+### 2.6) Yêu cầu hóa đơn
+
+Khi bạn sẵn sàng thanh toán (cho những đơn hàng "Thanh toán theo bàn"):
+
+1. Vào chi tiết đơn hàng của bạn
+2. Nhấn nút "Yêu cầu hóa đơn"
+3. Nhân viên sẽ được thông báo và mang hóa đơn cho bạn
+
+### 2.7) Đánh giá & Đánh giá
+
+Sau bữa ăn của bạn, bạn có thể đánh giá các mục riêng lẻ:
+
+1. Vào đơn hàng hoàn tất của bạn
+2. Nhấn vào một mục để đánh giá nó (1-5 sao)
+3. Thêm bình luận tùy chọn
+4. Gửi bài đánh giá
+
+**Các bài đánh giá giúp:**
+- Nhà hàng cải thiện các mục menu
+- Khách hàng khác thực hiện những lựa chọn tốt hơn
 
 ---
 
-## 4) Staff/Waiter Guide
+## 3) Hướng dẫn chủ nhà hàng/Quản trị viên
 
-### 4.1) Login & Dashboard
+### 3.1) Cài đặt tài khoản & Đăng nhập
 
-**Login:**
-1. Visit tenant dashboard URL
-2. Enter your staff email and password
-3. You'll see staff dashboard with:
-   - Active tables
-   - Pending orders
-   - Service requests
+**Đăng ký lần đầu:**
+1. Truy cập URL bảng điều khiển nhà hàng
+2. Nhấp vào "Đăng ký"
+3. Nhập:
+   - Địa chỉ email
+   - Mật khẩu
+   - Tên đầy đủ
+   - Tên nhà hàng
+   - Slug nhà hàng (định danh URL)
+4. Xác minh email qua mã OTP
+5. Hoàn thành các bước onboarding
 
-### 4.2) Managing Tables
+**Đăng nhập:**
+1. Vào bảng điều khiển nhà hàng
+2. Nhập email và mật khẩu
+3. Nhấp vào "Đăng nhập"
 
-**Access:** Staff → Tables or Waiter → Tables
+**Vai trò:**
+- **OWNER:** Truy cập đầy đủ vào tất cả các tính năng
+- **STAFF:** Quản lý bàn và đơn hàng
+- **KITCHEN:** Chỉ hệ thống hiển thị bếp
 
-**View table status:**
-- See all tables with real-time status
-- Filter by location or status
-- View active sessions
+### 3.2) Tổng quan bảng điều khiển
 
-**Opening a table:**
-- Table becomes OCCUPIED when customer scans QR code
-- Session is automatically created
-- No manual action needed
+Sau khi đăng nhập, bạn sẽ thấy:
 
-**Closing a table:**
-1. Click on occupied table
-2. Click "Close Session & Generate Bill"
-3. Select payment method:
-   - **Cash:** Mark bill as paid immediately
-   - **Bill to Table:** Generate bill for payment
-4. Enter tip (optional)
-5. Add notes (optional)
-6. Confirm - table becomes AVAILABLE
+- Tổng số đơn hàng hôm nay
+- Tóm tắt doanh thu
+- Bàn hoạt động
+- Các đơn hàng chờ xử lý
+- Các bài đánh giá gần đây
+- Biểu đồ phân tích
 
-**Clearing a table:** (Legacy method, use Close Session instead)
-- Marks table as cleared without generating bill
+[Ảnh chụp màn hình: Bảng điều khiển quản trị viên]
 
-[Screenshot Placeholder: Staff Table View]
+### 3.3) Quản lý menu
 
-### 4.3) Service Board
+**Truy cập:** Menu → Quản lý menu
 
-**Access:** Staff → Service Board or Waiter → Service Board
+#### Tạo danh mục
 
-**Monitor customer requests:**
-- Bill requests
-- Special assistance
-- Order issues
+1. Nhấp vào "Thêm danh mục"
+2. Nhập tên danh mục (ví dụ: "Khai vị")
+3. Thêm mô tả (tùy chọn)
+4. Đặt thứ tự hiển thị (số nhỏ hơn xuất hiện trước)
+5. Nhấp vào "Lưu"
 
-**Handling requests:**
-1. View request details (table, time, type)
-2. Take action
-3. Mark as resolved
+#### Thêm mục menu
 
-### 4.4) Assisting with Orders
+1. Chọn một danh mục
+2. Nhấp vào "Thêm mục"
+3. Điền vào chi tiết:
+   - Tên
+   - Mô tả
+   - Giá (trong tiền tệ của nhà hàng, thường là VND)
+   - Thời gian chuẩn bị (phút)
+   - Thẻ (ví dụ: "chay", "cay")
+   - Chất gây dị ứng (ví dụ: "gluten", "hạt")
+4. Tải lên ảnh (ADD HERE: giới hạn ảnh chưa xác nhận, ví dụ: tối đa 10 ảnh mỗi mục)
+5. Lưu thành "Bản nháp" hoặc "Xuất bản" ngay lập tức
 
-**View all orders:**
-- See orders by table or status
-- Help customers who have questions
+**Trạng thái mục:**
+- **DRAFT:** Không hiển thị cho khách hàng
+- **PUBLISHED:** Hiển thị trên menu khách hàng
+- **ARCHIVED:** Xóa mềm, có thể khôi phục
 
-**Manual order actions:**
-- Update order status if needed
-- Mark orders as paid (for cash payments)
-- Cancel orders (with customer approval)
+**Nút chuyển đổi khả dụng:**
+- Đánh dấu các mục là không khả dụng tạm thời (ví dụ: hết hàng)
+- Mục vẫn được xuất bản nhưng bị xám cho khách hàng
 
-**Communicating with kitchen:**
-- Check order status before asking kitchen
-- Notify customers of delays
-- Handle special requests
+[Ảnh chụp màn hình: Trình chỉnh sửa mục menu]
+
+### 3.4) Quản lý bộ sửa đổi
+
+Bộ sửa đổi cho phép khách hàng tùy chỉnh các mục (kích thước, topping, phụ tùng).
+
+**Truy cập:** Menu → Bộ sửa đổi
+
+**Tạo một nhóm bộ sửa đổi:**
+
+1. Nhấp vào "Thêm nhóm bộ sửa đổi"
+2. Nhập tên (ví dụ: "Kích thước")
+3. Chọn loại:
+   - **Lựa chọn duy nhất:** Khách hàng phải chọn một (nút radio)
+   - **Lựa chọn nhiều:** Khách hàng có thể chọn nhiều (checkbox)
+4. Đặt nếu bắt buộc hoặc tùy chọn
+5. Thêm các tùy chọn:
+   - Tên tùy chọn (ví dụ: "Nhỏ", "Vừa", "Lớn")
+   - Điều chỉnh giá (+ hoặc - từ giá cơ sở)
+6. Lưu nhóm bộ sửa đổi
+7. Gán cho các mục menu
+
+**Ví dụ:**
+- **Nhóm:** Kích thước thức uống
+- **Loại:** Lựa chọn duy nhất (bắt buộc)
+- **Tùy chọn:**
+  - Nhỏ: điều chỉnh giá (ví dụ: -10.000 VND hoặc -$1)
+  - Vừa: không điều chỉnh
+  - Lớn: điều chỉnh giá (ví dụ: +15.000 VND hoặc +$1,50)
+
+**Ghi chú:** Tiền tệ và số tiền khác nhau tùy theo cấu hình nhà hàng. Ví dụ được hiển thị chỉ để minh họa.
+
+### 3.5) Quản lý bàn & Mã QR
+
+**Truy cập:** Bàn → Quản lý bàn
+
+#### Tạo bàn
+
+1. Nhấp vào "Thêm bàn"
+2. Nhập:
+   - Số bàn (ví dụ: "Bàn 1", "VIP-A")
+   - Sức chứa (số chỗ ngồi)
+   - Vị trí (ví dụ: "Phòng chính", "Sân hiên")
+   - Mô tả (tùy chọn)
+3. Mã QR được tạo tự động
+4. Nhấp vào "Lưu"
+
+**Trạng thái bàn:**
+- **AVAILABLE:** Sẵn sàng cho khách hàng
+- **OCCUPIED:** Đang được sử dụng
+- **RESERVED:** Đã đặt trước
+- **INACTIVE:** Tạm thời không khả dụng
+
+#### Tải xuống mã QR
+
+**Bàn đơn:**
+1. Nhấp vào hàng bàn
+2. Nhấp vào "Tải xuống QR"
+3. Chọn định dạng: PNG, SVG hoặc PDF
+
+**Tất cả bàn:**
+1. Nhấp vào "Tải xuống tất cả mã QR"
+2. Chọn ZIP (các tệp riêng lẻ) hoặc PDF (nhiều trang)
+3. In và đặt trên các bàn
+
+**Tạo lại mã QR:**
+- Sử dụng nếu mã QR bị xâm phạm
+- Các mã QR cũ trở nên không hợp lệ
+- Có thể tạo lại các bàn riêng lẻ hoặc tất cả cùng một lúc
+
+[Ảnh chụp màn hình: Quản lý bàn]
+
+### 3.6) Quản lý nhân viên
+
+**Truy cập:** Cài đặt → Quản lý nhân viên
+
+**Giới hạn đăng ký áp dụng** (Miễn phí: 1 nhân viên, Cơ bản: 5, Premium: không giới hạn)
+
+#### Mời nhân viên
+
+1. Nhấp vào "Mời nhân viên"
+2. Nhập địa chỉ email
+3. Chọn vai trò:
+   - **STAFF:** Có thể quản lý bàn, đơn hàng, bảng dịch vụ
+   - **KITCHEN:** Chỉ có thể truy cập KDS
+4. Gửi lời mời
+5. Nhân viên nhận được email với liên kết đăng ký
+6. Họ tạo mật khẩu và tham gia nhà hàng của bạn
+
+**Quản lý nhân viên hiện có:**
+- Xem tất cả nhân viên
+- Thay đổi vai trò
+- Xóa nhân viên (họ mất quyền truy cập ngay lập tức)
+- Gửi lại lời mời nếu hết hạn
+
+### 3.7) Xem & Quản lý đơn hàng
+
+**Truy cập:** Đơn hàng → Tất cả đơn hàng
+
+**Lọc đơn hàng theo:**
+- Trạng thái (Chờ xử lý, Đang chuẩn bị, Hoàn tất, v.v.)
+- Bàn
+- Phạm vi ngày
+- Tìm kiếm theo số đơn hàng hoặc tên khách hàng
+
+**Hành động đơn hàng:**
+- Xem chi tiết đơn hàng
+- Cập nhật trạng thái đơn hàng theo cách thủ công
+- Đánh dấu là đã thanh toán (cho tiền mặt/thanh toán theo bàn)
+- Hủy đơn hàng (có lý do)
+- In hóa đơn
+
+**Trạng thái đơn hàng được sử dụng:**
+- PENDING - Đơn hàng được tạo, chờ xác nhận từ nhân viên/bếp
+- RECEIVED - Bếp đã xác nhận
+- PREPARING - Đang được nấu
+- READY - Thức ăn sẵn sàng để nhận/phục vụ
+- SERVED - Được giao tới bàn
+- COMPLETED - Khách hàng hoàn tất ăn
+- PAID - Thanh toán hoàn tất
+- CANCELLED - Đơn hàng đã hủy
+
+**Ghi chú:** Thứ tự của các trạng thái COMPLETED và PAID có thể khác nhau tùy thuộc vào phương thức thanh toán (thanh toán ngay SePay so với thanh toán sau khi ăn xong).
+
+[Ảnh chụp màn hình: Trang quản lý đơn hàng]
+
+### 3.8) Quản lý đăng ký
+
+**Truy cập:** Cài đặt → Đăng ký
+
+**Xem gói hiện tại:**
+- Tầng gói (Miễn phí, Cơ bản, Premium)
+- Giới hạn: bàn, mục menu, đơn hàng mỗi tháng, nhân viên
+- Các tính năng được bật
+- Thống kê sử dụng
+
+**Nâng cấp:**
+1. Nhấp vào "Nâng cấp gói"
+2. Chọn tầng đích
+3. Xem lại giá
+4. Trả qua mã QR SePay
+5. Đăng ký được nâng cấp tự động sau khi thanh toán
+
+**Các tầng đăng ký:**
+
+| Tính năng | Miễn phí | Cơ bản | Premium |
+|----------|---------|--------|---------|
+| Bàn | 1 | 10 | Không giới hạn |
+| Mục Menu | 10 | 50 | Không giới hạn |
+| Đơn hàng/Tháng | 100 | 500 | Không giới hạn |
+| Nhân viên | 1 | 5 | Không giới hạn |
+| Phân tích | Không | Có | Có |
+| Khuyến mãi | Không | Có | Có |
+| Hỗ trợ ưu tiên | Không | Không | Có |
+
+### 3.9) Cấu hình thanh toán
+
+**Truy cập:** Cài đặt → Cài đặt thanh toán
+
+**Cài đặt tích hợp SePay:**
+1. Nhập khóa API SePay
+2. Nhập chi tiết tài khoản ngân hàng:
+   - Số tài khoản
+   - Tên chủ tài khoản
+   - Mã ngân hàng (ví dụ: VCB, ACB, MB)
+3. Đặt bí mật webhook (tùy chọn, để xác nhận thanh toán tự động)
+4. Cấu hình kiểm tra
+5. Bật SePay cho khách hàng
+
+**Phương thức thanh toán có sẵn cho khách hàng:**
+- Thanh toán theo bàn: Luôn có sẵn
+- SePay QR: Chỉ nếu được cấu hình
+- Thanh toán trực tuyến bằng thẻ: Không trong MVP hiện tại
+
+### 3.10) Cài đặt nhà hàng
+
+**Truy cập:** Cài đặt → Hồ sơ nhà hàng
+
+**Cài đặt có thể cấu hình:**
+
+- **Thông tin cơ bản:** Tên, slug, mô tả, địa chỉ, điện thoại
+- **Giờ mở cửa:** Đặt giờ cho mỗi ngày trong tuần
+- **Giá:**
+  - Tiền tệ (VND theo mặc định, có thể cấu hình cho mỗi nhà hàng)
+  - Tỷ lệ thuế và nhãn (ví dụ: 10% VAT)
+  - Phí dịch vụ (ví dụ: 5%)
+  - Đề xuất tip (ví dụ: 10%, 15%, 20%)
+- **Ngôn ngữ & Múi giờ**
+
+### 3.11) Phân tích & Báo cáo
+
+**Truy cập:** Phân tích → Bảng điều khiển
+
+**Báo cáo có sẵn:**
+
+- **Doanh thu:** Tổng hàng ngày, hàng tuần, hàng tháng
+- **Thống kê đơn hàng:** Số lượng, giá trị đơn hàng trung bình, tỷ lệ hoàn thành
+- **Mục phổ biến:** Những món ăn bán chạy nhất
+- **Phân phối theo giờ:** Thời gian đặt hàng cao điểm
+- **Hiệu suất bàn:** Doanh thu và luân chuyển theo bàn
+- **Bài đánh giá:** Xu hướng xếp hạng và phản hồi khách hàng
+
+[Ảnh chụp màn hình: Bảng điều khiển phân tích]
 
 ---
 
-## 5) Kitchen/KDS Guide
+## 4) Hướng dẫn nhân viên/Phục vụ
 
-### 5.1) Accessing Kitchen Display System (KDS)
+### 4.1) Đăng nhập & Bảng điều khiển
 
-**Login:**
-1. Visit tenant dashboard URL
-2. Login with kitchen staff credentials
-3. Automatically redirected to KDS view
+**Đăng nhập:**
+1. Truy cập URL bảng điều khiển nhà hàng
+2. Nhập email và mật khẩu nhân viên của bạn
+3. Bạn sẽ thấy bảng điều khiển nhân viên với:
+   - Bàn hoạt động
+   - Các đơn hàng chờ xử lý
+   - Yêu cầu dịch vụ
 
-**Alternative:** Direct KDS URL (if configured)
+### 4.2) Quản lý bàn
 
-### 5.2) KDS Interface Overview
+**Truy cập:** Nhân viên → Bàn hoặc Phục vụ → Bàn
 
-**Display shows:**
-- **Normal priority orders:** Within estimated time (≤ 100% of estimated prep time)
-- **High priority orders:** Exceeding estimated time (100-150% of estimated prep time)
-- **Urgent orders:** Significantly delayed (> 150% of estimated prep time)
+**Xem trạng thái bàn:**
+- Xem tất cả bàn với trạng thái thực tế
+- Lọc theo vị trí hoặc trạng thái
+- Xem các phiên hoạt động
 
-**For each order card:**
-- Order number
-- Table number
-- Time elapsed since order placed
-- All items with quantities and modifiers
-- Special notes from customer
-- Estimated prep time vs actual time
+**Mở một bàn:**
+- Bàn trở thành OCCUPIED khi khách hàng quét mã QR
+- Phiên được tạo tự động
+- Không cần hành động thủ công
 
-[Screenshot Placeholder: KDS Board with Orders]
+**Đóng một bàn:**
+1. Nhấp vào bàn được sử dụng
+2. Nhấp vào "Đóng phiên & Tạo hóa đơn"
+3. Chọn phương thức thanh toán:
+   - **Tiền mặt:** Đánh dấu hóa đơn là đã thanh toán ngay lập tức
+   - **Thanh toán theo bàn:** Tạo hóa đơn để thanh toán
+4. Nhập tip (tùy chọn)
+5. Thêm ghi chú (tùy chọn)
+6. Xác nhận - bàn trở thành AVAILABLE
 
-### 5.3) Processing Orders
+**Xóa bàn:** (Phương pháp kế thừa, sử dụng Đóng phiên)
+- Đánh dấu bàn là đã xóa mà không tạo hóa đơn
 
-**When new order arrives:**
+[Ảnh chụp màn hình: Xem bàn của nhân viên]
 
-1. Order appears in "RECEIVED" status
-2. Review items and check availability
-3. Click "Start Preparing" - status changes to PREPARING
-4. Timer starts counting
+### 4.3) Bảng dịch vụ
 
-**While preparing:**
-- Follow recipe and check modifiers
-- Check special instructions
-- Mark individual items as prepared (optional)
+**Truy cập:** Nhân viên → Bảng dịch vụ hoặc Phục vụ → Bảng dịch vụ
 
-**When order is ready:**
-1. Click "Mark Ready" - status changes to READY
-2. Notify serving staff
-3. Order moves off your main screen
+**Giám sát các yêu cầu khách hàng:**
+- Yêu cầu hóa đơn
+- Yêu cầu hỗ trợ đặc biệt
+- Sự cố đơn hàng
 
-### 5.4) Handling Order Statuses
+**Xử lý yêu cầu:**
+1. Xem chi tiết yêu cầu (bàn, thời gian, loại)
+2. Hành động
+3. Đánh dấu là đã giải quyết
 
-**Status meanings in KDS:**
+### 4.4) Hỗ trợ đơn hàng
 
-- **RECEIVED:** New order, needs acknowledgment
-- **PREPARING:** Currently being cooked
-- **READY:** Finished, awaiting server pickup
-- **CANCELLED:** Customer or staff cancelled, stop preparation
+**Xem tất cả đơn hàng:**
+- Xem đơn hàng theo bàn hoặc trạng thái
+- Giúp khách hàng có câu hỏi
 
-**Priority indicators:**
+**Hành động đơn hàng thủ công:**
+- Cập nhật trạng thái đơn hàng nếu cần
+- Đánh dấu đơn hàng là đã thanh toán (để thanh toán tiền mặt)
+- Hủy đơn hàng (với sự chấp thuận của khách hàng)
 
-- **Green (Normal):** ≤ 100% of estimated time, on track
-- **Yellow (High):** 100-150% of estimated time, prioritize
-- **Red (Urgent):** > 150% of estimated time, immediate attention
-
-### 5.5) KDS Statistics
-
-**Dashboard shows:**
-- Total active orders
-- Average prep time today
-- Orders completed today
-- Urgent/high priority count
-
-**Use stats to:**
-- Monitor kitchen performance
-- Identify bottlenecks
-- Plan staffing needs
-
-### 5.6) Cancellations & Modifications
-
-**If order is cancelled:**
-- Order card turns gray or disappears
-- Stop preparation immediately
-- Dispose of or repurpose ingredients
-
-**If customer modifies order:**
-- Not supported in current MVP
-- Customer must cancel and reorder
-- Or coordinate through staff
+**Liên lạc với bếp:**
+- Kiểm tra trạng thái đơn hàng trước khi hỏi bếp
+- Thông báo cho khách hàng về độ trễ
+- Xử lý các yêu cầu đặc biệt
 
 ---
 
-## 6) Status Glossary
+## 5) Hướng dẫn bếp/KDS
 
-### Order Statuses (Actual System Values)
+### 5.1) Truy cập hệ thống hiển thị bếp (KDS)
 
-| Status | Description | Who Can Set | Next Status |
-|--------|-------------|-------------|-------------|
-| **PENDING** | Order created, waiting for kitchen | System (auto) | RECEIVED |
-| **RECEIVED** | Kitchen acknowledged order | Kitchen Staff | PREPARING |
-| **PREPARING** | Food is being cooked | Kitchen Staff | READY |
-| **READY** | Food is ready for pickup | Kitchen Staff | SERVED |
-| **SERVED** | Food delivered to table | Waiter/Staff | COMPLETED |
-| **COMPLETED** | Customer finished dining | Waiter/Staff | PAID |
-| **PAID** | Payment completed | System/Staff | - |
-| **CANCELLED** | Order cancelled | Customer/Staff | - |
+**Đăng nhập:**
+1. Truy cập URL bảng điều khiển nhà hàng
+2. Đăng nhập bằng thông tin xác thực nhân viên bếp
+3. Tự động chuyển hướng đến chế độ xem KDS
 
-### Table Statuses (Actual System Values)
+**Thay thế:** URL KDS trực tiếp (nếu được cấu hình)
 
-| Status | Description | Color | Actions Available |
-|--------|-------------|-------|-------------------|
-| **AVAILABLE** | Ready for customers | Green | QR scan, manual reserve |
-| **OCCUPIED** | Currently in use | Red | View orders, close session |
-| **RESERVED** | Pre-booked | Yellow | Cancel reservation |
-| **INACTIVE** | Temporarily unavailable | Gray | Reactivate |
+### 5.2) Tổng quan giao diện KDS
 
-### Payment Statuses
+**Hiển thị cho thấy:**
+- **Đơn hàng ưu tiên thông thường:** Trong thời gian ước tính (≤ 100% thời gian chuẩn bị ước tính)
+- **Đơn hàng ưu tiên cao:** Vượt quá thời gian ước tính (100-150% thời gian chuẩn bị ước tính)
+- **Đơn hàng khẩn cấp:** Bị trễ đáng kể (> 150% thời gian chuẩn bị ước tính)
 
-| Status | Description |
-|--------|-------------|
-| **PENDING** | Awaiting payment |
-| **PROCESSING** | Payment being verified |
-| **COMPLETED** | Payment successful |
-| **FAILED** | Payment failed or expired |
-| **REFUNDED** | Payment refunded |
+**Cho mỗi thẻ đơn hàng:**
+- Số đơn hàng
+- Số bàn
+- Thời gian trôi qua kể từ khi đơn hàng được đặt
+- Tất cả các mục có số lượng và bộ sửa đổi
+- Ghi chú đặc biệt từ khách hàng
+- Thời gian chuẩn bị ước tính so với thời gian thực
 
-### Priority Levels (KDS)
+[Ảnh chụp màn hình: Bảng KDS với đơn hàng]
 
-| Priority | Condition | Color |
-|----------|-----------|-------|
-| **NORMAL** | Prep time ≤ 100% of estimate | Green |
-| **HIGH** | Prep time 100-150% of estimate | Yellow |
-| **URGENT** | Prep time > 150% of estimate | Red |
+### 5.3) Xử lý đơn hàng
 
-**Note:** Thresholds confirmed from system implementation (kds-response.dto.ts).
+**Khi đơn hàng mới đến:**
+
+1. Đơn hàng xuất hiện với trạng thái "RECEIVED"
+2. Xem lại các mục và kiểm tra tính khả dụng
+3. Nhấp vào "Bắt đầu chuẩn bị" - trạng thái thay đổi thành PREPARING
+4. Bộ đếm thời gian bắt đầu
+
+**Trong khi chuẩn bị:**
+- Theo dõi công thức và kiểm tra bộ sửa đổi
+- Kiểm tra các hướng dẫn đặc biệt
+- Đánh dấu các mục riêng lẻ như đã chuẩn bị (tùy chọn)
+
+**Khi đơn hàng sẵn sàng:**
+1. Nhấp vào "Đánh dấu sẵn sàng" - trạng thái thay đổi thành READY
+2. Thông báo cho nhân viên phục vụ
+3. Đơn hàng rời khỏi màn hình chính của bạn
+
+### 5.4) Xử lý trạng thái đơn hàng
+
+**Ý nghĩa trạng thái trong KDS:**
+
+- **RECEIVED:** Đơn hàng mới, cần xác nhận
+- **PREPARING:** Hiện đang được nấu
+- **READY:** Hoàn thành, chờ nhân viên phục vụ nhận
+- **CANCELLED:** Khách hàng hoặc nhân viên hủy, ngừng chuẩn bị
+
+**Chỉ báo ưu tiên:**
+
+- **Xanh (Thường):** ≤ 100% thời gian ước tính, theo đúng tiến độ
+- **Vàng (Cao):** 100-150% thời gian ước tính, ưu tiên
+- **Đỏ (Khẩn cấp):** > 150% thời gian ước tính, chú ý ngay lập tức
+
+### 5.5) Thống kê KDS
+
+**Bảng điều khiển hiển thị:**
+- Tổng số đơn hàng hoạt động
+- Thời gian chuẩn bị trung bình hôm nay
+- Các đơn hàng hoàn tất hôm nay
+- Số lượng khẩn cấp/ưu tiên cao
+
+**Sử dụng thống kê để:**
+- Giám sát hiệu suất bếp
+- Xác định các nút thắt
+- Lập kế hoạch nhu cầu nhân viên
+
+### 5.6) Hủy & Sửa đổi
+
+**Nếu đơn hàng bị hủy:**
+- Thẻ đơn hàng chuyển sang màu xám hoặc biến mất
+- Ngừng chuẩn bị ngay lập tức
+- Vứt bỏ hoặc tái sử dụng nguyên liệu
+
+**Nếu khách hàng sửa đổi đơn hàng:**
+- Không được hỗ trợ trong MVP hiện tại
+- Khách hàng phải hủy và đặt lại
+- Hoặc phối hợp qua nhân viên
 
 ---
 
-## 7) FAQ & Known Limitations
+## 6) Từ điển trạng thái
 
-### Frequently Asked Questions
+### Trạng thái đơn hàng (Giá trị hệ thống thực tế)
 
-**Q: Can I order from multiple tables with one QR scan?**  
-A: No, each QR code is linked to a specific table. Each table has its own session.
+| Trạng thái | Mô tả | Ai có thể đặt | Trạng thái tiếp theo |
+|-----------|-------|--------------|-------------------|
+| **PENDING** | Đơn hàng được tạo, chờ bếp | Hệ thống (tự động) | RECEIVED |
+| **RECEIVED** | Bếp đã xác nhận đơn hàng | Nhân viên bếp | PREPARING |
+| **PREPARING** | Thức ăn đang được nấu | Nhân viên bếp | READY |
+| **READY** | Thức ăn sẵn sàng để nhận | Nhân viên bếp | SERVED |
+| **SERVED** | Thức ăn được giao tới bàn | Phục vụ/Nhân viên | COMPLETED |
+| **COMPLETED** | Khách hàng hoàn tất ăn | Phục vụ/Nhân viên | PAID |
+| **PAID** | Thanh toán hoàn tất | Hệ thống/Nhân viên | - |
+| **CANCELLED** | Đơn hàng đã hủy | Khách hàng/Nhân viên | - |
 
-**Q: Can I modify my order after placing it?**  
-A: You can cancel within 5 minutes if the kitchen hasn't started. Modifications are not supported in current MVP - you must cancel and reorder.
+### Trạng thái bàn (Giá trị hệ thống thực tế)
 
-**Q: What happens if I scan a QR code for an occupied table?**  
-A: You'll see an error message. Each table can only have one active session at a time.
+| Trạng thái | Mô tả | Màu sắc | Hành động có sẵn |
+|-----------|-------|--------|-----------------|
+| **AVAILABLE** | Sẵn sàng cho khách hàng | Xanh lá | Quét QR, đặt trước thủ công |
+| **OCCUPIED** | Hiện đang được sử dụng | Đỏ | Xem đơn hàng, đóng phiên |
+| **RESERVED** | Đã đặt trước | Vàng | Hủy đặt trước |
+| **INACTIVE** | Tạm thời không khả dụng | Xám | Kích hoạt lại |
 
-**Q: Can I pay separately for items on the same table?**  
-A: Not in current MVP. All orders at a table are combined into one bill when using "Bill to Table".
+### Trạng thái thanh toán
 
-**Q: How long does my cart stay active?**  
-A: Cart is session-based and expires when you close the browser or after session timeout (configured per tenant).
+| Trạng thái | Mô tả |
+|-----------|-------|
+| **PENDING** | Chờ thanh toán |
+| **PROCESSING** | Thanh toán đang được xác minh |
+| **COMPLETED** | Thanh toán thành công |
+| **FAILED** | Thanh toán thất bại hoặc hết hạn |
+| **REFUNDED** | Thanh toán được hoàn lại |
 
-**Q: Can customers leave reviews without ordering?**  
-A: No, reviews are linked to completed orders. Only customers who ordered an item can review it.
+### Mức độ ưu tiên (KDS)
 
-### Known Limitations (Current MVP)
+| Ưu tiên | Điều kiện | Màu sắc |
+|--------|----------|--------|
+| **NORMAL** | Thời gian chuẩn bị ≤ 100% ước tính | Xanh lá |
+| **HIGH** | Thời gian chuẩn bị 100-150% ước tính | Vàng |
+| **URGENT** | Thời gian chuẩn bị > 150% ước tính | Đỏ |
 
-**Customer App:**
-- ❌ **Order modification:** Cannot edit order after checkout (must cancel and reorder)
-- ❌ **Split bills:** Cannot split bill by individual items
-- ❌ **Multiple payment methods:** Cannot use multiple payment methods for one order
-- ❌ **Guest checkout:** Session required (scanned QR), no standalone browsing yet
-- ❌ **Order history:** Limited to current session only
+**Ghi chú:** Các ngưỡng được xác nhận từ triển khai hệ thống (kds-response.dto.ts).
 
-**Tenant Dashboard:**
-- ❌ **Advanced inventory:** No stock tracking or ingredient management
-- ❌ **Shift management:** No staff scheduling or shift reports
-- ❌ **Multi-location:** Single restaurant only (no chain support)
-- ❌ **Email notifications:** Limited email alerts (registration only)
-- ❌ **Custom themes:** Fixed UI theme, no customization
-- ❌ **Loyalty programs:** No points or rewards system
+---
+
+## 7) Câu hỏi thường gặp & Những hạn chế
+
+### Các câu hỏi thường gặp
+
+**Q: Tôi có thể đặt hàng từ nhiều bàn bằng một lần quét QR không?**  
+A: Không, mỗi mã QR được liên kết với một bàn cụ thể. Mỗi bàn có phiên riêng của nó.
+
+**Q: Tôi có thể sửa đổi đơn hàng của mình sau khi đặt hàng không?**  
+A: Bạn có thể hủy trong vòng 5 phút nếu bếp chưa bắt đầu. Sửa đổi không được hỗ trợ trong MVP hiện tại - bạn phải hủy và đặt lại.
+
+**Q: Điều gì xảy ra nếu tôi quét mã QR cho một bàn đã được sử dụng?**  
+A: Bạn sẽ thấy thông báo lỗi. Mỗi bàn chỉ có thể có một phiên hoạt động cùng một lúc.
+
+**Q: Tôi có thể thanh toán riêng cho các mục ở cùng một bàn không?**  
+A: Không trong MVP hiện tại. Tất cả đơn hàng ở một bàn được kết hợp thành một hóa đơn khi sử dụng "Thanh toán theo bàn".
+
+**Q: Giỏ hàng của tôi hoạt động bao lâu?**  
+A: Giỏ hàng dựa trên phiên và hết hạn khi bạn đóng trình duyệt hoặc sau khi hết thời gian chờ phiên (được cấu hình cho mỗi nhà hàng).
+
+**Q: Khách hàng có thể để lại bài đánh giá mà không đặt hàng không?**  
+A: Không, bài đánh giá được liên kết với các đơn hàng hoàn tất. Chỉ những khách hàng đặt hàng một mục mới có thể đánh giá nó.
+
+### Những hạn chế đã biết (MVP hiện tại)
+
+**Ứng dụng khách hàng:**
+- ❌ **Sửa đổi đơn hàng:** Không thể chỉnh sửa đơn hàng sau khi thanh toán (phải hủy và đặt lại)
+- ❌ **Chia hóa đơn:** Không thể chia hóa đơn theo các mục riêng lẻ
+- ❌ **Nhiều phương thức thanh toán:** Không thể sử dụng nhiều phương thức thanh toán cho một đơn hàng
+- ❌ **Thanh toán khách:** Cần có phiên (quét QR), chưa có duyệt web độc lập
+- ❌ **Lịch sử đơn hàng:** Giới hạn cho phiên hiện tại chỉ
+
+**Bảng điều khiển nhà hàng:**
+- ❌ **Kho hàng nâng cao:** Không theo dõi hàng tồn kho hoặc quản lý nguyên liệu
+- ❌ **Quản lý ca:** Không có lịch biểu hoặc báo cáo ca làm việc
+- ❌ **Nhiều vị trí:** Nhà hàng đơn lẻ chỉ (không hỗ trợ chuỗi)
+- ❌ **Thông báo email:** Cảnh báo email hạn chế (chỉ đăng ký)
+- ❌ **Giao diện tùy chỉnh:** Giao diện cố định, không tùy chỉnh
+- ❌ **Chương trình trung thành:** Không có hệ thống điểm hoặc phần thưởng
 
 **KDS:**
-- ❌ **Order routing:** All orders go to one KDS (no station-specific routing)
-- ❌ **Printing:** No kitchen receipt printer integration
-- ❌ **Bumping:** Cannot mark sub-items separately (all or nothing)
-- ❌ **Recall:** Cannot un-ready an order
+- ❌ **Định tuyến đơn hàng:** Tất cả đơn hàng đi đến một KDS (không định tuyến từng trạm)
+- ❌ **In ấn:** Không tích hợp máy in khu bếp
+- ❌ **Bumping:** Không thể đánh dấu các mục con riêng biệt (tất cả hoặc không)
+- ❌ **Thu hồi:** Không thể bỏ sẵn sàng một đơn hàng
 
-**Payments:**
-- ❌ **Card payments:** Only cash and SePay QR supported
-- ❌ **Installments:** No buy-now-pay-later options
-- ❌ **International:** VND and USD only
-- ❌ **Refunds:** No self-service refund process (contact support)
+**Thanh toán:**
+- ❌ **Thanh toán thẻ:** Chỉ hỗ trợ tiền mặt và SePay QR
+- ❌ **Trả góp:** Không có tùy chọn mua ngay trả sau
+- ❌ **Quốc tế:** Chỉ VND và USD
+- ❌ **Hoàn lại:** Không có quy trình tự phục vụ (liên hệ hỗ trợ)
 
-**General:**
-- ❌ **Mobile apps:** Web only (no native iOS/Android apps)
-- ❌ **Offline mode:** Internet required for all operations
-- ❌ **Multi-language:** Limited language support
-- ❌ **Accessibility:** Not fully WCAG compliant yet
+**Chung:**
+- ❌ **Ứng dụng di động:** Chỉ web (không có ứng dụng iOS/Android gốc)
+- ❌ **Chế độ ngoại tuyến:** Internet được yêu cầu cho tất cả hoạt động
+- ❌ **Đa ngôn ngữ:** Hỗ trợ ngôn ngữ hạn chế
+- ❌ **Trợ cập:** Chưa tuân thủ đầy đủ WCAG
 
-### Planned Features (Future Releases)
+### Các tính năng được lên kế hoạch (Phiên bản tương lai)
 
-**High Priority:**
-- Order modification after checkout
-- Split bill by item
-- Kitchen printer integration
-- Customer order history
+**Ưu tiên cao:**
+- Sửa đổi đơn hàng sau khi thanh toán
+- Chia hóa đơn theo mục
+- Tích hợp máy in bếp
+- Lịch sử đơn hàng của khách hàng
 
-**Medium Priority:**
-- Multi-restaurant management
-- Advanced inventory tracking
-- Loyalty and rewards program
-- Native mobile apps
+**Ưu tiên trung:**
+- Quản lý nhà hàng nhiều địa điểm
+- Theo dõi kho hàng nâng cao
+- Chương trình trung thành và phần thưởng
+- Ứng dụng di động gốc
 
-**Low Priority:**
-- Offline ordering mode
-- Gift cards and vouchers
+**Ưu tiên thấp:**
+- Chế độ đặt hàng ngoại tuyến
+- Thẻ quà tặng và phiếu giảm giá
 
-**For technical roadmap:** See [ARCHITECTURE.md Section 10](./ARCHITECTURE.md#10-future-enhancements-planned-but-not-implemented)
-
----
-
-## 8) Screenshot Placeholders
-
-Below are placeholder captions for screenshots that should be added to this guide:
-
-### Customer App
-
-1. **[Screenshot: Customer Menu Page]**
-   - Shows category tabs, item cards with photos and prices, cart icon
-   - Caption: "Browse menu by category and add items to cart"
-
-2. **[Screenshot: Item Detail with Modifiers]**
-   - Shows item photo, description, modifier groups (size, toppings), quantity selector
-   - Caption: "Customize your order with modifiers and special instructions"
-
-3. **[Screenshot: Cart View]**
-   - Shows cart items, quantities, subtotal, tax, service charge, total
-   - Caption: "Review your cart before checkout"
-
-4. **[Screenshot: Checkout Page]**
-   - Shows payment method selection, customer name field, notes field
-   - Caption: "Choose payment method and complete checkout"
-
-5. **[Screenshot: Payment QR Code]**
-   - Shows VietQR code, transfer content, bank details, countdown timer
-   - Caption: "Scan this QR code with your banking app to pay"
-
-6. **[Screenshot: Order Tracking Page]**
-   - Shows order status timeline, estimated time, order items, table number
-   - Caption: "Track your order status in real-time"
-
-### Tenant Dashboard
-
-7. **[Screenshot: Admin Dashboard]**
-   - Shows revenue charts, order stats, active tables, recent reviews
-   - Caption: "Monitor your restaurant performance at a glance"
-
-8. **[Screenshot: Menu Item Editor]**
-   - Shows form for item name, price, description, photos, modifiers
-   - Caption: "Create and edit menu items with photos and modifiers"
-
-9. **[Screenshot: Table Management]**
-   - Shows table list with status indicators, filters, QR download buttons
-   - Caption: "Manage tables and download QR codes"
-
-10. **[Screenshot: Order Management Page]**
-    - Shows order list with filters, status badges, search bar
-    - Caption: "View and manage all orders with filters"
-
-11. **[Screenshot: Analytics Dashboard]**
-    - Shows revenue charts, popular items, hourly distribution graphs
-    - Caption: "Analyze sales trends and performance metrics"
-
-### Staff/Waiter App
-
-12. **[Screenshot: Staff Table View]**
-    - Shows table grid with status colors, session info, actions
-    - Caption: "View all tables and their current status"
-
-### Kitchen Display System
-
-13. **[Screenshot: KDS Board with Orders]**
-    - Shows order cards grouped by priority, timers, item lists
-    - Caption: "Kitchen display shows active orders with priority indicators"
+**Để biết lộ trình kỹ thuật:** Xem [ARCHITECTURE.md Phần 10](./ARCHITECTURE.md#10-future-enhancements-planned-but-not-implemented)
 
 ---
 
-## Need Help?
+## 8) Ảnh chụp màn hình - Chú thích
 
-**Technical Support:**  
-ADD HERE (example: support@tkqrin.com)
+Dưới đây là các chú thích ảnh chụp màn hình cho các ảnh sẽ được thêm vào hướng dẫn này:
 
-**Documentation:**  
-For developer documentation and API details, see:
+### Ứng dụng khách hàng
+
+1. **[Ảnh chụp: Trang menu khách hàng]**
+   - Hiển thị các tab danh mục, thẻ mục với ảnh và giá, biểu tượng giỏ hàng
+   - Chú thích: "Duyệt menu theo danh mục và thêm mục vào giỏ hàng"
+
+2. **[Ảnh chụp: Chi tiết mục với bộ sửa đổi]**
+   - Hiển thị ảnh mục, mô tả, các nhóm bộ sửa đổi (kích thước, topping), bộ chọn số lượng
+   - Chú thích: "Tùy chỉnh đơn hàng của bạn với bộ sửa đổi và hướng dẫn đặc biệt"
+
+3. **[Ảnh chụp: Xem giỏ hàng]**
+   - Hiển thị các mục giỏ hàng, số lượng, tổng phụ, thuế, phí dịch vụ, tổng cộng
+   - Chú thích: "Xem lại giỏ hàng của bạn trước khi thanh toán"
+
+4. **[Ảnh chụp: Trang thanh toán]**
+   - Hiển thị lựa chọn phương thức thanh toán, trường tên khách hàng, trường ghi chú
+   - Chú thích: "Chọn phương thức thanh toán và hoàn thành thanh toán"
+
+5. **[Ảnh chụp: Mã QR thanh toán]**
+   - Hiển thị mã QR VietQR, nội dung chuyển khoản, chi tiết ngân hàng, bộ đếm thời gian
+   - Chú thích: "Quét mã QR này bằng ứng dụng ngân hàng của bạn để thanh toán"
+
+6. **[Ảnh chụp: Trang theo dõi đơn hàng]**
+   - Hiển thị dòng thời gian trạng thái đơn hàng, thời gian còn lại ước tính, các mục đơn hàng, số bàn
+   - Chú thích: "Theo dõi trạng thái đơn hàng của bạn theo thời gian thực"
+
+### Bảng điều khiển nhà hàng
+
+7. **[Ảnh chụp: Bảng điều khiển quản trị viên]**
+   - Hiển thị biểu đồ doanh thu, thống kê đơn hàng, bàn hoạt động, bài đánh giá gần đây
+   - Chú thích: "Giám sát hiệu suất nhà hàng của bạn trong nháy mắt"
+
+8. **[Ảnh chụp: Trình chỉnh sửa mục menu]**
+   - Hiển thị biểu mẫu cho tên mục, giá, mô tả, ảnh, bộ sửa đổi
+   - Chú thích: "Tạo và chỉnh sửa các mục menu với ảnh và bộ sửa đổi"
+
+9. **[Ảnh chụp: Quản lý bàn]**
+   - Hiển thị danh sách bàn với chỉ báo trạng thái, bộ lọc, nút tải xuống QR
+   - Chú thích: "Quản lý bàn và tải xuống mã QR"
+
+10. **[Ảnh chụp: Trang quản lý đơn hàng]**
+    - Hiển thị danh sách đơn hàng với bộ lọc, huy hiệu trạng thái, thanh tìm kiếm
+    - Chú thích: "Xem và quản lý tất cả đơn hàng với bộ lọc"
+
+11. **[Ảnh chụp: Bảng điều khiển phân tích]**
+    - Hiển thị biểu đồ doanh thu, mục phổ biến, biểu đồ phân phối theo giờ
+    - Chú thích: "Phân tích xu hướng bán hàng và số liệu hiệu suất"
+
+### Ứng dụng nhân viên/Phục vụ
+
+12. **[Ảnh chụp: Xem bàn của nhân viên]**
+    - Hiển thị lưới bàn với chỉ báo trạng thái màu sắc, thông tin phiên, hành động
+    - Chú thích: "Xem tất cả bàn và trạng thái hiện tại của chúng"
+
+### Hệ thống hiển thị bếp
+
+13. **[Ảnh chụp: Bảng KDS với đơn hàng]**
+    - Hiển thị thẻ đơn hàng được nhóm theo ưu tiên, bộ đếm thời gian, danh sách mục
+    - Chú thích: "Hệ thống hiển thị bếp hiển thị các đơn hàng hoạt động với chỉ báo ưu tiên"
+
+---
+
+## Cần giúp đỡ?
+
+**Hỗ trợ kỹ thuật:**  
+ADD HERE (ví dụ: support@tkqrin.com)
+
+**Tài liệu:**  
+Để tìm tài liệu nhà phát triển và chi tiết API, xem:
 - [docs/common/OPENAPI.md](./OPENAPI.md)
 - [docs/backend/README.md](../backend/README.md)
 - [docs/frontend/README.md](../frontend/README.md)
 
-**Report Issues:**  
-ADD HERE (example: GitHub Issues link or support portal)
+**Báo cáo sự cố:**  
+ADD HERE (ví dụ: liên kết GitHub Issues hoặc cổng thông tin hỗ trợ)
 
 ---
 
-**Document Version:** 1.0  
-**Last Reviewed:** 2026-01-20  
-**Next Review:** 2026-04-20
+**Phiên bản tài liệu:** 1.0  
+**Lần kiểm tra lần cuối:** 2026-01-20  
+**Lần kiểm tra tiếp theo:** 2026-04-20

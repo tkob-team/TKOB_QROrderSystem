@@ -1,18 +1,18 @@
-# WebSocket Integration Guide - Epic 5
+# Hướng dẫn Tích hợp WebSocket - Epic 5
 
-## Overview
+## Tổng quan
 
-Epic 5 implements real-time order updates using Socket.IO WebSocket. This guide shows how to integrate WebSocket in your frontend applications.
+Epic 5 thực hiện cập nhật đơn hàng real-time bằng Socket.IO WebSocket. Hướng dẫn này cho thấy cách tích hợp WebSocket trong ứng dụng frontend của bạn.
 
-## Installation
+## Cài đặt
 
 ```bash
 npm install socket.io-client
 ```
 
-## 1. Staff/Kitchen Dashboard Integration
+## 1. Tích hợp Bảng điều khiển Nhân viên/Bếp
 
-### Connect to WebSocket
+### Kết nối đến WebSocket
 
 ```typescript
 // lib/socket.ts
@@ -42,7 +42,7 @@ export const connectToOrders = (tenantId: string): Socket => {
 };
 ```
 
-### Subscribe to Events
+### Đăng ký sự kiện
 
 ```typescript
 // components/KitchenDisplay.tsx
@@ -56,22 +56,22 @@ export default function KitchenDisplay() {
   useEffect(() => {
     const socket = connectToOrders(tenantId);
 
-    // Listen for new orders
+    // Lắng nghe đơn hàng mới
     socket.on('order:new', ({ order }) => {
       console.log('🔔 New order:', order.orderNumber);
       setOrders(prev => [order, ...prev]);
       
-      // Play notification sound
+      // Phát âm thanh thông báo
       new Audio('/notification.mp3').play();
       
-      // Show browser notification
+      // Hiển thị thông báo trình duyệt
       new Notification('New Order', {
         body: `Order #${order.orderNumber} - Table ${order.tableNumber}`,
         icon: '/icon.png',
       });
     });
 
-    // Listen for status changes
+    // Lắng nghe thay đổi trạng thái
     socket.on('order:status_changed', ({ order }) => {
       console.log('📝 Order updated:', order.orderNumber, order.status);
       setOrders(prev => 
@@ -79,7 +79,7 @@ export default function KitchenDisplay() {
       );
     });
 
-    // Listen for timer updates (for priority highlighting)
+    // Lắng nghe cập nhật bộ đếm (để tô sáng ưu tiên)
     socket.on('order:timer_update', ({ orderId, elapsedMinutes, priority }) => {
       setOrders(prev =>
         prev.map(o => 
@@ -110,9 +110,9 @@ export default function KitchenDisplay() {
 }
 ```
 
-## 2. Customer Order Tracking Integration
+## 2. Tích hợp Theo dõi Đơn hàng Khách hàng
 
-### Connect with Table Context
+### Kết nối với Bối cảnh Bàn
 
 ```typescript
 // app/tracking/[orderId]/page.tsx
@@ -123,7 +123,7 @@ export default function OrderTracking({ orderId, tableId, tenantId }) {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    // Connect to WebSocket
+    // Kết nối đến WebSocket
     const socket = io(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
       query: {
         tenantId,
@@ -132,7 +132,7 @@ export default function OrderTracking({ orderId, tableId, tenantId }) {
       },
     });
 
-    // Subscribe to status changes for this table
+    // Đăng ký thay đổi trạng thái cho bàn này
     socket.on('order:status_changed', ({ order: updatedOrder }) => {
       if (updatedOrder.id === orderId) {
         setOrder(updatedOrder);
@@ -156,7 +156,7 @@ export default function OrderTracking({ orderId, tableId, tenantId }) {
 }
 ```
 
-### Order Timeline Component
+### Thành phần Dòng thời gian Đơn hàng
 
 ```typescript
 // components/OrderTimeline.tsx
@@ -191,12 +191,12 @@ export function OrderTimeline({ status }: { status: string }) {
 }
 ```
 
-## 3. API Endpoints Reference
+## 3. Tham khảo Điểm cuối API
 
-### REST Endpoints
+### Điểm cuối REST
 
 ```typescript
-// Get active orders for KDS (with priority)
+// Lấy các đơn hàng hoạt động cho KDS (có ưu tiên)
 GET /api/v1/admin/kds/orders/active
 Authorization: Bearer {token}
 
@@ -207,12 +207,12 @@ Response:
   "urgent": [Order]
 }
 
-// Update order status
+// Cập nhật trạng thái đơn hàng
 PATCH /api/v1/admin/orders/:orderId/status
 Authorization: Bearer {token}
 Body: { "status": "PREPARING", "notes": "Started cooking" }
 
-// Get customer order tracking
+// Lấy theo dõi đơn hàng khách hàng
 GET /api/v1/tracking/:orderId
 Cookie: table_session_id={sessionId}
 
@@ -227,18 +227,18 @@ Response:
 }
 ```
 
-### WebSocket Events
+### Sự kiện WebSocket
 
 **Server → Client:**
 
 ```typescript
-// New order notification (staff only)
+// Thông báo đơn hàng mới (chỉ nhân viên)
 socket.on('order:new', (data: { order: Order, timestamp: Date }) => {});
 
-// Order status changed (staff & customer)
+// Trạng thái đơn hàng đã thay đổi (nhân viên & khách hàng)
 socket.on('order:status_changed', (data: { order: Order, timestamp: Date }) => {});
 
-// Timer update (staff only, for priority highlighting)
+// Cập nhật bộ đếm (chỉ nhân viên, để tô sáng ưu tiên)
 socket.on('order:timer_update', (data: { 
   orderId: string, 
   elapsedMinutes: number,
@@ -246,28 +246,28 @@ socket.on('order:timer_update', (data: {
   timestamp: Date 
 }) => {});
 
-// Order list update (bulk update for dashboard)
+// Cập nhật danh sách đơn hàng (cập nhật hàng loạt cho bảng điều khiển)
 socket.on('order:list_update', (data: { orders: Order[], timestamp: Date }) => {});
 ```
 
 **Client → Server:**
 
 ```typescript
-// Subscribe to staff room
+// Đăng ký phòng nhân viên
 socket.emit('subscribe:staff', { tenantId: '...' });
 
-// Subscribe to customer room
+// Đăng ký phòng khách hàng
 socket.emit('subscribe:customer', { tenantId: '...', tableId: '...' });
 ```
 
-## 4. Best Practices
+## 4. Các Thực tiễn Tốt nhất
 
-### Error Handling
+### Xử lý Lỗi
 
 ```typescript
 socket.on('connect_error', (error) => {
   console.error('Connection error:', error);
-  // Show user-friendly error message
+  // Hiển thị thông báo lỗi thân thiện với người dùng
   toast.error('Unable to connect to real-time updates');
 });
 
@@ -276,12 +276,12 @@ socket.on('error', (error) => {
 });
 ```
 
-### Reconnection Strategy
+### Chiến lược Kết nối lại
 
 ```typescript
 socket.on('reconnect', (attemptNumber) => {
   console.log('Reconnected after', attemptNumber, 'attempts');
-  // Refresh data after reconnection
+  // Làm mới dữ liệu sau khi kết nối lại
   fetchOrders();
 });
 
@@ -291,13 +291,13 @@ socket.on('reconnect_failed', () => {
 });
 ```
 
-### Memory Management
+### Quản lý Bộ nhớ
 
 ```typescript
 useEffect(() => {
   const socket = connectToOrders(tenantId);
   
-  // Always cleanup on unmount
+  // Luôn dọn dẹp khi unmount
   return () => {
     socket.off('order:new');
     socket.off('order:status_changed');
@@ -306,25 +306,25 @@ useEffect(() => {
 }, [tenantId]);
 ```
 
-## 5. Testing
+## 5. Kiểm thử
 
-### Test WebSocket Connection
+### Kiểm tra Kết nối WebSocket
 
 ```bash
-# Install wscat for testing
+# Cài đặt wscat để kiểm thử
 npm install -g wscat
 
-# Connect to WebSocket
+# Kết nối đến WebSocket
 wscat -c "ws://localhost:3000/orders?tenantId=abc123&role=staff"
 
-# Send subscribe message
+# Gửi thông báo đăng ký
 {"event":"subscribe:staff","data":{"tenantId":"abc123"}}
 ```
 
-### Simulate Order Events (for testing)
+### Mô phỏng Sự kiện Đơn hàng (để kiểm thử)
 
 ```typescript
-// In your test file or development tools
+// Trong tệp kiểm thử hoặc công cụ phát triển
 const testSocket = io('http://localhost:3000/orders');
 
 testSocket.emit('test:new_order', {
@@ -333,20 +333,20 @@ testSocket.emit('test:new_order', {
 });
 ```
 
-## 6. Performance Considerations
+## 6. Cân nhắc về Hiệu năng
 
-- **Throttle timer updates**: Don't send timer updates every second. Update every 30-60 seconds for PREPARING orders.
-- **Room-based broadcasting**: Use Socket.IO rooms to send updates only to relevant clients.
-- **Cleanup**: Always disconnect sockets when components unmount.
-- **Fallback**: Implement polling fallback if WebSocket connection fails.
+- **Giới hạn tốc độ cập nhật bộ đếm**: Không gửi cập nhật bộ đếm mỗi giây. Cập nhật cứ 30-60 giây cho các đơn hàng PREPARING.
+- **Phát sóng dựa trên phòng**: Sử dụng phòng Socket.IO để gửi cập nhật chỉ cho các client có liên quan.
+- **Dọn dẹp**: Luôn ngắt kết nối sockets khi các thành phần unmount.
+- **Fallback**: Thực hiện fallback polling nếu kết nối WebSocket không thành công.
 
 ---
 
-## Summary
+## Tóm tắt
 
-Epic 5 provides comprehensive real-time order management:
-- ✅ WebSocket for instant updates
-- ✅ KDS with priority-based ordering
-- ✅ Customer order tracking
-- ✅ Timer-based priority system
-- ✅ Scalable room-based architecture
+Epic 5 cung cấp quản lý đơn hàng real-time toàn diện:
+- ✅ WebSocket để cập nhật tức thời
+- ✅ KDS với sắp xếp dựa trên ưu tiên
+- ✅ Theo dõi đơn hàng khách hàng
+- ✅ Hệ thống ưu tiên dựa trên bộ đếm
+- ✅ Kiến trúc dựa trên phòng có thể mở rộng

@@ -2,7 +2,7 @@
 
 > Tài liệu này mô tả đầy đủ REST API của hệ thống TKOB_QROrderSystem theo chuẩn **OpenAPI 3.0**.
 >
-> **⚠️ NOTE:** This document is a high-level overview. For complete, up-to-date API documentation, refer to the **live Swagger UI** at `http://localhost:3000/api-docs` (development) or your deployed API's `/api-docs` endpoint.
+> **⚠️ LƯU Ý:** Tài liệu này là tổng quan cấp cao. Để có tài liệu API đầy đủ và cập nhật, hãy tham khảo **Swagger UI trực tiếp** tại `http://localhost:3000/api-docs` (phát triển) hoặc endpoint `/api-docs` của API được triển khai.
 
 - **Version**: 1.0.0
 - **Base URL**: ADD HERE (see section 1.2 for environment-specific URLs)
@@ -13,24 +13,24 @@
 ## Mục lục
 
 1. [Tổng quan API](#1-tổng-quan-api)
-   - [1.5. Swagger Tag Index](#15-swagger-tag-index-source-swagger-ui)
-2. [Authentication & Authorization](#2-authentication--authorization)
-3. [Error Handling](#3-error-handling)
-4. [Rate Limiting](#4-rate-limiting)
-5. [Tenants API](#5-tenants-api)
-6. [Legacy API Examples (Archived)](#6-legacy-api-examples-archived)
-7. [OpenAPI Export (Optional)](#7-openapi-export-optional)
-8. [Subscription Management API](#8-subscription-management-api)
-9. [Staff Management API](#9-staff-management-api)
-10. [Bill Management API](#10-bill-management-api)
-11. [Review System API](#11-review-system-api)
-12. [Promotion System API](#12-promotion-system-api)
+   - [1.5. Chỉ mục Swagger Tags](#15-swagger-tag-index-source-swagger-ui)
+2. [Xác thực và Phân quyền](#2-authentication--authorization)
+3. [Xử lý Lỗi](#3-error-handling)
+4. [Giới hạn Tỷ lệ](#4-rate-limiting)
+5. [API Tenants](#5-tenants-api)
+6. [Ví dụ API Cũ (Được Lưu Trữ)](#6-legacy-api-examples-archived)
+7. [Xuất OpenAPI (Tùy chọn)](#7-openapi-export-optional)
+8. [API Quản lý Đăng ký](#8-subscription-management-api)
+9. [API Quản lý Nhân viên](#9-staff-management-api)
+10. [API Quản lý Hóa đơn](#10-bill-management-api)
+11. [API Hệ thống Đánh giá](#11-review-system-api)
+12. [API Hệ thống Khuyến mãi](#12-promotion-system-api)
 
 ---
 
 ## 1. Tổng quan API
 
-### 1.1. API Design Principles
+### 1.1. Nguyên tắc Thiết kế API
 
 - **RESTful**: Tuân thủ nguyên tắc REST (Resources, HTTP Methods, Status Codes)
 - **Multi-tenant**: Mọi endpoint đều tenant-scoped
@@ -40,7 +40,7 @@
 - **Pagination**: Cursor-based hoặc offset-based
 - **Filtering**: Query parameters cho filter/sort
 
-### 1.2. Base URL
+### 1.2. URL Cơ bản
 
 ```
 Production:  ADD HERE (example: https://api.your-domain.com/api/v1)
@@ -48,30 +48,30 @@ Staging:     ADD HERE (example: https://api.staging.your-domain.com/api/v1)
 Development: http://localhost:3000/api/v1
 ```
 
-### 1.3. Content Type
+### 1.3. Loại Nội dung
 
 ```http
 Content-Type: application/json
 Accept: application/json
 ```
 
-### 1.4. API Documentation URL
+### 1.4. URL Tài liệu API
 
 - **Swagger UI (Development)**: `http://localhost:3000/api-docs`
 - **OpenAPI JSON**: ADD HERE (example: `http://localhost:3000/api-docs-json` for local, verify exact path in NestJS Swagger config)
 - **Production Swagger**: ADD HERE (replace with your deployed domain + `/api-docs`)
 
-> **🔍 Source of Truth:** The Swagger UI auto-generated from code decorators is the authoritative API reference. This markdown document provides conceptual overviews and workflows.
+> **🔍 Nguồn Sự thật:** Swagger UI được tạo tự động từ code decorators là tài liệu API có thẩm quyền. Tài liệu markdown này cung cấp tổng quan về khái niệm và quy trình làm việc.
 
-### 1.5. Swagger Tag Index (Source: Swagger UI)
+### 1.5. Chỉ mục Swagger Tags (Nguồn: Swagger UI)
 
-> **Source of Truth:** Live Swagger UI at `http://localhost:3000/api-docs`  
-> **Total Operations:** ~140+ (currently ~142; see openapi.exported.json for exact count) across multiple tags (see spec for exact tag count)  
-> **Last Verified:** 2026-01-20 (from `openapi.exported.json`)
+> **Nguồn Sự thật:** Swagger UI trực tiếp tại `http://localhost:3000/api-docs`  
+> **Tổng cộng Hoạt động:** ~140+ (hiện tại ~142; xem openapi.exported.json để biết số lượng chính xác) trên nhiều tags (xem spec để biết số lượng tag chính xác)  
+> **Lần xác minh cuối cùng:** 2026-01-20 (từ `openapi.exported.json`)
 
-**Operations by Category:**
+**Hoạt động theo Danh mục:**
 
-| Tag | Count | Representative Endpoints |
+| Tag | Số lượng | Các Endpoints Tiêu biểu |
 |-----|-------|-------------------------|
 | **Authentication** | 15 | `POST /api/v1/auth/register/submit`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout` |
 | **Menu - Categories** | 6 | `POST /api/v1/menu/categories`, `GET /api/v1/menu/categories`, `PATCH /api/v1/menu/categories/{id}`, `DELETE /api/v1/menu/categories/{id}` |
@@ -97,29 +97,29 @@ Accept: application/json
 | **Staff Management** | 9 | `POST /api/v1/admin/staff/invite`, `GET /api/v1/admin/staff`, `POST /api/v1/admin/staff/accept-invite` |
 | **Health** | 4 | `GET /health`, `GET /api/v1/health/detailed`, `GET /api/v1/health/ready`, `GET /api/v1/health/live` |
 
-**For complete endpoint details:**
-- Request/response schemas: Swagger UI → Expand any tag
-- Authentication requirements: Look for 🔒 icon in Swagger UI
-- Try endpoints live: Use "Try it out" button in Swagger UI
+**Để xem chi tiết endpoint hoàn chỉnh:**
+- Các schema request/response: Swagger UI → Mở rộng bất kỳ tag nào
+- Yêu cầu xác thực: Tìm biểu tượng 🔒 trong Swagger UI
+- Thử các endpoint trực tiếp: Sử dụng nút "Try it out" trong Swagger UI
 
-**Evidence Source:** Verified via Python analysis of `docs/common/openapi.exported.json` (142 operations, 23 tags)
+**Nguồn bằng chứng:** Được xác minh qua phân tích Python của `docs/common/openapi.exported.json` (142 hoạt động, 23 tags)
 
 ---
 
-## 2. Authentication & Authorization
+## 2. Xác thực và Phân quyền
 
-### 2.1. Authentication Flows (Owner & Staff)
+### 2.1. Quy trình Xác thực (Chủ sở hữu và Nhân viên)
 
 Hệ thống sử dụng cơ chế **Stateful Session with JWT**.
 
 - **Access Token**: Stateless JWT (ngắn hạn), chứa thông tin authorize.
 - **Refresh Token**: Stateful (được lưu hash trong bảng `USER_SESSION`), dùng để quản lý phiên đăng nhập và revoke quyền truy cập.
 
-#### 2.1.1. Registration Process (2-Step Flow)
+#### 2.1.1. Quy trình Đăng ký (Luồng 2 Bước)
 
 **Quy trình gồm 2 bước API chính**, sử dụng **Redis** làm bộ nhớ tạm để lưu thông tin đăng ký trong lúc chờ xác thực.
 
-**Step 1: Submit & Challenge (Gửi thông tin & Nhận OTP)**
+**Bước 1: Gửi & Thử thách (Gửi thông tin & Nhận OTP)**
 
 User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng lặp (Duplicate Check) trước, nếu hợp lệ thì lưu tạm vào Redis và gửi OTP.
 
@@ -138,19 +138,19 @@ User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng l�
 }
 ```
 
-**Backend Logic**:
+**Lôgic Backend**:
 
 1. **Validation**: Kiểm tra format email, password complexity.
-2. **Uniqueness Check (Postgres)**:
+2. **Kiểm tra Tính duy nhất (Postgres)**:
     - Kiểm tra `email` có trong bảng `USER` chưa?
     - Kiểm tra `slug` có trong bảng `TENANT` chưa?
     - *Nếu trùng*: Trả về `409 Conflict` ngay lập tức (kèm message chi tiết lỗi ở field nào).
-3. **Temporary Storage (Redis)**:
+3. **Lưu trữ Tạm thời (Redis)**:
     - Hash password.
     - Generate OTP (6 số).
     - Generate `registrationToken` (Random string, dùng làm key truy xuất Redis).
     - Lưu object `{ email, password_hash, fullName, tenantName, slug, otp }` vào Redis với Key=`reg:{registrationToken}` và TTL=10 phút.
-4. **Send OTP**: Gửi email chứa OTP cho user.
+4. **Gửi OTP**: Gửi email chứa OTP cho user.
 
 **Response: 200 OK**
 
@@ -162,7 +162,7 @@ User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng l�
 }
 ```
 
-**Error Response (Ví dụ trùng Email): 409 Conflict**
+**Lỗi Response (Ví dụ trùng Email): 409 Conflict**
 
 ```json
 {
@@ -176,7 +176,7 @@ User nhập toàn bộ thông tin đăng ký. Hệ thống kiểm tra trùng l�
 
 ---
 
-**Step 2: Confirm & Create (Xác thực OTP & Tạo tài khoản)**
+**Bước 2: Xác nhận & Tạo (Xác thực OTP & Tạo tài khoản)**
 
 User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chuyển từ Redis sang Postgres.
 
@@ -192,16 +192,16 @@ User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chu
 }
 ```
 
-**Backend Logic**:
+**Lôgic Backend**:
 
 1. **Retrieve**: Dùng `registrationToken` lấy dữ liệu tạm từ Redis. Nếu không thấy -> Lỗi `400` (Token hết hạn hoặc không tồn tại).
-2. **Verify OTP**: So khớp `otp` user gửi lên với `otp` trong Redis.
+2. **Xác minh OTP**: So khớp `otp` user gửi lên với `otp` trong Redis.
 3. **Transactional Write (Postgres)**:
     - Insert `TENANT` (dùng dữ liệu từ Redis).
     - Insert `USER` (dùng email, password_hash từ Redis).
     - Insert `USER_SESSION` (Login luôn cho user).
 4. **Cleanup**: Xóa key trong Redis.
-5. **Token Generation**: Tạo Access/Refresh Token.
+5. **Tạo Token**: Tạo Access/Refresh Token.
 
 **Response: 201 Created**
 
@@ -226,7 +226,7 @@ User nhập OTP nhận được để hoàn tất. Dữ liệu sẽ được chu
 }
 ```
 
-#### 2.1.2. Login (Session Creation)
+#### 2.1.2. Đăng nhập (Tạo Phiên)
 
 Dành cho User đã tồn tại trong DB.
 
@@ -262,7 +262,7 @@ Response: 200 OK
 }
 ```
 
-#### 2.1.3. Refresh Token (Session Renewal)
+#### 2.1.3. Làm mới Token (Gia hạn Phiên)
 
 Dùng `refreshToken` để lấy `accessToken` mới. Backend sẽ check bảng `USER_SESSION`.
 
@@ -281,7 +281,7 @@ Response: 200 OK
 }
 ```
 
-#### 2.1.4. Logout
+#### 2.1.4. Đăng xuất
 
 Dùng `refreshToken` để đăng xuất khỏi chính xác thiết bị thực hiện `logout` (bằng cách so sánh `refreshToken`)
 
@@ -296,7 +296,7 @@ Content-Type: application/json
 Response: 200 OK
 
 ```
-#### 2.1.5. Get Current User Profile
+#### 2.1.5. Lấy Hồ sơ User Hiện tại
 
 Lấy thông tin user hiện tại từ access token. Yêu cầu gửi access token hợp lệ qua header `Authorization: Bearer <accessToken>`. Backend sẽ giải mã JWT và trả về thông tin user.
 
@@ -330,9 +330,9 @@ Accept: application/json
 - Endpoint này dùng để lấy thông tin user đang đăng nhập, thường dùng cho trang profile hoặc kiểm tra trạng thái đăng nhập.  
 - Không cần truyền thêm tham số nào ngoài access token.
 
-### 2.2. Token Claims & Authorization
+### 2.2. Token Claims & Phân quyền
 
-#### 2.2.1. JWT Access Token Structure (Staff/Owner)
+#### 2.2.1. Cấu trúc Access Token JWT (Nhân viên/Chủ sở hữu)
 
 Payload của Access Token phản ánh trực tiếp dữ liệu từ bảng `USER`.
 
@@ -348,18 +348,18 @@ Payload của Access Token phản ánh trực tiếp dữ liệu từ bảng `US
 }
 ```
 
-#### 2.2.2. Role-Based Access Control (RBAC)
+#### 2.2.2. Kiểm soát Truy cập Dựa trên Role (RBAC)
 
 Dựa trên Enum `role` trong Database:
 _Đối với Super Admin: Không cần registry (liên hệ bên cung cấp sản phẩm để đăng ký tài khoản, login như các role dưới)_
 
-| **Role (DB Enum)** | **Description**   | **Permissions**                                                          |
+| **Role (DB Enum)** | **Mô tả**   | **Quyền**                                                          |
 | ------------------ | ----------------- | ------------------------------------------------------------------------ |
 | **OWNER**          | Chủ nhà hàng      | Full CRUD on Tenant, Users, Menu, Payment Config. (Tương đương Admin cũ) |
 | **STAFF**          | Nhân viên phục vụ | Read Menu, Create/Update Orders, Payment Status.                         |
 | **KITCHEN**        | Đầu bếp/Bar       | Read Orders (Real-time), Update Order State (Preparing -> Ready).        |
 
-### 2.3. Tenant Isolation Strategy
+### 2.3. Chiến lược Cách ly Tenant
 
 Để đảm bảo tính toàn vẹn dữ liệu giữa các Tenant (Multi-tenancy):
 
@@ -369,9 +369,9 @@ _Đối với Super Admin: Không cần registry (liên hệ bên cung cấp s�
     - Application Logic: Middleware của ORM sẽ tự động chèn điều kiện `WHERE tenant_id = <current_tenant>` vào tất cả các câu lệnh `find`, `update`, `delete` trước khi gửi xuống DB.
     - (Optional/Planned) Database RLS (Row-Level Security): Ngay cả khi tầng Application có lỗi (bug ở middleware, quên filter), Database sẽ chặn truy cập nếu`tenant_id` của dòng dữ liệu không khớp với session context hiện tại.
 
-## 3. Error Handling
+## 3. Xử lý Lỗi
 
-### 3.1. Error Response Format
+### 3.1. Định dạng Response Lỗi
 
 ```json
 {
@@ -388,21 +388,21 @@ _Đối với Super Admin: Không cần registry (liên hệ bên cung cấp s�
 }
 ```
 
-### 3.2. Standard Error Codes
+### 3.2. Mã Lỗi Tiêu chuẩn
 
-| HTTP Status | Error Code              | Description                                   |
+| Mã HTTP | Mã Lỗi              | Mô tả                                   |
 | ----------- | ----------------------- | --------------------------------------------- |
-| 400         | `BAD_REQUEST`           | Invalid request format/parameters             |
+| 400         | `BAD_REQUEST`           | Định dạng request/parameters không hợp lệ             |
 | 401         | `UNAUTHORIZED`          | Missing or invalid authentication             |
-| 403         | `FORBIDDEN`             | Insufficient permissions                      |
-| 404         | `NOT_FOUND`             | Resource not found                            |
-| 409         | `CONFLICT`              | Resource conflict (duplicate, state mismatch) |
-| 422         | `VALIDATION_ERROR`      | Request validation failed                     |
-| 429         | `RATE_LIMIT_EXCEEDED`   | Too many requests                             |
-| 500         | `INTERNAL_SERVER_ERROR` | Server error                                  |
-| 503         | `SERVICE_UNAVAILABLE`   | Service temporarily unavailable               |
+| 403         | `FORBIDDEN`             | Quyền hạn không đủ                      |
+| 404         | `NOT_FOUND`             | Tài nguyên không tìm thấy                            |
+| 409         | `CONFLICT`              | Xung đột tài nguyên (duplicate, state mismatch) |
+| 422         | `VALIDATION_ERROR`      | Xác thực request không thành công                     |
+| 429         | `RATE_LIMIT_EXCEEDED`   | Quá nhiều request                             |
+| 500         | `INTERNAL_SERVER_ERROR` | Lỗi server                                  |
+| 503         | `SERVICE_UNAVAILABLE`   | Dịch vụ tạm thời không khả dụng               |
 
-### 3.3. Validation Errors
+### 3.3. Lỗi Xác thực
 
 ```json
 {
@@ -428,9 +428,9 @@ _Đối với Super Admin: Không cần registry (liên hệ bên cung cấp s�
 
 ---
 
-## 4. Rate Limiting
+## 4. Giới hạn Tỷ lệ
 
-### 4.1. Rate Limit Headers
+### 4.1. Các Header Giới hạn Tỷ lệ
 
 ```http
 X-RateLimit-Limit: 100
@@ -438,16 +438,16 @@ X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1704960060
 ```
 
-### 4.2. Rate Limit Policies
+### 4.2. Chính sách Giới hạn Tỷ lệ
 
-| Endpoint Type         | Limit                 |
+| Loại Endpoint         | Giới hạn                 |
 | --------------------- | --------------------- |
 | Public (Menu)         | 100 req/min per IP    |
 | Authenticated (Staff) | 1000 req/min per user |
 | Order Creation        | 10 req/min per table  |
 | Admin Operations      | 100 req/min per admin |
 
-### 4.3. Rate Limit Exceeded Response
+### 4.3. Response Vượt quá Giới hạn Tỷ lệ
 
 ```json
 {
@@ -461,17 +461,17 @@ X-RateLimit-Reset: 1704960060
 
 ---
 
-## 5. Tenants API
+## 5. API Tenants
 
 > Lưu ý: Việc tạo Tenant mới (Create) đã được thực hiện tự động trong quy trình đăng ký 2 bước: `POST /api/v1/auth/register/submit` (Step 1: Submit & Challenge) → `POST /api/v1/auth/register/confirm` (Step 2: Confirm & Create). Các API dưới đây dành cho OWNER để thiết lập thông tin nhà hàng (Onboarding) sau khi đã đăng nhập.
 
-### Base URL
+### URL Cơ bản
 
 ```
 /api/v1/tenants
 ```
 
-### 5.1. Get Current Tenant Info
+### 5.1. Lấy Thông tin Tenant Hiện tại
 
 ```
 GET /api/v1/tenants/me
@@ -509,7 +509,7 @@ Authorization: Bearer {accessToken}
 
 ---
 
-### 5.2. Update Tenant Profile (Onboarding Step 1)
+### 5.2. Cập nhật Hồ sơ Tenant (Bước Onboarding 1)
 
 ```
 PATCH /api/v1/tenants/profile
@@ -548,7 +548,7 @@ Content-Type: application/json
 
 ---
 
-### 5.3. Update Opening Hours (Onboarding Step 2)
+### 5.3. Cập nhật Giờ Mở cửa (Bước Onboarding 2)
 
 ```
 PATCH /api/v1/tenants/opening-hours
@@ -590,7 +590,7 @@ Content-Type: application/json
 
 ---
 
-### 5.4. Update Settings (Onboarding Step 3)
+### 5.4. Cập nhật Cài đặt (Bước Onboarding 3)
 
 ```
 PATCH /api/v1/tenants/settings
@@ -643,7 +643,7 @@ Content-Type: application/json
 
 ---
 
-### 5.5. Configure Payment Config (Onboarding Step 4 - Planned: Stripe)
+### 5.5. Cấu hình Thanh toán (Bước Onboarding 4 - Lên kế hoạch: Stripe)
 
 Dành cho bảng `TENANT_PAYMENT_CONFIG`. API này dự kiến liên kết tài khoản thanh toán (ví dụ: Stripe) của nhà hàng để nhận tiền.
 
@@ -675,7 +675,7 @@ Content-Type: application/json
 
 ---
 
-### 5.6. Complete Onboarding
+### 5.6. Hoàn tất Onboarding
 
 ```
 POST /api/v1/tenants/complete-onboarding
@@ -694,7 +694,7 @@ Authorization: Bearer {accessToken}
 
 ---
 
-### 5.7. Update Tenant Status (Admin only)
+### 5.7. Cập nhật Trạng thái Tenant (Chỉ Admin)
 
 ```
 PATCH /api/v1/tenants/:id/status
@@ -722,123 +722,123 @@ Content-Type: application/json
 
 ---
 
-## 6. Legacy API Examples (Archived)
+## 6. Ví dụ API Cũ (Được Lưu Trữ)
 
-> **⚠️ DEPRECATED CONTENT:** Sections 6-11 contained conceptual API examples that are **not guaranteed** to match the actual implementation.
+> **⚠️ NỘI DUNG LỖI THỜI:** Các phần 6-11 chứa các ví dụ API khái niệm không được đảm bảo khớp với việc triển khai thực tế.
 >
-> These examples have been moved to: [**docs/appendix/legacy/OPENAPI_LEGACY_EXAMPLES.md**](../../appendix/legacy/OPENAPI_LEGACY_EXAMPLES.md)
+> Các ví dụ này đã được chuyển tới: [**docs/appendix/legacy/OPENAPI_LEGACY_EXAMPLES.md**](../../appendix/legacy/OPENAPI_LEGACY_EXAMPLES.md)
 >
-> **For accurate API documentation, always use:**
-> - **Live Swagger UI:** `http://localhost:3000/api-docs`
+> **Để có tài liệu API chính xác, luôn sử dụng:**
+> - **Swagger UI trực tiếp:** `http://localhost:3000/api-docs`
 > - **OpenAPI JSON:** `http://localhost:3000/api-docs-json`
-> - **Controller Source Code:** `source/apps/api/src/modules/*/controllers/*.controller.ts`
+> - **Mã nguồn Controller:** `source/apps/api/src/modules/*/controllers/*.controller.ts`
 
-**Legacy Content Includes:**
-- Tables & QR API examples (create, generate QR, revoke, list)
-- Menu API examples (public menu, create category, create item, update, publish)
-- Orders API examples (create order, get details, list, update state, cancel)
-- Payments API examples (create session, webhooks, get status)
-- Analytics API examples (dashboard summary, kitchen performance)
-- Webhook examples (events, payload format, security)
+**Nội dung Cũ Bao gồm:**
+- Ví dụ Tables & QR API (create, generate QR, revoke, list)
+- Ví dụ Menu API (public menu, create category, create item, update, publish)
+- Ví dụ Orders API (create order, get details, list, update state, cancel)
+- Ví dụ Payments API (create session, webhooks, get status)
+- Ví dụ Analytics API (dashboard summary, kitchen performance)
+- Ví dụ Webhook (events, payload format, security)
 
-**Migration Path:**
-1. Export current spec: `curl http://localhost:3000/api-docs-json > openapi.json`
-2. Compare legacy examples with actual spec
-3. Update client code to match Swagger-documented endpoints
-4. Test against development API at `http://localhost:3000/api/v1`
+**Đường dẫn Di chuyển:**
+1. Xuất spec hiện tại: `curl http://localhost:3000/api-docs-json > openapi.json`
+2. So sánh các ví dụ cũ với spec thực tế
+3. Cập nhật mã client để khớp với các endpoint được ghi trong Swagger
+4. Kiểm tra lại API phát triển tại `http://localhost:3000/api/v1`
 
 ---
 
 
-## 7. OpenAPI Export (Optional)
+## 7. Xuất OpenAPI (Tùy chọn)
 
-> **Note:** This project uses NestJS Swagger decorators to auto-generate OpenAPI documentation. The live Swagger UI at `http://localhost:3000/api-docs` is the authoritative source.
+> **Lưu ý:** Dự án này sử dụng NestJS Swagger decorators để tự động tạo tài liệu OpenAPI. Swagger UI trực tiếp tại `http://localhost:3000/api-docs` là nguồn có thẩm quyền.
 
-### Auto-Generated JSON Endpoint
+### Endpoint JSON Được Tạo Tự động
 
-NestJS Swagger automatically exposes a JSON endpoint at `/api-docs-json`:
+NestJS Swagger tự động phơi bày một endpoint JSON tại `/api-docs-json`:
 
 - **Development**: `http://localhost:3000/api-docs-json`
-- **Production**: ADD HERE (replace with your deployed domain + `/api-docs-json`)
+- **Production**: ADD HERE (thay thế bằng tên miền được triển khai + `/api-docs-json`)
 
-**Evidence:** NestJS Swagger automatically creates this endpoint when calling `SwaggerModule.setup('api-docs', app, document)` in `source/apps/api/src/main.ts:102`
+**Bằng chứng:** NestJS Swagger tự động tạo endpoint này khi gọi `SwaggerModule.setup('api-docs', app, document)` trong `source/apps/api/src/main.ts:102`
 
-### Exporting OpenAPI Spec to File
+### Xuất Spec OpenAPI vào Tệp
 
-To export the OpenAPI specification for use with code generation tools (Orval, OpenAPI Generator, etc.):
+Để xuất thông số kỹ thuật OpenAPI để sử dụng với các công cụ tạo mã (Orval, OpenAPI Generator, v.v.):
 
 ```bash
 # Development (local API)
 curl http://localhost:3000/api-docs-json > docs/common/openapi.exported.json
 
-# Production (replace with your domain)
+# Production (thay thế bằng tên miền của bạn)
 curl ADD_YOUR_DOMAIN/api-docs-json > docs/common/openapi.exported.json
 ```
 
-### Current Frontend Apps Usage
+### Cách sử dụng Ứng dụng Frontend Hiện tại
 
-The frontend apps currently reference local copies:
+Các ứng dụng frontend hiện tại tham chiếu các bản sao cục bộ:
 - `source/apps/web-tenant/openapi-spec.json`
 - `source/apps/web-customer/openapi-spec.json`
 
-**Recommendation:** Export the latest spec and copy to frontend apps:
+**Khuyến nghị:** Xuất spec mới nhất và sao chép vào các ứng dụng frontend:
 ```bash
-# Export from running API
+# Xuất từ API chạy
 curl http://localhost:3000/api-docs-json > docs/common/openapi.exported.json
 
-# Copy to frontend apps for Orval
+# Sao chép đến các ứng dụng frontend cho Orval
 cp docs/common/openapi.exported.json source/apps/web-tenant/openapi-spec.json
 cp docs/common/openapi.exported.json source/apps/web-customer/openapi-spec.json
 
-# Regenerate API clients
+# Tạo lại các API clients
 cd source/apps/web-tenant && pnpm orval
 cd source/apps/web-customer && pnpm orval
 ```
 
 ---
 
-## 8. Subscription Management API
+## 8. API Quản lý Đăng ký
 
-> **Module:** `SubscriptionModule` - Location: `source/apps/api/src/modules/subscription/`
+> **Module:** `SubscriptionModule` - Vị trí: `source/apps/api/src/modules/subscription/`
 
-### Overview
-Subscription management system supporting multi-tier plans (FREE, BASIC, PREMIUM) with feature limits and usage tracking. Handles subscription upgrades via SePay payment gateway.
+### Tổng quan
+Hệ thống quản lý đăng ký hỗ trợ các kế hoạch đa tầng (FREE, BASIC, PREMIUM) với giới hạn tính năng và theo dõi mức sử dụng. Xử lý nâng cấp đăng ký thông qua cổng thanh toán SePay.
 
-### Base Path
+### Đường dẫn Cơ bản
 ```
 /api/v1/admin/subscription
 ```
 
 ### Endpoints
 
-#### 8.1. Get All Subscription Plans
+#### 8.1. Lấy Tất cả Kế hoạch Đăng ký
 ```http
 GET /api/v1/subscription/plans
 ```
-- **Authentication:** Public (customer-facing) or Bearer (admin)
-- **Description:** Retrieve all available subscription tiers with pricing and feature details
+- **Xác thực:** Public (customer-facing) hoặc Bearer (admin)
+- **Mô tả:** Lấy tất cả các tầng đăng ký có sẵn với chi tiết giá cả và tính năng
 - **Controller:** `PublicSubscriptionController.getPlans()`
 
-#### 8.2. Get Current Tenant Subscription
+#### 8.2. Lấy Đăng ký Tenant Hiện tại
 ```http
 GET /api/v1/admin/subscription/current
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
-- **Returns:** Current subscription tier, status, usage stats, and limits
+- **Trả về:** Tầng đăng ký hiện tại, trạng thái, thống kê mức sử dụng và giới hạn
 - **Controller:** `SubscriptionController.getCurrentSubscription()`
 
-#### 8.3. Get Usage Statistics
+#### 8.3. Lấy Thống kê Sử dụng
 ```http
 GET /api/v1/admin/subscription/usage
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
-- **Returns:** Current usage vs limits for tables, menu items, orders/month, staff members
+- **Xác thực:** Bắt buộc (JWT)
+- **Trả về:** Mức sử dụng hiện tại so với giới hạn cho bảng, mục menu, đơn hàng/tháng, thành viên nhân viên
 - **Controller:** `SubscriptionController.getUsage()`
 
-#### 8.4. Check Action Limit
+#### 8.4. Kiểm tra Giới hạn Hành động
 ```http
 POST /api/v1/admin/subscription/check-limit
 Authorization: Bearer {accessToken}
@@ -848,11 +848,11 @@ Content-Type: application/json
   "action": "createTable" | "createMenuItem" | "createOrder" | "inviteStaff"
 }
 ```
-- **Authentication:** Required (JWT)
-- **Description:** Check if tenant can perform an action based on subscription limits
+- **Xác thực:** Bắt buộc (JWT)
+- **Mô tả:** Kiểm tra xem tenant có thể thực hiện hành động dựa trên giới hạn đăng ký không
 - **Controller:** `SubscriptionController.checkLimit()`
 
-#### 8.5. Create Upgrade Payment
+#### 8.5. Tạo Thanh toán Nâng cấp
 ```http
 POST /api/v1/admin/subscription/upgrade
 Authorization: Bearer {accessToken}
@@ -863,38 +863,38 @@ Content-Type: application/json
   "billingCycle": "MONTHLY" | "YEARLY"
 }
 ```
-- **Authentication:** Required (JWT)
-- **Description:** Create SePay payment intent for subscription upgrade. Returns QR code for payment.
+- **Xác thực:** Bắt buộc (JWT)
+- **Mô tả:** Tạo ý định thanh toán SePay để nâng cấp đăng ký. Trả về mã QR để thanh toán.
 - **Controller:** `SubscriptionController.createUpgradePayment()`
 
-#### 8.6. Check Upgrade Payment Status
+#### 8.6. Kiểm tra Trạng thái Thanh toán Nâng cấp
 ```http
 GET /api/v1/admin/subscription/upgrade/{paymentId}/status
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
-- **Description:** Poll payment status. Auto-upgrades subscription when payment is confirmed.
+- **Xác thực:** Bắt buộc (JWT)
+- **Mô tả:** Khảo sát trạng thái thanh toán. Tự động nâng cấp đăng ký khi thanh toán được xác nhận.
 - **Controller:** `SubscriptionController.checkUpgradePaymentStatus()`
 
-**Evidence:** `source/apps/api/src/modules/subscription/subscription.controller.ts`
+**Bằng chứng:** `source/apps/api/src/modules/subscription/subscription.controller.ts`
 
 ---
 
-## 9. Staff Management API
+## 9. API Quản lý Nhân viên
 
-> **Module:** `StaffModule` - Location: `source/apps/api/src/modules/staff/`
+> **Module:** `StaffModule` - Vị trí: `source/apps/api/src/modules/staff/`
 
-### Overview
-Staff invitation and management system. Supports email-based invitations with time-limited tokens (7-day expiry).
+### Tổng quan
+Hệ thống mời nhân viên và quản lý. Hỗ trợ lời mời dựa trên email với token hết hạn giới hạn thời gian (hết hạn 7 ngày).
 
-### Base Path
+### Đường dẫn Cơ bản
 ```
 /api/v1/admin/staff
 ```
 
 ### Endpoints
 
-#### 9.1. Invite Staff Member
+#### 9.1. Mời Thành viên Nhân viên
 ```http
 POST /api/v1/admin/staff/invite
 Authorization: Bearer {accessToken}
@@ -905,33 +905,33 @@ Content-Type: application/json
   "role": "STAFF" | "KITCHEN"
 }
 ```
-- **Authentication:** Required (JWT)
-- **Roles:** OWNER only
-- **Guards:** `SubscriptionLimitsGuard` - checks if tenant can invite more staff
-- **Description:** Send email invitation with unique token
+- **Xác thực:** Bắt buộc (JWT)
+- **Roles:** Chỉ OWNER
+- **Guards:** `SubscriptionLimitsGuard` - kiểm tra xem tenant có thể mời thêm nhân viên không
+- **Mô tả:** Gửi email mời với token duy nhất
 - **Controller:** `StaffController.inviteStaff()`
 
-#### 9.2. List Staff Members
+#### 9.2. Danh sách Thành viên Nhân viên
 ```http
 GET /api/v1/admin/staff
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER
-- **Returns:** All active staff members for the tenant
+- **Trả về:** Tất cả thành viên nhân viên hoạt động cho tenant
 - **Controller:** `StaffController.listStaff()`
 
-#### 9.3. List Pending Invitations
+#### 9.3. Danh sách Lời mời Đang chờ
 ```http
 GET /api/v1/admin/staff/invitations
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER
-- **Returns:** Pending (unused) staff invitations
+- **Trả về:** Lời mời nhân viên đang chờ (chưa sử dụng)
 - **Controller:** `StaffController.listPendingInvitations()`
 
-#### 9.4. Update Staff Role
+#### 9.4. Cập nhật Vai trò Nhân viên
 ```http
 PATCH /api/v1/admin/staff/{staffId}/role
 Authorization: Bearer {accessToken}
@@ -941,21 +941,21 @@ Content-Type: application/json
   "role": "STAFF" | "KITCHEN"
 }
 ```
-- **Authentication:** Required (JWT)
-- **Roles:** OWNER only
-- **Description:** Change staff member's role
-- **Controller:** `StaffController.updateStaffRole()` (exists in controller lines 99+)
+- **Xác thực:** Bắt buộc (JWT)
+- **Roles:** Chỉ OWNER
+- **Mô tả:** Thay đổi vai trò của thành viên nhân viên
+- **Controller:** `StaffController.updateStaffRole()` (hiện diện trong controller dòng 99+)
 
-#### 9.5. Remove Staff Member
+#### 9.5. Xóa Thành viên Nhân viên
 ```http
 DELETE /api/v1/admin/staff/{staffId}
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
-- **Roles:** OWNER only
-- **Controller:** `StaffController.removeStaff()` (exists in controller)
+- **Xác thực:** Bắt buộc (JWT)
+- **Roles:** Chỉ OWNER
+- **Controller:** `StaffController.removeStaff()` (hiện diện trong controller)
 
-#### 9.6. Accept Invitation (Public)
+#### 9.6. Chấp nhận Lời mời (Public)
 ```http
 POST /api/v1/staff/accept-invite
 Content-Type: application/json
@@ -966,69 +966,69 @@ Content-Type: application/json
   "fullName": "Staff Name"
 }
 ```
-- **Authentication:** Public (token-based)
-- **Description:** Staff member accepts invitation and creates account
+- **Xác thực:** Public (token-based)
+- **Mô tả:** Nhân viên chấp nhận lời mời và tạo tài khoản
 - **Controller:** `StaffController.acceptInvite()` (public endpoint)
 
-**Evidence:** `source/apps/api/src/modules/staff/staff.controller.ts`
+**Bằng chứng:** `source/apps/api/src/modules/staff/staff.controller.ts`
 
 ---
 
-## 10. Bill Management API
+## 10. API Quản lý Hóa đơn
 
-> **Module:** `BillModule` (part of OrderModule) - Location: `source/apps/api/src/modules/order/controllers/bill.controller.ts`
+> **Module:** `BillModule` (phần của OrderModule) - Vị trí: `source/apps/api/src/modules/order/controllers/bill.controller.ts`
 
-### Overview
-Bill aggregation for tables. Groups multiple orders into a single bill for payment.
+### Tổng quan
+Tổng hợp hóa đơn cho các bảng. Nhóm nhiều đơn hàng thành một hóa đơn để thanh toán.
 
-### Base Path
+### Đường dẫn Cơ bản
 ```
 /api/v1/admin/bills
 ```
 
 ### Endpoints
 
-#### 10.1. Get All Bills
+#### 10.1. Lấy Tất cả Hóa đơn
 ```http
 GET /api/v1/admin/bills?tableId={tableId}&paymentStatus={status}&startDate={date}&endDate={date}
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
-- **Query Parameters:**
-  - `tableId` (optional): Filter by table
-  - `paymentStatus` (optional): PENDING | COMPLETED | FAILED
-  - `startDate` (optional): ISO date
-  - `endDate` (optional): ISO date
+- **Tham số Query:**
+  - `tableId` (tùy chọn): Lọc theo bảng
+  - `paymentStatus` (tùy chọn): PENDING | COMPLETED | FAILED
+  - `startDate` (tùy chọn): Ngày ISO
+  - `endDate` (tùy chọn): Ngày ISO
 - **Controller:** `BillController.getBills()`
 
-#### 10.2. Get Bill by ID
+#### 10.2. Lấy Hóa đơn theo ID
 ```http
 GET /api/v1/admin/bills/{billId}
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
-- **Returns:** Detailed bill with all associated orders
+- **Trả về:** Hóa đơn chi tiết với tất cả các đơn hàng liên quan
 - **Controller:** `BillController.getBillById()`
 
-#### 10.3. Create Bill (Implicit)
-Bills are typically created via order workflows. Check OrderModule for bill creation endpoints related to table checkout.
+#### 10.3. Tạo Hóa đơn (Ngầm)
+Hóa đơn thường được tạo thông qua các quy trình đơn hàng. Kiểm tra OrderModule để tìm các endpoint tạo hóa đơn liên quan đến thanh toán bảng.
 
-**Evidence:** `source/apps/api/src/modules/order/controllers/bill.controller.ts`
+**Bằng chứng:** `source/apps/api/src/modules/order/controllers/bill.controller.ts`
 
 ---
 
-## 11. Review System API
+## 11. API Hệ thống Đánh giá
 
-> **Module:** `ReviewModule` - Location: `source/apps/api/src/modules/review/`
+> **Module:** `ReviewModule` - Vị trí: `source/apps/api/src/modules/review/`
 
-### Overview
-Customer review system for menu items and orders. Supports 5-star ratings and text comments.
+### Tổng quan
+Hệ thống đánh giá khách hàng cho các mục menu và đơn hàng. Hỗ trợ đánh giá 5 sao và nhận xét văn bản.
 
 ### Endpoints
 
-#### 11.1. Create/Update Review (Customer)
+#### 11.1. Tạo/Cập nhật Đánh giá (Khách hàng)
 ```http
 POST /api/v1/orders/{orderId}/items/{itemId}/review?sessionId={sessionId}&tenantId={tenantId}
 Content-Type: application/json
@@ -1038,55 +1038,55 @@ Content-Type: application/json
   "comment": "Excellent pho!"
 }
 ```
-- **Authentication:** Public (session-based)
-- **Description:** Customer reviews a specific order item
+- **Xác thực:** Public (session-based)
+- **Mô tả:** Khách hàng đánh giá một mục đơn hàng cụ thể
 - **Controller:** `ReviewController.createReview()`
 
-#### 11.2. Get Order Reviews
+#### 11.2. Lấy Đánh giá Đơn hàng
 ```http
 GET /api/v1/orders/{orderId}/reviews?tenantId={tenantId}
 ```
-- **Authentication:** Public
-- **Returns:** All reviews for an order with summary statistics
+- **Xác thực:** Public
+- **Trả về:** Tất cả đánh giá cho một đơn hàng với thống kê tóm tắt
 - **Controller:** `ReviewController.getOrderReviews()`
 
-#### 11.3. Get Menu Item Reviews
+#### 11.3. Lấy Đánh giá Mục Menu
 ```http
 GET /api/v1/menu-items/{menuItemId}/reviews?tenantId={tenantId}
 ```
-- **Authentication:** Public
-- **Returns:** Review statistics for a specific menu item (average rating, count)
+- **Xác thực:** Public
+- **Trả về:** Thống kê đánh giá cho một mục menu cụ thể (đánh giá trung bình, số lượng)
 - **Controller:** `ReviewController.getMenuItemReviews()`
 
-#### 11.4. Get Tenant Review Stats (Admin)
+#### 11.4. Lấy Thống kê Đánh giá Tenant (Admin)
 ```http
 GET /api/v1/admin/reviews/stats
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
-- **Returns:** Tenant-wide review statistics and top-rated items
+- **Trả về:** Thống kê đánh giá trên toàn tenant và các mục được xếp hạng cao nhất
 - **Controller:** `ReviewController.getTenantReviewStats()`
 
-**Evidence:** `source/apps/api/src/modules/review/review.controller.ts`
+**Bằng chứng:** `source/apps/api/src/modules/review/review.controller.ts`
 
 ---
 
-## 12. Promotion System API
+## 12. API Hệ thống Khuyến mãi
 
-> **Module:** `PromotionModule` - Location: `source/apps/api/src/modules/promotion/`
+> **Module:** `PromotionModule` - Vị trí: `source/apps/api/src/modules/promotion/`
 
-### Overview
-Discount code management system. Supports percentage and fixed-amount discounts with usage limits. Feature-gated by subscription tier.
+### Tổng quan
+Hệ thống quản lý mã giảm giá. Hỗ trợ chiết khấu phần trăm và số tiền cố định với giới hạn sử dụng. Tính năng được ghi ở tầng đăng ký.
 
-### Base Path
+### Đường dẫn Cơ bản
 ```
 /api/v1/admin/promotions
 ```
 
 ### Endpoints
 
-#### 12.1. Create Promotion
+#### 12.1. Tạo Khuyến mãi
 ```http
 POST /api/v1/admin/promotions
 Authorization: Bearer {accessToken}
@@ -1103,30 +1103,30 @@ Content-Type: application/json
   "endDate": "2026-08-31T23:59:59Z"
 }
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
-- **Guards:** `FeatureGuard` - requires "promotions" feature in subscription
+- **Guards:** `FeatureGuard` - yêu cầu tính năng "promotions" trong đăng ký
 - **Controller:** `PromotionController.createPromotion()`
 
-#### 12.2. List Promotions
+#### 12.2. Danh sách Khuyến mãi
 ```http
 GET /api/v1/admin/promotions?active={true|false}
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
 - **Controller:** `PromotionController.getPromotions()`
 
-#### 12.3. Get Promotion Details
+#### 12.3. Lấy Chi tiết Khuyến mãi
 ```http
 GET /api/v1/admin/promotions/{promotionId}
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
 - **Controller:** `PromotionController.getPromotion()`
 
-#### 12.4. Update Promotion
+#### 12.4. Cập nhật Khuyến mãi
 ```http
 PUT /api/v1/admin/promotions/{promotionId}
 Authorization: Bearer {accessToken}
@@ -1137,21 +1137,21 @@ Content-Type: application/json
   "maxUses": 150
 }
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
 - **Guards:** `FeatureGuard`
 - **Controller:** `PromotionController.updatePromotion()`
 
-#### 12.5. Delete Promotion
+#### 12.5. Xóa Khuyến mãi
 ```http
 DELETE /api/v1/admin/promotions/{promotionId}
 Authorization: Bearer {accessToken}
 ```
-- **Authentication:** Required (JWT)
+- **Xác thực:** Bắt buộc (JWT)
 - **Roles:** OWNER, STAFF
-- **Controller:** `PromotionController.deletePromotion()` (line 100+)
+- **Controller:** `PromotionController.deletePromotion()` (dòng 100+)
 
-#### 12.6. Validate Promotion Code (Public/Customer)
+#### 12.6. Xác thực Mã Khuyến mãi (Public/Khách hàng)
 ```http
 POST /api/v1/checkout/validate-promo
 Content-Type: application/json
@@ -1162,9 +1162,9 @@ Content-Type: application/json
   "orderAmount": 150000
 }
 ```
-- **Authentication:** Public
-- **Description:** Validate if promotion code is applicable to an order
-- **Returns:** Discount amount and validity status
+- **Xác thực:** Public
+- **Mô tả:** Xác thực xem mã khuyến mãi có áp dụng được cho đơn hàng không
+- **Trả về:** Số tiền chiết khấu và trạng thái hợp lệ
 - **Controller:** `PromotionController.validatePromoCode()` (public endpoint)
 
-**Evidence:** `source/apps/api/src/modules/promotion/promotion.controller.ts`
+**Bằng chứng:** `source/apps/api/src/modules/promotion/promotion.controller.ts`

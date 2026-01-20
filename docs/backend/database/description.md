@@ -1,819 +1,819 @@
-# DATABASE SCHEMA DOCUMENTATION
+# TÀI LIỆU LƯỢC ĐỒ CƠ SỞ DỮ LIỆU
 
-- **Version**: 3.0
-- **Last Updated**: 2026-01-20
-- **Database**: PostgreSQL with Prisma ORM
-- **Migrations**: 21 migrations applied (as of 2026-01-20) (see [migrations folder](../../../source/apps/api/prisma/migrations/))
-
----
-
-## Table of Contents
-
-1. [Schema Overview](#schema-overview)
-2. [Domain Models](#domain-models)
-   - [Tenants Domain](#1-tenants-domain)
-   - [Users & Authentication](#2-users--authentication)
-   - [Staff Management](#3-staff-management)
-   - [Tables & Sessions](#4-tables--sessions)
-   - [Menu Management](#5-menu-management)
-   - [Shopping Cart](#6-shopping-cart)
-   - [Orders](#7-orders)
-   - [Payments](#8-payments)
-   - [Bills](#9-bills)
-   - [Subscriptions](#10-subscriptions)
-   - [Promotions](#11-promotions)
-   - [Reviews](#12-reviews)
-3. [Enums Reference](#enums-reference)
-4. [Related Documentation](#related-documentation)
+- **Phiên bản**: 3.0
+- **Cập nhật lần cuối**: 2026-01-20
+- **Cơ sở dữ liệu**: PostgreSQL với Prisma ORM
+- **Migrations**: 21 migrations được áp dụng (từ 2026-01-20) (xem [thư mục migrations](../../../source/apps/api/prisma/migrations/))
 
 ---
 
-## Schema Overview
+## Mục lục
 
-### Multi-Tenant Isolation
-
-**Pattern**: Application-level `tenantId` field enforcement
-
-- Every tenant-scoped table includes `tenant_id` foreign key
-- Prisma middleware automatically filters queries by `tenantId`
-- Composite indexes on `(tenant_id, ...)` for performance
-- Cascade deletion when tenant is deleted
-
-**Note**: Database-level Row-Level Security (RLS) is planned but not currently implemented.
-
-### Naming Conventions
-
-- **Tables**: Lowercase snake_case plural (e.g., `menu_items`, `order_status_history`)
-- **Columns**: Lowercase snake_case (e.g., `created_at`, `tenant_id`)
-- **Primary Keys**: UUID v4 (`@id @default(uuid())`)
-- **Foreign Keys**: `{entity}_id` pattern (e.g., `tenant_id`, `order_id`)
-- **Timestamps**: `created_at`, `updated_at` on all tables
-- **Soft Deletes**: `active` boolean flag where applicable
-
-### Key Constraints
-
-- **Uniqueness**: `slug` unique globally, `email` unique globally, table `number` unique per tenant
-- **Cascade Deletes**: Child records deleted when parent tenant is deleted
-- **Restrict Deletes**: Foreign keys to MenuItem, MenuCategory use RESTRICT to prevent accidental deletion
+1. [Tổng quan lược đồ](#tổng-quan-lược-đồ)
+2. [Mô hình miền](#mô-hình-miền)
+   - [Miền Tenants](#1-miền-tenants)
+   - [Người dùng & Xác thực](#2-người-dùng--xác-thực)
+   - [Quản lý nhân viên](#3-quản-lý-nhân-viên)
+   - [Bàn & Phiên](#4-bàn--phiên)
+   - [Quản lý menu](#5-quản-lý-menu)
+   - [Giỏ hàng](#6-giỏ-hàng)
+   - [Đơn hàng](#7-đơn-hàng)
+   - [Thanh toán](#8-thanh-toán)
+   - [Hóa đơn](#9-hóa-đơn)
+   - [Đăng ký](#10-đăng-ký)
+   - [Khuyến mãi](#11-khuyến-mãi)
+   - [Đánh giá](#12-đánh-giá)
+3. [Tham chiếu Enums](#tham-chiếu-enums)
+4. [Tài liệu liên quan](#tài-liệu-liên-quan)
 
 ---
 
-## Domain Models
+## Tổng quan lược đồ
 
-### 1. Tenants Domain
+### Cách ly tenant đa nhân viên
 
-**Purpose**: Core multi-tenant isolation. Each tenant represents a restaurant/food business.
+**Mô hình**: Thực thi mức ứng dụng với trường `tenantId`
 
-**Tables**: `tenants`, `tenant_payment_configs`, `tenant_subscriptions`
+- Mỗi bảng có phạm vi tenant bao gồm khóa ngoài `tenant_id`
+- Middleware Prisma tự động lọc các truy vấn theo `tenantId`
+- Các chỉ mục tổng hợp trên `(tenant_id, ...)` để có hiệu suất tốt
+- Xoá dây chuyền khi tenant bị xoá
+
+**Ghi chú**: Row-Level Security (RLS) ở cấp độ cơ sở dữ liệu được lên kế hoạch nhưng hiện chưa được triển khai.
+
+### Quy ước đặt tên
+
+- **Bảng**: Chữ thường snake_case số nhiều (ví dụ: `menu_items`, `order_status_history`)
+- **Cột**: Chữ thường snake_case (ví dụ: `created_at`, `tenant_id`)
+- **Khóa chính**: UUID v4 (`@id @default(uuid())`)
+- **Khóa ngoài**: Mô hình `{entity}_id` (ví dụ: `tenant_id`, `order_id`)
+- **Dấu thời gian**: `created_at`, `updated_at` trên tất cả các bảng
+- **Xoá mềm**: Cờ boolean `active` nếu áp dụng
+
+### Các ràng buộc chính
+
+- **Tính duy nhất**: `slug` duy nhất toàn cầu, `email` duy nhất toàn cầu, bàn `number` duy nhất cho mỗi tenant
+- **Xoá dây chuyền**: Các bản ghi con bị xoá khi tenant cha bị xoá
+- **Xoá giới hạn**: Khóa ngoài đến MenuItem, MenuCategory sử dụng RESTRICT để ngăn xoá vô tình
+
+---
+
+## Mô hình miền
+
+### 1. Miền Tenants
+
+**Mục đích**: Cách ly tenant đa nhân viên cốt lõi. Mỗi tenant đại diện cho một nhà hàng/kinh doanh thực phẩm.
+
+**Bảng**: `tenants`, `tenant_payment_configs`, `tenant_subscriptions`
 
 #### TENANT
 
-| Field           | Type         | Constraints                | Description                                    |
+| Trường           | Kiểu         | Ràng buộc                | Mô tả                                    |
 | --------------- | ------------ | -------------------------- | ---------------------------------------------- |
-| id              | UUID         | PK                         | Primary Key                                    |
-| name            | String       | Required                   | Restaurant name                                |
-| slug            | String       | Unique globally            | URL-friendly identifier (e.g., "pho-hung")     |
-| status          | Enum         | Default: DRAFT             | TenantStatus: DRAFT, ACTIVE, SUSPENDED         |
-| settings        | JSON         | Default: {}                | Flexible config: description, phone, address   |
-| opening_hours   | JSON         | Nullable                   | Business hours configuration                   |
-| onboarding_step | Int          | Default: 1                 | Onboarding progress tracker (1-5)              |
-| created_at      | DateTime     | Auto                       | Creation timestamp                             |
-| updated_at      | DateTime     | Auto                       | Last update timestamp                          |
+| id              | UUID         | PK                         | Khóa chính                                    |
+| name            | String       | Bắt buộc                   | Tên nhà hàng                                |
+| slug            | String       | Duy nhất toàn cầu            | Định danh thân thiện với URL (ví dụ: "pho-hung")     |
+| status          | Enum         | Mặc định: DRAFT             | TenantStatus: DRAFT, ACTIVE, SUSPENDED         |
+| settings        | JSON         | Mặc định: {}                | Cấu hình linh hoạt: mô tả, điện thoại, địa chỉ   |
+| opening_hours   | JSON         | Có thể rỗng                   | Cấu hình giờ kinh doanh                   |
+| onboarding_step | Int          | Mặc định: 1                 | Bộ theo dõi tiến độ onboarding (1-5)              |
+| created_at      | DateTime     | Tự động                       | Dấu thời gian tạo                             |
+| updated_at      | DateTime     | Tự động                       | Dấu thời gian cập nhật cuối                          |
 
-**Relations**: users, paymentConfig, menuItems, tables, orders, carts, subscriptions, bills
+**Quan hệ**: users, paymentConfig, menuItems, tables, orders, carts, subscriptions, bills
 
-**Business Rules**:
-- Slug must be unique for subdomain routing
-- Status DRAFT → ACTIVE after onboarding complete
-- Cascade deletes all tenant data when deleted
+**Quy tắc kinh doanh**:
+- Slug phải duy nhất cho định tuyến tên miền con
+- Trạng thái DRAFT → ACTIVE sau khi hoàn thành onboarding
+- Xoá dây chuyền tất cả dữ liệu tenant khi bị xoá
 
 #### TENANT_PAYMENT_CONFIG
 
-| Field            | Type    | Constraints       | Description                                  |
+| Trường            | Kiểu    | Ràng buộc       | Mô tả                                  |
 | ---------------- | ------- | ----------------- | -------------------------------------------- |
-| id               | UUID    | PK                | Primary Key                                  |
-| tenant_id        | UUID    | FK, Unique (1:1)  | Links to tenant                              |
-| sepay_enabled    | Boolean | Default: false    | SePay VietQR integration enabled             |
-| sepay_api_key    | String  | Nullable          | SePay API key (encrypted)                    |
-| sepay_account_no | String  | Nullable          | Bank account number for VietQR               |
-| sepay_account_name | String  | Nullable          | Bank account holder name                     |
-| sepay_bank_code  | String  | Nullable          | Bank code (MB, VCB, ACB, etc.)               |
-| webhook_secret   | String  | Nullable          | Webhook signature verification               |
-| webhook_enabled  | Boolean | Default: false    | Webhook integration status                   |
+| id               | UUID    | PK                | Khóa chính                                  |
+| tenant_id        | UUID    | FK, Duy nhất (1:1)  | Liên kết đến tenant                              |
+| sepay_enabled    | Boolean | Mặc định: false    | Tích hợp SePay VietQR được bật             |
+| sepay_api_key    | String  | Có thể rỗng          | Khóa API SePay (được mã hóa)                    |
+| sepay_account_no | String  | Có thể rỗng          | Số tài khoản ngân hàng cho VietQR               |
+| sepay_account_name | String  | Có thể rỗng          | Tên chủ tài khoản ngân hàng                     |
+| sepay_bank_code  | String  | Có thể rỗng          | Mã ngân hàng (MB, VCB, ACB, v.v.)               |
+| webhook_secret   | String  | Có thể rỗng          | Xác minh chữ ký webhook                               |
+| webhook_enabled  | Boolean | Mặc định: false    | Trạng thái tích hợp webhook                   |
 
-**Business Rules**:
-- One config per tenant (1:1 relationship)
-- API keys stored encrypted
-- ✅ **Implemented**: SePay VietQR payment provider
+**Quy tắc kinh doanh**:
+- Một cấu hình cho mỗi tenant (quan hệ 1:1)
+- Khóa API được lưu trữ được mã hóa
+- ✅ **Triển khai**: Nhà cung cấp thanh toán SePay VietQR
 
 ---
 
-### 2. Users & Authentication
+### 2. Người dùng & Xác thực
 
-**Purpose**: User accounts, roles, and session management for staff/owners.
+**Mục đích**: Tài khoản người dùng, vai trò và quản lý phiên cho nhân viên/chủ sở hữu.
 
-**Tables**: `users`, `user_sessions`
+**Bảng**: `users`, `user_sessions`
 
 #### USER
 
-| Field         | Type     | Constraints             | Description                             |
+| Trường         | Kiểu     | Ràng buộc             | Mô tả                             |
 | ------------- | -------- | ----------------------- | --------------------------------------- |
-| id            | UUID     | PK                      | Primary Key                             |
-| email         | String   | Unique globally         | Login email                             |
-| password_hash | String   | Required                | Bcrypt hashed password                  |
-| full_name     | String   | Required                | User full name                          |
-| avatar_url    | String   | Nullable                | User profile avatar URL                 |
-| role          | Enum     | Default: STAFF          | UserRole: OWNER, STAFF, KITCHEN         |
-| status        | Enum     | Default: PENDING        | UserStatus: ACTIVE, INACTIVE, PENDING, LOCKED |
-| tenant_id     | UUID     | FK                      | Links to tenant                         |
-| created_at    | DateTime | Auto                    | Creation timestamp                      |
-| updated_at    | DateTime | Auto                    | Last update timestamp                   |
+| id            | UUID     | PK                      | Khóa chính                             |
+| email         | String   | Duy nhất toàn cầu         | Email đăng nhập                             |
+| password_hash | String   | Bắt buộc                | Mật khẩu được mã hóa Bcrypt                  |
+| full_name     | String   | Bắt buộc                | Tên đầy đủ của người dùng                          |
+| avatar_url    | String   | Có thể rỗng                | URL hình đại diện người dùng                 |
+| role          | Enum     | Mặc định: STAFF          | UserRole: OWNER, STAFF, KITCHEN         |
+| status        | Enum     | Mặc định: PENDING        | UserStatus: ACTIVE, INACTIVE, PENDING, LOCKED |
+| tenant_id     | UUID     | FK                      | Liên kết đến tenant                         |
+| created_at    | DateTime | Tự động                    | Dấu thời gian tạo                      |
+| updated_at    | DateTime | Tự động                    | Dấu thời gian cập nhật cuối                   |
 
-**Indexes**: `(tenant_id, email)` for fast tenant-scoped lookups
+**Chỉ mục**: `(tenant_id, email)` để tìm kiếm nhanh theo phạm vi tenant
 
-**Relations**: sessions, tenant
+**Quan hệ**: sessions, tenant
 
-**Business Rules**:
-- Email unique globally (enforced by @unique constraint in schema)
-- Status PENDING until email verified or admin approved
-- OWNER role has full access, STAFF has limited access, KITCHEN sees only KDS
-- Cascade delete sessions when user deleted
+**Quy tắc kinh doanh**:
+- Email duy nhất toàn cầu (được thực thi bằng ràng buộc @unique trong lược đồ)
+- Trạng thái PENDING cho đến khi email được xác minh hoặc quản trị viên phê duyệt
+- Vai trò OWNER có quyền truy cập đầy đủ, STAFF có quyền truy cập hạn chế, KITCHEN chỉ xem KDS
+- Xoá dây chuyền các phiên khi người dùng bị xoá
 
 #### USER_SESSION
 
-| Field              | Type     | Constraints | Description                            |
+| Trường              | Kiểu     | Ràng buộc | Mô tả                            |
 | ------------------ | -------- | ----------- | -------------------------------------- |
-| id                 | UUID     | PK          | Primary Key                            |
-| user_id            | UUID     | FK          | Links to user                          |
-| refresh_token_hash | String   | Required    | Hashed refresh token (JWT)             |
-| device_info        | String   | Nullable    | Browser/device info                    |
-| last_used_at       | DateTime | Auto        | Last activity timestamp                |
-| expires_at         | DateTime | Required    | Session expiration time                |
-| created_at         | DateTime | Auto        | Creation timestamp                     |
+| id                 | UUID     | PK          | Khóa chính                            |
+| user_id            | UUID     | FK          | Liên kết đến người dùng                          |
+| refresh_token_hash | String   | Bắt buộc    | Mã hash refresh token (JWT)             |
+| device_info        | String   | Có thể rỗng    | Thông tin trình duyệt/thiết bị                    |
+| last_used_at       | DateTime | Tự động        | Dấu thời gian hoạt động cuối                |
+| expires_at         | DateTime | Bắt buộc    | Thời gian hết hạn phiên                |
+| created_at         | DateTime | Tự động        | Dấu thời gian tạo                     |
 
-**Business Rules**:
-- Multiple active sessions per user allowed
-- Refresh tokens stored as hash only (never plaintext)
-- Auto-cleanup expired sessions via background job
+**Quy tắc kinh doanh**:
+- Cho phép nhiều phiên hoạt động cho mỗi người dùng
+- Các refresh token được lưu trữ chỉ dưới dạng hash (không bao giờ plaintext)
+- Tự động dọn dẹp các phiên hết hạn thông qua công việc nền
 
 ---
 
-### 3. Staff Management
+### 3. Quản lý nhân viên
 
-**Purpose**: Invite and onboard new staff members.
+**Mục đích**: Mời và onboarding các thành viên nhân viên mới.
 
-**Tables**: `staff_invitations`
+**Bảng**: `staff_invitations`
 
 #### STAFF_INVITATION
 
-| Field      | Type     | Constraints         | Description                               |
+| Trường      | Kiểu     | Ràng buộc         | Mô tả                               |
 | ---------- | -------- | ------------------- | ----------------------------------------- |
-| id         | UUID     | PK                  | Primary Key                               |
-| tenant_id  | UUID     | FK                  | Links to tenant                           |
-| email      | String   | Required            | Invited email address                     |
-| role       | Enum     | Default: STAFF      | UserRole to assign                        |
-| token      | String   | Unique globally     | Secure invite token                       |
-| expires_at | DateTime | Required            | Invitation expiry (7 days default)        |
-| used_at    | DateTime | Nullable            | Timestamp when invitation accepted        |
-| invited_by | UUID     | Required            | User ID of inviter                        |
-| created_at | DateTime | Auto                | Creation timestamp                        |
+| id         | UUID     | PK                  | Khóa chính                               |
+| tenant_id  | UUID     | FK                  | Liên kết đến tenant                           |
+| email      | String   | Bắt buộc            | Địa chỉ email được mời                     |
+| role       | Enum     | Mặc định: STAFF      | UserRole để gán                        |
+| token      | String   | Duy nhất toàn cầu     | Mã thông báo mời bảo mật                       |
+| expires_at | DateTime | Bắt buộc            | Hết hạn lời mời (mặc định 7 ngày)        |
+| used_at    | DateTime | Có thể rỗng            | Dấu thời gian khi lời mời được chấp nhận        |
+| invited_by | UUID     | Bắt buộc            | ID người dùng của người mời                        |
+| created_at | DateTime | Tự động                | Dấu thời gian tạo                        |
 
-**Indexes**: `(tenant_id, email)`, `(token)`
+**Chỉ mục**: `(tenant_id, email)`, `(token)`
 
-**Business Rules**:
-- Token expires after 7 days
-- Mark as used (`used_at`) when accepted
-- One invitation per email per tenant (can resend if expired)
+**Quy tắc kinh doanh**:
+- Mã thông báo hết hạn sau 7 ngày
+- Đánh dấu là đã sử dụng (`used_at`) khi được chấp nhận
+- Một lời mời cho mỗi email cho mỗi tenant (có thể gửi lại nếu hết hạn)
 
 ---
 
-### 4. Tables & Sessions
+### 4. Bàn & Phiên
 
-**Purpose**: Restaurant table management with QR code security and session tracking.
+**Mục đích**: Quản lý bàn nhà hàng với bảo mật mã QR và theo dõi phiên.
 
-**Tables**: `tables`, `table_sessions`
+**Bảng**: `tables`, `table_sessions`
 
 #### TABLE
 
-| Field               | Type     | Constraints                | Description                                    |
+| Trường               | Kiểu     | Ràng buộc                | Mô tả                                    |
 | ------------------- | -------- | -------------------------- | ---------------------------------------------- |
-| id                  | UUID     | PK                         | Primary Key                                    |
-| tenant_id           | UUID     | FK                         | Links to tenant                                |
-| table_number        | String   | Unique per tenant          | Table identifier (e.g., "Table 1", "A1")       |
-| capacity            | Int      | Default: 4, Range: 1-20    | Maximum number of guests                       |
-| location            | String   | Nullable                   | Physical location (Floor 1, Terrace)           |
-| description         | String   | Nullable                   | Additional notes                               |
-| status              | Enum     | Default: AVAILABLE         | TableStatus: AVAILABLE, OCCUPIED, RESERVED, INACTIVE |
-| qr_token            | String   | Unique globally, Nullable  | HMAC signed QR code token                      |
-| qr_token_hash       | String   | Nullable                   | SHA256 hash for validation                     |
-| qr_token_created_at | DateTime | Nullable                   | QR code generation timestamp                   |
-| qr_invalidated_at   | DateTime | Nullable                   | When QR was regenerated/invalidated            |
-| current_session_id  | UUID     | Nullable                   | Active session reference                       |
-| display_order       | Int      | Default: 0                 | Display sorting order                          |
-| active              | Boolean  | Default: true              | Soft delete flag                               |
+| id                  | UUID     | PK                         | Khóa chính                                    |
+| tenant_id           | UUID     | FK                         | Liên kết đến tenant                                |
+| table_number        | String   | Duy nhất trên mỗi tenant          | Định danh bàn (ví dụ: "Bàn 1", "A1")       |
+| capacity            | Int      | Mặc định: 4, Phạm vi: 1-20    | Số lượng khách tối đa                       |
+| location            | String   | Có thể rỗng                   | Vị trí vật lý (Tầng 1, Sân hiên)           |
+| description         | String   | Có thể rỗng                   | Ghi chú bổ sung                                |
+| status              | Enum     | Mặc định: AVAILABLE         | TableStatus: AVAILABLE, OCCUPIED, RESERVED, INACTIVE |
+| qr_token            | String   | Duy nhất toàn cầu, Có thể rỗng  | Mã thông báo mã QR được ký HMAC                      |
+| qr_token_hash       | String   | Có thể rỗng                   | Mã hash SHA256 để xác thực                     |
+| qr_token_created_at | DateTime | Có thể rỗng                   | Dấu thời gian tạo mã QR                   |
+| qr_invalidated_at   | DateTime | Có thể rỗng                   | Khi mã QR được tạo lại/bị vô hiệu hóa            |
+| current_session_id  | UUID     | Có thể rỗng                   | Tham chiếu phiên hoạt động                       |
+| display_order       | Int      | Mặc định: 0                 | Thứ tự sắp xếp hiển thị                          |
+| active              | Boolean  | Mặc định: true              | Cờ xoá mềm                               |
 
-**Indexes**: `(tenant_id, status)`, `(tenant_id, active)`, `(qr_token)`, `(current_session_id)`
+**Chỉ mục**: `(tenant_id, status)`, `(tenant_id, active)`, `(qr_token)`, `(current_session_id)`
 
-**Relations**: sessions, orders, carts, bills, tenant
+**Quan hệ**: sessions, orders, carts, bills, tenant
 
-**Business Rules**:
-- `table_number` unique per tenant (e.g., can't have two "Table 1")
-- QR tokens globally unique for security
-- Status OCCUPIED when active session exists
-- Invalidate old QR when regenerating (security measure)
+**Quy tắc kinh doanh**:
+- `table_number` duy nhất trên mỗi tenant (ví dụ: không thể có hai "Bàn 1")
+- Mã thông báo QR duy nhất toàn cầu để bảo mật
+- Trạng thái OCCUPIED khi tồn tại phiên hoạt động
+- Vô hiệu hóa QR cũ khi tạo lại (biện pháp bảo mật)
 
 #### TABLE_SESSION
 
-| Field      | Type     | Constraints | Description                                 |
+| Trường      | Kiểu     | Ràng buộc | Mô tả                                 |
 | ---------- | -------- | ----------- | ------------------------------------------- |
-| id         | UUID     | PK          | Primary Key                                 |
-| table_id   | UUID     | FK          | Links to table                              |
-| tenant_id  | UUID     | FK          | Links to tenant                             |
-| scanned_at | DateTime | Auto        | When customer scanned QR                    |
-| active     | Boolean  | Default: true | Session active status                     |
-| cleared_at | DateTime | Nullable    | When staff cleared/closed session           |
-| cleared_by | UUID     | Nullable    | Staff user ID who cleared session           |
+| id         | UUID     | PK          | Khóa chính                                 |
+| table_id   | UUID     | FK          | Liên kết đến bàn                              |
+| tenant_id  | UUID     | FK          | Liên kết đến tenant                             |
+| scanned_at | DateTime | Tự động        | Khi khách hàng quét mã QR                    |
+| active     | Boolean  | Mặc định: true | Trạng thái phiên hoạt động                     |
+| cleared_at | DateTime | Có thể rỗng    | Khi nhân viên xóa/đóng phiên           |
+| cleared_by | UUID     | Có thể rỗng    | ID người dùng nhân viên đã xóa phiên           |
 
-**Indexes**: `(table_id, active)`, `(tenant_id, active)`, `(active, created_at)`
+**Chỉ mục**: `(table_id, active)`, `(tenant_id, active)`, `(active, created_at)`
 
-**Business Rules**:
-- One active session per table (Haidilao style)
-- Staff control when table is free (cleared_at)
-- Track session history for analytics
+**Quy tắc kinh doanh**:
+- Một phiên hoạt động trên mỗi bàn (kiểu Haidilao)
+- Nhân viên điều khiển khi bàn trống (cleared_at)
+- Theo dõi lịch sử phiên để phân tích
 
 ---
 
-### 5. Menu Management
+### 5. Quản lý menu
 
-**Purpose**: Menu structure with categories, items, modifiers, and photos.
+**Mục đích**: Cấu trúc menu với danh mục, mục, bộ sửa đổi và ảnh.
 
-**Tables**: `menu_categories`, `menu_items`, `menu_item_photos`, `modifier_groups`, `modifier_options`, `menu_item_modifiers`
+**Bảng**: `menu_categories`, `menu_items`, `menu_item_photos`, `modifier_groups`, `modifier_options`, `menu_item_modifiers`
 
 #### MENU_CATEGORY
 
-| Field         | Type     | Constraints            | Description                          |
+| Trường         | Kiểu     | Ràng buộc            | Mô tả                          |
 | ------------- | -------- | ---------------------- | ------------------------------------ |
-| id            | UUID     | PK                     | Primary Key                          |
-| tenant_id     | UUID     | FK                     | Links to tenant                      |
-| name          | String   | Unique per tenant      | Category name                        |
-| description   | String   | Nullable               | Category description                 |
-| display_order | Int      | Default: 0             | Display sorting order                |
-| active        | Boolean  | Default: true          | Visibility flag                      |
+| id            | UUID     | PK                     | Khóa chính                          |
+| tenant_id     | UUID     | FK                     | Liên kết đến tenant                      |
+| name          | String   | Duy nhất trên mỗi tenant      | Tên danh mục                        |
+| description   | String   | Có thể rỗng               | Mô tả danh mục                 |
+| display_order | Int      | Mặc định: 0             | Thứ tự sắp xếp hiển thị                |
+| active        | Boolean  | Mặc định: true          | Cờ hiển thị                      |
 
-**Indexes**: `(tenant_id, active)`, `(tenant_id, display_order)`
+**Chỉ mục**: `(tenant_id, active)`, `(tenant_id, display_order)`
 
-**Unique Constraint**: `(name, tenant_id)`
+**Ràng buộc duy nhất**: `(name, tenant_id)`
 
-**Business Rules**:
-- Category names unique within tenant
-- Inactive categories hidden from customer menu
+**Quy tắc kinh doanh**:
+- Tên danh mục duy nhất trong tenant
+- Danh mục không hoạt động bị ẩn khỏi menu khách hàng
 
 #### MENU_ITEM
 
-| Field             | Type     | Constraints                | Description                                       |
+| Trường             | Kiểu     | Ràng buộc                | Mô tả                                       |
 | ----------------- | -------- | -------------------------- | ------------------------------------------------- |
-| id                | UUID     | PK                         | Primary Key                                       |
-| tenant_id         | UUID     | FK                         | Links to tenant                                   |
-| category_id       | UUID     | FK (RESTRICT)              | Links to category                                 |
-| name              | String   | Unique per tenant+category | Menu item name                                    |
-| description       | String   | Nullable                   | Item description                                  |
-| price             | Decimal  | Required                   | Base price (10,2 precision)                       |
-| image_url         | String   | Nullable, Deprecated       | Legacy single image field                         |
-| status            | Enum     | Default: DRAFT             | MenuItemStatus: DRAFT, PUBLISHED, ARCHIVED        |
-| available         | Boolean  | Default: true              | Stock availability                                |
-| display_order     | Int      | Default: 0                 | Display sorting order                             |
-| preparation_time  | Int      | Nullable, Range: 0-240     | Estimated prep time in minutes                    |
-| chef_recommended  | Boolean  | Default: false             | Featured/recommended flag                         |
-| popularity        | Int      | Default: 0                 | Cached popularity score for sorting               |
-| primary_photo_id  | UUID     | Nullable                   | Reference to primary MenuItemPhoto                |
-| tags              | JSON     | Default: []                | Array of tags (e.g., ["spicy", "vegetarian"])     |
-| allergens         | JSON     | Default: []                | Array of allergens (e.g., ["nuts", "gluten"])     |
-| published_at      | DateTime | Nullable                   | When item was published                           |
+| id                | UUID     | PK                         | Khóa chính                                       |
+| tenant_id         | UUID     | FK                         | Liên kết đến tenant                                   |
+| category_id       | UUID     | FK (RESTRICT)              | Liên kết đến danh mục                                 |
+| name              | String   | Duy nhất trên tenant+danh mục | Tên mục menu                                    |
+| description       | String   | Có thể rỗng                   | Mô tả mục                                  |
+| price             | Decimal  | Bắt buộc                   | Giá cơ sở (độ chính xác 10,2)                       |
+| image_url         | String   | Có thể rỗng, Không dùng nữa       | Trường ảnh đơn lẻ kế thừa                         |
+| status            | Enum     | Mặc định: DRAFT             | MenuItemStatus: DRAFT, PUBLISHED, ARCHIVED        |
+| available         | Boolean  | Mặc định: true              | Tính khả dụng hàng tồn kho                                |
+| display_order     | Int      | Mặc định: 0                 | Thứ tự sắp xếp hiển thị                             |
+| preparation_time  | Int      | Có thể rỗng, Phạm vi: 0-240     | Thời gian chuẩn bị ước tính tính bằng phút                    |
+| chef_recommended  | Boolean  | Mặc định: false             | Cờ nổi bật/được đề xuất                         |
+| popularity        | Int      | Mặc định: 0                 | Điểm phổ biến được lưu vào bộ nhớ đệm để sắp xếp               |
+| primary_photo_id  | UUID     | Có thể rỗng                   | Tham chiếu đến MenuItemPhoto chính                |
+| tags              | JSON     | Mặc định: []                | Mảng thẻ (ví dụ: ["cay", "chay"])     |
+| allergens         | JSON     | Mặc định: []                | Mảng chất gây dị ứng (ví dụ: ["hạt", "gluten"])     |
+| published_at      | DateTime | Có thể rỗng                   | Khi mục được xuất bản                           |
 
-**Indexes**: `(tenant_id, status, available)`, `(tenant_id, category_id)`, `(tenant_id, popularity)`, `(tenant_id, chef_recommended)`
+**Chỉ mục**: `(tenant_id, status, available)`, `(tenant_id, category_id)`, `(tenant_id, popularity)`, `(tenant_id, chef_recommended)`
 
-**Unique Constraint**: `(name, tenant_id, category_id)`
+**Ràng buộc duy nhất**: `(name, tenant_id, category_id)`
 
-**Relations**: category, modifierGroups, photos, orderItems, cartItems, tenant
+**Quan hệ**: category, modifierGroups, photos, orderItems, cartItems, tenant
 
-**Business Rules**:
-- Item names unique within tenant+category scope
-- Status PUBLISHED required to show to customers
-- RESTRICT on category FK prevents accidental category deletion
-- Only one primary photo per item
+**Quy tắc kinh doanh**:
+- Tên mục duy nhất trong phạm vi tenant+danh mục
+- Trạng thái PUBLISHED bắt buộc để hiển thị cho khách hàng
+- RESTRICT trên FK danh mục ngăn xoá danh mục vô tình
+- Chỉ một ảnh chính trên mỗi mục
 
 #### MENU_ITEM_PHOTO
 
-| Field         | Type     | Constraints | Description                                 |
+| Trường         | Kiểu     | Ràng buộc | Mô tả                                 |
 | ------------- | -------- | ----------- | ------------------------------------------- |
-| id            | UUID     | PK          | Primary Key                                 |
-| menu_item_id  | UUID     | FK          | Links to menu item                          |
-| url           | String   | Required    | Full image URL (S3/Cloudinary or local)     |
-| filename      | String   | Required    | Original sanitized filename                 |
-| mime_type     | String   | Required    | Image MIME type (image/jpeg, image/png)     |
-| size          | Int      | Required    | File size in bytes                          |
-| width         | Int      | Nullable    | Image width in pixels                       |
-| height        | Int      | Nullable    | Image height in pixels                      |
-| display_order | Int      | Default: 0  | Display sorting order                       |
-| is_primary    | Boolean  | Default: false | Primary image flag (one per item)        |
+| id            | UUID     | PK          | Khóa chính                                 |
+| menu_item_id  | UUID     | FK          | Liên kết đến mục menu                          |
+| url           | String   | Bắt buộc    | URL hình ảnh đầy đủ (S3/Cloudinary hoặc cục bộ)     |
+| filename      | String   | Bắt buộc    | Tên tệp được sanitized gốc                 |
+| mime_type     | String   | Bắt buộc    | Loại MIME hình ảnh (image/jpeg, image/png)     |
+| size          | Int      | Bắt buộc    | Kích thước tệp tính bằng byte                          |
+| width         | Int      | Có thể rỗng    | Chiều rộng hình ảnh tính bằng pixel                       |
+| height        | Int      | Có thể rỗng    | Chiều cao hình ảnh tính bằng pixel                       |
+| display_order | Int      | Mặc định: 0  | Thứ tự sắp xếp hiển thị                       |
+| is_primary    | Boolean  | Mặc định: false | Cờ hình ảnh chính (một trên mỗi mục)        |
 
-**Indexes**: `(menu_item_id)`, `(menu_item_id, is_primary)`
+**Chỉ mục**: `(menu_item_id)`, `(menu_item_id, is_primary)`
 
-**Business Rules**:
-- Multiple photos per menu item
-- Only one `is_primary = true` per item
-- Cascade delete when menu item deleted
-- ✅ **Implemented**: Local file storage in `uploads/menu-photos/`
-- ❌ **Planned**: Cloud storage (S3/Cloudflare R2)
+**Quy tắc kinh doanh**:
+- Nhiều ảnh cho mỗi mục menu
+- Chỉ một `is_primary = true` trên mỗi mục
+- Xoá dây chuyền khi mục menu bị xoá
+- ✅ **Triển khai**: Lưu trữ tệp cục bộ trong `uploads/menu-photos/`
+- ❌ **Lên kế hoạch**: Lưu trữ đám mây (S3/Cloudflare R2)
 
 #### MODIFIER_GROUP
 
-| Field         | Type     | Constraints | Description                                        |
+| Trường         | Kiểu     | Ràng buộc | Mô tả                                        |
 | ------------- | -------- | ----------- | -------------------------------------------------- |
-| id            | UUID     | PK          | Primary Key                                        |
-| tenant_id     | UUID     | FK          | Links to tenant                                    |
-| name          | String   | Required    | Group name (e.g., "Size", "Toppings")              |
-| description   | String   | Nullable    | Group description                                  |
-| type          | Enum     | Required    | ModifierType: SINGLE_CHOICE, MULTI_CHOICE          |
-| required      | Boolean  | Default: false | Must customer select from this group?           |
-| min_choices   | Int      | Default: 0  | Minimum selections (for MULTI_CHOICE)              |
-| max_choices   | Int      | Nullable    | Maximum selections (null = unlimited)              |
-| display_order | Int      | Default: 0  | Display sorting order                              |
-| active        | Boolean  | Default: true | Visibility flag                                  |
+| id            | UUID     | PK          | Khóa chính                                        |
+| tenant_id     | UUID     | FK          | Liên kết đến tenant                                    |
+| name          | String   | Bắt buộc    | Tên nhóm (ví dụ: "Kích thước", "Topping")              |
+| description   | String   | Có thể rỗng    | Mô tả nhóm                                  |
+| type          | Enum     | Bắt buộc    | ModifierType: SINGLE_CHOICE, MULTI_CHOICE          |
+| required      | Boolean  | Mặc định: false | Khách hàng phải chọn từ nhóm này?           |
+| min_choices   | Int      | Mặc định: 0  | Lựa chọn tối thiểu (cho MULTI_CHOICE)              |
+| max_choices   | Int      | Có thể rỗng    | Lựa chọn tối đa (null = không giới hạn)              |
+| display_order | Int      | Mặc định: 0  | Thứ tự sắp xếp hiển thị                              |
+| active        | Boolean  | Mặc định: true | Cờ hiển thị                                  |
 
-**Indexes**: `(tenant_id, active)`
+**Chỉ mục**: `(tenant_id, active)`
 
-**Relations**: options, menuItems (junction), tenant
+**Quan hệ**: options, menuItems (junction), tenant
 
-**Business Rules**:
-- SINGLE_CHOICE: radio button (e.g., Size: S/M/L)
-- MULTI_CHOICE: checkboxes (e.g., Toppings: multiple selection)
-- `min_choices` and `max_choices` enforce selection rules
+**Quy tắc kinh doanh**:
+- SINGLE_CHOICE: nút radio (ví dụ: Kích thước: S/M/L)
+- MULTI_CHOICE: checkboxes (ví dụ: Topping: lựa chọn nhiều)
+- `min_choices` và `max_choices` thực thi các quy tắc lựa chọn
 
 #### MODIFIER_OPTION
 
-| Field         | Type    | Constraints | Description                          |
+| Trường         | Kiểu    | Ràng buộc | Mô tả                          |
 | ------------- | ------- | ----------- | ------------------------------------ |
-| id            | UUID    | PK          | Primary Key                          |
-| group_id      | UUID    | FK          | Links to modifier group              |
-| name          | String  | Required    | Option name (e.g., "Large", "Extra Cheese") |
-| price_delta   | Decimal | Default: 0  | Price adjustment (+/- from base)     |
-| display_order | Int     | Default: 0  | Display sorting order                |
-| active        | Boolean | Default: true | Availability flag                  |
+| id            | UUID    | PK          | Khóa chính                          |
+| group_id      | UUID    | FK          | Liên kết đến nhóm bộ sửa đổi              |
+| name          | String  | Bắt buộc    | Tên tùy chọn (ví dụ: "Lớn", "Phô mai thêm") |
+| price_delta   | Decimal | Mặc định: 0  | Điều chỉnh giá (+/- từ cơ sở)     |
+| display_order | Int     | Mặc định: 0  | Thứ tự sắp xếp hiển thị                |
+| active        | Boolean | Mặc định: true | Cờ khả dụng                  |
 
-**Indexes**: `(group_id, active)`
+**Chỉ mục**: `(group_id, active)`
 
-**Business Rules**:
-- `price_delta` can be positive (add-on) or zero (no charge)
-- Cascade delete when modifier group deleted
+**Quy tắc kinh doanh**:
+- `price_delta` có thể dương (phụ tùng) hoặc zero (không tính phí)
+- Xoá dây chuyền khi nhóm bộ sửa đổi bị xoá
 
-#### MENU_ITEM_MODIFIER (Junction Table)
+#### MENU_ITEM_MODIFIER (Bảng Điểm nối)
 
-| Field             | Type     | Constraints | Description                                     |
+| Trường             | Kiểu     | Ràng buộc | Mô tả                                     |
 | ----------------- | -------- | ----------- | ----------------------------------------------- |
-| menu_item_id      | UUID     | FK          | Links to menu item                              |
-| modifier_group_id | UUID     | FK          | Links to modifier group                         |
-| display_order     | Int      | Default: 0  | Display order for this modifier within item     |
+| menu_item_id      | UUID     | FK          | Liên kết đến mục menu                              |
+| modifier_group_id | UUID     | FK          | Liên kết đến nhóm bộ sửa đổi                         |
+| display_order     | Int      | Mặc định: 0  | Thứ tự hiển thị cho bộ sửa đổi này trong mục     |
 
-**Composite PK**: `(menu_item_id, modifier_group_id)`
+**Khóa chính tổng hợp**: `(menu_item_id, modifier_group_id)`
 
-**Indexes**: `(menu_item_id)`, `(modifier_group_id)`
+**Chỉ mục**: `(menu_item_id)`, `(modifier_group_id)`
 
-**Business Rules**:
-- Many-to-many relationship between menu items and modifier groups
-- Cascade delete when either side deleted
+**Quy tắc kinh doanh**:
+- Quan hệ nhiều-với-nhiều giữa các mục menu và nhóm bộ sửa đổi
+- Xoá dây chuyền khi bất kỳ bên nào bị xoá
 
 ---
 
-### 6. Shopping Cart
+### 6. Giỏ hàng
 
-**Purpose**: Persistent cart for customers before checkout.
+**Mục đích**: Giỏ hàng bền bỉ cho khách hàng trước khi thanh toán.
 
-**Tables**: `carts`, `cart_items`
+**Bảng**: `carts`, `cart_items`
 
 #### CART
 
-| Field      | Type     | Constraints         | Description                                  |
+| Trường      | Kiểu     | Ràng buộc         | Mô tả                                  |
 | ---------- | -------- | ------------------- | -------------------------------------------- |
-| id         | UUID     | PK                  | Primary Key                                  |
-| tenant_id  | UUID     | FK                  | Links to tenant                              |
-| table_id   | UUID     | FK                  | Links to table                               |
-| session_id | UUID     | Nullable            | Optional session tracking                    |
-| expires_at | DateTime | Required            | Auto-expire after 1 hour of inactivity       |
+| id         | UUID     | PK                  | Khóa chính                                  |
+| tenant_id  | UUID     | FK                  | Liên kết đến tenant                              |
+| table_id   | UUID     | FK                  | Liên kết đến bàn                               |
+| session_id | UUID     | Có thể rỗng            | Theo dõi phiên tùy chọn                    |
+| expires_at | DateTime | Bắt buộc            | Hết hạn tự động sau 1 giờ không hoạt động       |
 
-**Unique Constraint**: `(table_id, session_id)`
+**Ràng buộc duy nhất**: `(table_id, session_id)`
 
-**Indexes**: `(expires_at)`, `(tenant_id, created_at)`
+**Chỉ mục**: `(expires_at)`, `(tenant_id, created_at)`
 
-**Business Rules**:
-- One cart per table+session combination
-- Auto-cleanup via cron job when expired
-- Convert cart to order on checkout
+**Quy tắc kinh doanh**:
+- Một giỏ hàng cho mỗi bàn+phiên kết hợp
+- Dọn dẹp tự động thông qua công việc cron khi hết hạn
+- Chuyển đổi giỏ hàng thành đơn hàng khi thanh toán
 
 #### CART_ITEM
 
-| Field       | Type    | Constraints | Description                                       |
+| Trường       | Kiểu    | Ràng buộc | Mô tả                                       |
 | ----------- | ------- | ----------- | ------------------------------------------------- |
-| id          | UUID    | PK          | Primary Key                                       |
-| cart_id     | UUID    | FK          | Links to cart                                     |
-| menu_item_id | UUID    | FK          | Links to menu item                                |
-| quantity    | Int     | Default: 1  | Item quantity                                     |
-| unit_price  | Decimal | Required    | Price snapshot at add time                        |
-| notes       | String  | Nullable    | Customer notes for this item                      |
-| modifiers   | JSON    | Default: [] | Selected modifiers array                          |
+| id          | UUID    | PK          | Khóa chính                                       |
+| cart_id     | UUID    | FK          | Liên kết đến giỏ hàng                                     |
+| menu_item_id | UUID    | FK          | Liên kết đến mục menu                                |
+| quantity    | Int     | Mặc định: 1  | Số lượng mục                                     |
+| unit_price  | Decimal | Bắt buộc    | Ảnh chụp giá khi thêm                        |
+| notes       | String  | Có thể rỗng    | Ghi chú khách hàng cho mục này                      |
+| modifiers   | JSON    | Mặc định: [] | Mảng các bộ sửa đổi được chọn                          |
 
-**Indexes**: `(cart_id)`, `(menu_item_id)`
+**Chỉ mục**: `(cart_id)`, `(menu_item_id)`
 
-**Business Rules**:
-- Snapshot `unit_price` when added to cart
-- `modifiers` JSON format: `[{ groupId, optionId, name, priceDelta }]`
-- Cascade delete when cart deleted
+**Quy tắc kinh doanh**:
+- Ảnh chụp `unit_price` khi thêm vào giỏ hàng
+- Định dạng `modifiers` JSON: `[{ groupId, optionId, name, priceDelta }]`
+- Xoá dây chuyền khi giỏ hàng bị xoá
 
 ---
 
-### 7. Orders
+### 7. Đơn hàng
 
-**Purpose**: Order lifecycle from placement to completion.
+**Mục đích**: Vòng đời đơn hàng từ lúc đặt đến hoàn thành.
 
-**Tables**: `orders`, `order_items`, `order_status_history`
+**Bảng**: `orders`, `order_items`, `order_status_history`
 
 #### ORDER
 
-| Field               | Type     | Constraints            | Description                                          |
+| Trường               | Kiểu     | Ràng buộc            | Mô tả                                          |
 | ------------------- | -------- | ---------------------- | ---------------------------------------------------- |
-| id                  | UUID     | PK                     | Primary Key                                          |
-| order_number        | String   | Indexed (not unique)   | Human-readable order ID (e.g., "ORD-20260120-0001") |
-| tenant_id           | UUID     | FK                     | Links to tenant                                      |
-| table_id            | UUID     | FK (RESTRICT)          | Links to table                                       |
-| session_id          | UUID     | Nullable               | Links to table session                               |
-| customer_name       | String   | Nullable               | Customer name (optional)                             |
-| customer_notes      | String   | Nullable               | Special instructions                                 |
-| status              | Enum     | Default: PENDING       | OrderStatus (see enum list)                          |
-| priority            | Enum     | Default: NORMAL        | OrderPriority: NORMAL, HIGH, URGENT                  |
-| subtotal            | Decimal  | Required               | Sum of items before adjustments                      |
-| tax                 | Decimal  | Default: 0             | Tax amount                                           |
-| service_charge      | Decimal  | Default: 0             | Service charge amount                                |
-| tip                 | Decimal  | Default: 0             | Tip amount                                           |
-| total               | Decimal  | Required               | Final total amount                                   |
-| estimated_prep_time | Int      | Nullable               | Estimated preparation time (minutes)                 |
-| actual_prep_time    | Int      | Nullable               | Actual time taken (minutes)                          |
-| payment_method      | Enum     | Default: BILL_TO_TABLE | PaymentMethod (see enum list)                        |
-| payment_status      | Enum     | Default: PENDING       | PaymentStatus (see enum list)                        |
-| paid_at             | DateTime | Nullable               | Payment completion timestamp                         |
-| bill_id             | UUID     | FK, Nullable           | Links to bill when grouped                           |
-| received_at         | DateTime | Nullable               | Status RECEIVED timestamp (KDS)                      |
-| preparing_at        | DateTime | Nullable               | Status PREPARING timestamp (KDS)                     |
-| ready_at            | DateTime | Nullable               | Status READY timestamp (KDS)                         |
-| served_at           | DateTime | Nullable               | Status SERVED timestamp                              |
-| completed_at        | DateTime | Nullable               | Status COMPLETED timestamp                           |
+| id                  | UUID     | PK                     | Khóa chính                                          |
+| order_number        | String   | Được lập chỉ mục (không duy nhất)   | ID đơn hàng dễ đọc (ví dụ: "ORD-20260120-0001") |
+| tenant_id           | UUID     | FK                     | Liên kết đến tenant                                      |
+| table_id            | UUID     | FK (RESTRICT)          | Liên kết đến bàn                                       |
+| session_id          | UUID     | Có thể rỗng               | Liên kết đến phiên bàn                               |
+| customer_name       | String   | Có thể rỗng               | Tên khách hàng (tùy chọn)                             |
+| customer_notes      | String   | Có thể rỗng               | Hướng dẫn đặc biệt                                 |
+| status              | Enum     | Mặc định: PENDING       | OrderStatus (xem danh sách enum)                          |
+| priority            | Enum     | Mặc định: NORMAL        | OrderPriority: NORMAL, HIGH, URGENT                  |
+| subtotal            | Decimal  | Bắt buộc               | Tổng các mục trước khi điều chỉnh                      |
+| tax                 | Decimal  | Mặc định: 0             | Số tiền thuế                                           |
+| service_charge      | Decimal  | Mặc định: 0             | Số tiền phí dịch vụ                                         |
+| tip                 | Decimal  | Mặc định: 0             | Số tiền tip                                           |
+| total               | Decimal  | Bắt buộc               | Tổng số tiền cuối cùng                                   |
+| estimated_prep_time | Int      | Có thể rỗng               | Thời gian chuẩn bị ước tính (phút)                 |
+| actual_prep_time    | Int      | Có thể rỗng               | Thời gian thực tế (phút)                          |
+| payment_method      | Enum     | Mặc định: BILL_TO_TABLE | PaymentMethod (xem danh sách enum)                        |
+| payment_status      | Enum     | Mặc định: PENDING       | PaymentStatus (xem danh sách enum)                      |
+| paid_at             | DateTime | Có thể rỗng               | Dấu thời gian hoàn thành thanh toán                         |
+| bill_id             | UUID     | FK, Có thể rỗng           | Liên kết đến hóa đơn khi được nhóm                          |
+| received_at         | DateTime | Có thể rỗng               | Dấu thời gian trạng thái RECEIVED (KDS)                      |
+| preparing_at        | DateTime | Có thể rỗng               | Dấu thời gian trạng thái PREPARING (KDS)                     |
+| ready_at            | DateTime | Có thể rỗng               | Dấu thời gian trạng thái READY (KDS)                         |
+| served_at           | DateTime | Có thể rỗng               | Dấu thời gian trạng thái SERVED                             |
+| completed_at        | DateTime | Có thể rỗng               | Dấu thời gian trạng thái COMPLETED                         |
 
-**Indexes**: `(tenant_id, status)`, `(tenant_id, created_at)`, `(table_id, status)`, `(order_number)`, `(session_id)`
+**Chỉ mục**: `(tenant_id, status)`, `(tenant_id, created_at)`, `(table_id, status)`, `(order_number)`, `(session_id)`
 
-**Relations**: tenant, table, items, statusHistory, payment, bill
+**Quan hệ**: tenant, table, items, statusHistory, payment, bill
 
-**Business Rules**:
-- `order_number` generated per tenant (format: ORD-YYYYMMDD-####)
-- Order lifecycle: PENDING → RECEIVED → PREPARING → READY → SERVED → COMPLETED → PAID (or jump to CANCELLED)
-- Status can jump to CANCELLED at any point before SERVED
-- PAID status (in OrderStatus enum) marks order as payment completed; separate `payment_status` field tracks payment provider state
-- Priority auto-calculated based on elapsed time vs estimated prep time
-- RESTRICT on table FK prevents table deletion with active orders
-- ✅ **Implemented**: 5-minute cancellation window (in order.service.ts)
+**Quy tắc kinh doanh**:
+- `order_number` được tạo cho mỗi tenant (định dạng: ORD-YYYYMMDD-####)
+- Vòng đời đơn hàng: PENDING → RECEIVED → PREPARING → READY → SERVED → COMPLETED → PAID (hoặc nhảy đến CANCELLED)
+- Trạng thái có thể nhảy đến CANCELLED tại bất kỳ điểm nào trước SERVED
+- Trạng thái PAID (trong enum OrderStatus) đánh dấu đơn hàng thanh toán được hoàn thành; trường `payment_status` riêng theo dõi trạng thái nhà cung cấp thanh toán
+- Ưu tiên được tính tự động dựa trên thời gian trôi qua so với thời gian chuẩn bị ước tính
+- RESTRICT trên FK bàn ngăn xoá bàn có các đơn hàng hoạt động
+- ✅ **Triển khai**: Cửa sổ huỷ 5 phút (trong order.service.ts)
 
 #### ORDER_ITEM
 
-| Field       | Type     | Constraints       | Description                                    |
+| Trường       | Kiểu     | Ràng buộc       | Mô tả                                    |
 | ----------- | -------- | ----------------- | ---------------------------------------------- |
-| id          | UUID     | PK                | Primary Key                                    |
-| order_id    | UUID     | FK                | Links to order                                 |
-| menu_item_id | UUID     | FK (RESTRICT)     | Links to menu item                             |
-| name        | String   | Required          | Item name snapshot at order time               |
-| price       | Decimal  | Required          | Item price snapshot at order time              |
-| quantity    | Int      | Default: 1        | Item quantity                                  |
-| modifiers   | JSON     | Default: []       | Selected modifiers                             |
-| item_total  | Decimal  | Required          | Line total (price + modifiers) × quantity      |
-| notes       | String   | Nullable          | Special preparation instructions               |
-| prepared    | Boolean  | Default: false    | Kitchen marked as prepared                     |
-| prepared_at | DateTime | Nullable          | When kitchen completed this item               |
+| id          | UUID     | PK                | Khóa chính                                    |
+| order_id    | UUID     | FK                | Liên kết đến đơn hàng                                 |
+| menu_item_id | UUID     | FK (RESTRICT)     | Liên kết đến mục menu                                 |
+| name        | String   | Bắt buộc          | Ảnh chụp tên mục tại thời gian đặt hàng               |
+| price       | Decimal  | Bắt buộc          | Ảnh chụp giá mục tại thời gian đặt hàng              |
+| quantity    | Int      | Mặc định: 1        | Số lượng mục                                  |
+| modifiers   | JSON     | Mặc định: []       | Các bộ sửa đổi được chọn                             |
+| item_total  | Decimal  | Bắt buộc          | Tổng hàng (giá + bộ sửa đổi) × số lượng      |
+| notes       | String   | Có thể rỗng        | Hướng dẫn chuẩn bị đặc biệt                       |
+| prepared    | Boolean  | Mặc định: false    | Bếp đã đánh dấu là đã chuẩn bị                     |
+| prepared_at | DateTime | Có thể rỗng        | Khi bếp hoàn thành mục này               |
 
-**Indexes**: `(order_id)`, `(menu_item_id)`, `(order_id, prepared)`
+**Chỉ mục**: `(order_id)`, `(menu_item_id)`, `(order_id, prepared)`
 
-**Relations**: order, menuItem, review
+**Quan hệ**: order, menuItem, review
 
-**Business Rules**:
-- Snapshot name & price at order time (price history)
-- `modifiers` JSON format: `[{ groupId, groupName, optionId, optionName, priceDelta }]`
-- Kitchen can mark individual items as prepared
-- Cascade delete when order deleted
+**Quy tắc kinh doanh**:
+- Ảnh chụp tên & giá tại thời gian đặt hàng (lịch sử giá)
+- Định dạng `modifiers` JSON: `[{ groupId, groupName, optionId, optionName, priceDelta }]`
+- Bếp có thể đánh dấu các mục riêng lẻ là đã chuẩn bị
+- Xoá dây chuyền khi đơn hàng bị xoá
 
 #### ORDER_STATUS_HISTORY
 
-| Field      | Type     | Constraints | Description                                |
+| Trường      | Kiểu     | Ràng buộc | Mô tả                                |
 | ---------- | -------- | ----------- | ------------------------------------------ |
-| id         | UUID     | PK          | Primary Key                                |
-| order_id   | UUID     | FK          | Links to order                             |
-| status     | Enum     | Required    | Status at this point in history            |
-| notes      | String   | Nullable    | Reason for status change                   |
-| changed_by | UUID     | Nullable    | Staff user ID who made the change          |
+| id         | UUID     | PK          | Khóa chính                                |
+| order_id   | UUID     | FK          | Liên kết đến đơn hàng                             |
+| status     | Enum     | Bắt buộc    | Trạng thái tại điểm này trong lịch sử            |
+| notes      | String   | Có thể rỗng    | Lý do thay đổi trạng thái                   |
+| changed_by | UUID     | Có thể rỗng    | ID người dùng nhân viên đã thực hiện thay đổi          |
 
-**Indexes**: `(order_id, created_at)`
+**Chỉ mục**: `(order_id, created_at)`
 
-**Business Rules**:
-- Audit trail for all status changes
-- Track who changed status and when
-- Cascade delete when order deleted
+**Quy tắc kinh doanh**:
+- Dòng kiểm tra cho tất cả các thay đổi trạng thái
+- Theo dõi người thay đổi trạng thái và thời gian
+- Xoá dây chuyền khi đơn hàng bị xoá
 
 ---
 
-### 8. Payments
+### 8. Thanh toán
 
-**Purpose**: Online payment transactions (SePay VietQR).
+**Mục đích**: Giao dịch thanh toán trực tuyến (SePay VietQR).
 
-**Tables**: `payments`
+**Bảng**: `payments`
 
 #### PAYMENT
 
-| Field            | Type     | Constraints           | Description                                      |
+| Trường            | Kiểu     | Ràng buộc           | Mô tả                                      |
 | ---------------- | -------- | --------------------- | ------------------------------------------------ |
-| id               | UUID     | PK                    | Primary Key                                      |
-| order_id         | UUID     | FK, Unique, Nullable  | Links to order (optional for subscriptions)      |
-| tenant_id        | UUID     | FK                    | Links to tenant                                  |
-| method           | Enum     | Required              | PaymentMethod (SEPAY_QR, BILL_TO_TABLE, etc.)    |
-| status           | Enum     | Default: PENDING      | PaymentStatus (PENDING, COMPLETED, FAILED, etc.) |
-| amount           | Decimal  | Required              | Payment amount                                   |
-| currency         | String   | Default: "VND"        | Currency code                                    |
-| transaction_id   | String   | Nullable              | SePay transaction ID                             |
-| bank_code        | String   | Nullable              | Bank code (VCB, TCB, MB, etc.)                   |
-| account_number   | String   | Nullable              | Merchant account number                          |
-| qr_content       | String   | Nullable              | VietQR code data                                 |
-| deep_link        | String   | Nullable              | Banking app deep link                            |
-| transfer_content | String   | Nullable              | Transfer description/reference code              |
-| provider_data    | JSON     | Nullable              | Raw webhook data from SePay                      |
-| failure_reason   | String   | Nullable              | Error message if failed                          |
-| paid_at          | DateTime | Nullable              | Payment completion timestamp                     |
-| refunded_at      | DateTime | Nullable              | Refund timestamp                                 |
-| expires_at       | DateTime | Required              | Payment link expiry (15 minutes default)         |
+| id               | UUID     | PK                    | Khóa chính                                      |
+| order_id         | UUID     | FK, Duy nhất, Có thể rỗng  | Liên kết đến đơn hàng (tùy chọn cho đăng ký)      |
+| tenant_id        | UUID     | FK                    | Liên kết đến tenant                              |
+| method           | Enum     | Bắt buộc              | PaymentMethod (SEPAY_QR, BILL_TO_TABLE, v.v.)    |
+| status           | Enum     | Mặc định: PENDING      | PaymentStatus (PENDING, COMPLETED, FAILED, v.v.) |
+| amount           | Decimal  | Bắt buộc              | Số tiền thanh toán                                           |
+| currency         | String   | Mặc định: "VND"        | Mã tiền tệ                                       |
+| transaction_id   | String   | Có thể rỗng              | ID giao dịch SePay                             |
+| bank_code        | String   | Có thể rỗng              | Mã ngân hàng (VCB, TCB, MB, v.v.)                   |
+| account_number   | String   | Có thể rỗng              | Số tài khoản nhà cung cấp                          |
+| qr_content       | String   | Có thể rỗng              | Dữ liệu mã VietQR                                 |
+| deep_link        | String   | Có thể rỗng              | Liên kết sâu ứng dụng ngân hàng                            |
+| transfer_content | String   | Có thể rỗng              | Mô tả/mã tham chiếu chuyển khoản              |
+| provider_data    | JSON     | Có thể rỗng              | Dữ liệu webhook thô từ SePay                      |
+| failure_reason   | String   | Có thể rỗng              | Thông báo lỗi nếu không thành công                          |
+| paid_at          | DateTime | Có thể rỗng              | Dấu thời gian hoàn thành thanh toán                     |
+| refunded_at      | DateTime | Có thể rỗng              | Dấu thời gian hoàn lại                                 |
+| expires_at       | DateTime | Bắt buộc              | Hết hạn liên kết thanh toán (mặc định 15 phút)         |
 
-**Indexes**: `(tenant_id, status)`, `(transaction_id)`, `(expires_at)`
+**Chỉ mục**: `(tenant_id, status)`, `(transaction_id)`, `(expires_at)`
 
-**Relations**: order, tenant
+**Quan hệ**: order, tenant
 
-**Business Rules**:
-- One payment per order (1:1 relationship via unique constraint on order_id)
-- `order_id` nullable to support subscription payments
-- Payment expires after 15 minutes if not completed
-- Webhook updates status based on bank confirmation
-- ✅ **Implemented**: SePay VietQR integration with webhook + polling fallback
+**Quy tắc kinh doanh**:
+- Một thanh toán cho mỗi đơn hàng (quan hệ 1:1 thông qua ràng buộc duy nhất trên order_id)
+- `order_id` có thể rỗng để hỗ trợ thanh toán đăng ký
+- Thanh toán hết hạn sau 15 phút nếu không hoàn thành
+- Webhook cập nhật trạng thái dựa trên xác nhận ngân hàng
+- ✅ **Triển khai**: Tích hợp SePay VietQR với webhook + fallback bằng cách poll
 
 ---
 
-### 9. Bills
+### 9. Hóa đơn
 
-**Purpose**: Group multiple orders for table checkout (bill consolidation).
+**Mục đích**: Nhóm nhiều đơn hàng để thanh toán bàn (hợp nhất hóa đơn).
 
-**Tables**: `bills`
+**Bảng**: `bills`
 
 #### BILL
 
-| Field          | Type     | Constraints       | Description                                    |
+| Trường          | Kiểu     | Ràng buộc       | Mô tả                                    |
 | -------------- | -------- | ----------------- | ---------------------------------------------- |
-| id             | UUID     | PK                | Primary Key                                    |
-| bill_number    | String   | Unique globally   | Human-readable bill ID (e.g., "BILL-20260120-0001") |
-| tenant_id      | UUID     | FK                | Links to tenant                                |
-| table_id       | UUID     | FK (RESTRICT)     | Links to table                                 |
-| session_id     | UUID     | Required          | Links to table session                         |
-| subtotal       | Decimal  | Required          | Sum of all orders before adjustments           |
-| discount       | Decimal  | Default: 0        | Bill-level discount                            |
-| tip            | Decimal  | Default: 0        | Bill-level tip                                 |
-| service_charge | Decimal  | Default: 0        | Service charge amount                          |
-| tax            | Decimal  | Default: 0        | Tax amount                                     |
-| total          | Decimal  | Required          | Final amount after adjustments                 |
-| payment_method | Enum     | Default: BILL_TO_TABLE | PaymentMethod                             |
-| payment_status | Enum     | Default: PENDING  | PaymentStatus                                  |
-| paid_at        | DateTime | Nullable          | Payment completion timestamp                   |
-| notes          | String   | Nullable          | Additional notes                               |
+| id             | UUID     | PK                | Khóa chính                                    |
+| bill_number    | String   | Duy nhất toàn cầu   | ID hóa đơn dễ đọc (ví dụ: "BILL-20260120-0001") |
+| tenant_id      | UUID     | FK                | Liên kết đến tenant                                |
+| table_id       | UUID     | FK (RESTRICT)     | Liên kết đến bàn                                 |
+| session_id     | UUID     | Bắt buộc          | Liên kết đến phiên bàn                         |
+| subtotal       | Decimal  | Bắt buộc          | Tổng tất cả đơn hàng trước khi điều chỉnh           |
+| discount       | Decimal  | Mặc định: 0        | Chiết khấu ở cấp hóa đơn                            |
+| tip            | Decimal  | Mặc định: 0        | Tip ở cấp hóa đơn                                 |
+| service_charge | Decimal  | Mặc định: 0        | Số tiền phí dịch vụ                                         |
+| tax            | Decimal  | Mặc định: 0        | Số tiền thuế                                     |
+| total          | Decimal  | Bắt buộc          | Số tiền cuối cùng sau khi điều chỉnh                 |
+| payment_method | Enum     | Mặc định: BILL_TO_TABLE | PaymentMethod                             |
+| payment_status | Enum     | Mặc định: PENDING  | PaymentStatus                                  |
+| paid_at        | DateTime | Có thể rỗng        | Dấu thời gian hoàn thành thanh toán                   |
+| notes          | String   | Có thể rỗng        | Ghi chú bổ sung                               |
 
-**Indexes**: `(tenant_id)`, `(table_id)`, `(session_id)`, `(bill_number)`
+**Chỉ mục**: `(tenant_id)`, `(table_id)`, `(session_id)`, `(bill_number)`
 
-**Relations**: tenant, table, orders
+**Quan hệ**: tenant, table, orders
 
-**Business Rules**:
-- Groups multiple orders from same table session
-- `bill_number` unique globally
-- Orders reference `bill_id` when included in a bill
-- Used for "close table" / "request bill" workflow
+**Quy tắc kinh doanh**:
+- Nhóm nhiều đơn hàng từ cùng một phiên bàn
+- `bill_number` duy nhất toàn cầu
+- Các đơn hàng tham chiếu `bill_id` khi được đưa vào hóa đơn
+- Được sử dụng cho quy trình "đóng bàn" / "yêu cầu hóa đơn"
 
 ---
 
-### 10. Subscriptions
+### 10. Đăng ký
 
-**Purpose**: Subscription tiers and usage limits per tenant.
+**Mục đích**: Tầng đăng ký và giới hạn sử dụng cho mỗi tenant.
 
-**Tables**: `subscription_plans`, `tenant_subscriptions`
+**Bảng**: `subscription_plans`, `tenant_subscriptions`
 
 #### SUBSCRIPTION_PLAN
 
-| Field            | Type     | Constraints       | Description                                         |
+| Trường            | Kiểu     | Ràng buộc       | Mô tả                                         |
 | ---------------- | -------- | ----------------- | --------------------------------------------------- |
-| id               | UUID     | PK                | Primary Key                                         |
-| tier             | Enum     | Unique            | SubscriptionTier: FREE, BASIC, PREMIUM              |
-| price_usd        | Decimal  | Default: 0        | Monthly price in USD                                |
-| price_vnd        | Decimal  | Default: 0        | Monthly price in VND                                |
-| max_tables       | Int      | Default: 1        | Max tables allowed (-1 = unlimited)                 |
-| max_menu_items   | Int      | Default: 10       | Max menu items allowed (-1 = unlimited)             |
-| max_orders_month | Int      | Default: 100      | Max orders per month (-1 = unlimited)               |
-| max_staff        | Int      | Default: 1        | Max staff members (-1 = unlimited)                  |
-| features         | JSON     | Default: {}       | Feature flags (analytics, promotions, customBranding) |
-| name             | String   | Required          | Display name (e.g., "Free", "Basic", "Premium")     |
-| description      | String   | Nullable          | Plan description                                    |
-| is_active        | Boolean  | Default: true     | Plan availability flag                              |
+| id               | UUID     | PK                | Khóa chính                                         |
+| tier             | Enum     | Duy nhất            | SubscriptionTier: FREE, BASIC, PREMIUM              |
+| price_usd        | Decimal  | Mặc định: 0        | Giá hàng tháng tính bằng USD                                |
+| price_vnd        | Decimal  | Mặc định: 0        | Giá hàng tháng tính bằng VND                                |
+| max_tables       | Int      | Mặc định: 1        | Bàn tối đa được phép (-1 = không giới hạn)                 |
+| max_menu_items   | Int      | Mặc định: 10       | Mục menu tối đa được phép (-1 = không giới hạn)             |
+| max_orders_month | Int      | Mặc định: 100      | Đơn hàng tối đa mỗi tháng (-1 = không giới hạn)               |
+| max_staff        | Int      | Mặc định: 1        | Thành viên nhân viên tối đa (-1 = không giới hạn)                  |
+| features         | JSON     | Mặc định: {}       | Cờ tính năng (phân tích, khuyến mãi, branding tùy chỉnh) |
+| name             | String   | Bắt buộc          | Tên hiển thị (ví dụ: "Miễn phí", "Cơ bản", "Premium")     |
+| description      | String   | Có thể rỗng        | Mô tả gói                                            |
+| is_active        | Boolean  | Mặc định: true     | Cờ khả dụng gói                              |
 
-**Business Rules**:
-- DB-driven pricing (updateable without deploy)
-- Three tiers: FREE (1 table, 10 items, 100 orders, 1 staff), BASIC (10/50/500/5), PREMIUM (unlimited)
-- Feature flags control access to analytics, promotions, etc.
-- ✅ **Implemented**: Seeded plans in database (see seed.service.ts)
+**Quy tắc kinh doanh**:
+- Giá do DB chạy (có thể cập nhật mà không triển khai)
+- Ba tầng: FREE (1 bàn, 10 mục, 100 đơn hàng, 1 nhân viên), BASIC (10/50/500/5), PREMIUM (không giới hạn)
+- Các cờ tính năng kiểm soát quyền truy cập vào phân tích, khuyến mãi, v.v.
+- ✅ **Triển khai**: Các gói được hạt giống trong cơ sở dữ liệu (xem seed.service.ts)
 
 #### TENANT_SUBSCRIPTION
 
-| Field                | Type     | Constraints        | Description                                   |
+| Trường                | Kiểu     | Ràng buộc        | Mô tả                                   |
 | -------------------- | -------- | ------------------ | --------------------------------------------- |
-| id                   | UUID     | PK                 | Primary Key                                   |
-| tenant_id            | UUID     | FK, Unique (1:1)   | Links to tenant                               |
-| plan_id              | UUID     | FK                 | Links to subscription plan                    |
-| status               | Enum     | Default: ACTIVE    | SubscriptionStatus: ACTIVE, EXPIRED, CANCELLED |
-| current_period_start | DateTime | Required           | Billing period start date                     |
-| current_period_end   | DateTime | Nullable           | Billing period end date (null for FREE)       |
-| orders_this_month    | Int      | Default: 0         | Order count (reset monthly)                   |
-| usage_reset_at       | DateTime | Auto               | Last usage reset timestamp                    |
-| last_payment_id      | UUID     | Nullable           | Reference to payment for upgrade              |
+| id                   | UUID     | PK                 | Khóa chính                                   |
+| tenant_id            | UUID     | FK, Duy nhất (1:1)   | Liên kết đến tenant                               |
+| plan_id              | UUID     | FK                 | Liên kết đến gói đăng ký                    |
+| status               | Enum     | Mặc định: ACTIVE    | SubscriptionStatus: ACTIVE, EXPIRED, CANCELLED |
+| current_period_start | DateTime | Bắt buộc           | Ngày bắt đầu kỳ thanh toán                     |
+| current_period_end   | DateTime | Có thể rỗng        | Ngày kết thúc kỳ thanh toán (null cho FREE)       |
+| orders_this_month    | Int      | Mặc định: 0         | Số lượng đơn hàng (đặt lại hàng tháng)                    |
+| usage_reset_at       | DateTime | Tự động               | Dấu thời gian đặt lại sử dụng cuối cùng                    |
+| last_payment_id      | UUID     | Có thể rỗng        | Tham chiếu đến thanh toán để nâng cấp              |
 
-**Indexes**: `(tenant_id)`, `(plan_id)`, `(status)`
+**Chỉ mục**: `(tenant_id)`, `(plan_id)`, `(status)`
 
-**Business Rules**:
-- One subscription per tenant (1:1 relationship)
-- FREE tier never expires (`current_period_end` = null)
-- Usage counters reset monthly at `usage_reset_at`
-- Status EXPIRED triggers when payment not renewed
-- ✅ **Implemented**: All new tenants start on FREE plan
+**Quy tắc kinh doanh**:
+- Một đăng ký cho mỗi tenant (quan hệ 1:1)
+- Tầng FREE không bao giờ hết hạn (`current_period_end` = null)
+- Các bộ đếm sử dụng được đặt lại hàng tháng tại `usage_reset_at`
+- Trạng thái EXPIRED kích hoạt khi thanh toán không được gia hạn
+- ✅ **Triển khai**: Tất cả các tenant mới bắt đầu trên gói FREE
 
 ---
 
-### 11. Promotions
+### 11. Khuyến mãi
 
-**Purpose**: Discount codes and vouchers.
+**Mục đích**: Mã chiết khấu và phiếu giảm giá.
 
-**Tables**: `promotions`
+**Bảng**: `promotions`
 
 #### PROMOTION
 
-| Field           | Type     | Constraints         | Description                                        |
+| Trường           | Kiểu     | Ràng buộc         | Mô tả                                        |
 | --------------- | -------- | ------------------- | -------------------------------------------------- |
-| id              | UUID     | PK                  | Primary Key                                        |
-| tenant_id       | UUID     | FK                  | Links to tenant                                    |
-| code            | String   | Unique per tenant   | Promo code (e.g., "SUMMER20", "WELCOME10")         |
-| description     | String   | Nullable            | Code description                                   |
-| type            | Enum     | Required            | PromotionType: PERCENTAGE, FIXED                   |
-| value           | Decimal  | Required            | Discount value (20 for 20%, or fixed amount)       |
-| min_order_value | Decimal  | Nullable            | Minimum order amount to apply                      |
-| max_discount    | Decimal  | Nullable            | Maximum discount cap (for percentage discounts)    |
-| usage_limit     | Int      | Nullable            | Max total uses (null = unlimited)                  |
-| usage_count     | Int      | Default: 0          | Current usage count                                |
-| starts_at       | DateTime | Required            | Promotion start date                               |
-| expires_at      | DateTime | Required            | Promotion end date                                 |
-| active          | Boolean  | Default: true       | Active status                                      |
+| id              | UUID     | PK                  | Khóa chính                                  |
+| tenant_id       | UUID     | FK                  | Liên kết đến tenant                                    |
+| code            | String   | Duy nhất cho tenant   | Mã promo (ví dụ: "SUMMER20", "WELCOME10")         |
+| description     | String   | Có thể rỗng            | Mô tả mã                                    |
+| type            | Enum     | Bắt buộc            | PromotionType: PERCENTAGE, FIXED                   |
+| value           | Decimal  | Bắt buộc            | Giá trị chiết khấu (20 cho 20%, hoặc số tiền cố định)       |
+| min_order_value | Decimal  | Có thể rỗng            | Số tiền đơn hàng tối thiểu để áp dụng                      |
+| max_discount    | Decimal  | Có thể rỗng            | Giới hạn chiết khấu tối đa (cho chiết khấu phần trăm)    |
+| usage_limit     | Int      | Có thể rỗng            | Sử dụng tối đa (null = không giới hạn)                  |
+| usage_count     | Int      | Mặc định: 0          | Số lượng sử dụng hiện tại                                |
+| starts_at       | DateTime | Bắt buộc            | Ngày bắt đầu khuyến mãi                           |
+| expires_at      | DateTime | Bắt buộc            | Ngày kết thúc khuyến mãi                             |
+| active          | Boolean  | Mặc định: true       | Trạng thái hoạt động                                      |
 
-**Indexes**: `(tenant_id, active)`, `(code)`
+**Chỉ mục**: `(tenant_id, active)`, `(code)`
 
-**Unique Constraint**: `(tenant_id, code)`
+**Ràng buộc duy nhất**: `(tenant_id, code)`
 
-**Business Rules**:
-- Promo codes unique per tenant
-- PERCENTAGE type: value is percentage (e.g., 20 = 20% off)
-- FIXED type: value is fixed amount (e.g., 50000 = 50,000 VND off)
-- `usage_count` incremented on each use
-- Disabled when `usage_count >= usage_limit`
+**Quy tắc kinh doanh**:
+- Các mã promo duy nhất cho mỗi tenant
+- Loại PERCENTAGE: giá trị là phần trăm (ví dụ: 20 = giảm 20%)
+- Loại FIXED: giá trị là số tiền cố định (ví dụ: 50000 = giảm 50.000 VND)
+- `usage_count` tăng lên khi mỗi lần sử dụng
+- Vô hiệu hóa khi `usage_count >= usage_limit`
 
 ---
 
-### 12. Reviews
+### 12. Đánh giá
 
-**Purpose**: Customer ratings for individual order items.
+**Mục đích**: Xếp hạng của khách hàng cho các mục đơn hàng riêng lẻ.
 
-**Tables**: `item_reviews`
+**Bảng**: `item_reviews`
 
 #### ITEM_REVIEW
 
-| Field        | Type     | Constraints         | Description                              |
+| Trường        | Kiểu     | Ràng buộc         | Mô tả                              |
 | ------------ | -------- | ------------------- | ---------------------------------------- |
-| id           | UUID     | PK                  | Primary Key                              |
-| order_item_id | UUID     | FK, Unique (1:1)    | Links to order item                      |
-| session_id   | UUID     | Required            | Session tracking                         |
-| tenant_id    | UUID     | Required            | Links to tenant (for queries)            |
-| rating       | Int      | Required, Range: 1-5 | Star rating                             |
-| comment      | String   | Nullable            | Review comment                           |
+| id           | UUID     | PK                  | Khóa chính                              |
+| order_item_id | UUID     | FK, Duy nhất (1:1)    | Liên kết đến mục đơn hàng                      |
+| session_id   | UUID     | Bắt buộc            | Theo dõi phiên                         |
+| tenant_id    | UUID     | Bắt buộc            | Liên kết đến tenant (cho các truy vấn)            |
+| rating       | Int      | Bắt buộc, Phạm vi: 1-5 | Xếp hạng sao                             |
+| comment      | String   | Có thể rỗng            | Bình luận đánh giá                           |
 
-**Indexes**: `(session_id)`, `(tenant_id, created_at)`
+**Chỉ mục**: `(session_id)`, `(tenant_id, created_at)`
 
-**Unique Constraint**: `(order_item_id)` - one review per order item
+**Ràng buộc duy nhất**: `(order_item_id)` - một đánh giá cho mỗi mục đơn hàng
 
-**Business Rules**:
-- Customers can rate individual items from their order
-- Rating scale: 1-5 stars
-- One review per order item (enforced by unique constraint)
-- Reviews linked to session for analytics
+**Quy tắc kinh doanh**:
+- Khách hàng có thể đánh giá các mục riêng lẻ từ đơn hàng của họ
+- Thang đánh giá: 1-5 sao
+- Một đánh giá cho mỗi mục đơn hàng (được thực thi bằng ràng buộc duy nhất)
+- Các bài đánh giá được liên kết với phiên để phân tích
 
 ---
 
-## Enums Reference
+## Tham chiếu Enums
 
 ### TenantStatus
-- `DRAFT` - Tenant created but onboarding incomplete
-- `ACTIVE` - Tenant active and operational
-- `SUSPENDED` - Tenant suspended (payment issue, policy violation)
+- `DRAFT` - Tenant được tạo nhưng onboarding chưa hoàn thành
+- `ACTIVE` - Tenant hoạt động và vận hành
+- `SUSPENDED` - Tenant bị tạm dừng (sự cố thanh toán, vi phạm chính sách)
 
 ### UserRole
-- `OWNER` - Full access to tenant dashboard
-- `STAFF` - Limited access (waiter console)
-- `KITCHEN` - Kitchen display system only
+- `OWNER` - Truy cập đầy đủ vào bảng điều khiển tenant
+- `STAFF` - Truy cập hạn chế (console phục vụ)
+- `KITCHEN` - Chỉ hệ thống hiển thị bếp
 
 ### UserStatus
-- `ACTIVE` - User account active
-- `INACTIVE` - User deactivated by admin
-- `PENDING` - Email verification pending
-- `LOCKED` - Account locked (security)
+- `ACTIVE` - Tài khoản người dùng hoạt động
+- `INACTIVE` - Tài khoản người dùng bị vô hiệu hóa bởi quản trị viên
+- `PENDING` - Xác minh email chưa hoàn thành
+- `LOCKED` - Tài khoản bị khóa (bảo mật)
 
 ### MenuItemStatus
-- `DRAFT` - Item not visible to customers
-- `PUBLISHED` - Item visible in menu
-- `ARCHIVED` - Item hidden but kept for history
+- `DRAFT` - Mục không hiển thị cho khách hàng
+- `PUBLISHED` - Mục hiển thị trong menu
+- `ARCHIVED` - Mục bị ẩn nhưng giữ lại cho lịch sử
 
 ### ModifierType
-- `SINGLE_CHOICE` - Radio button selection (e.g., Size)
-- `MULTI_CHOICE` - Checkbox selection (e.g., Toppings)
+- `SINGLE_CHOICE` - Lựa chọn nút radio (ví dụ: Kích thước)
+- `MULTI_CHOICE` - Lựa chọn checkbox (ví dụ: Topping)
 
 ### TableStatus
-- `AVAILABLE` - Table ready for customers
-- `OCCUPIED` - Table has active session
-- `RESERVED` - Table reserved for booking
-- `INACTIVE` - Table out of service
+- `AVAILABLE` - Bàn sẵn sàng cho khách hàng
+- `OCCUPIED` - Bàn có phiên hoạt động
+- `RESERVED` - Bàn được đặt trước
+- `INACTIVE` - Bàn không hoạt động
 
 ### OrderStatus
-- `PENDING` - Order created, waiting for staff/kitchen acknowledgement
-- `RECEIVED` - Kitchen acknowledged order
-- `PREPARING` - Kitchen preparing food
-- `READY` - Food ready to serve
-- `SERVED` - Food delivered to table
-- `COMPLETED` - Customer finished eating
-- `PAID` - Payment completed
-- `CANCELLED` - Order cancelled
+- `PENDING` - Đơn hàng được tạo, chờ xác nhận từ nhân viên/bếp
+- `RECEIVED` - Bếp đã xác nhận đơn hàng
+- `PREPARING` - Bếp đang chuẩn bị thức ăn
+- `READY` - Thức ăn sẵn sàng để phục vụ
+- `SERVED` - Thức ăn được giao tới bàn
+- `COMPLETED` - Khách hàng hoàn tất ăn
+- `PAID` - Thanh toán hoàn tất
+- `CANCELLED` - Đơn hàng bị hủy
 
 ### PaymentMethod
-- `BILL_TO_TABLE` - Pay at table after eating (default for Vietnam)
-- `SEPAY_QR` - SePay VietQR banking (✅ implemented)
-- `CARD_ONLINE` - Online card payment (❌ enum exists in schema, NOT integrated in MVP)
-- `CASH` - Cash payment recorded by staff
+- `BILL_TO_TABLE` - Trả tiền tại bàn sau khi ăn (mặc định cho Việt Nam)
+- `SEPAY_QR` - Thanh toán SePay VietQR ngân hàng (✅ triển khai)
+- `CARD_ONLINE` - Thanh toán trực tuyến bằng thẻ (❌ enum tồn tại trong lược đồ, KHÔNG được tích hợp trong MVP)
+- `CASH` - Thanh toán tiền mặt được ghi lại bởi nhân viên
 
 ### PaymentStatus
-- `PENDING` - Awaiting payment
-- `PROCESSING` - Payment in progress
-- `COMPLETED` - Payment successful
-- `FAILED` - Payment failed
-- `REFUNDED` - Payment refunded
+- `PENDING` - Chờ thanh toán
+- `PROCESSING` - Thanh toán đang diễn ra
+- `COMPLETED` - Thanh toán thành công
+- `FAILED` - Thanh toán thất bại
+- `REFUNDED` - Thanh toán được hoàn lại
 
 ### OrderPriority
-- `NORMAL` - Within estimated prep time (≤100%)
-- `HIGH` - Exceeded estimated time (100-150%)
-- `URGENT` - Significantly overdue (>150%)
+- `NORMAL` - Trong thời gian chuẩn bị ước tính (≤100%)
+- `HIGH` - Vượt quá thời gian ước tính (100-150%)
+- `URGENT` - Quá hạn đáng kể (>150%)
 
 ### PromotionType
-- `PERCENTAGE` - Percentage discount (e.g., 20%)
-- `FIXED` - Fixed amount discount (e.g., 50,000 VND)
+- `PERCENTAGE` - Chiết khấu phần trăm (ví dụ: 20%)
+- `FIXED` - Chiết khấu số tiền cố định (ví dụ: 50.000 VND)
 
 ### SubscriptionTier
-- `FREE` - Free tier with limits
-- `BASIC` - Paid tier with higher limits
-- `PREMIUM` - Unlimited tier
+- `FREE` - Tầng miễn phí có giới hạn
+- `BASIC` - Tầng trả phí với giới hạn cao hơn
+- `PREMIUM` - Tầng không giới hạn
 
 ### SubscriptionStatus
-- `ACTIVE` - Subscription active
-- `EXPIRED` - Payment not renewed
-- `CANCELLED` - User cancelled subscription
+- `ACTIVE` - Đăng ký hoạt động
+- `EXPIRED` - Thanh toán không được gia hạn
+- `CANCELLED` - Người dùng hủy đăng ký
 
 ---
 
-## Related Documentation
+## Tài liệu Liên quan
 
-- **Prisma Schema**: [source/apps/api/prisma/schema.prisma](../../../source/apps/api/prisma/schema.prisma)
+- **Lược đồ Prisma**: [source/apps/api/prisma/schema.prisma](../../../source/apps/api/prisma/schema.prisma)
 - **Migrations**: [source/apps/api/prisma/migrations/](../../../source/apps/api/prisma/migrations/)
-- **ER Diagram**: [er_diagram.md](./er_diagram.md)
-- **API Documentation**: [OpenAPI Specification](../../common/openapi.exported.json)
-- **Architecture**: [ARCHITECTURE.md](../../common/ARCHITECTURE.md)
-- **User Guide**: [USER_GUIDE.md](../../common/USER_GUIDE.md)
+- **Sơ đồ ER**: [er_diagram.md](./er_diagram.md)
+- **Tài liệu API**: [Đặc tả OpenAPI](../../common/openapi.exported.json)
+- **Kiến trúc**: [ARCHITECTURE.md](../../common/ARCHITECTURE.md)
+- **Hướng dẫn Người dùng**: [USER_GUIDE.md](../../common/USER_GUIDE.md)
 
 ---
 
-**Last Schema Migration**: `20260119060909_add_user_avatar`  
-**Total Migrations**: 20+ applied  
-**Database Provider**: PostgreSQL  
+**Migration Lược đồ Cuối cùng**: `20260119060909_add_user_avatar`  
+**Tổng Migration**: 20+ được áp dụng  
+**Nhà cung cấp Cơ sở dữ liệu**: PostgreSQL  
 **ORM**: Prisma 5.x

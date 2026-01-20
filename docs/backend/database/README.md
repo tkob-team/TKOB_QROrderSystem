@@ -1,32 +1,32 @@
-# Database Documentation Index
+# Chỉ mục Tài liệu Cơ sở Dữ liệu
 
-Welcome to the database documentation for the **TKOB_QROrderSystem** project.
+Chào mừng đến với tài liệu cơ sở dữ liệu cho dự án **TKOB_QROrderSystem**.
 
 ---
 
-## Quick Links
+## Liên kết Nhanh
 
-- **[Schema Description](./description.md)** - Comprehensive database schema documentation
-  - Schema overview (multi-tenant isolation, naming conventions)
-  - Domain models (Tenants, Users, Tables, Menu, Orders, Payments, Subscriptions, etc.)
-  - Enums reference
-  - Business rules and constraints
+- **[Mô tả Schema](./description.md)** - Tài liệu schema cơ sở dữ liệu toàn diện
+  - Tổng quan schema (cách ly multi-tenant, các quy ước đặt tên)
+  - Domain models (Tenants, Users, Tables, Menu, Orders, Payments, Subscriptions, v.v.)
+  - Tham chiếu Enums
+  - Các quy tắc kinh doanh và ràng buộc
 
-- **[ER Diagram](./er_diagram.md)** - Entity-Relationship diagram
-  - Visual representation of database relationships
-  - Key foreign keys and associations
+- **[Sơ đồ ER](./er_diagram.md)** - Sơ đồ Entity-Relationship
+  - Biểu diễn trực quan các mối quan hệ cơ sở dữ liệu
+  - Các khóa ngoại chính và liên kết
 
-- **[Prisma Schema](../../../source/apps/api/prisma/schema.prisma)** - Source of truth
-  - Complete Prisma schema definition
-  - All models, enums, and relations
+- **[Prisma Schema](../../../source/apps/api/prisma/schema.prisma)** - Nguồn sự thật
+  - Định nghĩa schema Prisma hoàn chỉnh
+  - Tất cả các models, enums, và relations
 
-- **[Migrations](../../../source/apps/api/prisma/migrations/)** - Database migration history
+- **[Migrations](../../../source/apps/api/prisma/migrations/)** - Lịch sử migration cơ sở dữ liệu
   - 21 migrations applied (as of 2026-01-20)
   - Migration lock file
 
 ---
 
-## Database Technology Stack
+## Stack Công nghệ Cơ sở Dữ liệu
 
 - **Database**: PostgreSQL
 - **ORM**: Prisma 5.x
@@ -35,41 +35,41 @@ Welcome to the database documentation for the **TKOB_QROrderSystem** project.
 
 ---
 
-## Quick Start (Local Development)
+## Khởi động Nhanh (Local Development)
 
-### Prerequisites
+### Yêu cầu Tiên quyết
 
 - Node.js >=18.0.0 (source: root package.json engines field)
 - PostgreSQL 16+ (source: docker-compose.yaml image tag postgres:16-alpine)
 - pnpm package manager
 
-### Option 1: Docker Compose (Recommended)
+### Tùy chọn 1: Docker Compose (Được Khuyến nghị)
 
 ```bash
-# Start PostgreSQL in Docker
+# Khởi động PostgreSQL trong Docker
 cd source/docker
 docker compose up -d postgres
 
-# Wait for PostgreSQL to be ready
-# Database will be available at: postgresql://postgres:postgres@localhost:5432/qr_ordering_dev
+# Chờ PostgreSQL sẵn sàng
+# Database sẽ có sẵn tại: postgresql://postgres:postgres@localhost:5432/qr_ordering_dev
 # (Defaults from docker-compose.yaml: user=postgres, password=postgres, db=qr_ordering_dev)
 ```
 
-### Option 2: Local PostgreSQL
+### Tùy chọn 2: PostgreSQL Cục bộ
 
 ```bash
-# Ensure PostgreSQL is running locally
-# Update .env file with your database URL:
+# Đảm bảo PostgreSQL chạy cục bộ
+# Cập nhật tệp .env với URL cơ sở dữ liệu của bạn:
 DATABASE_URL="ADD HERE (example: postgresql://user:password@localhost:5432/dbname)"
 ```
 
-### Apply Migrations
+### Áp dụng Migrations
 
 ```bash
-# Navigate to API directory
+# Điều hướng đến thư mục API
 cd source/apps/api
 
-# Apply all pending migrations
+# Áp dụng tất cả các migrations đang chờ
 pnpm prisma:migrate:deploy
 # OR: npx prisma migrate deploy --config=./prisma/prisma.config.ts
 
@@ -82,7 +82,7 @@ pnpm db:generate
 # OR: npx prisma generate --config=./prisma/prisma.config.ts
 ```
 
-### Reset Database with Seed Data
+### Reset Cơ sở Dữ liệu với Seed Data
 
 ```bash
 # Reset database and re-seed subscription plans (deletes ALL data)
@@ -93,9 +93,9 @@ pnpm db:reset
 # ⚠️ WARNING: Deletes all tenant data, users, orders, etc.
 ```
 
-**Note:** No official seed script for demo tenant/menu data. Use `db:reset` only to clear database and re-seed subscription plans (source: package.json line 26, scripts/reset-db.ts).
+**Ghi chú:** Không có script seed chính thức cho dữ liệu demo tenant/menu. Chỉ sử dụng `db:reset` để xóa cơ sở dữ liệu và tái seed các kế hoạch đăng ký (source: package.json line 26, scripts/reset-db.ts).
 
-### View Database in Prisma Studio
+### Xem Cơ sở Dữ liệu trong Prisma Studio
 
 ```bash
 # Open Prisma Studio GUI
@@ -108,9 +108,9 @@ pnpm db:studio
 
 ---
 
-## Common Commands
+## Các Lệnh Thường gặp
 
-### Create New Migration
+### Tạo New Migration
 
 ```bash
 cd source/apps/api
@@ -119,7 +119,7 @@ pnpm db:migrate
 npx prisma migrate dev --name describe_your_changes --config=./prisma/prisma.config.ts
 ```
 
-### Reset Database (⚠️ Destructive)
+### Reset Cơ sở Dữ liệu (⚠️ Destructive)
 
 ```bash
 cd source/apps/api
@@ -128,14 +128,14 @@ pnpm db:reset
 # Source: package.json line 26, scripts/reset-db.ts
 ```
 
-### Check Migration Status
+### Kiểm tra Trạng thái Migration
 
 ```bash
 cd source/apps/api
 pnpm prisma migrate status
 ```
 
-### Format Schema
+### Định dạng Schema
 
 ```bash
 cd source/apps/api
@@ -144,11 +144,11 @@ pnpm prisma format
 
 ---
 
-## Database Connection
+## Kết nối Cơ sở Dữ liệu
 
-### Environment Variables
+### Biến Môi trường
 
-Configure these in your `.env` file:
+Cấu hình những biến này trong tệp `.env` của bạn:
 
 ```env
 # PostgreSQL connection string (Docker default from docker-compose.yaml)
@@ -158,7 +158,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
 DATABASE_URL_DIRECT="postgresql://postgres:postgres@localhost:5432/qr_ordering_dev"
 ```
 
-### Connection Pool Settings
+### Cài đặt Connection Pool
 
 - **Default Pool Size**: 10 connections (Prisma default)
 - **Connection Timeout**: 10 seconds
@@ -166,35 +166,35 @@ DATABASE_URL_DIRECT="postgresql://postgres:postgres@localhost:5432/qr_ordering_d
 
 ---
 
-## Schema Conventions
+## Quy ước Schema
 
-### Table Names
+### Tên Bảng
 - Lowercase snake_case plural (e.g., `menu_items`, `user_sessions`)
 
-### Column Names
+### Tên Cột
 - Lowercase snake_case (e.g., `created_at`, `tenant_id`)
 - Foreign keys follow `{entity}_id` pattern
 
-### Primary Keys
+### Khóa Chính
 - UUID v4 format (`@id @default(uuid())`)
 
 ### Timestamps
 - All tables include `created_at` and `updated_at`
 - Auto-managed by Prisma
 
-### Multi-Tenant Isolation
+### Cách ly Multi-Tenant
 - Every tenant-scoped table has `tenant_id` foreign key
 - Composite indexes on `(tenant_id, ...)` for performance
 - Application-level filtering via Prisma middleware
 
 ---
 
-## Migration History
+## Lịch sử Migration
 
 **Latest Migration**: `20260119060909_add_user_avatar`  
 **Total Migrations**: 21 (as of 2026-01-20)
 
-### Key Milestones
+### Các Cột mốc Chính
 
 1. **Init** (`20251124113547`) - Initial auth and tenant models
 2. **Payments** (`20251204091502`) - Payment configuration schema
@@ -214,7 +214,7 @@ View full migration history in [migrations folder](../../../source/apps/api/pris
 
 ## Backup & Recovery
 
-### Backup Database
+### Backup Cơ sở Dữ liệu
 
 ```bash
 # Backup with pg_dump (replace DB name with your actual database)
@@ -224,7 +224,7 @@ pg_dump -h localhost -U postgres -d qr_ordering_dev > backup_$(date +%Y%m%d_%H%M
 # pg_dump -t tenants -t users ... (specify tables as needed)
 ```
 
-### Restore Database
+### Khôi phục Cơ sở Dữ liệu
 
 ```bash
 # Restore from backup (replace DB name with your actual database)
@@ -233,7 +233,7 @@ psql -h localhost -U postgres -d qr_ordering_dev < backup_file.sql
 
 ---
 
-## Performance Tips
+## Mẹo Hiệu suất
 
 1. **Indexes**: Critical indexes defined in schema.prisma:
    - `(tenant_id, ...)` for all tenant-scoped queries
@@ -249,9 +249,9 @@ psql -h localhost -U postgres -d qr_ordering_dev < backup_file.sql
 
 ---
 
-## Troubleshooting
+## Khắc phục Sự cố
 
-### Migration Conflicts
+### Xung đột Migration
 
 ```bash
 # If migrations are out of sync
@@ -262,7 +262,7 @@ pnpm prisma migrate resolve --applied <migration_name>
 pnpm prisma migrate reset
 ```
 
-### Connection Issues
+### Vấn đề Kết nối
 
 ```bash
 # Test database connection
@@ -271,7 +271,7 @@ pnpm prisma db pull
 # If successful, connection is working
 ```
 
-### Prisma Client Generation
+### Tạo Prisma Client
 
 ```bash
 # Regenerate Prisma Client
@@ -284,7 +284,7 @@ pnpm db:generate
 
 ---
 
-## Additional Resources
+## Tài nguyên Bổ sung
 
 - **Prisma Documentation**: https://www.prisma.io/docs
 - **PostgreSQL Documentation**: https://www.postgresql.org/docs/

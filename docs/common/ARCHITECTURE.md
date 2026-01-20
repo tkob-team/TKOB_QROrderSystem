@@ -8,112 +8,112 @@
 
 ---
 
-## Document Navigation
+## Điều hướng Tài liệu
 
-**Related Documentation:**
-- [Setup Guide](./SETUP.md) - Installation and development environment setup (ports: API 3000, Customer 3001, Tenant 3002)
-- [OpenAPI Specification](./OPENAPI.md) - Complete API reference (~140+ operations; see openapi.exported.json for exact count)
-- [User Guide](./USER_GUIDE.md) - End-user documentation for all roles
-- [Database Schema](../backend/database/description.md) - Detailed schema documentation
-- [ER Diagram](../backend/database/er_diagram.md) - Entity relationship diagram
-
----
-
-## Table of Contents (Quick Navigation)
-
-**Status:** [0. Implementation Status](#0-implementation-status) - What's built vs planned  
-**Overview:** [1. Tổng quan Kiến trúc](#1-tổng-quan-kiến-trúc) - High-level architecture  
-**Components:** [2. Các Thành Phần Chính](#2-các-thành-phần-chính) - Client, backend, data layers  
-**Flows:** [3. Luồng Dữ liệu](#3-luồng-dữ-liệu) - Ordering, state transitions, QR generation  
-**Security:** [4. Security Architecture](#4-security-architecture) - Auth, multi-tenancy, encryption  
-**Scale:** [5. Scalability & Performance](#5-scalability--performance) - Scaling strategies  
-**Deploy:** [6. Deployment Architecture](#6-deployment-architecture) - Infrastructure (suggested)  
-**Observability:** [7. Monitoring & Observability](#7-monitoring--observability) - Logs, metrics (suggested)  
-**Tech Stack:** [8. Technology Stack Summary](#8-technology-stack-summary) - All technologies used  
-**NFRs:** [9. Non‑Functional Requirements](#9-nonfunctional-requirements) - Availability, reliability  
-**Future:** [10. Future Enhancements](#10-future-enhancements) - Planned features  
-**Decisions:** [11. Quyết định Kiến trúc (ADR)](#11-quyết-định-kiến-trúc-adr) - Architecture decisions
+**Tài liệu Liên quan:**
+- [Setup Guide](./SETUP.md) - Cài đặt và thiết lập môi trường phát triển (ports: API 3000, Customer 3001, Tenant 3002)
+- [OpenAPI Specification](./OPENAPI.md) - Tài liệu API đầy đủ (~140+ operations; xem openapi.exported.json để biết số lượng chính xác)
+- [User Guide](./USER_GUIDE.md) - Tài liệu cho người dùng cuối với tất cả các vai trò
+- [Database Schema](../backend/database/description.md) - Tài liệu schema chi tiết
+- [ER Diagram](../backend/database/er_diagram.md) - Sơ đồ quan hệ thực thể
 
 ---
 
-## 0. Implementation Status
+## Mục Lục (Điều hướng Nhanh)
 
-### 0.1. Implemented in Current Version (Evidence-Based)
+**Trạng thái:** [0. Trạng thái Triển khai](#0-trạng-thái-triển-khai) - Những gì đã xây dựng vs dự định  
+**Tổng quan:** [1. Tổng quan Kiến trúc](#1-tổng-quan-kiến-trúc) - Kiến trúc cấp cao  
+**Thành phần:** [2. Các Thành Phần Chính](#2-các-thành-phần-chính) - Client, backend, data layers  
+**Luồng dữ liệu:** [3. Luồng Dữ liệu](#3-luồng-dữ-liệu) - Quá trình đặt hàng, chuyển trạng thái, tạo QR  
+**Bảo mật:** [4. Security Architecture](#4-security-architecture) - Xác thực, multi-tenancy, mã hóa  
+**Khả năng mở rộng:** [5. Scalability & Performance](#5-scalability--performance) - Chiến lược mở rộng  
+**Triển khai:** [6. Deployment Architecture](#6-deployment-architecture) - Cơ sở hạ tầng (đề xuất)  
+**Quan sát:** [7. Monitoring & Observability](#7-monitoring--observability) - Logs, metrics (đề xuất)  
+**Tech Stack:** [8. Technology Stack Summary](#8-technology-stack-summary) - Tất cả các công nghệ được sử dụng  
+**Yêu cầu:** [9. Non‑Functional Requirements](#9-nonfunctional-requirements) - Khả dụng, độ tin cậy  
+**Tương lai:** [10. Future Enhancements](#10-future-enhancements) - Các tính năng dự định  
+**Quyết định:** [11. Quyết định Kiến trúc (ADR)](#11-quyết-định-kiến-trúc-adr) - Các quyết định kiến trúc
 
-**Applications Deployed:**
-- ✅ **API Service** (`source/apps/api`) - NestJS backend with ~140+ REST operations (see openapi.exported.json)
+---
+
+## 0. Trạng thái Triển khai
+
+### 0.1. Các tính năng đã triển khai trong phiên bản hiện tại (Dựa trên bằng chứng)
+
+**Ứng dụng Đã triển khai:**
+- ✅ **API Service** (`source/apps/api`) - NestJS backend với ~140+ REST operations (xem openapi.exported.json)
 - ✅ **Web Tenant Dashboard** (`source/apps/web-tenant`) - Next.js 15 admin/staff/kitchen interface
 - ✅ **Web Customer App** (`source/apps/web-customer`) - Next.js 15 customer ordering interface
 
-**Implemented Modules (Verified from OpenAPI Spec & Codebase):**
+**Các Module Đã triển khai (Xác minh từ OpenAPI Spec & Codebase):**
 
-| Module | Status | Evidence |
+| Module | Trạng thái | Bằng chứng |
 |--------|--------|----------|
-| **Authentication** | ✅ Implemented | 2-step OTP registration, JWT auth, refresh tokens, password reset |
-| **Tenants** | ✅ Implemented | Restaurant profile, settings, pricing config, onboarding flow |
-| **Menu Management** | ✅ Implemented | Categories, items, modifiers (SINGLE/MULTI choice), photos (bulk upload) |
-| **Tables & QR Codes** | ✅ Implemented | CRUD, QR generation/regeneration, download (PNG/SVG/PDF/ZIP), sessions |
-| **Cart** | ✅ Implemented | Session-based cart with modifiers, real-time pricing |
-| **Orders** | ✅ Implemented | Checkout, status tracking, cancellation (5min window), append items |
-| **Payments** | ✅ Implemented | SePay QR integration, webhook + polling fallback, bill-to-table |
-| **Payment Config** | ✅ Implemented | SePay API key, bank account, test QR generation |
-| **KDS (Kitchen Display)** | ✅ Implemented | Priority-based display (Normal/High/Urgent), real-time stats |
-| **Staff Management** | ✅ Implemented | Email invitations, role assignment (STAFF/KITCHEN), limits per plan |
-| **Subscriptions** | ✅ Implemented | FREE/BASIC/PREMIUM tiers, usage tracking, upgrade via SePay |
-| **Analytics** | ✅ Implemented | Revenue, orders, popular items, hourly distribution, table performance |
-| **Reviews & Ratings** | ✅ Implemented | 1-5 star ratings per order item, aggregated stats |
-| **Promotions** | ✅ Implemented | Discount codes (PERCENTAGE/FIXED), usage limits, validation |
-| **Bills** | ✅ Implemented | Bill generation when closing table session |
-| **WebSocket** | ✅ Implemented | Real-time order updates (order.gateway.ts) |
-| **Health Checks** | ✅ Implemented | Basic, detailed, readiness, liveness endpoints |
+| **Xác thực** | ✅ Đã triển khai | OTP 2 bước, xác thực JWT, làm mới token, đặt lại mật khẩu |
+| **Tenants** | ✅ Đã triển khai | Hồ sơ nhà hàng, cài đặt, cấu hình giá, luồng onboarding |
+| **Quản lý Menu** | ✅ Đã triển khai | Danh mục, mục, modifier (SINGLE/MULTI choice), ảnh (tải hàng loạt) |
+| **Bàn & QR Code** | ✅ Đã triển khai | CRUD, tạo/tạo lại QR, tải xuống (PNG/SVG/PDF/ZIP), phiên |
+| **Giỏ hàng** | ✅ Đã triển khai | Giỏ hàng dựa trên phiên với modifier, giá thực tế |
+| **Đơn hàng** | ✅ Đã triển khai | Thanh toán, theo dõi trạng thái, hủy (cửa sổ 5 phút), thêm mục |
+| **Thanh toán** | ✅ Đã triển khai | Tích hợp SePay QR, webhook + polling fallback, tính tiền theo bàn |
+| **Cấu hình Thanh toán** | ✅ Đã triển khai | Khóa API SePay, tài khoản ngân hàng, tạo QR kiểm tra |
+| **KDS (Hiển thị Bếp)** | ✅ Đã triển khai | Hiển thị dựa trên mức độ ưu tiên (Thường/Cao/Khẩn cấp), thống kê thực tế |
+| **Quản lý Nhân viên** | ✅ Đã triển khai | Lời mời email, gán vai trò (STAFF/KITCHEN), giới hạn theo gói |
+| **Đăng ký** | ✅ Đã triển khai | Cấp FREE/BASIC/PREMIUM, theo dõi sử dụng, nâng cấp qua SePay |
+| **Phân tích** | ✅ Đã triển khai | Doanh thu, đơn hàng, mục phổ biến, phân bố theo giờ, hiệu suất bàn |
+| **Đánh giá & Xếp hạng** | ✅ Đã triển khai | Xếp hạng 1-5 sao cho từng mục đơn hàng, thống kê tổng hợp |
+| **Khuyến mãi** | ✅ Đã triển khai | Mã chiết khấu (PERCENTAGE/FIXED), giới hạn sử dụng, xác thực |
+| **Hóa đơn** | ✅ Đã triển khai | Tạo hóa đơn khi đóng phiên bàn |
+| **WebSocket** | ✅ Đã triển khai | Cập nhật đơn hàng thực tế (order.gateway.ts) |
+| **Kiểm tra Sức khỏe** | ✅ Đã triển khai | Endpoints cơ bản, chi tiết, sẵn sàng, sống |
 
-**Database:**
-- ✅ **PostgreSQL** with Prisma ORM
-- ✅ Multi-tenant isolation via `tenantId` field (application-level)
-- ✅ 21 migrations applied (as of 2026-01-20) (see `prisma/migrations/`)
+**Cơ sở dữ liệu:**
+- ✅ **PostgreSQL** với Prisma ORM
+- ✅ Cách ly đa tenant qua trường `tenantId` (application-level)
+- ✅ 21 migrations đã áp dụng (tính đến 2026-01-20) (xem `prisma/migrations/`)
 
-**Authentication & Security:**
-- ✅ JWT bearer tokens with refresh mechanism
-- ✅ Role-based access control: OWNER, STAFF, KITCHEN
-- ✅ Session-based customer authentication (QR scan → table_session_id cookie)
-- ✅ Subscription-based feature gating
+**Xác thực & Bảo mật:**
+- ✅ JWT bearer tokens với cơ chế làm mới
+- ✅ Kiểm soát truy cập dựa trên vai trò: OWNER, STAFF, KITCHEN
+- ✅ Xác thực khách hàng dựa trên phiên (quét QR → table_session_id cookie)
+- ✅ Gating tính năng dựa trên đăng ký
 
-**API Documentation:**
-- ✅ Full OpenAPI 3.0 spec: [openapi.exported.json](./openapi.exported.json)
-- ✅ ~140+ documented operations across multiple API tags (see openapi.exported.json for exact count)
-- ✅ See also: [OPENAPI.md](./OPENAPI.md)
+**Tài liệu API:**
+- ✅ Đặc tả OpenAPI 3.0 đầy đủ: [openapi.exported.json](./openapi.exported.json)
+- ✅ ~140+ hoạt động được ghi chép trên nhiều thẻ API (xem openapi.exported.json để biết số lượng chính xác)
+- ✅ Xem thêm: [OPENAPI.md](./OPENAPI.md)
 
-**User Documentation:**
-- ✅ Comprehensive user guide: [USER_GUIDE.md](./USER_GUIDE.md)
+**Tài liệu Người dùng:**
+- ✅ Hướng dẫn người dùng toàn diện: [USER_GUIDE.md](./USER_GUIDE.md)
 
-### 0.2. Planned / Not in Current MVP
+### 0.2. Đã lên kế hoạch / Không có trong MVP hiện tại
 
-**Features NOT Implemented:**
-- ❌ **Card Online Payments** - CARD_ONLINE enum exists but no processor integration
-- ❌ **Order Modification** - Cannot edit order after checkout (must cancel and reorder)
-- ❌ **Split Bills** - All orders at table combined into one bill
-- ❌ **Inventory Management** - No stock tracking or ingredient management
-- ❌ **Shift Management** - No staff clock-in/clock-out or shift reports
-- ❌ **Multi-Location** - Single restaurant per tenant (no chain support)
-- ❌ **Kitchen Printer Integration** - Screen-only KDS display
-- ❌ **Native Mobile Apps** - Web-only (no iOS/Android native)
-- ❌ **Offline Mode** - Internet required for all operations
-- ❌ **Advanced Analytics** - Cohort analysis, heatmaps, predictive analytics
-- ❌ **POS Integration** - No external POS system connectivity
-- ❌ **Loyalty/Rewards** - No points or rewards program
+**Các tính năng CHƯA triển khai:**
+- ❌ **Card Online Payments** - CARD_ONLINE enum tồn tại nhưng không có tích hợp processor
+- ❌ **Order Modification** - Không thể chỉnh sửa đơn hàng sau khi thanh toán (phải hủy và đặt lại)
+- ❌ **Split Bills** - Tất cả đơn hàng ở bàn được gộp thành một hóa đơn
+- ❌ **Inventory Management** - Không có theo dõi kho hoặc quản lý nguyên liệu
+- ❌ **Shift Management** - Không có chấm công/giờ về hoặc báo cáo ca làm
+- ❌ **Multi-Location** - Một nhà hàng trên mỗi tenant (không hỗ trợ chuỗi)
+- ❌ **Kitchen Printer Integration** - Chỉ hiển thị KDS trên màn hình
+- ❌ **Native Mobile Apps** - Web-only (không có iOS/Android native)
+- ❌ **Offline Mode** - Cần kết nối internet để tất cả hoạt động
+- ❌ **Advanced Analytics** - Phân tích cohort, heatmaps, phân tích dự đoán
+- ❌ **POS Integration** - Không có kết nối hệ thống POS bên ngoài
+- ❌ **Loyalty/Rewards** - Không có chương trình điểm hoặc phần thưởng
 
-**Infrastructure NOT Implemented:**
-- ❌ **Redis Cache** - Module exists but not actively used for caching
-- ❌ **Elasticsearch/Meilisearch** - No full-text search engine
-- ❌ **Message Queue** - No RabbitMQ/Kafka for async tasks
-- ❌ **Kubernetes** - Development uses Docker Compose only
-- ❌ **CDN** - No Cloudflare/CloudFront integration documented
-- ❌ **Object Storage** - Photos stored locally in `uploads/` directory
+**Cơ sở hạ tầng CHƯA triển khai:**
+- ❌ **Redis Cache** - Module tồn tại nhưng không được sử dụng tích cực để lưu vào bộ nhớ cache
+- ❌ **Elasticsearch/Meilisearch** - Không có công cụ tìm kiếm toàn văn
+- ❌ **Message Queue** - Không có RabbitMQ/Kafka cho các tác vụ không đồng bộ
+- ❌ **Kubernetes** - Phát triển chỉ sử dụng Docker Compose
+- ❌ **CDN** - Không có tích hợp Cloudflare/CloudFront được ghi chép
+- ❌ **Object Storage** - Ảnh được lưu trữ cục bộ trong thư mục `uploads/`
 
-**Deployment NOT Documented:**
-- ❌ Production deployment details
-- ❌ CI/CD pipeline configuration
-- ❌ Monitoring/observability setup (Grafana, Prometheus, etc.)
+**Triển khai CHƯA được Ghi chép:**
+- ❌ Chi tiết triển khai sản xuất
+- ❌ Cấu hình pipeline CI/CD
+- ❌ Thiết lập giám sát/quan sát (Grafana, Prometheus, v.v.)
 
 ---
 
@@ -144,7 +144,7 @@
                            │
 ┌─────────────────────────────────────────────────────────────┐
 │         API GATEWAY / CDN (⚠️ SUGGESTED, NOT IN MVP)        │
-│  - Rate Limiting (not implemented)                          │
+│  - Rate Limiting (chưa triển khai)                          │
 │  - SSL Termination (handled by deployment platform)         │
 │  - Request Routing (direct connection to backend in MVP)    │
 └─────────────────────────────────────────────────────────────┘
@@ -241,20 +241,20 @@
 
 ### 2.2. API Gateway / CDN (⚠️ Suggested for Production, Not in MVP)
 
-**Note:** MVP kết nối trực tiếp từ frontend đến backend API. API Gateway/CDN là đề xuất cho production deployment.
+**Ghi chú:** MVP kết nối trực tiếp từ frontend đến backend API. API Gateway/CDN là đề xuất cho production deployment.
 
-**Vai trò (Planned):**
+**Vai trò (Dự định):**
 - Load balancing
 - Rate limiting (chống abuse)
 - SSL termination
 - Caching tĩnh (menu images)
-- Request routing theo tenant
+- Định tuyến yêu cầu theo tenant
 
 **Công nghệ gợi ý:**
 - Cloudflare / AWS CloudFront
 - NGINX / Traefik
 
-**Current MVP:** Frontend apps (localhost:3001, localhost:3002) kết nối trực tiếp với API (localhost:3000).
+**MVP Hiện tại:** Frontend apps (localhost:3001, localhost:3002) kết nối trực tiếp với API (localhost:3000).
 
 ### 2.3. Backend API Service
 
@@ -316,20 +316,20 @@
 - Staff actions: update status, mark paid, cancel
 - Request bill notification
 
-##### Payment Module ✅
-- **SePay Integration:** VietQR payment with QR code generation
-- **Webhook:** Automatic payment confirmation from SePay
-- **Polling Fallback:** Manual check if webhook unavailable
-- **Exchange Rate:** USD to VND conversion
-- Payment status tracking: PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
+##### Mô-đun Thanh toán ✅
+- **Tích hợp SePay:** Thanh toán VietQR với tạo mã QR
+- **Webhook:** Xác nhận thanh toán tự động từ SePay
+- **Fallback Polling:** Kiểm tra thủ công nếu webhook không khả dụng
+- **Tỷ giá hối đoái:** Chuyển đổi USD sang VND
+- Theo dõi trạng thái thanh toán: PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
 
-##### Payment Config Module ✅
-- SePay API key management (encrypted storage)
-- Bank account configuration (account number, name, bank code)
-- Webhook secret for verification
-- Test QR generation to validate config
-- Supported banks list
-- Public endpoint to check enabled payment methods
+##### Mô-đun Cấu hình Thanh toán ✅
+- Quản lý khóa API SePay (lưu trữ được mã hóa)
+- Cấu hình tài khoản ngân hàng (số tài khoản, tên, mã ngân hàng)
+- Bí mật webhook để xác minh
+- Tạo mã QR kiểm tra để xác thực cấu hình
+- Danh sách các ngân hàng được hỗ trợ
+- Endpoint công khai để kiểm tra các phương thức thanh toán được bật
 
 ##### KDS Module ✅
 - Active orders grouped by priority (normal, high, urgent)
@@ -434,11 +434,11 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 **Migrations**: Sử dụng migration tool (Prisma, TypeORM, Drizzle)
 
 #### 2.4.2. Redis
-**Vai trò** (⚠️ **Partially Implemented**):
+**Vai trò** (⚠️ **Một phần được triển khai**):
 - ✅ Session storage (table_session_id for customer QR sessions)
 - ✅ Registration OTP storage (2-step registration flow)
 - ⚠️ Cache menu data (module exists but not actively used in current version)
-- ❌ Rate limiting counters (not implemented)
+- ❌ Rate limiting counters (chưa triển khai)
 - ❌ Real‑time pub/sub (WebSocket used instead)
 
 **Current Usage**:
@@ -451,25 +451,25 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 #### 2.4.3. File Storage
 **Current Implementation**: ⚠️ **Local File System** (MVP)
 
-**Photo Storage (Persistent):**
-- **Location:** `source/apps/api/uploads/menu-photos/`, `source/apps/api/uploads/avatars/`
-- **Served by:** NestJS static file middleware
-- **Upload:** Single or bulk (up to 10 per item)
-- **Formats:** JPEG, PNG, WebP, GIF
-- **Max size:** 5MB per photo
+**Lưu trữ Ảnh (Lâu dài):**
+- **Vị trí:** `source/apps/api/uploads/menu-photos/`, `source/apps/api/uploads/avatars/`
+- **Phục vụ bởi:** NestJS static file middleware
+- **Tải lên:** Đơn lẻ hoặc hàng loạt (tối đa 10 cho mỗi mục)
+- **Định dạng:** JPEG, PNG, WebP, GIF
+- **Kích thước tối đa:** 5MB mỗi ảnh
 
-**QR Code Generation (Dynamic, Not Stored):**
-- **Generation:** On-the-fly using `qrcode` library when requested
-- **Download formats:** PNG, SVG, PDF (single), ZIP/PDF (bulk)
-- **Storage:** NOT stored on disk - regenerated each time
-- **Token:** QR contains JWT token (signed payload with table/tenant info)
+**Tạo mã QR (Động, Không được Lưu trữ):**
+- **Tạo:** Theo yêu cầu bằng thư viện `qrcode`
+- **Định dạng tải xuống:** PNG, SVG, PDF (đơn lẻ), ZIP/PDF (hàng loạt)
+- **Lưu trữ:** KHÔNG được lưu trữ trên đĩa - tái tạo mỗi lần
+- **Token:** QR chứa token JWT (payload ký với thông tin table/tenant)
 
-**Clarification:** QR codes are dynamically generated and NOT persisted to object storage. Only user-uploaded photos (menu items, avatars) are stored on disk.
+**Làm rõ:** Mã QR được tạo động và KHÔNG được lưu trữ vào lưu trữ đối tượng. Chỉ các ảnh do người dùng tải lên (các mục menu, ảnh đại diện) mới được lưu trữ trên đĩa.
 
 **Future Migration (Planned):**
-- ❌ **NOT IMPLEMENTED**: AWS S3 / Cloudflare R2 for photo storage
-- ❌ **NOT IMPLEMENTED**: CDN integration for faster delivery
-- **Note:** Current local file system setup is suitable for MVP, requires cloud storage for production scale
+- ❌ **Chưa triển khai**: AWS S3 / Cloudflare R2 cho lưu trữ ảnh
+- ❌ **Chưa triển khai**: Tích hợp CDN để cấp phát nhanh hơn
+- **Ghi chú:** Thiết lập hệ thống tệp cục bộ hiện tại phù hợp cho MVP, yêu cầu lưu trữ đám mây cho sản xuất ở quy mô lớn
 
 ### 2.5. External Services
 
@@ -477,29 +477,29 @@ audit_logs (id, tenant_id, entity, action, user, timestamp, ...)
 **Provider**: **SePay** (VietQR - Vietnam bank transfer) ✅ **IMPLEMENTED**
 
 **Flow**:
-1. Customer checkout → Backend creates SePay payment intent
-2. Generate VietQR code with transfer content (order number)
-3. Customer scans QR with banking app → Makes transfer
-4. **Webhook** receives notification from SePay → Auto-confirm payment
-5. **Polling Fallback**: If webhook unavailable, manually check via SePay API
-6. Update order status to PAID
+1. Khách hàng thanh toán → Backend tạo ý định thanh toán SePay
+2. Tạo mã VietQR với nội dung chuyển (số đơn hàng)
+3. Khách hàng quét mã QR bằng ứng dụng ngân hàng → Thực hiện chuyển tiền
+4. **Webhook** nhận thông báo từ SePay → Xác nhận thanh toán tự động
+5. **Fallback Polling**: Nếu webhook không khả dụng, kiểm tra thủ công qua SePay API
+6. Cập nhật trạng thái đơn hàng thành PAID
 
-**Supported Methods**:
-- ✅ **BILL_TO_TABLE**: Pay cash at end (mark paid by staff)
-- ✅ **SEPAY_QR**: VietQR instant payment
-- ⚠️ **CARD_ONLINE**: Enum exists but not integrated
-- ✅ **CASH**: For bill closing
+**Các phương thức được hỗ trợ**:
+- ✅ **BILL_TO_TABLE**: Thanh toán tiền mặt vào cuối (nhân viên đánh dấu đã trả)
+- ✅ **SEPAY_QR**: Thanh toán VietQR tức thời
+- ⚠️ **CARD_ONLINE**: Enum tồn tại nhưng chưa tích hợp
+- ✅ **CASH**: Để đóng hóa đơn
 
-**Configuration**:
-- Tenant-level SePay API key (encrypted)
-- Bank account details (account number, name, bank code)
-- Webhook secret for verification
-- Test mode available
+**Cấu hình**:
+- Khóa API SePay cấp Tenant (được mã hóa)
+- Thông tin tài khoản ngân hàng (số tài khoản, tên, mã ngân hàng)
+- Bí mật webhook để xác minh
+- Chế độ kiểm tra có sẵn
 
-**Note**: Original plan mentioned Stripe, but **SePay is actually implemented** for Vietnam market.
+**Ghi chú**: Kế hoạch gốc đề cập đến Stripe, nhưng **SePay thực sự đã được triển khai** cho thị trường Vietnam.
 
-#### 2.5.2. Notification Service
-**Channels**:
+#### 2.5.2. Dịch vụ Thông báo
+**Các kênh**:
 - **Email**: Xác nhận đơn, receipt (SendGrid/SES)
 - **SMS**: Thông báo đơn sẵn sàng (Twilio) – optional
 
@@ -613,7 +613,7 @@ Each transition:
 
 ### 3.3. QR Code Generation Flow
 
-**Phase 1: Table Creation (One-time)**
+**Giai đoạn 1: Tạo Bàn (Một lần)**
 ```
 Admin → [Create Table]
            │
@@ -632,7 +632,7 @@ Admin → [Create Table]
     Return table metadata
 ```
 
-**Phase 2: QR Download (On-demand, Dynamic)**
+**Giai đoạn 2: Tải xuống QR (Theo yêu cầu, Động)**
 ```
 Admin requests QR download
     (GET /tables/{id}/qr/download?format=PNG/SVG/PDF)
@@ -653,30 +653,30 @@ Admin requests QR download
     Download complete
 ```
 
-**Bulk Download:**
+**Tải xuống Hàng loạt:**
 ```
-Admin requests all QR codes
+Admin yêu cầu tất cả mã QR
     (GET /tables/qr/download-all?format=ZIP/PDF)
            │
            ↓
-    Loop through all tables
+    Vòng lặp qua tất cả các bàn
            │
            ↓
-    Generate each QR code dynamically
+    Tạo mã QR động cho mỗi bàn
            │
            ↓
-    Combine into ZIP or multi-page PDF
+    Kết hợp thành ZIP hoặc PDF nhiều trang
            │
            ↓
-    Stream combined file to browser
-    (NOT stored to disk)
+    Stream tệp kết hợp đến trình duyệt
+    (KHÔNG được lưu trữ trên đĩa)
 ```
 
 **Important Notes:**
-- ✅ **Token stored:** Only JWT token hash is persisted in database
-- ❌ **QR NOT stored:** Images are generated on-demand and streamed directly
-- ⚠️ **Object Storage:** Planned for future but NOT in current MVP
-- 🔄 **Regeneration:** When QR is regenerated, only token hash is updated in DB
+- ✅ **Token stored:** Chỉ hash JWT token được lưu trữ trong cơ sở dữ liệu
+- ❌ **QR NOT stored:** Ảnh được tạo theo yêu cầu và stream trực tiếp
+- ⚠️ **Object Storage:** Dự định cho tương lai nhưng CHỈ không có trong MVP hiện tại
+- 🔄 **Regeneration:** Khi QR được tạo lại, chỉ hash token trong DB được cập nhật
 
 **Token Structure (JWT Payload):**
 ```json
@@ -730,7 +730,7 @@ await prisma.order.findMany({
 
 **Optional Future Enhancement (Database-Level RLS)**:
 ```sql
--- NOT IMPLEMENTED: Example RLS policy for future consideration
+-- Chưa triển khai: Ví dụ chính sách RLS dành cho xem xét tương lai
 CREATE POLICY tenant_isolation ON orders
   USING (tenant_id = current_setting('app.current_tenant')::uuid);
 ```
@@ -741,14 +741,14 @@ CREATE POLICY tenant_isolation ON orders
 - **At Rest**: Database encryption (PostgreSQL + disk encryption)
 - **Sensitive Fields**: PII (phone, email) → AES‑256 encryption
 
-### 4.4. Rate Limiting (❌ Not Implemented)
+### 4.4. Giới hạn Tốc độ (❌ Chưa triển khai)
 
-**Note**: Rate limiting chưa được triển khai trong MVP. Đây là các mức đề xuất cho production.
+**Ghi chú**: Giới hạn tốc độ chưa được triển khai trong MVP. Đây là các mức đề xuất cho sản xuất.
 
-**Suggested Levels**:
-- **API Gateway**: ADD HERE req/min per IP (khi API Gateway được deploy)
-- **Application**: ADD HERE req/min per user (cần implement với Redis)
-- **QR Scan**: ADD HERE scans/min per QR code (cần implement anti-spam logic)
+**Các mức được đề xuất**:
+- **API Gateway**: ADD HERE req/min per IP (khi API Gateway được triển khai)
+- **Application**: ADD HERE req/min per user (cần triển khai với Redis)
+- **QR Scan**: ADD HERE scans/min per QR code (cần triển khai logic chống spam)
 
 ---
 
@@ -788,20 +788,20 @@ CREATE POLICY tenant_isolation ON orders
 
 ---
 
-## 6. Deployment Architecture (⚠️ Suggested / Planned)
+## 6. Kiến trúc Triển khai (⚠️ Đề xuất / Dự định)
 
-**Note**: Section này mô tả các deployment strategies được đề xuất cho production. MVP hiện tại có thể deploy đơn giản hơn (e.g., Vercel for frontend, Railway/Render for backend).
+**Ghi chú**: Phần này mô tả các chiến lược triển khai được đề xuất cho sản xuất. MVP hiện tại có thể triển khai đơn giản hơn (ví dụ: Vercel cho frontend, Railway/Render cho backend).
 
-### 6.1. Environment Strategy
+### 6.1. Chiến lược Môi trường
 
-**Environments**:
-- **Development**: Local Docker Compose
-- **Staging**: Cloud (mimic production)
-- **Production**: Cloud (multi‑region optional)
+**Môi trường**:
+- **Phát triển**: Local Docker Compose
+- **Staging**: Cloud (giống sản xuất)
+- **Sản xuất**: Cloud (multi-region tùy chọn)
 
-### 6.2. Infrastructure (Suggested)
+### 6.2. Cơ sở hạ tầng (Đề xuất)
 
-**Option 1: Cloud Managed Services**
+**Tùy chọn 1: Dịch vụ Quản lý Cloud**
 ```
 Frontend: Vercel / Netlify
 Backend: Fly.io / Render / Railway
@@ -810,7 +810,7 @@ Redis: Upstash / Redis Cloud
 Storage: Cloudflare R2 / AWS S3
 ```
 
-**Option 2: Container Orchestration**
+**Tùy chọn 2: Điều phối Container**
 ```
 Platform: Docker + Kubernetes (GKE/EKS)
 Services: Pods with auto‑scaling
@@ -818,7 +818,7 @@ Database: Cloud SQL / RDS
 Redis: ElastiCache / Memorystore
 ```
 
-### 6.3. CI/CD Pipeline
+### 6.3. Pipeline CI/CD
 
 ```
 Code Push (GitHub)
@@ -836,24 +836,24 @@ Deployment
      └─→ Production (manual approval)
 ```
 
-**Steps**:
-1. Run tests (unit, integration)
-2. Build Docker image
-3. Push to container registry
-4. Deploy to staging
-5. Run smoke tests
-6. Manual approval → Deploy to production
-7. Health check & rollback if needed
+**Các bước**:
+1. Chạy kiểm tra (unit, integration)
+2. Xây dựng Docker image
+3. Đẩy đến container registry
+4. Triển khai đến staging
+5. Chạy smoke tests
+6. Manual approval → Triển khai đến sản xuất
+7. Kiểm tra sức khỏe & rollback nếu cần
 
 ---
 
-## 7. Monitoring & Observability (⚠️ Suggested / Planned)
+## 7. Giám sát & Quan sát (⚠️ Đề xuất / Dự định)
 
-**Note**: Section này mô tả observability best practices được đề xuất. MVP hiện tại có basic console logging và có thể mở rộng dần.
+**Ghi chú**: Phần này mô tả best practices quan sát được đề xuất. MVP hiện tại có cơ bản console logging và có thể mở rộng dần dần.
 
-### 7.1. Logging (Suggested)
+### 7.1. Logging (Đề xuất)
 
-**Structured Logs (Recommended Format)**:
+**Structured Logs (Định dạng được Đề xuất)**:
 ```json
 {
   "timestamp": "2025-01-11T10:30:00Z",
@@ -867,47 +867,47 @@ Deployment
 }
 ```
 
-**Centralized (Planned)**: Loki / ELK / CloudWatch Logs  
-**Current MVP**: Console logging với NestJS Logger
+**Tập trung hóa (Dự định)**: Loki / ELK / CloudWatch Logs  
+**MVP Hiện tại**: Console logging với NestJS Logger
 
-### 7.2. Metrics (Suggested)
+### 7.2. Metrics (Đề xuất)
 
-**Key Metrics (Recommended)**:
+**Các Metrics Chính (Được Đề xuất)**:
 - Request rate, error rate, latency (RED)
 - Database connections, query time
 - Cache hit rate
 - Order conversion rate
 
-**Dashboards (Planned)**: Grafana với alerts  
-**Current MVP**: Có thể dùng platform metrics (Railway/Vercel dashboards)
+**Dashboards (Dự định)**: Grafana với alerts  
+**MVP Hiện tại**: Có thể sử dụng platform metrics (Railway/Vercel dashboards)
 
-### 7.3. Tracing (Suggested)
+### 7.3. Tracing (Đề xuất)
 
-**Distributed Tracing (Planned)**:
-- OpenTelemetry instrumentation (chưa implement)
+**Distributed Tracing (Dự định)**:
+- OpenTelemetry instrumentation (chưa triển khai)
 - Trace request từ frontend → backend → database
 - Visualize trong Jaeger
 
-**Current MVP**: Request ID correlation trong logs
+**MVP Hiện tại**: Request ID correlation trong logs
 
-### 7.4. Alerts (Suggested)
+### 7.4. Alerts (Đề xuất)
 
-**Critical Alerts (Recommended)**:
+**Critical Alerts (Được Đề xuất)**:
 - API error rate > 5%
 - Database connection pool exhausted
 - Payment webhook failure
 - Disk usage > 80%
 
-**Channels (Planned)**: PagerDuty, Slack, Email  
-**Current MVP**: Manual monitoring, platform alerts (Railway/Vercel)
+**Channels (Dự định)**: PagerDuty, Slack, Email  
+**MVP Hiện tại**: Manual monitoring, platform alerts (Railway/Vercel)
 
 ---
 
-## 8. Technology Stack Summary
+## 8. Tóm tắt Tech Stack
 
 ### 8.1. Frontend
 
-| Component | Technology | Status |
+| Thành phần | Công nghệ | Trạng thái |
 |-----------|-----------|--------|
 | Customer App | **Next.js 15** App Router + TypeScript | ✅ Implemented |
 | Tenant Dashboard | **Next.js 15** App Router + TypeScript | ✅ Implemented |
@@ -917,18 +917,18 @@ Deployment
 | State Management | Zustand | ✅ Implemented |
 | API Client | TanStack Query | ✅ Implemented |
 | Code Generation | **Orval** (from OpenAPI spec) | ✅ Implemented |
-| PWA | ❌ Not implemented | Planned |
+| PWA | ❌ Chưa triển khai | Planned |
 
-**Note**: Original plan mentioned separate React apps, but **Next.js 15** with App Router is used for both customer and tenant applications.
+**Ghi chú**: Kế hoạch gốc đề cập đến các ứng dụng React riêng biệt, nhưng **Next.js 15** với App Router được sử dụng cho cả ứng dụng khách hàng và ứng dụng tenant.
 
 ### 8.2. Backend
 
-| Component | Technology | Status |
+| Thành phần | Công nghệ | Trạng thái |
 |-----------|-----------|--------|
 | Runtime | **Node.js 20+** | ✅ Implemented |
 | Framework | **NestJS** | ✅ Implemented |
 | Language | **TypeScript** | ✅ Implemented |
-| API Docs | **OpenAPI 3.0 (Swagger)** - ~140+ operations (see openapi.exported.json) | ✅ Implemented |
+| API Docs | **OpenAPI 3.0 (Swagger)** - ~140+ operations (xem openapi.exported.json) | ✅ Implemented |
 | Validation | **class-validator + class-transformer** | ✅ Implemented |
 | ORM | **Prisma** | ✅ Implemented |
 | File Upload | **Multer** | ✅ Implemented |
@@ -938,9 +938,9 @@ Deployment
 | Password Hashing | **bcrypt** | ✅ Implemented |
 | JWT | **@nestjs/jwt** | ✅ Implemented |
 
-### 8.3. Database & Storage
+### 8.3. Cơ sở dữ liệu & Lưu trữ
 
-| Component | Technology | Status |
+| Thành phần | Công nghệ | Trạng thái |
 |-----------|-----------|--------|
 | Primary DB | **PostgreSQL** (via Prisma) | ✅ Implemented |
 | ORM | **Prisma** | ✅ Implemented |
@@ -950,11 +950,11 @@ Deployment
 | Object Storage | ❌ AWS S3 / Cloudflare R2 | Planned |
 | Search | ❌ Elasticsearch / Meilisearch | Planned |
 
-**Database Schema**: See [docs/backend/database/description.md](../backend/database/description.md) and [ER diagram](../backend/database/er_diagram.md)
+**Database Schema**: Xem [docs/backend/database/description.md](../backend/database/description.md) và [ER diagram](../backend/database/er_diagram.md)
 
-### 8.4. Infrastructure
+### 8.4. Cơ sở hạ tầng
 
-| Component | Technology |
+| Thành phần | Công nghệ |
 |-----------|-----------|
 | Container | Docker |
 | Orchestration | Docker Compose (dev) / Kubernetes (prod) |
@@ -962,9 +962,9 @@ Deployment
 | Hosting | Fly.io / Render / Vercel |
 | CDN | Cloudflare |
 
-### 8.5. Observability
+### 8.5. Quan sát
 
-| Component | Technology |
+| Thành phần | Công nghệ |
 |-----------|-----------|
 | Logging | Winston/Pino → Loki |
 | Metrics | Prometheus + Grafana |
@@ -973,50 +973,50 @@ Deployment
 
 ---
 
-## 9. Non‑Functional Requirements
+## 9. Các Yêu cầu Phi‑Chức năng
 
-### 9.1. Availability
-- **Target**: 99.5% uptime (MVP), 99.9% (production)
-- **Strategy**: Load balancing, health checks, auto‑restart
+### 9.1. Tính Khả dụng
+- **Mục tiêu**: Uptime 99.5% (MVP), 99.9% (sản xuất)
+- **Chiến lược**: Load balancing, health checks, auto‑restart
 
-### 9.2. Reliability
-- **Database**: Automated backups (daily), point‑in‑time recovery
+### 9.2. Độ tin cậy
+- **Cơ sở dữ liệu**: Automated backups (hàng ngày), point‑in‑time recovery
 - **Idempotency**: Order creation với idempotency keys
 - **Retry Logic**: Exponential backoff cho external APIs
 
-### 9.3. Maintainability
+### 9.3. Khả năng Bảo trì
 - **Code Quality**: ESLint, Prettier, Husky hooks
 - **Documentation**: OpenAPI, JSDoc, Architecture Decision Records (ADR)
 - **Testing**: Unit (>80%), Integration, E2E
 
-### 9.4. Security
-- **OWASP Top 10**: Mitigated
-- **Secrets Management**: Environment variables, Vault (future)
+### 9.4. Bảo mật
+- **OWASP Top 10**: Giảm thiểu
+- **Secrets Management**: Environment variables, Vault (tương lai)
 - **Vulnerability Scanning**: Dependabot, Snyk
 
 ---
 
-## 10. Future Enhancements (Planned but Not Implemented)
+## 10. Nâng cấp Tương lai (Đã lên kế hoạch nhưng chưa triển khai)
 
-**Phase 2 Features:**
+**Các tính năng Giai đoạn 2:**
 - Multi‑location support (chuỗi nhà hàng)
 - Advanced Analytics (cohort analysis, heatmaps)
 - Inventory Management (stock tracking)
 - Native mobile apps (iOS/Android)
 
-**Technical Improvements:**
+**Cải thiện Kỹ thuật:**
 - Microservices architecture (tách modules)
 - Event‑Driven with message queue (RabbitMQ/Kafka)
 - GraphQL API (thay thế REST)
 - Cloud storage (S3/R2) + CDN integration
 
-**Integrations:**
+**Tích hợp:**
 - POS Systems (Square, Toast)
 - Kitchen Printers (auto-print orders)
 - Loyalty Programs (points, rewards)
 - Third‑party Delivery (Grab, Shopee Food)
 
-**Full planned features list:** See [USER_GUIDE.md Section 7](./USER_GUIDE.md#7-faq--known-limitations) for detailed feature roadmap.
+**Danh sách đầy đủ các tính năng dự định:** Xem [USER_GUIDE.md Phần 7](./USER_GUIDE.md#7-faq--known-limitations) để biết lộ trình tính năng chi tiết.
 
 ---
 
@@ -1024,51 +1024,51 @@ Deployment
 
 ### ADR‑001: Monolithic Modular (MVP)
 **Quyết định**: Bắt đầu với monolith có cấu trúc module rõ ràng.  
-**Lý do**: Đơn giản triển khai, dễ debug, đủ cho MVP.  
-**Trade‑off**: Khó scale độc lập từng module, nhưng có thể refactor sau.
+**Lý do**: Triển khai đơn giản, dễ debug, đủ cho MVP.  
+**Tradeoff**: Khó scale độc lập từng module, nhưng có thể refactor sau.
 
-### ADR‑002: PostgreSQL with Application-Level Isolation
-**Quyết định**: Dùng PostgreSQL với application-level `tenantId` filtering cho multi‑tenant.  
-**Lý do**: ACID, mature, đơn giản implementation cho MVP, cost‑effective.  
-**Trade‑off**: Phụ thuộc vào application logic (không có database-level RLS), nhưng đủ cho SMB scale và dễ debug.  
-**Future**: Có thể thêm Row-Level Security (RLS) policies khi scale lên.
+### ADR‑002: PostgreSQL với Application-Level Isolation
+**Quyết định**: Sử dụng PostgreSQL với application-level `tenantId` filtering cho multi‑tenant.  
+**Lý do**: ACID, mature, triển khai đơn giản cho MVP, cost‑effective.  
+**Tradeoff**: Phụ thuộc vào application logic (không có database-level RLS), nhưng đủ cho SMB scale và dễ debug.  
+**Tương lai**: Có thể thêm Row-Level Security (RLS) policies khi scale lên.
 
 ### ADR‑003: JWT cho Auth
 **Quyết định**: JWT stateless cho staff/admin, token‑based cho customer.  
 **Lý do**: Không cần session server, scale dễ dàng.  
-**Trade‑off**: Không thể revoke JWT ngay lập tức (dùng short TTL + refresh token).
+**Tradeoff**: Không thể revoke JWT ngay lập tức (sử dụng short TTL + refresh token).
 
 ### ADR‑004: SePay VietQR Payment (MVP) ✅
-**Quyết định**: Dùng **SePay** (VietQR - Vietnam bank transfer) thay vì Stripe.  
+**Quyết định**: Sử dụng **SePay** (VietQR - Vietnam bank transfer) thay vì Stripe.  
 **Lý do**: Target market là Vietnam, VietQR phổ biến, không cần credit card, instant confirmation.  
-**Implementation**: Webhook + polling fallback, QR code generation, tenant-level config.  
-**Trade‑off**: Chỉ support Vietnam banks, cần bank account setup per tenant.
+**Triển khai**: Webhook + polling fallback, QR code generation, tenant-level config.  
+**Tradeoff**: Chỉ support Vietnam banks, cần bank account setup per tenant.
 
 ### ADR‑005: Next.js 15 App Router
-**Quyết định**: Dùng **Next.js 15** với App Router cho cả customer và tenant apps.  
+**Quyết định**: Sử dụng **Next.js 15** với App Router cho cả customer và tenant apps.  
 **Lý do**: SSR/SSG support, file-based routing, React Server Components, TypeScript first-class.  
-**Trade‑off**: Learning curve cao hơn Vite, nhưng SEO và performance tốt hơn cho customer app.
+**Tradeoff**: Learning curve cao hơn Vite, nhưng SEO và performance tốt hơn cho customer app.
 
 ### ADR‑006: Orval Code Generation
 **Quyết định**: Generate API client code từ OpenAPI spec bằng **Orval**.  
 **Lý do**: Type-safe API calls, sync giữa backend và frontend, giảm boilerplate.  
-**Trade‑off**: Dependency vào OpenAPI spec quality, cần regenerate khi API thay đổi.
+**Tradeoff**: Dependency vào OpenAPI spec quality, cần regenerate khi API thay đổi.
 
 ---
 
 ## 12. Tài liệu Tham khảo
 
-### 12.1. Internal Docs
-- ✅ [OpenAPI Specification](./openapi.exported.json) - Full API spec with ~140+ operations (exact count in file)
-- ✅ [OpenAPI Documentation](./OPENAPI.md) - API usage guide
-- ✅ [User Guide](./USER_GUIDE.md) - End-user manual for all roles
-- ✅ [Database Schema](../backend/database/description.md) - Prisma schema documentation
-- ✅ [Database ER Diagram](../backend/database/er_diagram.md) - Entity relationship diagram
-- ✅ [Frontend Architecture - Tenant](../frontend/ARCHITECTURE.md) - Next.js app structure
-- ✅ [Orval Code Generation](../frontend/ORVAL.md) - API client generation
-- ✅ [RBAC Guide](../frontend/RBAC_GUIDE.md) - Role-based access control
+### 12.1. Tài liệu Nội bộ
+- ✅ [Đặc tả OpenAPI](./openapi.exported.json) - Spec API đầy đủ với ~140+ operations (đếm chính xác trong file)
+- ✅ [Tài liệu OpenAPI](./OPENAPI.md) - Hướng dẫn sử dụng API
+- ✅ [Hướng dẫn Người dùng](./USER_GUIDE.md) - Hướng dẫn cho người dùng cuối với tất cả các vai trò
+- ✅ [Lược đồ Cơ sở dữ liệu](../backend/database/description.md) - Tài liệu lược đồ Prisma
+- ✅ [Sơ đồ ER Cơ sở dữ liệu](../backend/database/er_diagram.md) - Sơ đồ quan hệ thực thể
+- ✅ [Kiến trúc Frontend - Tenant](../frontend/ARCHITECTURE.md) - Cấu trúc ứng dụng Next.js
+- ✅ [Tạo mã Orval](../frontend/ORVAL.md) - Tạo mã client API
+- ✅ [Hướng dẫn RBAC](../frontend/RBAC_GUIDE.md) - Kiểm soát truy cập dựa trên vai trò
 
-### 12.2. External Resources
+### 12.2. Tài nguyên Bên ngoài
 - [NestJS Documentation](https://docs.nestjs.com/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/current/)
 - [Next.js 15 Documentation](https://nextjs.org/docs)
@@ -1080,15 +1080,15 @@ Deployment
 
 ## 13. Ghi chú & Cập nhật
 
-**Change Log**:
+**Changelog**:
 - **2025‑01‑11**: Phiên bản đầu tiên – kiến trúc tổng quan, modules, tech stack
-- *(Future)*: Cập nhật khi có thay đổi lớn về kiến trúc
+- *(Tương lai)*: Cập nhật khi có thay đổi lớn về kiến trúc
 
-**Contributors**:
+**Những người đóng góp**:
 - *(TBD)*
 
-**Review Cycle**: Quarterly hoặc khi có major feature/refactor
+**Chu kỳ Đánh giá**: Hàng quý hoặc khi có major feature/refactor
 
 ---
 
-**END OF ARCHITECTURE DOCUMENT**
+**KẾT THÚC TÀI LIỆU KIẾN TRÚC**

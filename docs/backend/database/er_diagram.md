@@ -1,8 +1,8 @@
-# Database ER Diagram - TKOB_QROrderSystem
+# Sơ đồ ER Cơ sở dữ liệu - TKOB_QROrderSystem
 
-> **Source of Truth**: `source/apps/api/prisma/schema.prisma`  
-> **Last Updated**: 2026-01-20  
-> **Note**: This diagram shows all major entities with key fields. Non-key columns may be simplified for readability.
+> **Nguồn sự thật**: `source/apps/api/prisma/schema.prisma`  
+> **Cập nhật lần cuối**: 2026-01-20  
+> **Ghi chú**: Sơ đồ này hiển thị tất cả các thực thể chính với các trường chính. Các cột không phải khóa có thể được đơn giản hóa để dễ đọc.
 
 ---
 
@@ -457,142 +457,142 @@ erDiagram
 
 ---
 
-## Diagram Legend
+## Chú giải Sơ đồ
 
-**Cardinality:**
-- `||--||` : One-to-One
-- `||--|{` : One-to-Many
-- `}|--|{` : Many-to-Many (via junction table)
-- `||--o|` : One-to-Zero-or-One (optional)
-- `}o--||` : Many-to-One (optional FK)
+**Tính chất quan hệ**:
+- `||--||` : Một-một
+- `||--|{` : Một-nhiều
+- `}|--|{` : Nhiều-nhiều (thông qua bảng nối)
+- `||--o|` : Một-không-hoặc-một (tùy chọn)
+- `}o--||` : Nhiều-một (FK tùy chọn)
 
-**Field Types:**
-- `uuid` : UUID v4 primary/foreign keys
-- `string` : VARCHAR/TEXT fields
-- `enum` : PostgreSQL ENUM types
-- `decimal` : DECIMAL(10,2) or DECIMAL(12,0) for money
-- `int` : INTEGER fields
-- `boolean` : BOOLEAN fields
-- `json` : JSONB fields for flexible data
-- `timestamp` : TIMESTAMPTZ fields
+**Kiểu trường**:
+- `uuid` : UUID v4 khóa chính/ngoài
+- `string` : Trường VARCHAR/TEXT
+- `enum` : Kiểu ENUM PostgreSQL
+- `decimal` : DECIMAL(10,2) hoặc DECIMAL(12,0) cho tiền tệ
+- `int` : Trường INTEGER
+- `boolean` : Trường BOOLEAN
+- `json` : Trường JSONB cho dữ liệu linh hoạt
+- `timestamp` : Trường TIMESTAMPTZ
 
-**Key Annotations:**
-- `PK` : Primary Key
-- `FK` : Foreign Key
-- `UK` : Unique Constraint
-- `"deprecated"` : Field still exists but replaced by better solution
-
----
-
-## Domain Groupings
-
-### 1. Tenant & Identity (AUTH)
-- `TENANT` - Restaurant/business entity
-- `USER` - Staff/owner accounts
-- `USER_SESSION` - Login sessions with refresh tokens
-- `STAFF_INVITATION` - Email-based staff onboarding
-- `TENANT_PAYMENT_CONFIG` - SePay/payment gateway configuration
-
-### 2. Menu Management (MENU)
-- `MENU_CATEGORY` - Menu sections (Appetizers, Mains, etc.)
-- `MENU_ITEM` - Dishes/products
-- `MENU_ITEM_PHOTO` - Multiple photos per item
-- `MODIFIER_GROUP` - Customization groups (Size, Toppings)
-- `MODIFIER_OPTION` - Individual choices within groups
-- `MENU_ITEM_MODIFIER` - Junction table linking items to modifier groups
-
-### 3. Table & Session Management (TABLES)
-- `TABLE` - Physical tables with QR codes
-- `TABLE_SESSION` - Customer QR scan sessions (Haidilao-style)
-
-### 4. Shopping Cart (CART)
-- `CART` - Session-based shopping cart
-- `CART_ITEM` - Items in cart with modifiers
-
-### 5. Order Management (ORDERS)
-- `ORDER` - Customer orders
-- `ORDER_ITEM` - Line items with modifiers snapshot
-- `ORDER_STATUS_HISTORY` - Audit trail for status changes
-
-### 6. Payment & Billing (PAYMENTS)
-- `PAYMENT` - Online payment transactions (SePay QR)
-- `BILL` - Grouped orders for table closing (Bill-to-Table)
-
-### 7. Subscription System (SUBSCRIPTION)
-- `SUBSCRIPTION_PLAN` - FREE/BASIC/PREMIUM tiers
-- `TENANT_SUBSCRIPTION` - Tenant's active subscription with usage tracking
-
-### 8. Promotions (PROMOTION)
-- `PROMOTION` - Discount codes with usage limits
-
-### 9. Reviews (REVIEWS)
-- `ITEM_REVIEW` - Customer ratings (1-5 stars) per order item
+**Chú thích khóa**:
+- `PK` : Khóa chính
+- `FK` : Khóa ngoài
+- `UK` : Ràng buộc duy nhất
+- `"deprecated"` : Trường vẫn tồn tại nhưng được thay thế bằng giải pháp tốt hơn
 
 ---
 
-## Key Design Patterns
+## Nhóm Miền
 
-### Multi-Tenancy
-All major tables have `tenant_id` FK for data isolation. Application-level middleware enforces tenant scoping on all queries.
+### 1. Tenant & Danh tính (AUTH)
+- `TENANT` - Thực thể nhà hàng/kinh doanh
+- `USER` - Tài khoản nhân viên/chủ sở hữu
+- `USER_SESSION` - Phiên đăng nhập với token làm mới
+- `STAFF_INVITATION` - Onboarding nhân viên dựa trên email
+- `TENANT_PAYMENT_CONFIG` - Cấu hình cổng thanh toán SePay/thanh toán
 
-### Soft Deletes
-Tables use `active` boolean or `status` enum instead of hard deletes (e.g., `TABLE.active`, `MENU_ITEM.status`).
+### 2. Quản lý Menu (MENU)
+- `MENU_CATEGORY` - Phần menu (Khai vị, Món chính, v.v.)
+- `MENU_ITEM` - Các món ăn/sản phẩm
+- `MENU_ITEM_PHOTO` - Nhiều ảnh cho mỗi mục
+- `MODIFIER_GROUP` - Nhóm tùy chỉnh (Kích thước, Topping)
+- `MODIFIER_OPTION` - Các lựa chọn riêng lẻ trong nhóm
+- `MENU_ITEM_MODIFIER` - Bảng nối liên kết các mục với nhóm sửa đổi
 
-### Audit Trails
-- `ORDER_STATUS_HISTORY` tracks all order state changes
-- Most tables have `created_at` and `updated_at` timestamps
-- User actions reference `user_id` or `changed_by`
+### 3. Quản lý Bàn & Phiên (TABLES)
+- `TABLE` - Bàn vật lý với mã QR
+- `TABLE_SESSION` - Phiên quét mã QR của khách hàng (kiểu Haidilao)
 
-### JSON Flexibility
-- `TENANT.settings` - Restaurant-specific configuration
-- `MENU_ITEM.tags` / `allergens` - Flexible metadata
-- `ORDER_ITEM.modifiers` - Snapshot of selected modifiers
-- `CART_ITEM.modifiers` - Current modifier selections
+### 4. Giỏ hàng (CART)
+- `CART` - Giỏ hàng dựa trên phiên
+- `CART_ITEM` - Các mục trong giỏ hàng với bộ sửa đổi
 
-### Session-Based Cart
-Cart is tied to `table_id` and optional `session_id` for anonymous customer ordering.
+### 5. Quản lý Đơn hàng (ORDERS)
+- `ORDER` - Đơn hàng của khách hàng
+- `ORDER_ITEM` - Các mục dòng có snapshot bộ sửa đổi
+- `ORDER_STATUS_HISTORY` - Nhật ký kiểm tra cho các thay đổi trạng thái
 
-### Payment Flexibility
-- `PAYMENT` table supports multiple providers (SePay QR currently implemented)
-- `TENANT_PAYMENT_CONFIG` stores encrypted gateway credentials
-- `ORDER.payment_method` enum allows future payment methods (Stripe, etc.)
+### 6. Thanh toán & Hóa đơn (PAYMENTS)
+- `PAYMENT` - Giao dịch thanh toán trực tuyến (SePay QR)
+- `BILL` - Các đơn hàng được nhóm lại để đóng bàn (Bill-to-Table)
 
----
+### 7. Hệ thống Đăng ký (SUBSCRIPTION)
+- `SUBSCRIPTION_PLAN` - Tầng FREE/BASIC/PREMIUM
+- `TENANT_SUBSCRIPTION` - Đăng ký hoạt động của Tenant với theo dõi sử dụng
 
-## Simplified Fields
+### 8. Khuyến mãi (PROMOTION)
+- `PROMOTION` - Mã chiết khấu có giới hạn sử dụng
 
-For diagram readability, the following columns are omitted but exist in schema:
-
-**TENANT**: No fields omitted (all key fields shown)
-
-**USER**: No significant fields omitted
-
-**MENU_ITEM**: All fields shown (this is a complex entity)
-
-**TABLE**: All key fields shown
-
-**ORDER**: All key fields shown (complex entity with many timestamps)
-
-**All other tables**: Only non-critical text fields or metadata omitted
-
----
-
-## Notes
-
-1. **SePay vs Stripe**: Current implementation uses SePay (Vietnam VietQR). `TENANT_PAYMENT_CONFIG` reflects actual schema with `sepay_*` fields. `CARD_ONLINE` payment method enum exists but not integrated.
-
-2. **QR Token Security**: `TABLE.qr_token` is unique globally. `qr_token_hash` stores SHA256 hash for validation. Tokens can be invalidated via `qr_invalidated_at` timestamp.
-
-3. **Bill vs Order**: 
-   - `ORDER` = single customer order (items from one checkout)
-   - `BILL` = aggregated invoice when closing table session (may include multiple orders)
-
-4. **Modifier Snapshot**: `ORDER_ITEM.modifiers` and `CART_ITEM.modifiers` store JSON snapshots to preserve modifier state even if menu changes.
-
-5. **Subscription Usage Tracking**: `TENANT_SUBSCRIPTION.orders_this_month` is reset monthly via `usage_reset_at` field.
-
-6. **Review Uniqueness**: One review per `ORDER_ITEM` (enforced via unique constraint on `order_item_id`).
+### 9. Đánh giá (REVIEWS)
+- `ITEM_REVIEW` - Xếp hạng của khách hàng (1-5 sao) cho mỗi mục đơn hàng
 
 ---
 
-**Last Schema Sync**: 2026-01-20 from `source/apps/api/prisma/schema.prisma` (796 lines)
+## Các Mẫu Thiết kế Chính
+
+### Đa thuê bao (Multi-Tenancy)
+Tất cả các bảng chính có FK `tenant_id` để cách ly dữ liệu. Phần mềm trung gian cấp ứng dụng thi hành phạm vi tenant trên tất cả các truy vấn.
+
+### Xóa mềm (Soft Deletes)
+Các bảng sử dụng boolean `active` hoặc enum `status` thay vì xóa cứng (ví dụ: `TABLE.active`, `MENU_ITEM.status`).
+
+### Nhật ký kiểm tra (Audit Trails)
+- `ORDER_STATUS_HISTORY` theo dõi tất cả các thay đổi trạng thái đơn hàng
+- Hầu hết các bảng đều có timestamp `created_at` và `updated_at`
+- Các hành động của người dùng tham chiếu `user_id` hoặc `changed_by`
+
+### Tính linh hoạt JSON
+- `TENANT.settings` - Cấu hình cụ thể của nhà hàng
+- `MENU_ITEM.tags` / `allergens` - Siêu dữ liệu linh hoạt
+- `ORDER_ITEM.modifiers` - Snapshot của các bộ sửa đổi được chọn
+- `CART_ITEM.modifiers` - Lựa chọn bộ sửa đổi hiện tại
+
+### Giỏ hàng dựa trên Phiên (Session-Based Cart)
+Giỏ hàng được gắn với `table_id` và `session_id` tùy chọn cho các đơn hàng khách hàng nặc danh.
+
+### Tính linh hoạt của Thanh toán (Payment Flexibility)
+- Bảng `PAYMENT` hỗ trợ nhiều nhà cung cấp (SePay QR hiện được triển khai)
+- `TENANT_PAYMENT_CONFIG` lưu trữ thông tin xác thực cổng được mã hóa
+- Enum `ORDER.payment_method` cho phép các phương thức thanh toán trong tương lai (Stripe, v.v.)
+
+---
+
+## Các Trường Đơn giản hóa
+
+Để dễ đọc sơ đồ, các cột sau bị bỏ qua nhưng tồn tại trong lược đồ:
+
+**TENANT**: Không có trường bị bỏ qua (tất cả các trường chính được hiển thị)
+
+**USER**: Không có trường quan trọng bị bỏ qua
+
+**MENU_ITEM**: Tất cả các trường được hiển thị (đây là một thực thể phức tạp)
+
+**TABLE**: Tất cả các trường chính được hiển thị
+
+**ORDER**: Tất cả các trường chính được hiển thị (thực thể phức tạp với nhiều timestamp)
+
+**Tất cả các bảng khác**: Chỉ các trường văn bản không quan trọng hoặc siêu dữ liệu bị bỏ qua
+
+---
+
+## Ghi chú
+
+1. **SePay vs Stripe**: Triển khai hiện tại sử dụng SePay (Vietnam VietQR). `TENANT_PAYMENT_CONFIG` phản ánh lược đồ thực tế với các trường `sepay_*`. Enum `CARD_ONLINE` tồn tại nhưng không được tích hợp.
+
+2. **Bảo mật Token QR**: `TABLE.qr_token` là duy nhất toàn cầu. `qr_token_hash` lưu trữ hash SHA256 để xác thực. Các token có thể được vô hiệu hóa thông qua timestamp `qr_invalidated_at`.
+
+3. **Bill vs Order**:
+   - `ORDER` = đơn hàng khách hàng duy nhất (các mục từ một thanh toán)
+   - `BILL` = hóa đơn tổng hợp khi đóng phiên bàn (có thể bao gồm nhiều đơn hàng)
+
+4. **Snapshot Bộ sửa đổi**: `ORDER_ITEM.modifiers` và `CART_ITEM.modifiers` lưu trữ JSON snapshot để bảo quản trạng thái bộ sửa đổi ngay cả khi menu thay đổi.
+
+5. **Theo dõi sử dụng Đăng ký**: `TENANT_SUBSCRIPTION.orders_this_month` được đặt lại hàng tháng thông qua trường `usage_reset_at`.
+
+6. **Tính duy nhất Đánh giá**: Một đánh giá trên `ORDER_ITEM` (thi hành thông qua ràng buộc duy nhất trên `order_item_id`).
+
+---
+
+**Lần đồng bộ sơ đồ cuối cùng**: 2026-01-20 từ `source/apps/api/prisma/schema.prisma` (796 dòng)

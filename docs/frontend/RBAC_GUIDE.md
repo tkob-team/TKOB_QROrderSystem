@@ -1,11 +1,11 @@
-# Role-Based Access Control (RBAC) System
+# Hệ thống Kiểm soát Truy cập dựa trên Vai trò (RBAC)
 
-**Last Updated:** 2026-01-20  
-**Applies to:** `source/apps/web-tenant` (tenant/restaurant admin dashboard)
+**Cập nhật lần cuối:** 2026-01-20  
+**Áp dụng cho:** `source/apps/web-tenant` (tenant/restaurant admin dashboard)
 
 ---
 
-## Overview
+## Tổng quan
 Web-tenant app sử dụng 3 roles chính cho nhân viên nhà hàng. Hệ thống sử dụng **backend role enums** từ Prisma schema nhưng có thể hiển thị tên khác trên frontend cho UX tốt hơn.
 
 ---
@@ -18,7 +18,7 @@ Web-tenant app sử dụng 3 roles chính cho nhân viên nhà hàng. Hệ thố
 | **Waiter/Staff** | `STAFF` | Nhân viên phục vụ | Quản lý orders, tables |
 | **KDS/Kitchen** | `KITCHEN` | Đầu bếp | Kitchen display system |
 
-> **⚠️ Important:** 
+> **⚠️ Quan trọng:** 
 > - Backend API expects: `OWNER`, `STAFF`, `KITCHEN` (uppercase enums)
 > - Frontend may display: "Admin", "Waiter", "KDS" (user-friendly names)
 > - Always use **backend enums** when making API calls
@@ -34,7 +34,7 @@ enum UserRole {
 
 ---
 
-## Roles
+## Các Vai trò
 
 ### 1. **OWNER** (Backend) / "Admin" (Frontend Display)
 - **Mô tả**: Chủ nhà hàng, có quyền truy cập đầy đủ
@@ -73,67 +73,67 @@ enum UserRole {
   - ✅ Manage table orders
   - ❌ Menu Management, Table Management, Settings (không có quyền truy cập)
 
-## Dev Mode Login (DEV ONLY)
+## Đăng nhập Chế độ Phát triển (CHỈ DÙNG TRONG DEV)
 
-> **⚠️ DEVELOPMENT ONLY:** This feature is for local testing and should be removed/disabled in production builds.
+> **⚠️ CHỈ DÙNG TRONG PHÁT TRIỂN:** Tính năng này chỉ dùng để kiểm thử địa phương và nên bị xóa/vô hiệu hóa trước khi deploy lên production builds.
 
-**File:** `source/apps/web-tenant/src/features/auth/ui/pages/LoginPage.tsx` (lines ~150-160)
+**Tệp:** `source/apps/web-tenant/src/features/auth/ui/pages/LoginPage.tsx` (dòng ~150-160)
 
-In development environment, you can bypass authentication with quick role selection:
+Trong môi trường phát triển, bạn có thể bỏ qua xác thực với lựa chọn vai trò nhanh:
 
-1. Open Login page (`/auth/login`)
-2. Use dev mode shortcuts (if NODE_ENV=development):
-   - 🔐 **Login as Admin** → Logs in with OWNER role
-   - 👨‍🍳 **Login as KDS** → Logs in with KITCHEN role
-   - 🧑‍💼 **Login as Waiter** → Logs in with STAFF role
+1. Mở trang Đăng nhập (`/auth/login`)
+2. Sử dụng tối ưu hóa dev mode (nếu NODE_ENV=development):
+   - 🔐 **Đăng nhập như Admin** → Đăng nhập với vai trò OWNER
+   - 👨‍🍳 **Đăng nhập như KDS** → Đăng nhập với vai trò KITCHEN
+   - 🧑‍💼 **Đăng nhập như Nhân viên** → Đăng nhập với vai trò STAFF
 
-### Dev Login Implementation (Reference)
+### Triển khai Đăng nhập Dev (Tham khảo)
 ```typescript
-// Reference from: LoginPage.tsx line ~150
-// ⚠️ DEV ONLY - Remove in production
+// Tham khảo từ: LoginPage.tsx dòng ~150
+// ⚠️ CHỈ DÙNG TRONG DEV - Xóa trước khi deploy
 const handleDevLogin = (role: 'admin' | 'kds' | 'waiter') => {
   logger.debug('[auth] LOGIN_PAGE_DEV_LOGIN', { role });
   if (typeof window !== 'undefined') {
     localStorage.clear();
   }
-  devLogin(role); // Calls AuthContext's devLogin function
+  devLogin(role); // Gọi hàm devLogin của AuthContext
   
-  // Note: Navigation handled by AuthContext after successful dev login
+  // Ghi chú: Điều hướng được xử lý bởi AuthContext sau khi đăng nhập dev thành công
 };
 ```
 
 ---
 
-## API Integration
+## Tích hợp API
 
-When making API calls, always use the **backend enum values**:
+Khi thực hiện các lệnh gọi API, luôn sử dụng **giá trị enum backend**:
 
 ```typescript
-// ✅ CORRECT - Using backend enums
+// ✅ ĐÚNG - Sử dụng backend enums
 const inviteStaff = async (email: string, role: 'STAFF' | 'KITCHEN') => {
   await api.post('/api/v1/admin/staff/invite', {
     email,
-    role // Send 'STAFF' or 'KITCHEN', NOT 'waiter' or 'kds'
+    role // Gửi 'STAFF' hoặc 'KITCHEN', KHÔNG phải 'waiter' hoặc 'kds'
   });
 };
 
-// ❌ WRONG - Using frontend display names
+// ❌ SAI - Sử dụng tên hiển thị frontend
 const inviteStaffWrong = async (email: string, role: 'waiter' | 'kds') => {
   await api.post('/api/v1/admin/staff/invite', {
     email,
-    role // Backend won't recognize 'waiter' or 'kds'
+    role // Backend sẽ không nhận diện 'waiter' hoặc 'kds'
   });
 };
 ```
 
 ---
 
-## Implementation Details
+## Chi tiết Triển khai
 
 ### AuthContext
-File: `source/apps/web-tenant/src/shared/context/AuthContext.tsx` (re-exports from `features/auth`)
+Tệp: `source/apps/web-tenant/src/shared/context/AuthContext.tsx` (tái xuất từ `features/auth`)
 
-**Note:** Actual auth types defined in `features/auth/domain/types.ts`
+**Ghi chú:** Các loại xác thực thực tế được xác định trong `features/auth/domain/types.ts`
 
 ```typescript
 // Backend roles (from Prisma)
@@ -161,10 +161,10 @@ export function getRoleDisplayName(role: UserRole): UserRoleDisplay {
 }
 ```
 
-### RoleGuard Component
-File: `source/apps/web-tenant/src/shared/guards/RoleGuard.tsx`
+### Thành phần RoleGuard
+Tệp: `source/apps/web-tenant/src/shared/guards/RoleGuard.tsx`
 
-Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
+Bao bọc các trang với `RoleGuard` để bảo vệ các route. **Sử dụng backend role enums:**
 
 ```tsx
 <RoleGuard allowedRoles={['OWNER']}>
@@ -172,7 +172,7 @@ Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
 </RoleGuard>
 ```
 
-### Page Protection Examples
+### Ví dụ Bảo vệ Trang
 
 **Admin Dashboard** (chỉ OWNER):
 ```tsx
@@ -195,9 +195,9 @@ Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
 </RoleGuard>
 ```
 
-## Route Structure
+## Cấu trúc Route
 
-**Verified routes** from `source/apps/web-tenant/src/app/`:
+**Các route được xác thực** từ `source/apps/web-tenant/src/app/`:
 
 ```
 /admin
@@ -218,14 +218,14 @@ Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
 /staff                  → Standalone staff route (verified: app/staff/)
 ```
 
-## Testing
+## Kiểm thử
 
-### Test Different Roles (DEV ONLY)
+### Kiểm thử Các Vai trò Khác nhau (CHỈ DÙNG TRONG DEV)
 1. Use dev mode login buttons to switch between roles
 2. Try accessing routes not allowed for current role
 3. Verify that RoleGuard shows "Access Denied" page (unauthorized page)
 
-### Expected Behavior
+### Hành vi Mong đợi
 - ✅ User with correct role: View page content
 - ❌ User with wrong role: Show "Access Denied" page with countdown, then redirect to role-appropriate page
   - Evidence: `RoleGuard.tsx` lines 110-122 (shows Access Denied UI + countdown)
@@ -235,9 +235,9 @@ Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
 
 ---
 
-## Production Checklist
+## Danh sách Kiểm tra Trước khi Deploy
 
-### Before Deploying to Production:
+### Trước khi Deploy lên Production:
 - [ ] Remove or disable dev mode login shortcuts (check NODE_ENV guards)
 - [ ] Implement real JWT authentication with backend API
 - [ ] Verify all RoleGuard protections are in place
@@ -245,7 +245,7 @@ Wrap pages with `RoleGuard` to protect routes. **Use backend role enums:**
 - [ ] Add audit logging for authentication events
 - [ ] Configure proper session management
 
-### Current Implementation Status:
+### Trạng thái Triển khai Hiện tại:
 - ✅ Role enum definitions (from Prisma schema)
 - ✅ RoleGuard component for route protection
 - ✅ AuthContext for auth state management
