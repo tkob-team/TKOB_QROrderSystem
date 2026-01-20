@@ -2,9 +2,9 @@ name: Deploy to AWS EC2
 
 on:
   push:
-    branches: [ "release" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "release" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
@@ -83,7 +83,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/release' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=long
             type=ref,event=pr
 
@@ -92,8 +92,8 @@ jobs:
         with:
           context: .
           file: ./source/apps/api/Dockerfile
-          # Chỉ push image khi push vào release
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/release' }}
+          # Chỉ push image khi push vào main
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -104,8 +104,8 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    # Chỉ deploy khi push vào release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+    # Chỉ deploy khi push vào main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: production
 
