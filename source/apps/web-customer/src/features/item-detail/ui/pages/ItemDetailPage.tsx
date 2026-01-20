@@ -123,6 +123,8 @@ export function ItemDetailPage({ itemId }: ItemDetailProps) {
         onIncrement={actions.incrementQuantity}
         onAddToCart={actions.addToCart}
         total={derivedTotal}
+        disabled={state.isBillRequested}
+        disabledMessage="Session Locked"
       />
 
       <style>{`

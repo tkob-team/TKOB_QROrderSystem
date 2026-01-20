@@ -149,8 +149,6 @@ export function useWebSocket({
       return;
     }
 
-    setStatus('connecting');
-
     const socket = getSocket({
       tenantId,
       tableId,
@@ -158,13 +156,19 @@ export function useWebSocket({
     });
 
     if (socket) {
+      // Check if already connected BEFORE setting status to connecting
+      if (socket.connected) {
+        console.log('[useWebSocket] Already connected, updating status immediately');
+        socketRef.current = socket;
+        setupEventListeners(socket);
+        setStatus('connected');
+        return;
+      }
+
+      // Not yet connected - set connecting status
+      setStatus('connecting');
       socketRef.current = socket;
       setupEventListeners(socket);
-
-      // If already connected (reconnection), update status
-      if (socket.connected) {
-        setStatus('connected');
-      }
     }
   }, [tenantId, tableId, setupEventListeners]);
 

@@ -329,7 +329,7 @@ export function CloseTableModal({
             ) : (
               <>
                 <Receipt className="w-5 h-5" />
-                <span>Close Table & Generate Bill</span>
+                <span>Close Table</span>
               </>
             )}
           </button>

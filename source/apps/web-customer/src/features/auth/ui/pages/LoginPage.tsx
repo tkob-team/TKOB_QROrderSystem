@@ -61,7 +61,7 @@ export function LoginPage() {
         <div className="mt-4 text-center">
           <button
             type="button"
-            onClick={controller.navigateBack}
+            onClick={controller.navigateToHome}
             className="group inline-flex items-center gap-2 px-4 py-2 transition-colors hover:text-[var(--gray-700)]"
             style={{ color: 'var(--gray-600)', fontSize: '14px' }}
           >

@@ -9,18 +9,30 @@ import { log } from '@/shared/logging/logger'
 import { maskId } from '@/shared/logging/helpers'
 
 /**
- * Convert CartItem to OrderItem for order display
+ * Convert CartItem or API OrderItem to OrderItem for order display
+ * Handles both:
+ * - CartItem format: { menuItem: MenuItem, quantity, selectedSize, ... }
+ * - API OrderItemResponseDto format: { id, name, price, quantity, itemTotal, modifiers, ... }
  */
 function cartItemToOrderItem(cartItem: CartItem | any): OrderItem {
-  // CartItem structure: { id, menuItem: MenuItem, selectedSize?, selectedToppings[], quantity, ... }
-  // OrderItem structure: { id, name, quantity, size?, toppings?, specialInstructions?, price }
-  
-  const itemName = (cartItem.menuItem?.name || cartItem.name || 'Unknown Item') as string
   const itemId = cartItem.id || `item-${Math.random().toString(36).slice(2, 9)}`
   
-  // Try to calculate line total (base price + size + toppings) * quantity
+  // API response format: has name directly (OrderItemResponseDto)
+  // CartItem format: name is in cartItem.menuItem.name
+  const itemName = cartItem.name || cartItem.menuItem?.name || 'Unknown Item'
+  
+  // API response format: has price/itemTotal directly
+  // CartItem format: need to calculate from menuItem.basePrice
   let linePrice = 0
-  if (cartItem.menuItem?.basePrice) {
+  
+  // Check API response format first (has itemTotal or direct price)
+  if (typeof cartItem.itemTotal === 'number' && cartItem.itemTotal > 0) {
+    linePrice = cartItem.itemTotal
+  } else if (typeof cartItem.price === 'number' && cartItem.price > 0) {
+    // For API format with single price (unit price) - multiply by quantity
+    linePrice = cartItem.price * (cartItem.quantity || 1)
+  } else if (cartItem.menuItem?.basePrice) {
+    // Fallback: CartItem format - calculate from menuItem
     linePrice = cartItem.menuItem.basePrice
     
     // Add size price if applicable
@@ -43,13 +55,23 @@ function cartItemToOrderItem(cartItem: CartItem | any): OrderItem {
     linePrice *= cartItem.quantity || 1
   }
   
+  // Extract size from modifiers for API format
+  const size = cartItem.selectedSize || 
+    (cartItem.modifiers?.find((m: any) => m.type === 'size')?.name) ||
+    undefined
+  
+  // Extract toppings from modifiers for API format  
+  const toppings = cartItem.selectedToppings || 
+    (cartItem.modifiers?.filter((m: any) => m.type === 'topping')?.map((m: any) => m.name)) ||
+    []
+  
   const result: OrderItem = {
     id: itemId,
     name: itemName,
     quantity: cartItem.quantity || 1,
-    size: cartItem.selectedSize,
-    toppings: cartItem.selectedToppings || [],
-    specialInstructions: cartItem.specialInstructions,
+    size,
+    toppings,
+    specialInstructions: cartItem.specialInstructions || cartItem.notes,
     price: linePrice,
   }
   

@@ -698,7 +698,7 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Bill request sent. A server will assist you shortly.',
+      message: 'Bill request sent. A waiter will assist you shortly.',
       orderId: order.id,
       tableNumber: order.table.tableNumber,
       requestedAt: new Date(),
@@ -835,7 +835,7 @@ export class OrderService {
 
     return {
       success: true,
-      message: 'Bill request sent. A server will assist you shortly.',
+      message: 'Bill request sent. A waiter will assist you shortly.',
       sessionId,
       tableNumber: table.tableNumber,
       totalAmount,
