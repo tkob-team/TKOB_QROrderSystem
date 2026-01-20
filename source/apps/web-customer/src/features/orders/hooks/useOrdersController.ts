@@ -92,7 +92,7 @@ export function useOrdersController() {
       })
       
       // Backend returns { success, data: { orders: [...], total: N } }
-      const list = response.data?.data?.orders || response.data?.orders || []
+      const list = response.data?.data?.orders || []
       log('data', 'Fetched customer order history', { count: list.length }, { feature: 'orders' })
       
       return list.map(toFeatureOrder)
