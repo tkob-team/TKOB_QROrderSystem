@@ -1,6 +1,28 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  Req,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { AuthResponseDto, RegisterSubmitResponseDto } from '../dto/auth-response.dto';
 import { RegisterSubmitDto } from '../dto/register-submit.dto';
@@ -11,13 +33,18 @@ import { LogoutDto } from '../dto/logout.dto';
 import { ForgotPasswordDto, ForgotPasswordResponseDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto, ResetPasswordResponseDto } from '../dto/reset-password.dto';
 import { VerifyEmailDto, VerifyEmailResponseDto } from '../dto/verify-email.dto';
-import { ResendVerificationDto, ResendVerificationResponseDto } from '../dto/resend-verification.dto';
+import {
+  ResendVerificationDto,
+  ResendVerificationResponseDto,
+} from '../dto/resend-verification.dto';
 import { ChangePasswordDto, ChangePasswordResponseDto } from '../dto/change-password.dto';
 import { UpdateUserProfileDto, UpdateProfileResponseDto } from '../dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
 import { SkipTransform } from '../../../common/interceptors/transform.interceptor';
+import { EnvConfig } from '../../../config/env.validation';
 
 /**
  * Auth Controller
@@ -28,7 +55,10 @@ import { SkipTransform } from '../../../common/interceptors/transform.intercepto
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService<EnvConfig, true>,
+  ) {}
 
   // ==================== REGISTRATION ====================
 
@@ -269,7 +299,10 @@ export class AuthController {
     schema: {
       properties: {
         message: { type: 'string', example: 'Avatar updated successfully' },
-        avatarUrl: { type: 'string', example: 'http://localhost:3000/uploads/avatars/user-123.jpg' },
+        avatarUrl: {
+          type: 'string',
+          example: 'http://localhost:3000/uploads/avatars/user-123.jpg',
+        },
       },
     },
   })
@@ -340,7 +373,9 @@ export class AuthController {
       },
     },
   })
-  async verifyResetToken(@Body('token') token: string): Promise<{ valid: boolean; email?: string }> {
+  async verifyResetToken(
+    @Body('token') token: string,
+  ): Promise<{ valid: boolean; email?: string }> {
     return this.authService.verifyResetToken(token);
   }
 
@@ -381,5 +416,48 @@ export class AuthController {
     @Body() dto: ResendVerificationDto,
   ): Promise<ResendVerificationResponseDto> {
     return this.authService.resendVerification(dto);
+  }
+
+  // ==================== GOOGLE OAUTH ====================
+
+  @Get('google')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects to Google login page',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to Google' })
+  async googleAuth() {
+    // Guard handles redirect to Google
+  }
+
+  @Get('google/callback')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @SkipTransform()
+  @ApiOperation({
+    summary: 'Google OAuth callback',
+    description: 'Handle callback from Google after authentication',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to frontend with tokens' })
+  async googleAuthCallback(@Req() req: any, @Res() res: Response) {
+    try {
+      const result = await this.authService.googleAuth(req.user);
+      
+      // Get frontend URL from config
+      const frontendUrl = this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      
+      // Redirect to frontend with tokens as query params
+      const redirectUrl = new URL(`${frontendUrl}/auth/google/callback`);
+      redirectUrl.searchParams.set('accessToken', result.accessToken);
+      redirectUrl.searchParams.set('refreshToken', result.refreshToken);
+      redirectUrl.searchParams.set('isNewUser', String(result.isNewUser));
+      
+      return res.redirect(redirectUrl.toString());
+    } catch (error) {
+      const frontendUrl = this.configService.get('CUSTOMER_APP_URL', { infer: true });
+      return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+    }
   }
 }

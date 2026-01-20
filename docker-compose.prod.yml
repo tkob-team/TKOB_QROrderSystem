@@ -1,0 +1,28 @@
+services:
+  api:
+    image: ghcr.io/tkob-team/tkob_qrordersystem:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./.env:/app/source/apps/api/.env:ro  # Chỉ dùng volume mount
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis_data:

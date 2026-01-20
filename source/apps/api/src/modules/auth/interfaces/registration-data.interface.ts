@@ -47,4 +47,5 @@ export interface CreateSessionData {
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
+  sessionId?: string; // Session ID for Redis tracking
 }

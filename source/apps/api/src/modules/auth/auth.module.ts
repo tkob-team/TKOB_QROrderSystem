@@ -19,7 +19,9 @@ import { OtpService } from './services/otp.service';
 // Guards & Strategies
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 // External modules (already global)
 // - PrismaModule
@@ -66,8 +68,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
     // Guards & Strategies
     JwtStrategy,
+    GoogleStrategy,
     JwtAuthGuard,
     RolesGuard,
+    GoogleAuthGuard,
   ],
 
   exports: [
@@ -79,3 +83,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
 })
 export class AuthModule {}
+

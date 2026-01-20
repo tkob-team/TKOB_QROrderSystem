@@ -1,46 +1,69 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ...existing code...
 
-# dependencies
-node_modules/
-/.pnp
-.pnp.js
+# pnpm
+.pnpm-store
+**/.pnpm-store
 
-# testing
-/coverage
+# Docker
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*.yml
 
-# next.js
-/.next/
-/out/
+# Build artifacts (monorepo)
+**/dist
+**/build
+**/.next
+**/out
 
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Logs
+**/logs
+**/*.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# local env files
-.env*.local
-.env
+# Coverage & test
+**/coverage
+**/.nyc_output
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
 
-# vercel
-.vercel
+# Temporary files
+**/tmp
+**/temp
+**/.cache
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# vscode
+# IDE/editor
 .vscode
-
-# macos
+.idea
+*.swp
+*.swo
+*~
 .DS_Store
 
-# prisma
+# Documentation
+**/README.md
+**/docs
+**/LICENSE
+
+# Environment files (all apps/packages)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Uploads & user-generated
+uploads/
+**/uploads
+
+# Prisma artifacts
 prisma/migrations/dev.db
 prisma/migrations/*.sql
+
+# Ignore deploy keys
+deploy_key
+deploy_key.pub
+node_modules
+
+**/.terraform/

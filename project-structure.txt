@@ -1,0 +1,293 @@
+TKOB_QROrderSystem
+├── .github/workflows
+│   ├── deploy.yml
+├── source/
+│   ├── apps/
+│   │   ├── api/
+│   │   │   ├── prisma/
+│   │   │   │   ├── migrations/
+│   │   │   │   │   │   └── migration.sql (1.7 KB)
+│   │   │   │   │   └── migration_lock.toml (0.1 KB)
+│   │   │   │   ├── prisma.config.ts (0.4 KB)
+│   │   │   │   └── schema.prisma (27.8 KB)
+│   │   │   ├── scripts/
+│   │   │   │   ├── check-order-data.ts (2.7 KB)
+│   │   │   │   ├── clear-staff-invitations.ts (0.9 KB)
+│   │   │   │   ├── reset-db.ts (5.7 KB)
+│   │   │   │   └── reset-subscription-to-free.ts (1.4 KB)
+│   │   │   ├── src/
+│   │   │   │   ├── common/
+│   │   │   │   │   ├── constants/
+│   │   │   │   │   │   ├── error-codes.constant.ts (10.8 KB)
+│   │   │   │   │   │   └── redis-keys.constant.ts (0.9 KB)
+│   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   └── health.controller.ts (4.8 KB)
+│   │   │   │   │   ├── decorators/
+│   │   │   │   │   │   ├── current-session.decorator.ts (0.5 KB)
+│   │   │   │   │   │   ├── current-user.decorator.ts (0.6 KB)
+│   │   │   │   │   │   ├── public.decorator.ts (0.1 KB)
+│   │   │   │   │   │   ├── roles.decorator.ts (0.2 KB)
+│   │   │   │   │   │   ├── session.decorator.ts (0.5 KB)
+│   │   │   │   │   │   └── tenant.decorator.ts (0.9 KB)
+│   │   │   │   │   ├── dto/
+│   │   │   │   │   │   ├── api-response.dto.ts (2.1 KB)
+│   │   │   │   │   │   ├── error-response.dto.ts (0.9 KB)
+│   │   │   │   │   │   ├── id.dto.ts (0.2 KB)
+│   │   │   │   │   │   ├── index.ts (0.2 KB)
+│   │   │   │   │   │   └── pagination.dto.ts (1.4 KB)
+│   │   │   │   │   ├── exceptions/
+│   │   │   │   │   │   └── business.exception.ts (2.3 KB)
+│   │   │   │   │   ├── filters/
+│   │   │   │   │   │   ├── all-exceptions.filter.ts (1.6 KB)
+│   │   │   │   │   │   ├── http-exception.filter.ts (4.7 KB)
+│   │   │   │   │   │   └── prisma-exception.filter.ts (4.7 KB)
+│   │   │   │   │   ├── guards/
+│   │   │   │   │   │   └── rate-limit.guard.ts (3.3 KB)
+│   │   │   │   │   ├── interceptors/
+│   │   │   │   │   │   ├── logging.interceptor.ts (2.4 KB)
+│   │   │   │   │   │   ├── timeout.interceptor.ts (0.8 KB)
+│   │   │   │   │   │   └── transform.interceptor.ts (1.9 KB)
+│   │   │   │   │   ├── interfaces/
+│   │   │   │   │   │   ├── auth.interface.ts (0.6 KB)
+│   │   │   │   │   │   └── query-options.interface.ts (0.4 KB)
+│   │   │   │   │   ├── middleware/
+│   │   │   │   │   │   ├── array-query.middleware.ts (1.0 KB)
+│   │   │   │   │   │   ├── request-id.middleware.ts (0.6 KB)
+│   │   │   │   │   │   ├── security-headers.middleware.ts (1.4 KB)
+│   │   │   │   │   │   ├── session.middleware.ts (1.8 KB)
+│   │   │   │   │   │   └── tenant-context.middleware.ts (2.2 KB)
+│   │   │   │   │   ├── pipes/
+│   │   │   │   │   │   └── xss-sanitize.pipe.ts (2.2 KB)
+│   │   │   │   │   ├── utils/
+│   │   │   │   │   │   └── currency.util.ts (1.5 KB)
+│   │   │   │   │   ├── validators/
+│   │   │   │   │   │   └── input.validators.ts (4.3 KB)
+│   │   │   │   ├── config/
+│   │   │   │   │   ├── env.validation.ts (4.0 KB)
+│   │   │   │   │   └── payment.config.ts (0.7 KB)
+│   │   │   │   ├── database/
+│   │   │   │   │   ├── repositories/
+│   │   │   │   │   │   └── base.repository.ts (2.4 KB)
+│   │   │   │   │   ├── seed/
+│   │   │   │   │   │   ├── seed.module.ts (0.4 KB)
+│   │   │   │   │   │   ├── seed.service.ts (20.5 KB)
+│   │   │   │   │   │   └── unplash.service.ts (3.2 KB)
+│   │   │   │   │   ├── prisma.module.ts (0.6 KB)
+│   │   │   │   │   └── prisma.service.ts (4.1 KB)
+│   │   │   │   ├── modules/
+│   │   │   │   │   ├── analytics/
+│   │   │   │   │   │   ├── analytics.controller.ts (4.2 KB)
+│   │   │   │   │   │   ├── analytics.module.ts (0.3 KB)
+│   │   │   │   │   │   ├── analytics.service.ts (9.7 KB)
+│   │   │   │   │   │   └── index.ts (0.1 KB)
+│   │   │   │   │   ├── auth/
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   └── auth.controller.ts (8.2 KB)
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── auth-response.dto.ts (1.5 KB)
+│   │   │   │   │   │   │   ├── forgot-password.dto.ts (0.5 KB)
+│   │   │   │   │   │   │   ├── login.dto.ts (0.4 KB)
+│   │   │   │   │   │   │   ├── logout.dto.ts (0.2 KB)
+│   │   │   │   │   │   │   ├── refresh-token.dto.ts (0.2 KB)
+│   │   │   │   │   │   │   ├── register-confirm.dto.ts (0.4 KB)
+│   │   │   │   │   │   │   ├── register-submit.dto.ts (1.0 KB)
+│   │   │   │   │   │   │   ├── resend-verification.dto.ts (0.5 KB)
+│   │   │   │   │   │   │   ├── reset-password.dto.ts (0.7 KB)
+│   │   │   │   │   │   │   └── verify-email.dto.ts (0.5 KB)
+│   │   │   │   │   │   ├── guards/
+│   │   │   │   │   │   │   ├── jwt-auth.guard.ts (0.6 KB)
+│   │   │   │   │   │   │   └── roles.guard.ts (0.8 KB)
+│   │   │   │   │   │   ├── interfaces/
+│   │   │   │   │   │   │   └── registration-data.interface.ts (0.9 KB)
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   │   ├── auth.service.ts (15.6 KB)
+│   │   │   │   │   │   │   ├── otp.service.spec.ts (3.2 KB)
+│   │   │   │   │   │   │   ├── otp.service.ts (1.6 KB)
+│   │   │   │   │   │   │   ├── registration.service.ts (8.0 KB)
+│   │   │   │   │   │   │   ├── session.service.ts (5.6 KB)
+│   │   │   │   │   │   │   └── token.service.ts (4.1 KB)
+│   │   │   │   │   │   ├── strategies/
+│   │   │   │   │   │   │   └── jwt.strategy.ts (1.3 KB)
+│   │   │   │   │   │   └── auth.module.ts (1.8 KB)
+│   │   │   │   │   ├── email/
+│   │   │   │   │   │   ├── email.module.ts (0.2 KB)
+│   │   │   │   │   │   └── email.service.ts (13.3 KB)
+│   │   │   │   │   ├── menu/
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   ├── menu-category.controller.ts (4.1 KB)
+│   │   │   │   │   │   │   ├── menu-item-public.controller.ts (1.5 KB)
+│   │   │   │   │   │   │   ├── menu-item.controller.ts (3.9 KB)
+│   │   │   │   │   │   │   ├── menu-photo.controller.ts (4.4 KB)
+│   │   │   │   │   │   │   ├── modifier-group.controller.ts (3.3 KB)
+│   │   │   │   │   │   │   └── public-menu.controller.ts (2.0 KB)
+│   │   │   │   │   │   ├── domain/
+│   │   │   │   │   │   │   └── menu.entity.ts (0.0 KB)
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── menu-category.dto.ts (1.1 KB)
+│   │   │   │   │   │   │   ├── menu-item.dto.ts (4.3 KB)
+│   │   │   │   │   │   │   ├── menu-photo.dto.ts (1.6 KB)
+│   │   │   │   │   │   │   ├── menu-publish.dto.ts (1.6 KB)
+│   │   │   │   │   │   │   ├── menu-response.dto.ts (3.8 KB)
+│   │   │   │   │   │   │   └── modifier.dto.ts (6.9 KB)
+│   │   │   │   │   │   ├── infrastructure/
+│   │   │   │   │   │   │   ├── storage/
+│   │   │   │   │   │   │   │   ├── local.storage.ts (4.3 KB)
+│   │   │   │   │   │   │   │   ├── s3.storage.ts (4.4 KB)
+│   │   │   │   │   │   │   │   ├── storage.interface.ts (1.9 KB)
+│   │   │   │   │   │   │   │   ├── storage.module.ts (1.3 KB)
+│   │   │   │   │   │   │   │   └── storage.service.ts (0.0 KB)
+│   │   │   │   │   │   ├── repositories/
+│   │   │   │   │   │   │   ├── menu-category.repository.ts (2.0 KB)
+│   │   │   │   │   │   │   ├── menu-item.repository.ts (11.3 KB)
+│   │   │   │   │   │   │   └── modifier-group.repository.ts (4.7 KB)
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   │   ├── menu-category.service.ts (3.7 KB)
+│   │   │   │   │   │   │   ├── menu-item.service.ts (9.6 KB)
+│   │   │   │   │   │   │   ├── menu-photo.service.ts (11.0 KB)
+│   │   │   │   │   │   │   └── modifier-group.service.ts (2.2 KB)
+│   │   │   │   │   │   └── menu.module.ts (2.2 KB)
+│   │   │   │   │   ├── order/
+│   │   │   │   │   │   ├── constants/
+│   │   │   │   │   │   │   └── events.constant.ts (0.1 KB)
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   ├── bill.controller.ts (2.6 KB)
+│   │   │   │   │   │   │   ├── cart.controller.ts (3.1 KB)
+│   │   │   │   │   │   │   ├── kds.controller.ts (2.7 KB)
+│   │   │   │   │   │   │   └── order.controller.ts (10.4 KB)
+│   │   │   │   │   │   ├── dtos/
+│   │   │   │   │   │   │   ├── append-order-items.dto.ts (2.0 KB)
+│   │   │   │   │   │   │   ├── bill.dto.ts (2.1 KB)
+│   │   │   │   │   │   │   ├── cart.dto.ts (2.6 KB)
+│   │   │   │   │   │   │   ├── checkout.dto.ts (0.7 KB)
+│   │   │   │   │   │   │   ├── kds-response.dto.ts (1.5 KB)
+│   │   │   │   │   │   │   ├── order-filters.dto.ts (1.5 KB)
+│   │   │   │   │   │   │   ├── order-response.dto.ts (2.2 KB)
+│   │   │   │   │   │   │   ├── order-tracking.dto.ts (1.9 KB)
+│   │   │   │   │   │   │   └── update-order-status.dto.ts (0.4 KB)
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   │   ├── bill.service.ts (6.0 KB)
+│   │   │   │   │   │   │   ├── cart.service.ts (12.1 KB)
+│   │   │   │   │   │   │   └── order.service.ts (38.7 KB)
+│   │   │   │   │   │   └── order.module.ts (1.2 KB)
+│   │   │   │   │   ├── payment/
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   └── payment.controller.ts (5.0 KB)
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── create-payment-intent.dto.ts (0.7 KB)
+│   │   │   │   │   │   │   ├── payment-intent-response.dto.ts (2.0 KB)
+│   │   │   │   │   │   │   ├── payment-status-response.dto.ts (1.7 KB)
+│   │   │   │   │   │   │   ├── payment-webhook.dto.ts (1.3 KB)
+│   │   │   │   │   │   │   └── poll-transactions.dto.ts (2.7 KB)
+│   │   │   │   │   │   ├── exceptions/
+│   │   │   │   │   │   │   └── payment.exceptions.ts (3.6 KB)
+│   │   │   │   │   │   ├── interfaces/
+│   │   │   │   │   │   │   └── payment-provider.interface.ts (4.8 KB)
+│   │   │   │   │   │   ├── providers/
+│   │   │   │   │   │   │   └── sepay.provider.ts (24.4 KB)
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   │   ├── currency.service.ts (4.5 KB)
+│   │   │   │   │   │   │   └── payment.service.ts (31.5 KB)
+│   │   │   │   │   │   └── payment.module.ts (0.9 KB)
+│   │   │   │   │   ├── payment-config/
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   └── payment-config.dto.ts (2.6 KB)
+│   │   │   │   │   │   ├── payment-config.controller.ts (3.5 KB)
+│   │   │   │   │   │   ├── payment-config.module.ts (0.3 KB)
+│   │   │   │   │   │   └── payment-config.service.ts (8.9 KB)
+│   │   │   │   │   ├── promotion/
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   └── promotion.dto.ts (4.4 KB)
+│   │   │   │   │   │   ├── promotion.controller.ts (4.3 KB)
+│   │   │   │   │   │   ├── promotion.module.ts (0.5 KB)
+│   │   │   │   │   │   └── promotion.service.ts (9.4 KB)
+│   │   │   │   │   ├── redis/
+│   │   │   │   │   │   ├── redis.module.ts (2.0 KB)
+│   │   │   │   │   │   └── redis.service.ts (1.6 KB)
+│   │   │   │   │   ├── review/
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   └── review.dto.ts (2.0 KB)
+│   │   │   │   │   │   ├── review.controller.ts (3.9 KB)
+│   │   │   │   │   │   ├── review.module.ts (0.4 KB)
+│   │   │   │   │   │   └── review.service.ts (8.3 KB)
+│   │   │   │   │   ├── staff/
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── index.ts (0.0 KB)
+│   │   │   │   │   │   │   └── staff.dto.ts (3.3 KB)
+│   │   │   │   │   │   ├── index.ts (0.1 KB)
+│   │   │   │   │   │   ├── staff.controller.ts (5.7 KB)
+│   │   │   │   │   │   ├── staff.module.ts (0.5 KB)
+│   │   │   │   │   │   └── staff.service.ts (14.2 KB)
+│   │   │   │   │   ├── subscription/
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   └── public-subscription.controller.ts (6.2 KB)
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── index.ts (0.1 KB)
+│   │   │   │   │   │   │   ├── subscription-payment.dto.ts (3.1 KB)
+│   │   │   │   │   │   │   └── upgrade-subscription.dto.ts (0.4 KB)
+│   │   │   │   │   │   ├── guards/
+│   │   │   │   │   │   │   ├── feature.guard.ts (1.8 KB)
+│   │   │   │   │   │   │   ├── index.ts (0.1 KB)
+│   │   │   │   │   │   │   └── subscription-limits.guard.ts (1.8 KB)
+│   │   │   │   │   │   ├── index.ts (0.1 KB)
+│   │   │   │   │   │   ├── subscription-payment.service.ts (13.0 KB)
+│   │   │   │   │   │   ├── subscription.controller.ts (4.6 KB)
+│   │   │   │   │   │   ├── subscription.module.ts (1.0 KB)
+│   │   │   │   │   │   └── subscription.service.ts (11.3 KB)
+│   │   │   │   │   ├── table/
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   ├── public-table.controller.ts (3.5 KB)
+│   │   │   │   │   │   │   └── table.controller.ts (14.1 KB)
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── create-table.dto.ts (1.2 KB)
+│   │   │   │   │   │   │   ├── session.dto.ts (2.5 KB)
+│   │   │   │   │   │   │   ├── table-list-response.dto.ts (0.6 KB)
+│   │   │   │   │   │   │   ├── table-response.dto.ts (2.5 KB)
+│   │   │   │   │   │   │   └── update-table.dto.ts (1.4 KB)
+│   │   │   │   │   │   ├── guards/
+│   │   │   │   │   │   │   └── session.guard.ts (1.5 KB)
+│   │   │   │   │   │   ├── repositories/
+│   │   │   │   │   │   │   ├── table-session.repository.ts (2.2 KB)
+│   │   │   │   │   │   │   └── table.repository.ts (4.2 KB)
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   │   ├── pdf.service.ts (5.9 KB)
+│   │   │   │   │   │   │   ├── qr.service.ts (5.0 KB)
+│   │   │   │   │   │   │   ├── table-session.service.ts (6.6 KB)
+│   │   │   │   │   │   │   └── table.service.ts (11.6 KB)
+│   │   │   │   │   │   └── table.module.ts (1.4 KB)
+│   │   │   │   │   ├── tenant/
+│   │   │   │   │   │   ├── controllers/
+│   │   │   │   │   │   │   └── tenant.controller.ts (5.9 KB)
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── tenant-response.dto.ts (0.4 KB)
+│   │   │   │   │   │   │   ├── update-opening-hours.dto.ts (1.2 KB)
+│   │   │   │   │   │   │   ├── update-payment-config.dto.ts (0.2 KB)
+│   │   │   │   │   │   │   ├── update-profile.dto.ts (1.0 KB)
+│   │   │   │   │   │   │   └── update-settings.dto.ts (2.5 KB)
+│   │   │   │   │   │   ├── guards/
+│   │   │   │   │   │   │   └── tenant-ownership.guard.ts (2.0 KB)
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   │   ├── onboarding.service.ts (7.6 KB)
+│   │   │   │   │   │   │   └── tenant.service.ts (3.9 KB)
+│   │   │   │   │   │   └── tenant.module.ts (1.0 KB)
+│   │   │   │   │   ├── websocket/
+│   │   │   │   │   │   ├── gateways/
+│   │   │   │   │   │   │   └── order.gateway.ts (10.9 KB)
+│   │   │   │   │   │   └── websocket.module.ts (0.6 KB)
+│   │   │   │   ├── app.controller.ts (0.2 KB)
+│   │   │   │   ├── app.module.ts (5.0 KB)
+│   │   │   │   ├── app.service.ts (0.1 KB)
+│   │   │   │   └── main.ts (4.9 KB)
+│   │   │   ├── uploads/
+│   │   │   ├── Dockerfile (2.3 KB)
+│   │   │   ├── eslint.config.mjs (2.6 KB)
+│   │   │   ├── nest-cli.json (0.4 KB)
+│   │   │   ├── package.json (4.2 KB)
+│   │   │   ├── README.md (4.9 KB)
+│   │   │   ├── tsconfig.build.json (0.1 KB)
+│   │   │   └── tsconfig.json (1.0 KB)
+├── docker-compose.yml (1.5 KB)
+├── LICENSE (1.0 KB)
+├── package.json (1.4 KB)
+├── pnpm-lock.yaml (576.3 KB)
+├── pnpm-workspace.yaml (0.1 KB)
+└── README.md (0.0 KB)
