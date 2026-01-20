@@ -17,8 +17,9 @@ Optional (sau):
 ## 2. Clone & Cài Đặt
 ```bash
 # Clone repo
-git clone <REPO_URL> smart-restaurant
-cd smart-restaurant
+# ⏳ ADD HERE: Replace <REPO_URL> with actual repository URL
+git clone <REPO_URL> TKOB_QROrderSystem
+cd TKOB_QROrderSystem
 
 # Cài dependencies toàn monorepo
 pnpm install
@@ -26,12 +27,22 @@ pnpm install
 
 ## 3. Chạy Ứng Dụng Dev
 ```bash
-# Portal (web-tenant)
-pnpm --filter web-tenant dev
-# Customer app (web-customer)
-pnpm --filter web-customer dev
+# Portal (web-tenant) - navigate to app folder and run dev
+cd source/apps/web-tenant
+pnpm dev
+
+# Customer app (web-customer) - in separate terminal
+cd source/apps/web-customer
+pnpm dev
 ```
-Mặc định: web-tenant port 3000, web-customer port 3001 (tuỳ config).
+
+**Alternative (if package names verified):**
+```bash
+# ⏳ ADD HERE: Verify package names in source/apps/*/package.json ("name" field)
+# Then use: pnpm --filter <package-name> dev
+```
+
+**Ports:** web-tenant runs on port 3002, web-customer on port 3001 (verified in source/apps/*/package.json dev scripts).
 
 ## 4. Cấu Trúc Chính Cần Biết Nhanh
 ```
@@ -82,9 +93,9 @@ source/apps/web-customer/src/
 | Layering | Không import ngược từ shared vào feature logic cụ thể nếu có vòng phụ thuộc |
 | Component | < 200 dòng, tách logic ra hook |
 | Env vars | `NEXT_PUBLIC_` cho client, bí mật để server-only |
-| State server | React Query (server state) |
-| State client | Zustand cho UI/giỏ hàng hoặc ephemeral |
-| SSR fetch | Dùng `fetch(process.env.API_URL)` trong server component |
+| State server | React Query (server state) - ⏳ ADD HERE: verify @tanstack/react-query in package.json |
+| State client | Zustand - ⏳ ADD HERE: verify zustand in package.json |
+| SSR fetch | Dùng `fetch(process.env.*)` trong server component - ⏳ ADD HERE: verify env var names in source/apps/*/.env.example |
 
 ## 9. Kiểm Tra Trước Khi Mở PR
 - [ ] Tên file & thư mục đúng convention
@@ -99,7 +110,7 @@ source/apps/web-customer/src/
 | Vấn đề | Nguyên nhân | Giải pháp |
 |--------|-------------|-----------|
 | `window is not defined` | Dùng browser API trong Server Component | Thêm `'use client'` hoặc tách code |
-| Axios 401 logout không chạy | Thiếu interceptor | Kiểm tra `lib/api/interceptors.ts` |
+| Axios 401 logout không chạy | Thiếu interceptor (if present) | Kiểm tra `lib/api/` cho interceptor setup |
 | Không load được style | Thiếu import globals.css trong layout | Kiểm tra `app/layout.tsx` |
 | RoleGuard luôn chặn | Sai role hoặc context auth chưa khởi tạo | In ra `user.role` debug |
 | Query không refetch | Thiếu invalidation sau mutation | `queryClient.invalidateQueries([...])` |
@@ -137,4 +148,4 @@ A: Cho feature chính có khả năng tái sử dụng hoặc import nhiều nơ
 A: Dữ liệu thay đổi theo chu kỳ (danh mục, thống kê ngày) không cần realtime tuyệt đối.
 
 ---
-Last Updated: 2025-11-30
+Last Updated: 2026-01-20

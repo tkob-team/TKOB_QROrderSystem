@@ -44,6 +44,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     setShowFullReviewList(false)
   }, [item])
 
+  // Related Items: Mixed strategy - same category + best sellers as fallback
   const relatedItems = useMemo(() => {
     if (!item) return [] as MenuItem[]
     
@@ -51,22 +52,49 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     const currentCategory = item.category
     const currentCategoryId = (item as any).categoryId
     
-    return allMenuItems
+    // Helper: filter by availability
+    const isAvailable = (menuItem: MenuItem) => 
+      menuItem.availability === 'Available' || !menuItem.availability
+    
+    // Helper: check category match
+    const isSameCategory = (menuItem: MenuItem) => 
+      (currentCategory && menuItem.category === currentCategory) ||
+      (currentCategoryId && (menuItem as any).categoryId === currentCategoryId)
+    
+    // 1. Get items from same category (primary)
+    const sameCategoryItems = allMenuItems
       .filter((menuItem) => {
-        // Don't include the current item
         if (menuItem.id === item.id) return false
-        
-        // Match by category string (mock data) or categoryId (backend data)
-        const categoryMatch = 
-          (currentCategory && menuItem.category === currentCategory) ||
-          (currentCategoryId && (menuItem as any).categoryId === currentCategoryId)
-        
-        if (!categoryMatch) return false
-        
-        // Filter by availability
-        return menuItem.availability === 'Available' || !menuItem.availability
+        if (!isSameCategory(menuItem)) return false
+        return isAvailable(menuItem)
       })
       .slice(0, 4)
+    
+    // 2. If we have enough, return early
+    if (sameCategoryItems.length >= 4) {
+      return sameCategoryItems
+    }
+    
+    // 3. Fill remaining slots with "best sellers" / popular items from other categories
+    // Sort by rating average (descending) as proxy for popularity
+    const remainingSlots = 4 - sameCategoryItems.length
+    const sameCategoryIds = new Set([item.id, ...sameCategoryItems.map(i => i.id)])
+    
+    const popularItems = allMenuItems
+      .filter((menuItem) => {
+        if (sameCategoryIds.has(menuItem.id)) return false
+        return isAvailable(menuItem)
+      })
+      .sort((a, b) => {
+        // Sort by rating average (higher first), then by price (lower first for accessibility)
+        const ratingA = (a as any).ratingAvg || (a as any).rating || 0
+        const ratingB = (b as any).ratingAvg || (b as any).rating || 0
+        if (ratingB !== ratingA) return ratingB - ratingA
+        return a.basePrice - b.basePrice
+      })
+      .slice(0, remainingSlots)
+    
+    return [...sameCategoryItems, ...popularItems]
   }, [allMenuItems, item])
 
   // FEAT-02: Use reviews from API query, fallback to item.reviews for mock mode
@@ -296,6 +324,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     allReviews: reviews,
     ratingDistribution,
     showFullReviewList,
+    isBillRequested: session?.billRequestedAt != null,
   }), [
     item,
     allMenuItems,
@@ -315,6 +344,7 @@ export function useItemDetailController(itemId: string): ItemDetailController {
     reviews,
     ratingDistribution,
     showFullReviewList,
+    session?.billRequestedAt,
   ])
 
   return {

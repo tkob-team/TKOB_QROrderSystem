@@ -27,6 +27,7 @@ export interface ItemDetailState {
   allReviews: Review[]
   ratingDistribution: RatingDistribution | Record<number, number> | null
   showFullReviewList: boolean
+  isBillRequested: boolean
 }
 
 export interface ItemDetailActions {

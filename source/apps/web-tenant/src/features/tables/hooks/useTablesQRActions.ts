@@ -20,10 +20,20 @@ interface ShowToastFn {
   (message: string, type: 'success' | 'error'): void;
 }
 
+interface TablesQRActionsOptions {
+  /**
+   * Callback to update selected table after QR regeneration
+   * Receives the new qrToken to update the table state immediately
+   */
+  onTableUpdate?: (updates: { qrToken: string }) => void;
+}
+
 export function useTablesQRActions(
   selectedTable: Table | null,
-  showToast: ShowToastFn
+  showToast: ShowToastFn,
+  options?: TablesQRActionsOptions
 ) {
+  const { onTableUpdate } = options || {};
   // ============================================================================
   // STATE & REFS
   // ============================================================================
@@ -32,6 +42,7 @@ export function useTablesQRActions(
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [isPrintingQR, setIsPrintingQR] = useState(false);
   const [isBulkRegenLoading, setIsBulkRegenLoading] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const qrPrintRef = useRef<HTMLDivElement>(null);
   const regenerateQRMutation = useRegenerateQR();
@@ -44,10 +55,16 @@ export function useTablesQRActions(
   const handleRegenerateQR = async () => {
     if (!selectedTable) return;
 
+    setIsRegenerating(true);
     try {
       logger.debug('[tables] REGENERATE_QR_ATTEMPT', { tableId: selectedTable.id });
-      await regenerateQRMutation.mutateAsync(selectedTable.id);
-      logger.info('[tables] REGENERATE_QR_SUCCESS', { tableId: selectedTable.id });
+      const result = await regenerateQRMutation.mutateAsync(selectedTable.id);
+      logger.info('[tables] REGENERATE_QR_SUCCESS', { tableId: selectedTable.id, qrToken: result?.qrToken });
+
+      // Update selected table state immediately with new qrToken
+      if (result?.qrToken && onTableUpdate) {
+        onTableUpdate({ qrToken: result.qrToken });
+      }
 
       showToast('QR code regenerated successfully', 'success');
     } catch (error: any) {
@@ -57,6 +74,8 @@ export function useTablesQRActions(
         'Failed to regenerate QR code';
       logger.error('[tables] REGENERATE_QR_ERROR', { message: errorMessage });
       showToast(errorMessage, 'error');
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -206,6 +225,7 @@ export function useTablesQRActions(
       isDownloadingAll,
       isPrintingQR,
       isBulkRegenLoading,
+      isRegenerating,
     },
 
     // Handlers

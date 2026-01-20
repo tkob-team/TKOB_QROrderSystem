@@ -174,7 +174,7 @@ export function MenuPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-4 pb-24">
+        <div className="flex-1 p-4 pb-4">
         <div className="max-w-4xl mx-auto">
           {/* Filters and Sort */}
           <div className="flex items-center gap-3 mb-4">

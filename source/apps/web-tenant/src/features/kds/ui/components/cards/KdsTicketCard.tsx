@@ -106,10 +106,10 @@ export function KdsTicketCard({
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
             <span className="text-text-primary" style={{ fontSize: '20px', fontWeight: 700 }}>
-              {order.id}
+              {order.table}
             </span>
             <span className="text-text-secondary" style={{ fontSize: '15px', fontWeight: 500 }}>
-              {order.table}
+              Order #{order.orderNumber}
             </span>
           </div>
           <div

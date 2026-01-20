@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, UtensilsCrossed, CreditCard, Receipt, Clock, Wallet, XCircle, Loader2, Heart, Tag, CheckCircle, AlertCircle, QrCode, Banknote } from 'lucide-react'
+import { ArrowLeft, UtensilsCrossed, CreditCard, Receipt, Clock, Wallet, XCircle, Loader2, Heart, Tag, CheckCircle, AlertCircle, QrCode, Banknote, Lock, ShoppingBag, X } from 'lucide-react'
 import { PageTransition } from '@/shared/components/transitions/PageTransition'
-import { useSession } from '@/features/tables/hooks/useSession'
+import { useSession, sessionQueryKey } from '@/features/tables/hooks/useSession'
 import { useOrdersController } from '../../hooks'
 import { usePaymentMethods } from '@/features/checkout/hooks/usePaymentMethods'
+import { useVoucherValidation } from '@/features/checkout/hooks/useVoucherValidation'
 import { useCancelBillRequest } from '../../hooks/useCancelBillRequest'
+import { orderApi } from '../../data'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 // Tip percentage options
 const TIP_OPTIONS = [
@@ -51,13 +55,19 @@ function formatTime(dateStr: string): string {
  */
 export function BillPreviewPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { session } = useSession()
   const { state } = useOrdersController()
   const { data: paymentMethods } = usePaymentMethods()
   const cancelBillMutation = useCancelBillRequest()
+  const voucherMutation = useVoucherValidation()
 
   // Check if payment methods are available
   const isSepayAvailable = paymentMethods?.methods?.includes('SEPAY_QR') ?? false
+
+  // Payment confirmation state
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false)
+  const [showPayConfirmDialog, setShowPayConfirmDialog] = useState(false)
 
   // Tip state
   const [selectedTipIndex, setSelectedTipIndex] = useState<number>(0) // Default: No tip
@@ -71,7 +81,7 @@ export function BillPreviewPage() {
   const [voucherMessage, setVoucherMessage] = useState<string>('')
 
   // Payment method selection
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('SEPAY_QR')
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('BILL_TO_TABLE')
   
   // Check if bill was already requested from session
   const billRequested = session?.billRequestedAt != null
@@ -110,33 +120,33 @@ export function BillPreviewPage() {
     }
   }, [state.currentSessionOrders, tipAmount, voucherDiscount])
 
-  // Mock voucher validation
+  // Validate voucher via backend API
   const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) return
     
     setVoucherStatus('checking')
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Mock validation - check for specific test codes
-    const code = voucherCode.toUpperCase().trim()
-    if (code === 'WELCOME10') {
-      setVoucherDiscount(billSummary.subtotal * 0.1) // 10% discount
-      setVoucherStatus('valid')
-      setVoucherMessage('10% off your order!')
-    } else if (code === 'SAVE5') {
-      setVoucherDiscount(5) // $5 off
-      setVoucherStatus('valid')
-      setVoucherMessage('$5 off your order!')
-    } else if (code === 'FREESHIP') {
-      setVoucherDiscount(billSummary.serviceCharge) // Free service charge
-      setVoucherStatus('valid')
-      setVoucherMessage('Service charge waived!')
-    } else {
+    try {
+      const result = await voucherMutation.mutateAsync({
+        code: voucherCode.trim().toUpperCase(),
+        orderSubtotal: billSummary.subtotal,
+      })
+      
+      if (result.valid && result.discountAmount != null) {
+        setVoucherDiscount(result.discountAmount)
+        setVoucherStatus('valid')
+        setVoucherMessage(result.promotion?.type === 'PERCENTAGE' 
+          ? `${result.promotion.value}% off your order!` 
+          : `$${result.discountAmount.toFixed(2)} off your order!`)
+      } else {
+        setVoucherDiscount(0)
+        setVoucherStatus('invalid')
+        setVoucherMessage(result.error || 'Invalid or expired voucher code')
+      }
+    } catch (error: any) {
       setVoucherDiscount(0)
       setVoucherStatus('invalid')
-      setVoucherMessage('Invalid or expired voucher code')
+      setVoucherMessage(error.message || 'Failed to validate voucher')
     }
   }
 
@@ -151,20 +161,55 @@ export function BillPreviewPage() {
     router.push('/orders')
   }
 
+  // Show confirmation dialog before paying
   const handlePayNow = () => {
-    // Navigate to payment page with first unpaid order
+    setShowPayConfirmDialog(true)
+  }
+
+  // Actually process payment after confirmation
+  const handleConfirmPay = async () => {
+    setShowPayConfirmDialog(false)
+    
+    // Find first unpaid order
     const unpaidOrder = state.currentSessionOrders.find(
       order => order.paymentStatus?.toUpperCase() !== 'COMPLETED' && order.paymentStatus?.toUpperCase() !== 'PAID'
     )
     const targetOrderId = unpaidOrder?.id || state.currentSessionOrders[0]?.id
     
-    if (targetOrderId) {
-      // Use selected payment method
+    if (!targetOrderId) return
+
+    setIsConfirmingPayment(true)
+    
+    try {
+      // Build payment URL with parameters
       const tipParam = tipAmount > 0 ? `&tip=${tipAmount.toFixed(2)}` : ''
       const discountParam = voucherDiscount > 0 ? `&discount=${voucherDiscount.toFixed(2)}` : ''
       const voucherParam = voucherCode && voucherStatus === 'valid' ? `&voucher=${encodeURIComponent(voucherCode)}` : ''
       
+      // For BILL_TO_TABLE (Cash): Confirm payment immediately (locks session + notifies staff)
+      // Then navigate to success page - no need for /payment page
+      // For SEPAY_QR: Navigate to payment page, confirmSessionPayment called after polling success
+      if (selectedPaymentMethod === 'BILL_TO_TABLE') {
+        await orderApi.confirmSessionPayment(
+          'CASH',
+          tipAmount,
+          voucherDiscount,
+          voucherCode && voucherStatus === 'valid' ? voucherCode : undefined,
+        )
+        // Invalidate session to refresh billRequestedAt
+        queryClient.invalidateQueries({ queryKey: sessionQueryKey })
+        // Navigate to orders page to show payment confirmed state
+        router.push('/orders')
+        return
+      }
+      
+      // Navigate to payment page (for SEPAY_QR only)
       router.push(`/payment?orderId=${targetOrderId}&paymentMethod=${selectedPaymentMethod}&source=bill${tipParam}${discountParam}${voucherParam}`)
+    } catch (error) {
+      console.error('Failed to confirm payment:', error)
+      toast.error('Failed to process payment. Please try again.')
+    } finally {
+      setIsConfirmingPayment(false)
     }
   }
 
@@ -368,7 +413,11 @@ export function BillPreviewPage() {
           {/* Tip Selection Section */}
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
-            style={{ border: '1px solid var(--gray-200)' }}
+            style={{ 
+              border: '1px solid var(--gray-200)',
+              opacity: billRequested ? 0.6 : 1,
+              pointerEvents: billRequested ? 'none' : 'auto'
+            }}
           >
             <div className="flex items-center gap-2 mb-4">
               <Heart className="w-5 h-5" style={{ color: 'var(--orange-500)' }} />
@@ -454,10 +503,12 @@ export function BillPreviewPage() {
             )}
           </div>
 
-          {/* Voucher Section */}
+          {/* Tip Section - Always editable until payment is confirmed */}
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
-            style={{ border: '1px solid var(--gray-200)' }}
+            style={{ 
+              border: '1px solid var(--gray-200)'
+            }}
           >
             <div className="flex items-center gap-2 mb-4">
               <Tag className="w-5 h-5" style={{ color: 'var(--orange-500)' }} />
@@ -541,18 +592,16 @@ export function BillPreviewPage() {
                     <span>{voucherMessage}</span>
                   </div>
                 )}
-                
-                <p className="text-xs" style={{ color: 'var(--gray-500)' }}>
-                  Try: WELCOME10, SAVE5, or FREESHIP
-                </p>
               </div>
             )}
           </div>
 
-          {/* Payment Method Selection */}
+          {/* Payment Method Selection - Always editable until payment is confirmed */}
           <div 
             className="mt-6 p-4 rounded-xl bg-white"
-            style={{ border: '1px solid var(--gray-200)' }}
+            style={{ 
+              border: '1px solid var(--gray-200)'
+            }}
           >
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="w-5 h-5" style={{ color: 'var(--orange-500)' }} />
@@ -662,49 +711,118 @@ export function BillPreviewPage() {
           className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t space-y-3"
           style={{ borderColor: 'var(--gray-200)' }}
         >
-          <button
-            onClick={handlePayNow}
-            className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all hover:shadow-lg active:scale-95"
-            style={{ 
-              backgroundColor: 'var(--orange-500)',
-              color: 'white',
-              fontSize: '16px'
-            }}
-          >
-            {selectedPaymentMethod === 'SEPAY_QR' ? (
-              <>
-                <QrCode className="w-5 h-5" />
-                Pay ${billSummary.total.toFixed(2)} with QR
-              </>
-            ) : (
-              <>
+          {/* Session locked - show view-only mode */}
+          {billRequested ? (
+            <div className="space-y-3">
+              <div 
+                className="flex items-center gap-2 p-3 rounded-xl text-sm"
+                style={{ backgroundColor: 'var(--emerald-50)', color: 'var(--emerald-700)', border: '1px solid var(--emerald-200)' }}
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Payment confirmed - A waiter will assist you shortly</span>
+              </div>
+              <button
+                onClick={() => router.push('/orders')}
+                className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all"
+                style={{ 
+                  backgroundColor: 'var(--gray-100)',
+                  color: 'var(--gray-700)',
+                  fontSize: '16px'
+                }}
+              >
                 <Receipt className="w-5 h-5" />
-                Request Bill - ${billSummary.total.toFixed(2)}
-              </>
-            )}
-          </button>
-          
-          {/* Cancel Bill Request - Allow ordering more */}
-          {billRequested && (
+                Back to Orders
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={handleCancelBillRequest}
-              disabled={cancelBillMutation.isPending}
-              className="w-full py-3 rounded-full flex items-center justify-center gap-2 font-medium transition-all disabled:opacity-50"
+              onClick={handlePayNow}
+              disabled={isConfirmingPayment}
+              className="w-full py-4 rounded-full flex items-center justify-center gap-2 font-semibold transition-all hover:shadow-lg active:scale-95 disabled:opacity-70"
               style={{ 
-                backgroundColor: 'var(--gray-100)',
-                color: 'var(--gray-700)',
-                fontSize: '14px'
+                backgroundColor: 'var(--orange-500)',
+                color: 'white',
+                fontSize: '16px'
               }}
             >
-              {cancelBillMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {isConfirmingPayment ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Processing...
+                </>
+              ) : selectedPaymentMethod === 'SEPAY_QR' ? (
+                <>
+                  <QrCode className="w-5 h-5" />
+                  Pay ${billSummary.total.toFixed(2)} with QR
+                </>
               ) : (
-                <XCircle className="w-4 h-4" />
+                <>
+                  <Receipt className="w-5 h-5" />
+                  Pay ${billSummary.total.toFixed(2)} with Cash
+                </>
               )}
-              Changed your mind? Order more
             </button>
           )}
         </div>
+
+        {/* Payment Confirmation Dialog */}
+        {showPayConfirmDialog && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            onClick={() => setShowPayConfirmDialog(false)}
+          >
+            <div 
+              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-6">
+                <div 
+                  className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--orange-100)' }}
+                >
+                  {selectedPaymentMethod === 'SEPAY_QR' ? (
+                    <QrCode className="w-8 h-8" style={{ color: 'var(--orange-500)' }} />
+                  ) : (
+                    <Banknote className="w-8 h-8" style={{ color: 'var(--orange-500)' }} />
+                  )}
+                </div>
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--gray-900)' }}>
+                  Confirm Payment?
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--gray-600)' }}>
+                  {selectedPaymentMethod === 'SEPAY_QR' 
+                    ? 'You will be shown a QR code to complete payment.'
+                    : 'A waiter will come to your table to collect payment.'}
+                </p>
+                <p className="text-sm mt-2" style={{ color: 'var(--gray-500)' }}>
+                  After confirming, you won&apos;t be able to order more food.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleConfirmPay}
+                  className="w-full py-3 rounded-full font-semibold transition-all hover:shadow-lg"
+                  style={{ backgroundColor: 'var(--orange-500)', color: 'white' }}
+                >
+                  Yes, Proceed to Pay ${billSummary.total.toFixed(2)}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPayConfirmDialog(false)
+                    router.push('/menu')
+                  }}
+                  className="w-full py-3 rounded-full font-medium transition-all flex items-center justify-center gap-2"
+                  style={{ backgroundColor: 'var(--gray-100)', color: 'var(--gray-700)' }}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Order More Food
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   )

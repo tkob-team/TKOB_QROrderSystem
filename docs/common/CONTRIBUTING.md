@@ -7,8 +7,6 @@
 
 ---
 
-# Bận quá thì đọc mục 4, mục 6, mục 5.2, mục 7.3, mục 8.2 trước. Sau đó có thể quay lại đoạn toàn bài. Và nếu thấy dư thừa có thể bỏ qua=))
-
 ## Mục lục
 
 1. [Quy tắc Ứng xử](#1-quy-tắc-ứng-xử)
@@ -17,9 +15,9 @@
 4. [Quy trình Đóng góp](#4-quy-trình-đóng-góp)
 5. [Tiêu chuẩn Code](#5-tiêu-chuẩn-code)
 6. [Commit Messages](#6-commit-messages)
-7. [Pull Request Guidelines](#7-pull-request-guidelines)
-8. [Testing Requirements](#8-testing-requirements)
-9. [Documentation](#9-documentation)
+7. [Hướng dẫn Pull Request](#7-hướng-dẫn-pull-request)
+8. [Yêu cầu Kiểm thử](#8-yêu-cầu-kiểm-thử)
+9. [Tài liệu Hóa](#9-tài-liệu-hóa)
 10. [Báo cáo Lỗi](#10-báo-cáo-lỗi)
 11. [Đề xuất Tính năng](#11-đề-xuất-tính-năng)
 12. [Liên hệ & Hỗ trợ](#12-liên-hệ--hỗ-trợ)
@@ -64,7 +62,7 @@ Bạn có thể đóng góp theo nhiều cách:
 #### 🐛 Báo cáo Bug
 - Kiểm tra [Issues](../../../issues) xem bug đã được báo cáo chưa
 - Tạo issue mới với template [Bug Report]
-- Cung cấp thông tin chi tiết: steps to reproduce, expected vs actual behavior
+- Cung cấp thông tin chi tiết: các bước tái tạo, hành vi mong đợi so với hành vi thực tế
 
 #### 💡 Đề xuất Feature
 - Kiểm tra [Roadmap](./readme.md#18-lộ-trình--next-steps) và [Issues](../../../issues)
@@ -87,7 +85,7 @@ Bạn có thể đóng góp theo nhiều cách:
 - Viết integration tests
 - Manual testing và báo cáo
 
-### 2.2. Good First Issues
+### 2.2. Issues Tốt cho Người Bắt đầu
 
 Nếu bạn mới tham gia, hãy tìm issues với label:
 - `good first issue` – Phù hợp cho người mới
@@ -467,11 +465,11 @@ Scope là phần module/feature bị ảnh hưởng:
 
 ---
 
-## 7. Pull Request Guidelines
+## 7. Hướng dẫn Pull Request
 
 ### 7.1. Trước khi tạo PR
 
-**Checklist**:
+**Danh kiểm tra**:
 
 - [ ] Code tuân theo [style guidelines](#5-tiêu-chuẩn-code)
 - [ ] Đã chạy `pnpm lint` và sửa errors
@@ -566,9 +564,9 @@ PR được merge khi:
 
 ---
 
-## 8. Testing Requirements
+## 8. Yêu cầu Kiểm thử
 
-### 8.1. Testing Pyramid
+### 8.1. Tháp Kiểm thử
 
 ```
        /\
@@ -675,9 +673,9 @@ pnpm test:watch
 
 ---
 
-## 9. Documentation
+## 9. Tài liệu Hóa
 
-### 9.1. Code Documentation
+### 9.1. Tài liệu Code
 
 #### JSDoc cho public APIs:
 
@@ -736,7 +734,7 @@ Proposed | Accepted | Deprecated | Superseded
 ### Negative
 - ...
 
-## Alternatives Considered
+## Các Giải pháp Thay thế Đã Xem xét
 <!-- Các phương án khác đã cân nhắc -->
 ```
 
@@ -752,38 +750,38 @@ Proposed | Accepted | Deprecated | Superseded
 
 ### 10.1. Trước khi báo cáo
 
-- [ ] Search existing issues
-- [ ] Check documentation
-- [ ] Update to latest version
-- [ ] Minimal reproduction available
+- [ ] Tìm kiếm issues hiện có
+- [ ] Kiểm tra tài liệu
+- [ ] Cập nhật lên phiên bản mới nhất
+- [ ] Có sẵn reproduction tối thiểu
 
-### 10.2. Bug Report Template
+### 10.2. Mẫu Báo cáo Lỗi
 
 ```markdown
 **Mô tả bug**
 Mô tả ngắn gọn bug là gì.
 
-**Steps to reproduce**
+**Các bước Tái tạo**
 1. Vào '...'
 2. Click vào '...'
 3. Scroll xuống '...'
 4. Thấy lỗi
 
-**Expected behavior**
+**Hành vi Mong đợi**
 Mô tả kết quả mong đợi.
 
-**Actual behavior**
+**Hành vi Thực tế**
 Kết quả thực tế xảy ra.
 
 **Screenshots**
 Nếu có, thêm screenshots.
 
-**Environment**
+**Môi trường**
 - OS: [e.g. Windows 11]
 - Browser: [e.g. Chrome 120]
 - Version: [e.g. v1.2.3]
 
-**Additional context**
+**Thêm Bối cảnh**
 Thêm thông tin khác nếu cần.
 ```
 
@@ -791,7 +789,7 @@ Thêm thông tin khác nếu cần.
 
 ## 11. Đề xuất Tính năng
 
-### 11.1. Feature Request Template
+### 11.1. Mẫu Đề xuất Tính năng
 
 ```markdown
 **Tính năng đề xuất**
@@ -803,19 +801,19 @@ Giải thích vấn đề mà tính năng này giải quyết.
 **Giải pháp đề xuất**
 Mô tả giải pháp bạn muốn.
 
-**Alternatives considered**
+**Các Giải pháp Thay thế Đã Xem xét**
 Các giải pháp thay thế bạn đã cân nhắc.
 
-**Use cases**
+**Các Trường hợp Sử dụng**
 Ai sẽ sử dụng? Trong tình huống nào?
 
-**Priority**
+**Ưu tiên**
 - [ ] Critical
 - [ ] High
 - [ ] Medium
 - [ ] Low
 
-**Additional context**
+**Thêm Bối cảnh**
 Screenshots, mockups, links, etc.
 ```
 
