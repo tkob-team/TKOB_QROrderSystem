@@ -271,6 +271,7 @@ export const shadows = {
   buttonHover: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',  // Same as lg
   header: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',  // Same as DEFAULT
   navBar: '0 -1px 4px rgb(0 0 0 / 0.1)',  // Upward shadow for bottom nav
+  badge: '0 2px 4px 0 rgb(0 0 0 / 0.15)',  // Badge shadow for cart count
 } as const
 
 // ============================================================================

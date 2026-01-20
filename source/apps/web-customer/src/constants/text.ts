@@ -497,6 +497,10 @@ export const PROFILE_TEXT = {
   verifyNow: 'Verify Now',
   emailNotVerified: 'Email not verified',
   emailVerified: 'Email verified',
+  
+  // Loading states
+  loadingProfile: 'Loading profile...',
+  saving: 'Saving...',
 } as const
 
 // ============================================================================
@@ -636,6 +640,7 @@ export const ERROR_TEXT = {
   sessionExpired: 'Session Expired',
   sessionExpiredDesc: 'Your dining session has expired. Please scan the QR code at your table again to continue.',
   scanQRAgain: 'Scan QR Again',
+  invalidQR: 'Invalid QR code',
   
   // Menu errors
   menuLoadFailed: 'Failed to load menu',

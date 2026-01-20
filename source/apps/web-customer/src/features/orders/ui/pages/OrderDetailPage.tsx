@@ -108,7 +108,7 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
 
   const handleRequestBill = () => {
     if (!orderId) return;
-    requestBill(orderId, {
+    requestBill(undefined, {
       onSuccess: () => {
         setBillRequestSuccess(true);
         setTimeout(() => setBillRequestSuccess(false), 5000); // Hide after 5s

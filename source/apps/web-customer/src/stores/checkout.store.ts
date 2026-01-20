@@ -39,6 +39,10 @@ export const useCheckoutStore = create<CheckoutStore>()(
       paymentMethod: null, // User must select payment method
       tipPercent: 0, // Default: no tip
       customTipAmount: 0, // Default: no custom tip
+      // FEAT-14: Discount initial values
+      discountCode: '',
+      discountApplied: false,
+      discountAmount: 0,
 
       setCustomerName: (name) => {
         log('ui', 'Checkout name updated', { hasName: name.length > 0 }, { feature: 'checkout', dedupe: true, dedupeTtlMs: 3000 })

@@ -50,7 +50,15 @@ export function useAuthController() {
     }
 
     registerMutation.mutate(
-      { email: data.email, password: data.password },
+      { 
+        data: { 
+          email: data.email, 
+          password: data.password,
+          fullName: data.email.split('@')[0], // use email prefix as name
+          slug: `customer-${Date.now()}`,
+          tenantName: 'Customer Account',
+        } 
+      },
       {
         onSuccess: () => {
           toast.success('Account created! Please verify your email.')
@@ -65,7 +73,7 @@ export function useAuthController() {
 
   // Password reset actions
   const handleRequestPasswordReset = (data: ResetPasswordRequestForm) => {
-    requestResetMutation.mutate(data, {
+    requestResetMutation.mutate({ data: { email: data.email } }, {
       onSuccess: () => {
         toast.success('Reset link sent to your email')
       },
@@ -82,7 +90,7 @@ export function useAuthController() {
     }
 
     resetPasswordMutation.mutate(
-      { token, password: data.password },
+      { data: { token, newPassword: data.password } },
       {
         onSuccess: () => {
           toast.success('Password reset successfully!')
@@ -104,7 +112,7 @@ export function useAuthController() {
   // Email verification actions
   const handleVerifyEmail = (token: string) => {
     verifyEmailMutation.mutate(
-      { token },
+      { data: { token } },
       {
         onSuccess: () => {
           toast.success('Email verified successfully!')
@@ -120,7 +128,7 @@ export function useAuthController() {
 
   const handleResendVerification = (email: string) => {
     resendVerificationMutation.mutate(
-      { email },
+      { data: { email } },
       {
         onSuccess: () => {
           toast.success('Verification email sent!')

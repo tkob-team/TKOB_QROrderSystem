@@ -70,11 +70,7 @@ api.interceptors.response.use(
       }
     }
     
-    logError('data', 'API Error', error, { 
-      feature: 'api',
-      status: error.response?.status,
-      message: error.response?.data?.message,
-    });
+    logError('data', 'API Error', error, { feature: 'api' });
     
     return Promise.reject(error);
   }
@@ -132,13 +128,7 @@ export const customInstance = async <T>(config: any): Promise<T> => {
       
       // Don't log canceled requests (component unmount, React StrictMode, etc.)
       if (error.code !== 'ERR_CANCELED' && error.message !== 'canceled') {
-        logError('data', 'API call failed', error, {
-          feature: 'api',
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          duration: `${duration}ms`,
-          status: error.response?.status,
-        });
+        logError('data', 'API call failed', error, { feature: 'api' });
       }
       
       throw error;
