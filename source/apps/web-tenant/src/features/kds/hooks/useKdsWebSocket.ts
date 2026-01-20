@@ -141,32 +141,23 @@ export function useKdsWebSocket({
 
     // ==================== BUSINESS EVENTS ====================
 
-    // New order arrived
+    // New order arrived - DO NOT notify yet (order is PENDING, not sent to kitchen)
+    // Notification will trigger when waiter sends to kitchen (status changes to RECEIVED)
     socket.on(SocketEvents.ORDER_NEW, (payload: NewOrderPayload) => {
-      logger.info('[websocket] New order received', {
+      logger.info('[websocket] New order created', {
         orderId: payload.order.id,
         orderNumber: payload.order.orderNumber,
         table: payload.order.tableName || payload.order.tableId,
+        status: payload.order.status,
       });
 
-      // Play sound notification (3 beeps for new KDS order)
-      if (callbacksRef.current.soundEnabled) {
-        playNotificationSound('kds-new-order', 3);
-      }
-
-      // Increment badge count
-      setNewOrderCount((prev) => prev + 1);
-
-      // Invalidate KDS queries to refetch orders
+      // Just invalidate queries to refresh data, no notification/bell
       queryClient.invalidateQueries({ queryKey: ['kds', 'orders'] });
       queryClient.invalidateQueries({ queryKey: ['kds', 'stats'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-
-      // Call user callback
-      callbacksRef.current.onNewOrder?.(payload.order);
     });
 
-    // Order status changed
+    // Order status changed - only notify when waiter sends to kitchen (RECEIVED)
     socket.on(SocketEvents.ORDER_STATUS_CHANGED, (payload: OrderStatusChangedPayload) => {
       logger.info('[websocket] Order status changed', {
         orderId: payload.order.id,
@@ -174,20 +165,21 @@ export function useKdsWebSocket({
         status: payload.order.status,
       });
 
-      // Play sound when order moves to RECEIVED (sent to kitchen by waiter)
-      // This is the "new order" event for KDS
+      // Only play sound and show notification when order is sent to kitchen (RECEIVED)
+      // This is when waiter confirms the order and it appears in "New" column
       if (payload.order.status === 'RECEIVED' && callbacksRef.current.soundEnabled) {
         playNotificationSound('kds-new-order', 3);
         setNewOrderCount((prev) => prev + 1);
+        // Call user callback for toast notification
+        callbacksRef.current.onNewOrder?.(payload.order);
       }
-
 
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['kds', 'orders'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['order', payload.order.id] });
 
-      // Call user callback
+      // Call user callback for other status changes
       callbacksRef.current.onOrderStatusChanged?.(payload.order);
     });
 

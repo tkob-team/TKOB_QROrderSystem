@@ -16,6 +16,7 @@ export function SepayPaymentPage() {
     pollingProgress,
     pollingAttempt,
     pollingMaxAttempts,
+    source,
     retryPayment,
     goToOrderTracking,
     goBack,
@@ -83,6 +84,7 @@ export function SepayPaymentPage() {
       {/* Sticky Bottom CTA */}
       <StickyActionBar
         status={status}
+        source={source}
         onViewOrder={goToOrderTracking}
         onRetry={retryPayment}
         onBack={goBack}
@@ -403,15 +405,18 @@ function PaymentInstructions() {
 
 function StickyActionBar({
   status,
+  source,
   onViewOrder,
   onRetry,
   onBack,
 }: {
   status: SepayPaymentStatus
+  source: 'bill' | 'checkout'
   onViewOrder: () => void
   onRetry: () => void
   onBack: () => void
 }) {
+  const backButtonText = source === 'bill' ? 'Back to Bill' : 'Back to Checkout'
   return (
     <div
       className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t safe-area-bottom"
@@ -477,7 +482,7 @@ function StickyActionBar({
                 fontSize: '15px',
               }}
             >
-              Back to Checkout
+              {backButtonText}
             </button>
           </>
         )}

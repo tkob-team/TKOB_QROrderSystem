@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ClipboardList, LogIn, Receipt, Package, UtensilsCrossed, Loader2, XCircle, Lock, Plus, Wifi, WifiOff } from 'lucide-react'
+import { ClipboardList, LogIn, Receipt, Package, UtensilsCrossed, Loader2, XCircle, Lock, Plus, Wifi, WifiOff, Printer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { PageTransition } from '@/shared/components/transitions/PageTransition'
 import { log } from '@/shared/logging/logger'
@@ -55,11 +55,18 @@ export function OrderListPage() {
     // Bill requested state comes from session.billRequestedAt
     const canRequestBill = orders.length > 0 && !billRequested
     
+    // Check if any orders are SERVED or COMPLETED (for Print Bill feature)
+    const hasServedOrders = orders.some(order => {
+      const status = order.status?.toString().toUpperCase()
+      return status === 'SERVED' || status === 'COMPLETED'
+    })
+    
     return {
       totalAmount,
       totalItems,
       orderCount,
       canRequestBill,
+      hasServedOrders,
     }
   }, [state.currentSessionOrders, billRequested])
 
@@ -88,18 +95,16 @@ export function OrderListPage() {
   const proceedToRequestBill = async () => {
     try {
       if (process.env.NEXT_PUBLIC_USE_LOGGING) {
-        log('ui', 'Requesting bill for session', { 
+        log('ui', 'Navigating to bill preview', { 
           totalAmount: sessionSummary.totalAmount,
           orderCount: sessionSummary.orderCount,
         }, { feature: 'orders' })
       }
       
-      await requestBillMutation.mutateAsync()
-      
-      // Navigate to bill preview page
+      // Just navigate to bill preview - no lock/notify until customer confirms payment
       router.push('/bill')
     } catch (error) {
-      console.error('Failed to request bill:', error)
+      console.error('Failed to navigate to bill:', error)
     }
   }
   
@@ -230,42 +235,37 @@ export function OrderListPage() {
                       <Receipt className="w-4 h-4" />
                       View Bill
                     </button>
-                    
-                    {/* Cancel Bill Request */}
-                    <button
-                      onClick={handleCancelBillRequest}
-                      disabled={cancelBillMutation.isPending}
-                      className="px-4 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-all hover:bg-white/20 active:scale-95 disabled:opacity-50"
-                      style={{ 
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                        color: 'white'
-                      }}
-                    >
-                      {cancelBillMutation.isPending ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <XCircle className="w-3 h-3" />
-                      )}
-                      Cancel & Order More
-                    </button>
                   </>
                 ) : (
-                  <button
-                    onClick={handleRequestBillClick}
-                    disabled={requestBillMutation.isPending || state.currentSessionOrders.length === 0}
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                    style={{ 
-                      backgroundColor: 'white',
-                      color: 'var(--orange-500)'
-                    }}
-                  >
-                    {requestBillMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
+                  <>
+                    <button
+                      onClick={handleRequestBillClick}
+                      disabled={state.currentSessionOrders.length === 0}
+                      className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                      style={{ 
+                        backgroundColor: 'white',
+                        color: 'var(--orange-500)'
+                      }}
+                    >
                       <Receipt className="w-4 h-4" />
+                      View Bill
+                    </button>
+                    {/* Print Bill Button - Only show for served/completed orders when bill not requested */}
+                    {sessionSummary.hasServedOrders && (
+                      <button
+                        onClick={() => router.push('/bill?print=true')}
+                        className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+                        style={{ 
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          color: 'white',
+                          border: '1px solid rgba(255,255,255,0.3)'
+                        }}
+                      >
+                        <Printer className="w-4 h-4" />
+                        Print Bill
+                      </button>
                     )}
-                    Request Bill
-                  </button>
+                  </>
                 )}
               </div>
             </div>
@@ -293,7 +293,7 @@ export function OrderListPage() {
               >
                 <Receipt className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>
-                  A server will bring your bill shortly. Want to order more? Tap &quot;Cancel &amp; Order More&quot; above.
+                  A waiter will bring your bill shortly.
                 </span>
               </div>
             )}

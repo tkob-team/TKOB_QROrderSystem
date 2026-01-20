@@ -22,6 +22,7 @@ export interface OrderItem {
  */
 export interface KdsOrder {
   id: string;
+  orderNumber: string; // Human-readable order number (e.g., "123")
   table: string;
   time: number; // elapsed time in minutes
   items: OrderItem[];
@@ -31,6 +32,7 @@ export interface KdsOrder {
   readyAt?: string;
   servedAt?: string;
   servedBy?: 'KITCHEN' | 'WAITER';
+  createdAt?: string; // ISO date string for sorting
 }
 
 /**

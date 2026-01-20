@@ -77,6 +77,7 @@ export function mapOrderToKds(apiOrder: OrderResponse): KdsOrder {
   
   return {
     id: apiOrder.id,
+    orderNumber: apiOrder.orderNumber,
     table: apiOrder.tableNumber,
     time: elapsedMinutes,
     items: apiOrder.items.map(mapOrderItem),
@@ -86,6 +87,7 @@ export function mapOrderToKds(apiOrder: OrderResponse): KdsOrder {
     readyAt: apiOrder.readyAt,
     servedAt: apiOrder.servedAt,
     servedBy: undefined, // Not tracked in API response
+    createdAt: apiOrder.createdAt,
   }
 }
 

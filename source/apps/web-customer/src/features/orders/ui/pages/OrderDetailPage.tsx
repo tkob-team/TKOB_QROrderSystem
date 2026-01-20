@@ -224,7 +224,7 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
               
               {billRequestSuccess && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm text-center">
-                  ✓ A server will bring your bill to the table shortly
+                  ✓ A waiter will bring your bill to the table shortly
                 </div>
               )}
               
@@ -236,7 +236,7 @@ export function OrderDetailPage({ orderId }: OrderDetailPageProps) {
               
               {!billRequestSuccess && !isError && (
                 <p className="text-sm text-gray-500 text-center">
-                  A server will bring your bill to the table
+                  A waiter will bring your bill to the table
                 </p>
               )}
             </div>

@@ -771,8 +771,8 @@ export class OrderService {
   }
 
   /**
-   * Request bill for entire session
-   * Locks session from new orders until cancelled or paid
+   * Get bill preview for entire session
+   * Does NOT lock session - just returns bill info for customer to review
    */
   async requestSessionBill(sessionId: string, tableId: string, tenantId: string) {
     // Get table info
@@ -794,10 +794,6 @@ export class OrderService {
       throw new NotFoundException('Session not found');
     }
 
-    if (session.billRequestedAt) {
-      throw new BadRequestException('Bill has already been requested for this session');
-    }
-
     // Get all orders in session to calculate total
     const orders = await this.prisma.order.findMany({
       where: {
@@ -814,33 +810,119 @@ export class OrderService {
 
     const totalAmount = orders.reduce((sum, order) => sum + Number(order.total), 0);
 
-    // Update session to mark bill as requested
-    await this.prisma.tableSession.update({
-      where: { id: sessionId },
-      data: { billRequestedAt: new Date() },
-    });
+    // NOTE: Do NOT lock session or notify staff here
+    // This is just a bill preview - lock + notify happens when customer confirms payment
 
-    // Emit WebSocket event to notify staff
-    this.orderGateway.emitBillRequested(tenantId, {
-      orderId: sessionId, // Use sessionId for session-level bill request
-      orderNumber: `SESSION-${sessionId.slice(-6)}`,
-      tableId,
-      tableNumber: table.tableNumber,
-      totalAmount,
-      orderCount: orders.length,
-      requestedAt: new Date(),
-    });
-
-    this.logger.log(`Session bill requested for table ${table.tableNumber} (${orders.length} orders, $${totalAmount.toFixed(2)})`);
+    this.logger.log(`Bill preview requested for table ${table.tableNumber} (${orders.length} orders, $${totalAmount.toFixed(2)})`);
 
     return {
       success: true,
-      message: 'Bill request sent. A waiter will assist you shortly.',
+      message: 'Bill preview ready. Select a payment method to proceed.',
       sessionId,
       tableNumber: table.tableNumber,
       totalAmount,
       orderCount: orders.length,
+      billRequestedAt: session.billRequestedAt, // Return existing lock status if any
+    };
+  }
+
+  /**
+   * Confirm payment for session - locks session and notifies staff
+   * Called when customer selects payment method and confirms
+   */
+  async confirmSessionPayment(
+    sessionId: string, 
+    tableId: string, 
+    tenantId: string, 
+    paymentMethod: string,
+    tip?: number,
+    discount?: number,
+    voucherCode?: string,
+  ) {
+    // Get table info
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+      select: { tableNumber: true },
+    });
+
+    if (!table) {
+      throw new NotFoundException('Table not found');
+    }
+
+    // Get session
+    const session = await this.prisma.tableSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    // Already locked? Just return success (idempotent)
+    if (session.billRequestedAt) {
+      this.logger.log(`Session ${sessionId} already locked for payment`);
+      return {
+        success: true,
+        message: 'Payment already in progress.',
+        sessionId,
+        tableNumber: table.tableNumber,
+        alreadyLocked: true,
+      };
+    }
+
+    // Get all orders in session to calculate total
+    const orders = await this.prisma.order.findMany({
+      where: {
+        sessionId,
+        tenantId,
+        status: { notIn: [OrderStatus.CANCELLED] },
+      },
+      select: { total: true },
+    });
+
+    if (orders.length === 0) {
+      throw new BadRequestException('No orders to pay for');
+    }
+
+    const baseTotal = orders.reduce((sum, order) => sum + Number(order.total), 0);
+    const tipAmount = tip || 0;
+    const discountAmount = discount || 0;
+    const finalTotal = baseTotal + tipAmount - discountAmount;
+
+    // Lock the session (tip/discount/voucher will be saved when Bill is generated)
+    await this.prisma.tableSession.update({
+      where: { id: sessionId },
+      data: { 
+        billRequestedAt: new Date(),
+      },
+    });
+
+    // Notify staff with final total including tip and discount
+    this.orderGateway.emitBillRequested(tenantId, {
+      orderId: sessionId,
+      orderNumber: `SESSION-${sessionId.slice(-6)}`,
+      tableId,
+      tableNumber: table.tableNumber,
+      totalAmount: finalTotal,
+      orderCount: orders.length,
+      paymentMethod,
       requestedAt: new Date(),
+    });
+
+    this.logger.log(`Payment confirmed for table ${table.tableNumber} via ${paymentMethod} (${orders.length} orders, base: $${baseTotal.toFixed(2)}, tip: $${tipAmount.toFixed(2)}, discount: $${discountAmount.toFixed(2)}, final: $${finalTotal.toFixed(2)})`);
+
+    return {
+      success: true,
+      message: paymentMethod === 'SEPAY_QR' 
+        ? 'Payment initiated. Please complete the QR payment.'
+        : 'A waiter will assist you with payment shortly.',
+      sessionId,
+      tableNumber: table.tableNumber,
+      totalAmount: finalTotal,
+      tip: tipAmount,
+      discount: discountAmount,
+      orderCount: orders.length,
+      lockedAt: new Date(),
     };
   }
 

@@ -389,7 +389,19 @@ export function useTablesController(): TablesControllerState {
     setShowSuccessToast(true);
   };
 
-  const qrActions = useTablesQRActions(selectedTable, showToast);
+  // Callback to update selected table immediately after QR regeneration
+  const handleTableUpdate = (updates: { qrToken: string }) => {
+    if (selectedTable) {
+      setSelectedTable({
+        ...selectedTable,
+        qrToken: updates.qrToken,
+      });
+    }
+  };
+
+  const qrActions = useTablesQRActions(selectedTable, showToast, {
+    onTableUpdate: handleTableUpdate,
+  });
 
   // ============================================================================
   // RETURN CONTROLLER API
@@ -435,7 +447,7 @@ export function useTablesController(): TablesControllerState {
       isCreating: createTableMutation.isPending,
       isUpdating: updateTableMutation.isPending,
       isUpdatingStatus: updateStatusMutation.isPending,
-      isRegenerating: false,
+      isRegenerating: qrActions.loading.isRegenerating,
     },
 
     toast: {

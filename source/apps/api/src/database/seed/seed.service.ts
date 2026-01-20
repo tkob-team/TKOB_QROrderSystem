@@ -473,20 +473,20 @@ export class SeedService {
 
     const tables = [
       // Main Hall
-      { tableNumber: 'A1', capacity: 2, location: 'Main Hall', order: 0 },
-      { tableNumber: 'A2', capacity: 2, location: 'Main Hall', order: 1 },
-      { tableNumber: 'A3', capacity: 4, location: 'Main Hall', order: 2 },
-      { tableNumber: 'A4', capacity: 4, location: 'Main Hall', order: 3 },
-      { tableNumber: 'A5', capacity: 6, location: 'Main Hall', order: 4 },
+      { tableNumber: '1', capacity: 2, location: 'Main Hall', order: 0 },
+      { tableNumber: '2', capacity: 2, location: 'Main Hall', order: 1 },
+      { tableNumber: '3', capacity: 4, location: 'Main Hall', order: 2 },
+      { tableNumber: '4', capacity: 4, location: 'Main Hall', order: 3 },
+      { tableNumber: '5', capacity: 6, location: 'Main Hall', order: 4 },
 
       // Terrace
-      { tableNumber: 'T1', capacity: 2, location: 'Terrace', order: 5 },
-      { tableNumber: 'T2', capacity: 4, location: 'Terrace', order: 6 },
-      { tableNumber: 'T3', capacity: 4, location: 'Terrace', order: 7 },
+      { tableNumber: '6', capacity: 2, location: 'Terrace', order: 5 },
+      { tableNumber: '7', capacity: 4, location: 'Terrace', order: 6 },
+      { tableNumber: '8', capacity: 4, location: 'Terrace', order: 7 },
 
       // VIP Room
-      { tableNumber: 'VIP-1', capacity: 8, location: 'VIP Room', order: 8 },
-      { tableNumber: 'VIP-2', capacity: 10, location: 'VIP Room', order: 9 },
+      { tableNumber: '9', capacity: 8, location: 'VIP Room', order: 8 },
+      { tableNumber: '10', capacity: 10, location: 'VIP Room', order: 9 },
     ];
 
     const created = [] as any[];
