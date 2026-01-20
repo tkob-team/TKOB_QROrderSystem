@@ -2,7 +2,9 @@ name: Deploy to AWS EC2
 
 on:
   push:
-    branches: [ "release" ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
@@ -10,11 +12,56 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # CI: Run tests before building
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./source/apps/api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma:generate
+
+      - name: Run unit tests
+        run: pnpm test --passWithNoTests
+
+  # CD: Build and push Docker image
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    # Chỉ build khi push vào main hoặc là PR
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
@@ -36,23 +83,31 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=long
+            type=ref,event=pr
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./source/apps/api/Dockerfile
-          push: true
+          # Chỉ push image khi push vào main
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    # Chỉ deploy khi push vào main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
 
     steps:
       - name: Checkout code
@@ -67,6 +122,7 @@ jobs:
           source: "docker-compose.prod.yml"
           target: "/home/ubuntu/app/"
           strip_components: 0
+          overwrite: true
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -75,16 +131,23 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             mkdir -p /home/ubuntu/app
             cd /home/ubuntu/app
 
+            # Tạo file .env
             echo "${{ secrets.ENV_FILE }}" > .env
 
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Login vào GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            # Pull image mới nhất
             docker compose -f docker-compose.prod.yml pull
 
-            docker compose -f docker-compose.prod.yml down
-            docker compose -f docker-compose.prod.yml up -d
+            # Deploy với zero-downtime (nếu có healthcheck)
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            docker image prune -f
+            # Cleanup
+            docker image prune -af --filter "until=24h"
+            
+            echo "✅ Deployment completed successfully!"
