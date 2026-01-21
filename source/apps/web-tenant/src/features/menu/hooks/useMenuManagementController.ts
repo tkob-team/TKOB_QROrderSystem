@@ -27,7 +27,7 @@ export function useMenuManagementController() {
     status: filtersController.appliedFilters.status !== 'All Status' ? filtersController.appliedFilters.status : undefined,
     availability: filtersController.appliedFilters.availability as 'available' | 'unavailable',
     chefRecommended: filtersController.appliedFilters.chefRecommended || undefined,
-    searchQuery: filtersController.appliedFilters.searchQuery || undefined,
+    search: filtersController.appliedFilters.searchQuery || undefined,
     sortBy: filtersController.appliedFilters.sortBy,
     page: selectionState.currentPage,
     pageSize: selectionState.pageSize,

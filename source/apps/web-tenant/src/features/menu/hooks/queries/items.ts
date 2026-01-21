@@ -13,7 +13,7 @@ interface UseMenuItemsParams {
   status?: string;
   availability?: 'available' | 'unavailable';
   chefRecommended?: boolean;
-  searchQuery?: string;
+  search?: string;
   sortBy?: string;
   page?: number;
   pageSize?: number;
