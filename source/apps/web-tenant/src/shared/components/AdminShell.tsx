@@ -32,6 +32,7 @@ export type AdminNavItem =
   | 'service-board'
   | 'analytics'
   | 'staff'
+  | 'settings'
   | 'tenant-profile'
   | 'account-settings';
 
@@ -64,7 +65,7 @@ export function AdminShell({
     if (pathname.includes('/admin/service-board')) return 'service-board';
     if (pathname.includes('/admin/analytics')) return 'analytics';
     if (pathname.includes('/admin/staff')) return 'staff';
-    if (pathname.includes('/admin/settings')) return 'account-settings';
+    if (pathname.includes('/admin/settings')) return 'settings';
     if (pathname.includes('/admin/profile')) return 'tenant-profile';
     return 'dashboard';
   }, [pathname]);
