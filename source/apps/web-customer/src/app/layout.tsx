@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'QR Dine - Restaurant Ordering System',
   description: 'Scan QR code to order food at your table',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export const viewport: Viewport = {

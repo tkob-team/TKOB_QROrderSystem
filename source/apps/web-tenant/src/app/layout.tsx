@@ -29,6 +29,9 @@ const sourGummy = Sour_Gummy({
 export const metadata: Metadata = {
   title: 'TKOB Admin - Restaurant Management',
   description: 'Admin portal for restaurant management - menu, orders, tables, and staff',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export const viewport: Viewport = {
