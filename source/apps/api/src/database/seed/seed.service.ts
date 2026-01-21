@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import * as bcrypt from 'bcrypt';
 import { MenuPhotoService } from '@/modules/menu/services/menu-photo.service';
 import { UnsplashService } from './unplash.service';
 import {
@@ -40,6 +39,9 @@ export class SeedService {
     this.logger.log(`🌱 Starting seed data for tenant: ${tenantId}`);
 
     try {
+      // Step 0: Create FREE subscription first
+      await this.createFreeSubscription(tenantId);
+
       // Seed theo thứ tự phụ thuộc
       const categories = await this.seedCategories(tenantId);
       const modifiers = await this.seedModifiers(tenantId);
@@ -61,6 +63,141 @@ export class SeedService {
       this.logger.error(`❌ Seed failed for tenant ${tenantId}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Seed Subscription Plans (run once on startup)
+   * DB-driven pricing - can be updated without deploy
+   */
+  async seedSubscriptionPlans(): Promise<void> {
+    this.logger.log('🌱 Seeding subscription plans...');
+
+    const plans = [
+      {
+        tier: SubscriptionTier.FREE,
+        name: 'Free',
+        description: 'Perfect for trying out TKOB. Free forever with basic limits.',
+        priceUSD: 0,
+        priceVND: 0,
+        maxTables: 1,
+        maxMenuItems: 10,
+        maxOrdersMonth: 100,
+        maxStaff: 1,
+        features: {
+          analytics: false,
+          promotions: false,
+          customBranding: false,
+          prioritySupport: false,
+        },
+      },
+      {
+        tier: SubscriptionTier.BASIC,
+        name: 'Basic',
+        description: 'Great for small restaurants. More tables and menu items.',
+        priceUSD: 1,
+        priceVND: 25000,
+        maxTables: 10,
+        maxMenuItems: 50,
+        maxOrdersMonth: 500,
+        maxStaff: 5,
+        features: {
+          analytics: true,
+          promotions: true,
+          customBranding: false,
+          prioritySupport: false,
+        },
+      },
+      {
+        tier: SubscriptionTier.PREMIUM,
+        name: 'Premium',
+        description: 'Unlimited everything for growing businesses.',
+        priceUSD: 2,
+        priceVND: 50000, // 2 * 50000
+        maxTables: -1, // Unlimited
+        maxMenuItems: -1,
+        maxOrdersMonth: -1,
+        maxStaff: -1,
+        features: {
+          analytics: true,
+          promotions: true,
+          customBranding: true,
+          prioritySupport: true,
+        },
+      },
+    ];
+
+    for (const plan of plans) {
+      await this.prisma.subscriptionPlan.upsert({
+        where: { tier: plan.tier },
+        update: {
+          name: plan.name,
+          description: plan.description,
+          priceUSD: plan.priceUSD,
+          priceVND: plan.priceVND,
+          maxTables: plan.maxTables,
+          maxMenuItems: plan.maxMenuItems,
+          maxOrdersMonth: plan.maxOrdersMonth,
+          maxStaff: plan.maxStaff,
+          features: plan.features,
+          isActive: true,
+        },
+        create: {
+          tier: plan.tier,
+          name: plan.name,
+          description: plan.description,
+          priceUSD: plan.priceUSD,
+          priceVND: plan.priceVND,
+          maxTables: plan.maxTables,
+          maxMenuItems: plan.maxMenuItems,
+          maxOrdersMonth: plan.maxOrdersMonth,
+          maxStaff: plan.maxStaff,
+          features: plan.features,
+          isActive: true,
+        },
+      });
+    }
+
+    this.logger.log('✅ Subscription plans seeded successfully');
+  }
+
+  /**
+   * Create FREE subscription for new tenant
+   */
+  async createFreeSubscription(tenantId: string): Promise<void> {
+    // Get FREE plan
+    const freePlan = await this.prisma.subscriptionPlan.findUnique({
+      where: { tier: SubscriptionTier.FREE },
+    });
+
+    if (!freePlan) {
+      this.logger.error('FREE plan not found. Run seedSubscriptionPlans first.');
+      return;
+    }
+
+    // Check if subscription already exists
+    const existing = await this.prisma.tenantSubscription.findUnique({
+      where: { tenantId },
+    });
+
+    if (existing) {
+      this.logger.debug(`Subscription already exists for tenant ${tenantId}`);
+      return;
+    }
+
+    // Create subscription
+    await this.prisma.tenantSubscription.create({
+      data: {
+        tenantId,
+        planId: freePlan.id,
+        status: SubscriptionStatus.ACTIVE,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: null, // FREE never expires
+        ordersThisMonth: 0,
+        usageResetAt: new Date(),
+      },
+    });
+
+    this.logger.log(`✅ Created FREE subscription for tenant ${tenantId}`);
   }
 
   /**
@@ -464,141 +601,6 @@ export class SeedService {
     }
 
     return created;
-  }
-
-  /**
-   * Seed Subscription Plans (run once on startup)
-   * DB-driven pricing - can be updated without deploy
-   */
-  async seedSubscriptionPlans(): Promise<void> {
-    this.logger.log('🌱 Seeding subscription plans...');
-
-    const plans = [
-      {
-        tier: SubscriptionTier.FREE,
-        name: 'Free',
-        description: 'Perfect for trying out TKOB. Free forever with basic limits.',
-        priceUSD: 0,
-        priceVND: 0,
-        maxTables: 1,
-        maxMenuItems: 10,
-        maxOrdersMonth: 100,
-        maxStaff: 1,
-        features: {
-          analytics: false,
-          promotions: false,
-          customBranding: false,
-          prioritySupport: false,
-        },
-      },
-      {
-        tier: SubscriptionTier.BASIC,
-        name: 'Basic',
-        description: 'Great for small restaurants. More tables and menu items.',
-        priceUSD: 1,
-        priceVND: 25000,
-        maxTables: 10,
-        maxMenuItems: 50,
-        maxOrdersMonth: 500,
-        maxStaff: 5,
-        features: {
-          analytics: true,
-          promotions: true,
-          customBranding: false,
-          prioritySupport: false,
-        },
-      },
-      {
-        tier: SubscriptionTier.PREMIUM,
-        name: 'Premium',
-        description: 'Unlimited everything for growing businesses.',
-        priceUSD: 2,
-        priceVND: 50000, // 2 * 50000
-        maxTables: -1, // Unlimited
-        maxMenuItems: -1,
-        maxOrdersMonth: -1,
-        maxStaff: -1,
-        features: {
-          analytics: true,
-          promotions: true,
-          customBranding: true,
-          prioritySupport: true,
-        },
-      },
-    ];
-
-    for (const plan of plans) {
-      await this.prisma.subscriptionPlan.upsert({
-        where: { tier: plan.tier },
-        update: {
-          name: plan.name,
-          description: plan.description,
-          priceUSD: plan.priceUSD,
-          priceVND: plan.priceVND,
-          maxTables: plan.maxTables,
-          maxMenuItems: plan.maxMenuItems,
-          maxOrdersMonth: plan.maxOrdersMonth,
-          maxStaff: plan.maxStaff,
-          features: plan.features,
-          isActive: true,
-        },
-        create: {
-          tier: plan.tier,
-          name: plan.name,
-          description: plan.description,
-          priceUSD: plan.priceUSD,
-          priceVND: plan.priceVND,
-          maxTables: plan.maxTables,
-          maxMenuItems: plan.maxMenuItems,
-          maxOrdersMonth: plan.maxOrdersMonth,
-          maxStaff: plan.maxStaff,
-          features: plan.features,
-          isActive: true,
-        },
-      });
-    }
-
-    this.logger.log('✅ Subscription plans seeded successfully');
-  }
-
-  /**
-   * Create FREE subscription for new tenant
-   */
-  async createFreeSubscription(tenantId: string): Promise<void> {
-    // Get FREE plan
-    const freePlan = await this.prisma.subscriptionPlan.findUnique({
-      where: { tier: SubscriptionTier.FREE },
-    });
-
-    if (!freePlan) {
-      this.logger.error('FREE plan not found. Run seedSubscriptionPlans first.');
-      return;
-    }
-
-    // Check if subscription already exists
-    const existing = await this.prisma.tenantSubscription.findUnique({
-      where: { tenantId },
-    });
-
-    if (existing) {
-      this.logger.debug(`Subscription already exists for tenant ${tenantId}`);
-      return;
-    }
-
-    // Create subscription
-    await this.prisma.tenantSubscription.create({
-      data: {
-        tenantId,
-        planId: freePlan.id,
-        status: SubscriptionStatus.ACTIVE,
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: null, // FREE never expires
-        ordersThisMonth: 0,
-        usageResetAt: new Date(),
-      },
-    });
-
-    this.logger.log(`✅ Created FREE subscription for tenant ${tenantId}`);
   }
 
   /**
