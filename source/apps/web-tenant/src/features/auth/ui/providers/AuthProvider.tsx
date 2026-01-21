@@ -129,8 +129,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const result = await loginMutation.mutateAsync(loginPayload);
 
         logger.log('[AuthContext] Login mutation successful, setting hasToken=true');
+        
+        // 🔑 CRITICAL: Set user state immediately from login response
+        // This avoids race condition with refetch() which depends on hasToken state
+        if (result?.user) {
+          const mappedUser = mapBackendUserToDomainUser(result.user, result.tenant);
+          if (mappedUser) {
+            setUser(mappedUser);
+            logger.log('[AuthContext] User set from login response', { userId: mappedUser.id, role: mappedUser.role });
+          }
+        }
+        
         setHasToken(true);
-        await refetch();
+        // Note: Don't await refetch() here - it has race condition with enabled: hasToken
+        // The user is already set from login response above
         logger.log('[AuthContext] Login complete');
         
         // Return user role from login response so caller can navigate immediately
@@ -141,7 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
     },
-    [loginMutation, refetch],
+    [loginMutation],
   );
 
   const logout = useCallback(() => {
