@@ -21,7 +21,7 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ role: UserRole } | undefined>;
   logout: () => void;
   devLogin: (role: UserRole) => void;
   switchRole: (role: UserRole) => void;
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [currentUserData, hasToken, isLoading]);
 
   const login = useCallback(
-    async (email: string, password: string, rememberMe: boolean = false) => {
+    async (email: string, password: string, rememberMe: boolean = false): Promise<{ role: UserRole } | undefined> => {
       try {
         const deviceInfo = typeof window !== 'undefined'
           ? `${navigator.userAgent} | ${navigator.platform}`
@@ -126,12 +126,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           rememberMe,
         };
 
-        await loginMutation.mutateAsync(loginPayload);
+        const result = await loginMutation.mutateAsync(loginPayload);
 
         logger.log('[AuthContext] Login mutation successful, setting hasToken=true');
         setHasToken(true);
         await refetch();
         logger.log('[AuthContext] Login complete');
+        
+        // Return user role from login response so caller can navigate immediately
+        const userRole = (result?.user?.role?.toLowerCase() || 'admin') as UserRole;
+        return { role: userRole };
       } catch (error) {
         logger.error('[AuthContext] Login failed:', error);
         throw error;

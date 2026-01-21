@@ -34,6 +34,7 @@ if (typeof window !== 'undefined') {
 export const api = axios.create({
   baseURL,
   timeout: 30000, // 30s for registration with seed data
+  withCredentials: true, // 🔑 Enable sending cookies with requests
   headers: {
     'Content-Type': 'application/json',
   },

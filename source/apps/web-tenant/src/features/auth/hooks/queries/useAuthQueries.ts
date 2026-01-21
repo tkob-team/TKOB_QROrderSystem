@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authAdapter } from '@/features/auth/data/factory';
 import { logger } from '@/shared/utils/logger';
+import { api } from '@/services/axios';
 import type {
   LoginDto,
   RegisterSubmitDto,
@@ -49,6 +50,9 @@ export const useLogin = () => {
           storage.setItem('refreshToken', data.refreshToken);
         }
         
+        // 🔑 CRITICAL: Update axios default header immediately to prevent race condition
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
+        
         // Clean up temporary flag
         sessionStorage.removeItem('__rememberMe');
         
@@ -61,7 +65,7 @@ export const useLogin = () => {
         
         logger.debug('[auth] LOGIN_COOKIES_SET', { maxAge });
       }
-      // Invalidate current user query
+      // Invalidate current user query to trigger refetch with new token
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
     onError: (error) => {
@@ -98,6 +102,10 @@ export const useRegisterConfirm = () => {
         if (data.refreshToken) {
           localStorage.setItem('refreshToken', data.refreshToken); 
         }
+        
+        // 🔑 CRITICAL: Update axios default header immediately
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
+        
         const maxAge = data.expiresIn || 3600;
         document.cookie = `authToken=${data.accessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
         if (data.refreshToken) {
@@ -120,6 +128,8 @@ export const useRefreshToken = () => {
       // Update auth token
       if (typeof window !== 'undefined' && data.accessToken) {
         localStorage.setItem('authToken', data.accessToken);
+        // 🔑 Update axios default header immediately
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
       }
     },
   });
@@ -153,6 +163,9 @@ export const useLogout = () => {
         sessionStorage.removeItem('authToken');
         sessionStorage.removeItem('refreshToken');
         // Clear both authToken and refreshToken cookies
+        
+        // 🔑 Clear axios default header
+        delete api.defaults.headers.common['Authorization'];
         document.cookie = 'authToken=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';
       }
@@ -166,6 +179,9 @@ export const useLogout = () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');
         sessionStorage.removeItem('authToken');
+        
+        // 🔑 Clear axios default header
+        delete api.defaults.headers.common['Authorization'];
         sessionStorage.removeItem('refreshToken');
         document.cookie = 'authToken=; path=/; max-age=0; SameSite=Lax';
         document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';

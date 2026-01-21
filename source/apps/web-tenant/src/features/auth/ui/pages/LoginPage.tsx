@@ -10,7 +10,8 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/shared/context/AuthContext';
 import { logger } from '@/shared/utils/logger';
-import { config, ROUTES } from '@/shared/config';
+import { config, ROUTES, getHomeRouteForRole } from '@/shared/config';
+import type { UserRole } from '@/shared/config';
 import { AuthPageHeader } from '../components/AuthPageHeader';
 import {
   fadeInUp,
@@ -115,7 +116,7 @@ export function Login({ onNavigate }: LoginProps) {
 
       // Production authentication
       logger.debug('[auth] LOGIN_PAGE_ATTEMPT');
-      await login(data.email, data.password, rememberMe);
+      const result = await login(data.email, data.password, rememberMe);
 
       // Save remember me preference
       if (rememberMe) {
@@ -126,10 +127,14 @@ export function Login({ onNavigate }: LoginProps) {
         localStorage.removeItem('rememberMe');
       }
 
-      // Navigate to default route
-      const defaultRoute = getDefaultRoute();
-      logger.debug('[auth] LOGIN_PAGE_NAVIGATE', { route: defaultRoute });
-      router.push(defaultRoute);
+      // Navigate using role from login response (not from state which may be stale)
+      // result.role is already lowercase (from AuthProvider)
+      const userRole = result?.role || 'admin';
+      const defaultRoute = getHomeRouteForRole(userRole as UserRole);
+      logger.debug('[auth] LOGIN_PAGE_NAVIGATE', { route: defaultRoute, role: userRole, result });
+      
+      // Use window.location for hard redirect to avoid React Router race conditions
+      window.location.href = defaultRoute;
     } catch (error: unknown) {
       logger.error('[auth] LOGIN_PAGE_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
 

@@ -2,7 +2,7 @@
 // Extracted from Admin-screens-v3 App.tsx patterns
 import { logger } from '@/shared/utils/logger';
 
-export type UserRole = 'admin' | 'waiter' | 'kds' | null;
+export type UserRole = 'admin' | 'owner' | 'waiter' | 'kds' | null;
 
 type RoleRoutes = {
   [K in Exclude<UserRole, null>]: string;
@@ -14,6 +14,7 @@ type RoleAllowedRoutes = {
 
 export const ROLE_HOME_ROUTES: RoleRoutes = {
   admin: '/admin/dashboard',
+  owner: '/admin/dashboard', // Owner has same home as admin
   waiter: '/waiter',
   kds: '/kds',
   null: '/auth/login',
@@ -21,6 +22,7 @@ export const ROLE_HOME_ROUTES: RoleRoutes = {
 
 export const ROLE_ALLOWED_ROUTES: RoleAllowedRoutes = {
   admin: ['/admin/*', '/admin/profile'],
+  owner: ['/admin/*', '/admin/profile'], // Owner has same permissions as admin
   waiter: ['/waiter/*', '/admin/profile'],
   kds: ['/kds/*'],
   null: ['/auth/*'],
