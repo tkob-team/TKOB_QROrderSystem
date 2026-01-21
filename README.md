@@ -745,7 +745,6 @@ pnpm type-check
 
 ### Folder Structure
 
-```
 TKOB_QROrderSystem/
 ├── docs/
 │   ├── common/             # Shared documentation
