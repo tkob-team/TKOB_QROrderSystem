@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePagination } from './usePagination';
 
-export function useMenuSelectionState(itemsPerPage = 12) {
+export function useMenuSelectionState(itemsPerPage = 6) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categoryActiveOnly, setCategoryActiveOnly] = useState(false);
   const [categorySortBy, setCategorySortBy] = useState('displayOrder');
