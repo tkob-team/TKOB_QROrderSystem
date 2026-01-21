@@ -37,7 +37,9 @@ export function useItemModalState() {
       chefRecommended: item.chefRecommended || false,
       displayOrder: item.displayOrder || 0,
       photos: [],
-      modifierGroupIds: item.modifierGroups?.map(g => g.id) || [],
+      // Fix: Extract modifier group IDs from the correct structure
+      // API returns: { modifierGroupId, modifierGroup: { id, name, ... } }
+      modifierGroupIds: item.modifierGroups?.map((mg: any) => mg.modifierGroupId || mg.modifierGroup?.id || mg.id) || [],
       photosToDelete: [],
     });
     setIsItemModalOpen(true);

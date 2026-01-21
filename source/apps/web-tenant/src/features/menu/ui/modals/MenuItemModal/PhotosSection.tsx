@@ -7,6 +7,7 @@ interface ExistingPhoto {
   filename: string;
   size: number;
   isPrimary: boolean;
+  url: string;
 }
 
 interface PhotosSectionProps {
@@ -67,8 +68,16 @@ export function PhotosSection({
                     photo.isPrimary ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-gray-50'
                   }`}
                 >
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {photo.url ? (
+                      <img 
+                        src={photo.url} 
+                        alt={photo.filename}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-gray-400" />
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
