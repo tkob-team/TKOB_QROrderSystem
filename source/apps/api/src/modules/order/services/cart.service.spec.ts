@@ -37,6 +37,9 @@ describe('CartService', () => {
       tableSession: {
         findUnique: jest.fn(),
       },
+      menuItemPhoto: {
+        findMany: jest.fn(),
+      },
     };
 
     const tenantServiceMock = {
@@ -106,6 +109,8 @@ describe('CartService', () => {
         ],
       };
       (prismaService.cart.findFirst as jest.Mock).mockResolvedValue(mockCart);
+      (prismaService.menuItemPhoto.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.cart.findFirst as jest.Mock).mockResolvedValue(mockCart);
 
       const result = await service.getCartByTable('tenant-1', 'table-1', 'session-1');
 
@@ -137,6 +142,7 @@ describe('CartService', () => {
         tenantId: 'tenant-1',
         items: [],
       });
+      (prismaService.menuItemPhoto.findMany as jest.Mock).mockResolvedValue([]);
 
       await service.updateCartItem('cart-1', 'item-1', { quantity: 0 });
 
@@ -165,6 +171,7 @@ describe('CartService', () => {
         tenantId: 'tenant-1',
         items: [],
       });
+      (prismaService.menuItemPhoto.findMany as jest.Mock).mockResolvedValue([]);
 
       await service.removeCartItem('cart-1', 'item-1');
 

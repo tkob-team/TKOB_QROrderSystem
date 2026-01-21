@@ -203,7 +203,28 @@ export class CartService {
       };
     }
 
-    const photosByMenuItemId = await this.getMenuItemPhotos(cart.items.map(item => item.menuItemId));
+    // Lấy primary photos cho các menu items
+    const menuItemIds = cart.items.map(item => item.menuItemId);
+    const photos = await this.prisma.menuItemPhoto.findMany({
+      where: {
+        menuItemId: { in: menuItemIds },
+        isPrimary: true,
+      },
+      select: {
+        id: true,
+        menuItemId: true,
+        url: true,
+        filename: true,
+        mimeType: true,
+        size: true,
+        displayOrder: true,
+        isPrimary: true,
+        createdAt: true,
+      },
+    });
+
+    const photosByMenuItemId = new Map(photos.map(p => [p.menuItemId, p]));
+
     return this.buildCartResponse(cart, pricingSettings, photosByMenuItemId);
   }
 
@@ -324,7 +345,27 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    const photosByMenuItemId = await this.getMenuItemPhotos(cart.items.map(item => item.menuItemId));
+    // Lấy primary photos cho các menu items
+    const menuItemIds = cart.items.map(item => item.menuItemId);
+    const photos = await this.prisma.menuItemPhoto.findMany({
+      where: {
+        menuItemId: { in: menuItemIds },
+        isPrimary: true,
+      },
+      select: {
+        id: true,
+        menuItemId: true,
+        url: true,
+        filename: true,
+        mimeType: true,
+        size: true,
+        displayOrder: true,
+        isPrimary: true,
+        createdAt: true,
+      },
+    });
+
+    const photosByMenuItemId = new Map(photos.map(p => [p.menuItemId, p]));
 
     // Lấy pricing settings từ tenant
     const pricingSettings = await this.tenantService.getPricingSettings(cart.tenantId);
@@ -493,32 +534,4 @@ export class CartService {
 
     return validated;
   }
-
-  /**
-   * Get primary photos for menu items (avoid duplication)
-   */
-  private async getMenuItemPhotos(menuItemIds: string[]): Promise<Map<string, any>> {
-    if (menuItemIds.length === 0) {
-      return new Map();
-    }
-
-    const photos = await this.prisma.menuItemPhoto.findMany({
-      where: {
-        menuItemId: { in: menuItemIds },
-        isPrimary: true,
-      },
-      select: {
-        id: true,
-        menuItemId: true,
-        url: true,
-        filename: true,
-        mimeType: true,
-        size: true,
-        displayOrder: true,
-        isPrimary: true,
-        createdAt: true,
-      },
-    });
-
-    return new Map(photos.map(p => [p.menuItemId, p]));
-  }}
+}
