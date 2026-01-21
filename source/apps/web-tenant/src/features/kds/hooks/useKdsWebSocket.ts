@@ -199,6 +199,18 @@ export function useKdsWebSocket({
       callbacksRef.current.onOrderCancelled?.(payload);
     });
 
+    // Order timer update - real-time elapsed time updates
+    socket.on(SocketEvents.ORDER_TIMER_UPDATE, (payload: any) => {
+      logger.debug('[websocket] Order timer update received', {
+        orderId: payload.orderId,
+        elapsedMinutes: payload.elapsedMinutes,
+        priority: payload.priority,
+      });
+
+      // Invalidate orders query to refresh with updated times
+      queryClient.invalidateQueries({ queryKey: ['kds', 'orders'] });
+    });
+
   }, [queryClient]);
 
   const connect = useCallback(() => {

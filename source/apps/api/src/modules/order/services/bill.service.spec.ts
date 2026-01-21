@@ -159,6 +159,8 @@ describe('BillService', () => {
     it('should create bill from completed orders', async () => {
       (prismaService.order.findMany as jest.Mock).mockResolvedValue([mockOrder]);
       (prismaService.bill.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.bill.findMany as jest.Mock).mockResolvedValue([]); // Mock for generateBillNumber
+      (prismaService.bill.findUnique as jest.Mock).mockResolvedValue(null); // No collision
       (prismaService.$transaction as jest.Mock).mockResolvedValue(mockBill);
 
       const result = await service.closeTableAndGenerateBill(

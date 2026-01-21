@@ -18,7 +18,30 @@ export class BillService {
     sessionId: string,
     dto: CloseTableDto,
   ): Promise<BillResponseDto> {
-    // 1. Get all completed AND paid orders for this table session
+    // 1. Check if a bill already exists for this session
+    const existingBill = await this.prisma.bill.findFirst({
+      where: {
+        tenantId,
+        tableId,
+        sessionId,
+      },
+      include: {
+        orders: {
+          include: {
+            items: true,
+          },
+        },
+        table: true,
+      },
+    });
+
+    // If bill already exists, return it (avoid duplicate bill_number)
+    if (existingBill) {
+      this.logger.warn(`Bill already exists for session ${sessionId}. Returning existing bill.`);
+      return this.mapToBillResponse(existingBill);
+    }
+
+    // 2. Get all completed AND paid orders for this table session
     // Flow: waiter marks completed -> marks paid -> closes table
     const orders = await this.prisma.order.findMany({
       where: {
@@ -37,7 +60,7 @@ export class BillService {
       throw new BadRequestException('No completed and paid orders found for this table. Please mark all orders as paid first.');
     }
 
-    // 2. Calculate bill totals
+    // 3. Calculate bill totals
     const subtotal = orders.reduce((sum, order) => sum + Number(order.total), 0);
     const serviceCharge = orders.reduce((sum, order) => sum + Number(order.serviceCharge), 0);
     const tax = orders.reduce((sum, order) => sum + Number(order.tax), 0);
@@ -48,10 +71,36 @@ export class BillService {
     // Total = subtotal - discount + tip
     const total = subtotal - discount + tip;
 
-    // 3. Generate bill number
-    const billNumber = await this.generateBillNumber(tenantId);
+    // 4. Generate bill number with retry (in case of race condition)
+    let billNumber: string | null = null;
+    let retries = 5;
+    let lastError: any;
 
-    // 4. Create bill and update orders in transaction
+    while (retries > 0 && !billNumber) {
+      try {
+        billNumber = await this.generateBillNumber(tenantId);
+        break;
+      } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('bill_number')) {
+          // Unique constraint violation on bill_number - retry with new number
+          retries--;
+          if (retries === 0) {
+            throw new BadRequestException('Failed to generate unique bill number after multiple attempts');
+          }
+          // Wait a bit before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+          lastError = error;
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (!billNumber) {
+      throw lastError || new BadRequestException('Failed to generate bill number');
+    }
+
+    // 5. Create bill and update orders in transaction
     const bill = await this.prisma.$transaction(async (tx) => {
       // Create bill
       const newBill = await tx.bill.create({
@@ -169,22 +218,48 @@ export class BillService {
 
   /**
    * Generate unique bill number
+   * Uses loop instead of recursion to avoid excessive queries
+   * Bill number is globally unique across all tenants
    */
   private async generateBillNumber(tenantId: string): Promise<string> {
     const today = new Date();
     const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const billNumberPrefix = `BILL-${datePrefix}`;
 
-    const lastBill = await this.prisma.bill.findFirst({
+    // Get the highest sequence for today - single query only
+    // Search globally (not per tenant) since bill_number is globally unique
+    const lastBills = await this.prisma.bill.findMany({
       where: {
-        tenantId,
-        billNumber: { startsWith: `BILL-${datePrefix}` },
+        billNumber: { startsWith: billNumberPrefix },
       },
       orderBy: { billNumber: 'desc' },
+      take: 1, // Only need the last one
+      select: { billNumber: true },
     });
 
-    const sequence = lastBill ? parseInt(lastBill.billNumber.slice(-4)) + 1 : 1;
+    let sequence = lastBills.length > 0 ? parseInt(lastBills[0].billNumber.slice(-4)) + 1 : 1;
+    
+    // Try up to 5 times to find a unique number
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidateNumber = `${billNumberPrefix}-${sequence.toString().padStart(4, '0')}`;
+      
+      // Check if this number exists (globally unique)
+      const existingBill = await this.prisma.bill.findUnique({
+        where: { billNumber: candidateNumber },
+        select: { id: true },
+      });
 
-    return `BILL-${datePrefix}-${sequence.toString().padStart(4, '0')}`;
+      if (!existingBill) {
+        // Found unique number
+        return candidateNumber;
+      }
+
+      // Collision - increment and try again
+      sequence++;
+    }
+
+    // Should rarely happen, but fail gracefully
+    throw new BadRequestException('Failed to generate unique bill number after retries');
   }
 
   /**
