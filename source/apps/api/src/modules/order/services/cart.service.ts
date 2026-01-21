@@ -203,7 +203,8 @@ export class CartService {
       };
     }
 
-    return this.buildCartResponse(cart, pricingSettings);
+    const photosByMenuItemId = await this.getMenuItemPhotos(cart.items.map(item => item.menuItemId));
+    return this.buildCartResponse(cart, pricingSettings, photosByMenuItemId);
   }
 
   /**
@@ -323,18 +324,25 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
+    const photosByMenuItemId = await this.getMenuItemPhotos(cart.items.map(item => item.menuItemId));
+
     // Lấy pricing settings từ tenant
     const pricingSettings = await this.tenantService.getPricingSettings(cart.tenantId);
 
-    return this.buildCartResponse(cart, pricingSettings);
+    return this.buildCartResponse(cart, pricingSettings, photosByMenuItemId);
   }
 
   /**
    * Build cart response DTO from cart data
    */
-  private buildCartResponse(cart: any, pricingSettings: TenantPricingSettings): CartResponseDto {
+  private buildCartResponse(
+    cart: any, 
+    pricingSettings: TenantPricingSettings,
+    photosByMenuItemId?: Map<string, any>,
+  ): CartResponseDto {
     const items = cart.items.map((item: any) => {
       const itemTotal = Number(item.unitPrice) * item.quantity;
+      const photo = photosByMenuItemId?.get(item.menuItemId);
       return {
         id: item.id,
         menuItemId: item.menuItemId,
@@ -344,6 +352,18 @@ export class CartService {
         modifiers: (item.modifiers as any) || [],
         notes: item.notes,
         itemTotal,
+        ...(photo && {
+          primaryPhoto: {
+            id: photo.id,
+            url: photo.url,
+            filename: photo.filename,
+            mimeType: photo.mimeType,
+            size: photo.size,
+            displayOrder: photo.displayOrder,
+            isPrimary: photo.isPrimary,
+            createdAt: photo.createdAt,
+          },
+        }),
       };
     });
 
@@ -473,4 +493,32 @@ export class CartService {
 
     return validated;
   }
-}
+
+  /**
+   * Get primary photos for menu items (avoid duplication)
+   */
+  private async getMenuItemPhotos(menuItemIds: string[]): Promise<Map<string, any>> {
+    if (menuItemIds.length === 0) {
+      return new Map();
+    }
+
+    const photos = await this.prisma.menuItemPhoto.findMany({
+      where: {
+        menuItemId: { in: menuItemIds },
+        isPrimary: true,
+      },
+      select: {
+        id: true,
+        menuItemId: true,
+        url: true,
+        filename: true,
+        mimeType: true,
+        size: true,
+        displayOrder: true,
+        isPrimary: true,
+        createdAt: true,
+      },
+    });
+
+    return new Map(photos.map(p => [p.menuItemId, p]));
+  }}

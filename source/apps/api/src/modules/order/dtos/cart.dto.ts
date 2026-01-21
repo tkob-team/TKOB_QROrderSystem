@@ -9,6 +9,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { MenuItemPhotoResponseDto } from '../../menu/dto/menu-photo.dto';
 
 export class CartModifierInputDto {
   @ApiProperty({ example: 'adb1cd5a-6121-462d-97b1-e52bb8d84a97' })
@@ -96,6 +97,9 @@ export class CartItemResponseDto {
 
   @ApiProperty({ type: [CartModifierDto] })
   modifiers: CartModifierDto[];
+
+  @ApiPropertyOptional({ type: MenuItemPhotoResponseDto })
+  primaryPhoto?: MenuItemPhotoResponseDto;
 
   @ApiProperty()
   notes?: string;

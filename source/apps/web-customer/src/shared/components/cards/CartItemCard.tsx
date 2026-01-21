@@ -15,7 +15,7 @@ export function CartItemCard({ cartItem, onUpdateQuantity, onRemove, onEdit: _on
       <div className="flex gap-3">
         {/* Image */}
         <OptimizedImage
-          src={cartItem.imageUrl || 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1c/2f/33/2d/healthy-bowl-frische.jpg?w=900&h=500&s=1'}
+          src={cartItem.primaryPhoto?.url || cartItem.imageUrl || 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1c/2f/33/2d/healthy-bowl-frische.jpg?w=900&h=500&s=1'}
           alt={cartItem.name}
           width={80}
           height={80}

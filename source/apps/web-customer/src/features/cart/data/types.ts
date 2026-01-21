@@ -8,6 +8,17 @@ export interface CartModifier {
   priceDelta: number;
 }
 
+export interface MenuItemPhoto {
+  id: string;
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  displayOrder: number;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
 export interface CartItemResponse {
   id: string;
   menuItemId: string;
@@ -18,6 +29,7 @@ export interface CartItemResponse {
   modifiers: CartModifier[];
   notes?: string;
   itemTotal: number;
+  primaryPhoto?: MenuItemPhoto;
 }
 
 export interface CartResponse {
