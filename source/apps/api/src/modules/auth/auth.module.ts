@@ -33,8 +33,13 @@ import { GoogleStrategy } from './strategies/google.strategy';
 // - RedisModule
 // - EmailModule
 
+import { TenantModule } from '../tenant/tenant.module';
+
 @Module({
   imports: [
+    // Tenant module for slug checking
+    TenantModule,
+
     // Passport configuration
     PassportModule.register({ defaultStrategy: 'jwt' }),
 

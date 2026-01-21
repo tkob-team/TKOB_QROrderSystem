@@ -162,8 +162,12 @@ export function Signup({ onNavigate, initialEmail }: SignupProps) {
         toast.error(result.message || 'Signup failed');
       }
     } catch (error) {
-      logger.error('[auth] SIGNUP_ERROR', { message: error instanceof Error ? error.message : 'Unknown error' });
-      toast.error('Signup failed. Please try again.');
+      // Extract and display the error message from the API response
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      logger.error('[auth] SIGNUP_ERROR', { message: errorMessage });
+      
+      // Display the actual error message to the user
+      toast.error(errorMessage);
     }
   };
 

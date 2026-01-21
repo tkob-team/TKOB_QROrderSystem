@@ -136,14 +136,14 @@ export function LoginFormSection(props: LoginFormSectionProps) {
                 <button
                   type="button"
                   onClick={onTogglePassword}
-                  className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="cursor-pointer absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
                     <Eye className="h-5 w-5" />
+                  ) : (
+                    <EyeOff className="h-5 w-5" />
                   )}
                 </button>
               </div>
@@ -164,7 +164,7 @@ export function LoginFormSection(props: LoginFormSectionProps) {
               </label>
               <button
                 type="button"
-                className="text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
+                className="cursor-pointer text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
                 onClick={onForgotPassword}
                 tabIndex={-1}
               >
@@ -195,7 +195,7 @@ export function LoginFormSection(props: LoginFormSectionProps) {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
                 window.location.href = `${apiUrl}/api/v1/auth/google`;
               }}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-300 rounded-lg transition-all duration-200 hover:bg-neutral-50 hover:shadow-md bg-white"
+              className="cursor-pointer w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-300 rounded-lg transition-all duration-200 hover:bg-neutral-50 hover:shadow-md bg-white"
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -213,7 +213,7 @@ export function LoginFormSection(props: LoginFormSectionProps) {
               <button
                 type="button"
                 onClick={onSignup}
-                className="text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
+                className="cursor-pointer text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
               >
                 Sign up
               </button>

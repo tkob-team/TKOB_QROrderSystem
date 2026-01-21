@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
   Req,
@@ -46,6 +47,7 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
 import { SkipTransform } from '../../../common/interceptors/transform.interceptor';
 import { EnvConfig } from '../../../config/env.validation';
+import { TenantService } from '../../tenant/services/tenant.service';
 
 /**
  * Auth Controller
@@ -60,6 +62,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly customerAuthService: CustomerAuthService,
     private readonly configService: ConfigService<EnvConfig, true>,
+    private readonly tenantService: TenantService,
   ) {}
 
   // ==================== REGISTRATION ====================
@@ -97,6 +100,32 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid OTP or token expired' })
   async registerConfirm(@Body() dto: RegisterConfirmDto): Promise<AuthResponseDto> {
     return this.authService.registerConfirm(dto);
+  }
+
+  @Get('check-slug/:slug')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Check if slug is available',
+    description: 'Validates if a restaurant slug is available for registration',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slug availability checked',
+    schema: {
+      type: 'object',
+      properties: {
+        available: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Slug is available' },
+      },
+    },
+  })
+  async checkSlugAvailability(@Param('slug') slug: string) {
+    const isAvailable = await this.tenantService.isSlugAvailable(slug);
+    return {
+      available: isAvailable,
+      message: isAvailable ? 'Slug is available' : 'Slug is already taken',
+    };
   }
 
   // ==================== LOGIN ====================

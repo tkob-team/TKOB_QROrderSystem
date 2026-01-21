@@ -180,10 +180,10 @@ export function SignupFormSection(props: SignupFormSectionProps) {
                   <button
                     type="button"
                     onClick={onTogglePassword}
-                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    className="cursor-pointer absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -203,10 +203,10 @@ export function SignupFormSection(props: SignupFormSectionProps) {
                   <button
                     type="button"
                     onClick={onToggleConfirmPassword}
-                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    className="cursor-pointer absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
                     tabIndex={-1}
                   >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export function SignupFormSection(props: SignupFormSectionProps) {
               />
               <span className="text-sm text-neutral-600">
                 I agree to the{' '}
-                <button type="button" className="text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline" tabIndex={-1}>
+                <button type="button" className="cursor-pointer text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline" tabIndex={-1}>
                   Terms and Conditions
                 </button>
               </span>
@@ -240,7 +240,7 @@ export function SignupFormSection(props: SignupFormSectionProps) {
                 <button
                   type="button"
                   onClick={onNavigateLogin}
-                  className="text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
+                  className="cursor-pointer text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
                 >
                   Log in
                 </button>
