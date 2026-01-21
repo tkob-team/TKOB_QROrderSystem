@@ -9,7 +9,7 @@ export class MockAuthAdapter implements IAuthAdapter {
     return authHandlers.getCurrentUser();
   }
 
-  async updateProfile(data: { name: string }): Promise<ApiResponse<User>> {
+  async updateProfile(data: { name: string; avatarFile?: File }): Promise<ApiResponse<User>> {
     return authHandlers.updateProfile(data);
   }
 

@@ -16,6 +16,7 @@ export function useEditProfileController() {
   
   const [name, setName] = useState(user?.name || '')
   const [avatar, setAvatar] = useState(user?.avatar || '')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [nameError, setNameError] = useState('')
   const [nameTouched, setNameTouched] = useState(false)
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false)
@@ -56,6 +57,7 @@ export function useEditProfileController() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setAvatar(reader.result as string)
+        setAvatarFile(file)  // Store the actual file for upload
       }
       reader.readAsDataURL(file)
     }
@@ -76,6 +78,7 @@ export function useEditProfileController() {
 
   const handleRemovePhoto = () => {
     setAvatar('')
+    setAvatarFile(null)
     setIsAvatarModalOpen(false)
   }
 
@@ -85,8 +88,9 @@ export function useEditProfileController() {
       return
     }
 
+    // Include avatarFile if it was changed
     saveMutation.mutate(
-      { name: name.trim() },
+      { name: name.trim(), avatarFile: avatarFile || undefined },
       {
         onSuccess: (response) => {
           if (response.success) {

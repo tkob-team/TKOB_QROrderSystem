@@ -18,7 +18,7 @@ export interface User {
 export interface IAuthAdapter {
   getCurrentUser(): Promise<ApiResponse<User>>;
 
-  updateProfile(data: { name: string }): Promise<ApiResponse<User>>;
+  updateProfile(data: { name: string; avatarFile?: File }): Promise<ApiResponse<User>>;
 
   changePassword(data: {
     currentPassword: string;

@@ -24,7 +24,30 @@ export class AuthAdapter implements IAuthAdapter {
     return response.data;
   }
 
-  async updateProfile(data: { name: string }): Promise<ApiResponse<User>> {
+  async updateProfile(data: { name: string; avatarFile?: File }): Promise<ApiResponse<User>> {
+    // Use FormData for multipart/form-data when avatar file is included
+    if (data.avatarFile) {
+      const formData = new FormData();
+      formData.append('fullName', data.name);
+      formData.append('avatar', data.avatarFile);
+      const response = await apiClient.patch('/customer/auth/me', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const userData = response.data?.data || response.data;
+      if (userData) {
+        return {
+          success: true,
+          data: {
+            id: userData.id,
+            email: userData.email,
+            name: userData.fullName || userData.name || '',
+            avatar: userData.avatarUrl || userData.avatar,
+          }
+        };
+      }
+      return response.data;
+    }
+    
     // Backend expects PATCH /customer/auth/me with { fullName }
     const response = await apiClient.patch('/customer/auth/me', { fullName: data.name });
     // Map response back to frontend User type

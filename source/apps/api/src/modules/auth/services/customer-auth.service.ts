@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -14,6 +15,8 @@ import { TokenService } from './token.service';
 import { EmailService } from '../../email/email.service';
 import { EnvConfig } from '../../../config/env.validation';
 import { CustomerSessionService } from './customer-session.service';
+import type { StorageService } from '../../menu/infrastructure/storage/storage.interface';
+import { STORAGE_SERVICE } from '../../menu/infrastructure/storage/storage.interface';
 
 // DTOs for customer auth
 export interface CustomerRegisterDto {
@@ -43,6 +46,8 @@ export interface CustomerAuthResponseDto {
 @Injectable()
 export class CustomerAuthService {
   private readonly logger = new Logger(CustomerAuthService.name);
+  private readonly allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  private readonly maxFileSize = 5 * 1024 * 1024; // 5MB
 
   constructor(
     private readonly prisma: PrismaService,
@@ -51,6 +56,7 @@ export class CustomerAuthService {
     private readonly email: EmailService,
     private readonly config: ConfigService<EnvConfig, true>,
     private readonly session: CustomerSessionService,
+    @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
   ) {}
 
   // ==================== CUSTOMER REGISTRATION ====================
@@ -313,6 +319,52 @@ export class CustomerAuthService {
     });
 
     return customer;
+  }
+
+  /**
+   * Upload customer avatar
+   */
+  async uploadAvatar(customerId: string, file: Express.Multer.File): Promise<string> {
+    // Validate file type
+    if (!this.allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP, GIF');
+    }
+
+    // Validate file size
+    if (file.size > this.maxFileSize) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    try {
+      // Generate object key for storage (same pattern as menu photos)
+      const key = this.generateAvatarKey(customerId, file.originalname);
+
+      // Upload via StorageService (works with both local and S3)
+      const uploadResult = await this.storage.upload(file.buffer, {
+        key,
+        contentType: file.mimetype,
+        metadata: {
+          customerId,
+          originalName: file.originalname,
+        },
+      });
+
+      this.logger.log(`Avatar uploaded for customer: ${customerId}, URL: ${uploadResult.url}`);
+
+      return uploadResult.url;
+    } catch (error) {
+      this.logger.error(`Failed to upload avatar for customer ${customerId}:`, error);
+      throw new BadRequestException('Failed to upload avatar');
+    }
+  }
+
+  /**
+   * Generate object key for avatar storage
+   */
+  private generateAvatarKey(customerId: string, originalName: string): string {
+    const timestamp = Date.now();
+    const ext = originalName.split('.').pop() || 'jpg';
+    return `customer-avatars/${customerId}/${timestamp}.${ext}`;
   }
 
   // ==================== PASSWORD MANAGEMENT ====================

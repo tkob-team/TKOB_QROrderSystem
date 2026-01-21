@@ -34,11 +34,15 @@ import { GoogleStrategy } from './strategies/google.strategy';
 // - EmailModule
 
 import { TenantModule } from '../tenant/tenant.module';
+import { StorageModule } from '../menu/infrastructure/storage/storage.module';
 
 @Module({
   imports: [
     // Tenant module for slug checking
     TenantModule,
+
+    // Storage module for avatar upload (avoids circular dependency with MenuModule)
+    StorageModule,
 
     // Passport configuration
     PassportModule.register({ defaultStrategy: 'jwt' }),

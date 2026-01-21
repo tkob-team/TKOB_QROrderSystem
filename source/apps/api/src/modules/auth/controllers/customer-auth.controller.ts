@@ -8,8 +8,11 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
   CustomerAuthService,
   CustomerRegisterDto,
@@ -76,13 +79,35 @@ export class CustomerAuthController {
   @Patch('me')
   @UseGuards(CustomerAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update customer profile' })
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update customer profile with optional avatar upload' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        fullName: { type: 'string', description: 'Customer full name' },
+        phone: { type: 'string', description: 'Customer phone number' },
+        avatar: { type: 'string', format: 'binary', description: 'Avatar image file (JPEG, PNG, WebP, GIF - max 5MB)' },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Profile updated' })
   async updateProfile(
     @Req() req: any,
-    @Body() dto: { fullName?: string; avatarUrl?: string; phone?: string },
+    @Body() dto: { fullName?: string; phone?: string },
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.customerAuthService.updateProfile(req.customer.id, dto);
+    // If file is provided, upload it and get URL
+    let avatarUrl: string | undefined;
+    if (file) {
+      avatarUrl = await this.customerAuthService.uploadAvatar(req.customer.id, file);
+    }
+
+    return this.customerAuthService.updateProfile(req.customer.id, {
+      ...dto,
+      ...(avatarUrl && { avatarUrl }),
+    });
   }
 
   // ==================== PASSWORD ====================
