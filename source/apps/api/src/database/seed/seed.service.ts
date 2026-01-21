@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { MenuPhotoService } from '@/modules/menu/services/menu-photo.service';
-import { UnsplashService } from './unplash.service';
 import {
   SubscriptionTier,
   SubscriptionStatus,
@@ -25,11 +23,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 export class SeedService {
   private readonly logger = new Logger(SeedService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly unsplash: UnsplashService,
-    private readonly menuPhotoService: MenuPhotoService, // Add this
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * MAIN SEED FUNCTION
@@ -328,6 +322,7 @@ export class SeedService {
     const toppingsModifier = modifiers.find((m) => m.name === 'Extra Toppings');
 
     // Reduced to 10 menu items for faster seeding
+    // Using hardcoded image URLs for faster and more reliable seeding
     const menuItems = [
       // Appetizers (2 items)
       {
@@ -339,7 +334,7 @@ export class SeedService {
         tags: ['vegetarian', 'popular'],
         allergens: ['gluten'],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'spring rolls food',
+        imageUrl: 'https://www.elmundoeats.com/wp-content/uploads/2024/02/Crispy-spring-rolls.jpg',
       },
       {
         categoryId: appetizers.id,
@@ -350,7 +345,7 @@ export class SeedService {
         tags: ['spicy', 'popular'],
         allergens: ['dairy'],
         modifierIds: [sizeModifier.id, spiceModifier.id],
-        photoQuery: 'chicken wings food',
+        imageUrl: 'https://www.lifeisbutadish.com/wp-content/uploads/2016/01/Crispy-Baked-Chicken-Wings-9.jpg',
       },
 
       // Main Courses (3 items)
@@ -364,7 +359,7 @@ export class SeedService {
         allergens: [],
         chefRecommended: true,
         modifierIds: [sizeModifier.id, toppingsModifier.id],
-        photoQuery: 'beef steak food',
+        imageUrl: 'https://hestanculinary.com/cdn/shop/articles/20240716061729-grilled-20spanish-20style-20steaks-20_1200x.jpg?v=1721110720',
       },
       {
         categoryId: mains.id,
@@ -376,7 +371,7 @@ export class SeedService {
         allergens: ['fish'],
         chefRecommended: true,
         modifierIds: [sizeModifier.id, toppingsModifier.id],
-        photoQuery: 'salmon food',
+        imageUrl: 'https://www.billyparisi.com/wp-content/uploads/2023/08/grilled-salmon-1.jpg',
       },
       {
         categoryId: mains.id,
@@ -387,7 +382,7 @@ export class SeedService {
         tags: ['japanese', 'popular'],
         allergens: ['soy'],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'teriyaki chicken food',
+        imageUrl: 'https://seasonandthyme.com/wp-content/uploads/2024/01/crispy-teriyaki-chicken-bites-featured.jpg',
       },
 
       // Pasta & Noodles (2 items)
@@ -400,7 +395,7 @@ export class SeedService {
         tags: ['italian', 'popular'],
         allergens: ['dairy', 'gluten', 'eggs'],
         modifierIds: [sizeModifier.id, toppingsModifier.id],
-        photoQuery: 'carbonara pasta food',
+        imageUrl: 'https://www.marthastewart.com/thmb/S9xVtnWSHldvxPHKOxEq0bALG-k=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/MSL-338686-spaghetti-carbonara-hero-3x2-69999-560b45d1dd9f4741b717176eff024839.jpeg',
       },
       {
         categoryId: pasta.id,
@@ -411,7 +406,7 @@ export class SeedService {
         tags: ['thai', 'seafood'],
         allergens: ['seafood', 'peanuts'],
         modifierIds: [sizeModifier.id, spiceModifier.id],
-        photoQuery: 'pad thai food',
+        imageUrl: 'https://img.taste.com.au/CensbvZn/w1200-h1200-cfill-q80/taste/2021/02/10-minute-vegetarian-pad-thai-168946-2.jpg',
       },
 
       // Desserts (1 item)
@@ -424,7 +419,7 @@ export class SeedService {
         tags: ['italian', 'coffee'],
         allergens: ['dairy', 'eggs', 'gluten'],
         modifierIds: [],
-        photoQuery: 'tiramisu dessert',
+        imageUrl: 'https://bakewithzoha.com/wp-content/uploads/2025/06/tiramisu-featured.jpg',
       },
 
       // Beverages (2 items)
@@ -437,7 +432,7 @@ export class SeedService {
         tags: ['fresh', 'healthy'],
         allergens: [],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'orange juice drink',
+        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Orangejuice.jpg',
       },
       {
         categoryId: beverages.id,
@@ -448,67 +443,27 @@ export class SeedService {
         tags: ['vietnamese', 'coffee', 'popular'],
         allergens: ['dairy'],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'vietnamese coffee drink',
+        imageUrl: 'https://statics.vinpearl.com/How-To-Make-Vietnamese-Iced-Coffee-02_1701784452.jpg',
       },
     ];
 
     const created = [] as any[];
     for (const item of menuItems) {
-      const { modifierIds, photoQuery, ...itemData } = item;
+      const { modifierIds, imageUrl, ...itemData } = item;
 
-      // Step 1: Create menu item WITHOUT photo
+      // Create menu item with hardcoded image URL
       const menuItem = await this.prisma.menuItem.create({
         data: {
           tenantId,
           ...itemData,
-          imageUrl: null, // Will be set when primary photo is uploaded
+          imageUrl: imageUrl || null,
           status: 'PUBLISHED',
           available: true,
           popularity: Math.floor(Math.random() * 100),
         },
       });
 
-      // Step 2: Fetch photo from Unsplash and upload
-      if (photoQuery) {
-        try {
-          // 1. Fetch photo URL from Unsplash using the query
-          const photoUrl = await this.unsplash.searchPhoto(photoQuery);
-
-          if (!photoUrl) {
-            this.logger.warn(`No photo found on Unsplash for query: "${photoQuery}"`);
-            continue;
-          }
-
-          // 2. Download the photo buffer once
-          const sharedBuffer = await this.downloadPhotoToBuffer(photoUrl);
-
-          const mockFiles: Express.Multer.File[] = [];
-          const numberOfFiles = 3; // Number of photos to create
-
-          // 3. Create mock Multer files with the same buffer
-          for (let i = 0; i < numberOfFiles; i++) {
-            mockFiles.push({
-              fieldname: 'files',
-              originalname: `${itemData.name}-${i}.jpg`,
-              encoding: '7bit',
-              mimetype: 'image/jpeg',
-              buffer: sharedBuffer,
-              size: sharedBuffer.length,
-              stream: null as any,
-              destination: '',
-              filename: '',
-              path: '',
-            });
-          }
-
-          // Upload multiple photos at once
-          await this.menuPhotoService.uploadPhotos(menuItem.id, mockFiles);
-        } catch (error) {
-          this.logger.warn(`Failed to upload photos for "${itemData.name}":`, error);
-        }
-      }
-
-      // Step 3: Link modifiers
+      // Link modifiers
       if (modifierIds && modifierIds.length > 0) {
         await this.prisma.menuItemModifier.createMany({
           data: modifierIds.map((modId, index) => ({
@@ -525,28 +480,6 @@ export class SeedService {
     return created;
   }
 
-  /**
-   * Helper: Download photo from URL to Buffer
-   */
-  private async downloadPhotoToBuffer(url: string): Promise<Buffer> {
-    const https = await import('https');
-
-    return new Promise((resolve, reject) => {
-      https
-        .get(url, (response) => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download: ${response.statusCode}`));
-            return;
-          }
-
-          const chunks: Buffer[] = [];
-          response.on('data', (chunk) => chunks.push(chunk));
-          response.on('end', () => resolve(Buffer.concat(chunks)));
-          response.on('error', reject);
-        })
-        .on('error', reject);
-    });
-  }
 
   /**
    * STEP 4: Seed Tables
@@ -564,24 +497,11 @@ export class SeedService {
     ];
 
     const created = [] as any[];
+    const crypto = await import('crypto');
+    const secret = process.env.JWT_SECRET || 'fallback-secret-key-change-in-production';
+
     for (const table of tables) {
-      // Import QrService để generate QR
-      const crypto = await import('crypto');
-      const payload = {
-        tableId: 'temp-id', // Sẽ update sau
-        tenantId,
-        timestamp: Date.now(),
-      };
-
-      const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-      const secret = process.env.JWT_SECRET || 'fallback-secret';
-      const signature = crypto
-        .createHmac('sha256', secret)
-        .update(payloadBase64)
-        .digest('base64url');
-      const token = `${payloadBase64}.${signature}`;
-      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
+      // Step 1: Create table WITHOUT QR token first
       const createdTable = await this.prisma.table.create({
         data: {
           tenantId,
@@ -591,13 +511,35 @@ export class SeedService {
           displayOrder: table.order,
           status: 'AVAILABLE',
           active: true,
+        },
+      });
+
+      // Step 2: Generate QR token with REAL tableId (matching QrService.generateToken logic)
+      const payload = {
+        tableId: createdTable.id, // Use actual tableId
+        tenantId,
+        timestamp: Date.now(),
+      };
+
+      const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+      const signature = crypto
+        .createHmac('sha256', secret)
+        .update(payloadBase64)
+        .digest('base64url');
+      const token = `${payloadBase64}.${signature}`;
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+      // Step 3: Update table with correct QR token
+      const updatedTable = await this.prisma.table.update({
+        where: { id: createdTable.id },
+        data: {
           qrToken: token,
           qrTokenHash: tokenHash,
           qrTokenCreatedAt: new Date(),
         },
       });
 
-      created.push(createdTable);
+      created.push(updatedTable);
     }
 
     return created;

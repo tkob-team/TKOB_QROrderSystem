@@ -28,7 +28,9 @@ export class SessionMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const sessionId = req.cookies?.table_session_id;
 
-    this.logger.debug(`[SessionMiddleware] ${req.method} ${req.path} | Cookie: ${sessionId ? 'Present' : 'Missing'}`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(`[SessionMiddleware] ${req.method} ${req.path} | Cookie: ${sessionId ? 'Present' : 'Missing'}`);
+    }
 
     if (sessionId) {
       try {
@@ -36,10 +38,14 @@ export class SessionMiddleware implements NestMiddleware {
         const sessionData = await this.sessionService.validateSession(sessionId);
         req.session = sessionData;
         
-        this.logger.debug(`Session attached: ${sessionData.sessionId.substring(0, 8)}... | Tenant: ${sessionData.tenantId.substring(0, 8)}...`);
+        if (process.env.NODE_ENV !== 'production') {
+          this.logger.debug(`Session attached: ${sessionData.sessionId.substring(0, 8)}... | Tenant: ${sessionData.tenantId.substring(0, 8)}...`);
+        }
       } catch (error) {
         // Silently ignore invalid sessions - let controller decide if session is required
-        this.logger.debug(`Invalid session cookie: ${error.message}`);
+        if (process.env.NODE_ENV !== 'production') {
+          this.logger.debug(`Invalid session cookie: ${error.message}`);
+        }
       }
     }
 

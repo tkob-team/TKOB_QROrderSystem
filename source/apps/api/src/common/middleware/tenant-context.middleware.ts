@@ -47,7 +47,9 @@ export class TenantContextMiddleware implements NestMiddleware {
       // Gán vào req để Controller tiện dùng
       req.tenant = { id: tenantId };
       res.setHeader('x-tenant-id', tenantId);
-      this.logger.debug(`Tenant context initialized: ${tenantId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`Tenant context initialized: ${tenantId}`);
+      }
 
       // QUAN TRỌNG NHẤT: Bọc next() vào trong AsyncLocalStorage
       // Điều này đảm bảo PrismaService "nhìn thấy" tenantId trong suốt request này

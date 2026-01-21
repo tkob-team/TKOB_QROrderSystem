@@ -148,6 +148,6 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             # Cleanup
-            docker image prune -af --filter "until=24h"
+            docker image prune -af --filter "until=8h"
             
             echo "✅ Deployment completed successfully!"

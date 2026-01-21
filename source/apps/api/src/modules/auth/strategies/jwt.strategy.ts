@@ -63,7 +63,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (cachedStatus === 'ACTIVE') {
       // User is known to be active, skip DB query
-      this.logger.debug(`User status cache HIT (ACTIVE): ${userId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`User status cache HIT (ACTIVE): ${userId}`);
+      }
       return {
         userId: payload.sub,
         email: payload.email,
@@ -74,12 +76,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (cachedStatus && cachedStatus !== 'ACTIVE') {
       // User is cached as inactive - reject immediately
-      this.logger.debug(`User status cache HIT (${cachedStatus}): ${userId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`User status cache HIT (${cachedStatus}): ${userId}`);
+      }
       throw new UnauthorizedException('User not found or inactive');
     }
 
     // 2. Slow path: Cache miss - query DB
-    this.logger.debug(`User status cache MISS, querying DB: ${userId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(`User status cache MISS, querying DB: ${userId}`);
+    }
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

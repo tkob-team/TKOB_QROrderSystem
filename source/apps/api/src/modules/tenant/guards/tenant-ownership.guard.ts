@@ -48,7 +48,9 @@ export class TenantOwnershipGuard implements CanActivate {
 
     // If no tenant context, allow (global routes like /health)
     if (!requestedTenantId) {
-      this.logger.debug(`No tenant context for user ${user.userId}, allowing access`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`No tenant context for user ${user.userId}, allowing access`);
+      }
       return true;
     }
 
@@ -61,7 +63,9 @@ export class TenantOwnershipGuard implements CanActivate {
       throw new ForbiddenException('You do not have permission to access this tenant');
     }
 
-    this.logger.debug(`Tenant ownership verified: ${userTenantId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(`Tenant ownership verified: ${userTenantId}`);
+    }
     return true;
   }
 }

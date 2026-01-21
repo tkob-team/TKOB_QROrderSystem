@@ -30,7 +30,9 @@ export class TableService {
    */
   async create(tenantId: string, dto: CreateTableDto): Promise<Table> {
     try {
-      this.logger.debug(`Creating table: ${dto.tableNumber} for tenant: ${tenantId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`Creating table: ${dto.tableNumber} for tenant: ${tenantId}`);
+      }
 
       // Create table first (without QR)
       const table = await this.repo.create({
@@ -44,7 +46,9 @@ export class TableService {
         active: true,
       });
 
-      this.logger.debug(`Table created with ID: ${table.id}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`Table created with ID: ${table.id}`);
+      }
 
       // Generate QR with actual tableId
       const { token, tokenHash } = this.qrService.generateToken(table.id, tenantId);
@@ -80,9 +84,13 @@ export class TableService {
       sortOrder?: 'asc' | 'desc';
     },
   ): Promise<{ tables: Table[]; meta: { totalAll: number; totalFiltered: number } }> {
-    this.logger.debug(`[findAll] Query tables for tenantId: ${tenantId}, filters:`, filters);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(`[findAll] Query tables for tenantId: ${tenantId}, filters:`, filters);
+    }
     const { tables, totalAll, totalFiltered } = await this.repo.findByTenantId(tenantId, filters);
-    this.logger.debug(`[findAll] Found ${tables.length} tables (totalFiltered: ${totalFiltered}, totalAll: ${totalAll})`);
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.debug(`[findAll] Found ${tables.length} tables (totalFiltered: ${totalFiltered}, totalAll: ${totalAll})`);
+    }
     return {
       tables,
       meta: { totalAll, totalFiltered },
