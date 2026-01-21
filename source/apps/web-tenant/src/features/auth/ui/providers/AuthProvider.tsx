@@ -42,14 +42,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [hasToken, setHasToken] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const router = useRouter();
-
   const controller = useAuthController({
     enabledCurrentUser: hasToken,
   });
 
   const { loginMutation, logoutMutation, currentUserQuery } = controller;
   const currentUserData = currentUserQuery.data;
-  const refetch = currentUserQuery.refetch;
   
   // isLoading must be true until:
   // 1. Token bootstrap is complete (isInitialized)
@@ -146,7 +144,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         logger.log('[AuthContext] Login complete');
         
         // Return user role from login response so caller can navigate immediately
-        const userRole = (result?.user?.role?.toLowerCase() || 'admin') as UserRole;
+        // Map backend roles (OWNER, STAFF, KITCHEN) to frontend roles (admin, waiter, kds)
+        const backendRole = (result?.user?.role || 'OWNER').toLowerCase();
+        let userRole: UserRole = 'admin'; // Default fallback
+        
+        if (backendRole === 'owner') {
+          userRole = 'admin';
+        } else if (backendRole === 'staff') {
+          userRole = 'waiter';
+        } else if (backendRole === 'kitchen') {
+          userRole = 'kds';
+        }
+        
         return { role: userRole };
       } catch (error) {
         logger.error('[AuthContext] Login failed:', error);

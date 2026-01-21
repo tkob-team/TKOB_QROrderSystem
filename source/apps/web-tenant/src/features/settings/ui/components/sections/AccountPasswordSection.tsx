@@ -50,7 +50,7 @@ export function AccountPasswordSection(props: AccountPasswordSectionProps) {
               onClick={props.onShowCurrentToggle}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
             >
-              {props.showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {props.showCurrent ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -69,7 +69,7 @@ export function AccountPasswordSection(props: AccountPasswordSectionProps) {
               onClick={props.onShowNewToggle}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
             >
-              {props.showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {props.showNew ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -88,7 +88,7 @@ export function AccountPasswordSection(props: AccountPasswordSectionProps) {
               onClick={props.onShowConfirmToggle}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
             >
-              {props.showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {props.showConfirm ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
             </button>
           </div>
         </div>

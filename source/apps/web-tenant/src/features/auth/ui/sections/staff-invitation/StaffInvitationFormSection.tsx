@@ -160,7 +160,7 @@ export function StaffInvitationFormSection(props: StaffInvitationFormSectionProp
                     onClick={onTogglePassword}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                   </button>
                 </div>
 
@@ -187,7 +187,7 @@ export function StaffInvitationFormSection(props: StaffInvitationFormSectionProp
               {/* Confirm Password */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
-                <div className="relative">
+                <div className="relative min-h-[52px]">
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Confirm your password"
@@ -199,9 +199,9 @@ export function StaffInvitationFormSection(props: StaffInvitationFormSectionProp
                   <button
                     type="button"
                     onClick={onToggleConfirmPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                   </button>
                 </div>
               </div>

@@ -395,13 +395,9 @@ export class ApiAuthAdapter implements IAuthAdapter {
    * Map backend role to frontend role
    */
   private mapRoleFromBackend(backendRole: string): AuthUserResponseDtoRole {
-    const role = backendRole.toLowerCase();
-    
-    if (role === 'owner') return AuthUserResponseDtoRole.OWNER;
-    if (role === 'kitchen') return AuthUserResponseDtoRole.KITCHEN;
-    if (role === 'waiter' || role === 'server' || role === 'staff') return AuthUserResponseDtoRole.STAFF;
-    
-    return AuthUserResponseDtoRole.OWNER; // Default fallback
+    // Just return the role as-is (already comes from backend as OWNER/STAFF/KITCHEN)
+    // The AuthProvider will handle mapping to frontend roles (admin/waiter/kds)
+    return backendRole as AuthUserResponseDtoRole;
   }
 
   /**

@@ -123,7 +123,7 @@ export function ResetPasswordFormSection(props: ResetPasswordFormSectionProps) {
                     onClick={onTogglePassword}
                     className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                   </button>
                 </div>
 
@@ -166,7 +166,7 @@ export function ResetPasswordFormSection(props: ResetPasswordFormSectionProps) {
                     onClick={onToggleConfirmPassword}
                     className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                   </button>
                 </div>
               </div>

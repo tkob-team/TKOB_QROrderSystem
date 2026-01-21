@@ -70,9 +70,9 @@ export function ChangePasswordPage() {
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
                 {controller.showCurrentPassword ? (
-                  <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
-                ) : (
                   <Eye className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
+                ) : (
+                  <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
                 )}
               </button>
             </div>
@@ -119,9 +119,9 @@ export function ChangePasswordPage() {
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
                 {controller.showNewPassword ? (
-                  <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
-                ) : (
                   <Eye className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
+                ) : (
+                  <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
                 )}
               </button>
             </div>
@@ -203,9 +203,9 @@ export function ChangePasswordPage() {
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
                 {controller.showConfirmPassword ? (
-                  <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
-                ) : (
                   <Eye className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
+                ) : (
+                  <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
                 )}
               </button>
             </div>

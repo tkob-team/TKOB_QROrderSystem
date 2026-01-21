@@ -156,7 +156,7 @@ export function TenantPaymentsSection() {
                     onClick={() => setShowApiKey(!showApiKey)}
                     className="absolute right-2 top-2.5"
                   >
-                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showApiKey ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>
                 </div>
               </div>

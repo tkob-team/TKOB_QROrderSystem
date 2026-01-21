@@ -105,9 +105,9 @@ export function LoginFormSection({
             disabled={isLoading}
           >
             {showPassword ? (
-              <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
-            ) : (
               <Eye className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
+            ) : (
+              <EyeOff className="w-5 h-5" style={{ color: 'var(--gray-400)' }} />
             )}
           </button>
         </div>
