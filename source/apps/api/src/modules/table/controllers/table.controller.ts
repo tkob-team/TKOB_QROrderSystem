@@ -38,7 +38,10 @@ import { TableListResponseDto } from '../dto/table-list-response.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
 import { TenantOwnershipGuard } from 'src/modules/tenant/guards/tenant-ownership.guard';
-import { SubscriptionLimitsGuard, CheckLimit } from 'src/modules/subscription/guards/subscription-limits.guard';
+import {
+  SubscriptionLimitsGuard,
+  CheckLimit,
+} from 'src/modules/subscription/guards/subscription-limits.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole, TableStatus, Table } from '@prisma/client';
@@ -297,7 +300,8 @@ export class TableController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Clear table (Haidilao style) - Legacy',
-    description: '[DEPRECATED] Staff marks table as cleared. Use /close-session endpoint instead for proper bill generation.',
+    description:
+      '[DEPRECATED] Staff marks table as cleared. Use /close-session endpoint instead for proper bill generation.',
   })
   @ApiResponse({
     status: 200,
@@ -335,7 +339,8 @@ export class TableController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Close table session and generate bill',
-    description: 'Generate bill for all unpaid orders, mark them as paid (if cash), and clear the table session.',
+    description:
+      'Generate bill for all unpaid orders, mark them as paid (if cash), and clear the table session.',
   })
   @ApiResponse({ status: 201, type: BillResponseDto })
   @ApiResponse({ status: 404, description: 'No active session or unpaid orders found' })
@@ -388,6 +393,33 @@ export class TableController {
   })
   async getActiveSessions(@CurrentUser() user: AuthenticatedUser) {
     return this.sessionService.getActiveSessions(user.tenantId);
+  }
+
+  @Get('sessions/bill-requests')
+  @Roles(UserRole.OWNER, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get pending bill requests',
+    description: 'Returns all active sessions with pending bill requests for waiter dashboard',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      type: 'array',
+      items: {
+        properties: {
+          sessionId: { type: 'string' },
+          tableId: { type: 'string' },
+          tableNumber: { type: 'string' },
+          billRequestedAt: { type: 'string', format: 'date-time' },
+          totalAmount: { type: 'number' },
+          orderCount: { type: 'number' },
+        },
+      },
+    },
+  })
+  async getPendingBillRequests(@CurrentUser() user: AuthenticatedUser) {
+    return this.sessionService.getPendingBillRequests(user.tenantId);
   }
 
   // ==================== HELPER ====================

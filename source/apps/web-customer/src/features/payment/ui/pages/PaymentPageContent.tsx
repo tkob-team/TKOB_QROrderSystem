@@ -223,7 +223,7 @@ export function PaymentPageContent() {
   // BUG-10: Prevent customer self-payment before order is ready
   // Only apply this check for 'bill' source (pay after flow)
   // For 'checkout' source (pay first flow), always allow QR payment
-  const allowedPaymentStatuses = ['READY', 'SERVED', 'COMPLETED', 'PAID'];
+  const allowedPaymentStatuses = ['PENDING', 'RECEIVED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'PAID'];
   const orderStatus = orderData?.status?.toUpperCase() || '';
   const isPaymentStatusAllowed = allowedPaymentStatuses.includes(orderStatus);
   const isPayAfterFlow = source === 'bill';

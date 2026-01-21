@@ -16,26 +16,44 @@ export class UnsplashService {
   }
 
   /**
-   * Tìm ảnh theo từ khóa
+   * Tìm ảnh theo từ khóa (with timeout)
    */
   async searchPhoto(query: string): Promise<string | null> {
     try {
-      const result = await this.unsplash.search.getPhotos({
+      // Early exit if no API key configured
+      if (!process.env.UNSPLASH_ACCESS_KEY) {
+        this.logger.warn('UNSPLASH_ACCESS_KEY not set, skipping photo search');
+        return null;
+      }
+
+      // Create timeout promise (3 seconds)
+      const timeoutMs = 1000;
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => {
+          this.logger.warn(`Photo search timed out after ${timeoutMs}ms for "${query}"`);
+          resolve(null);
+        }, timeoutMs)
+      );
+
+      // Race between API call and timeout
+      const searchPromise = this.unsplash.search.getPhotos({
         query,
         page: 1,
         perPage: 10,
         orientation: 'landscape',
       });
 
-      if (result.type === 'success' && result.response.results.length > 0) {
-        // Lấy ảnh random từ top 10
-        const randomIndex = Math.floor(Math.random() * result.response.results.length);
-        const photo = result.response.results[randomIndex];
+      const result = await Promise.race([searchPromise, timeoutPromise]);
 
-        return photo.urls.regular; // URL ảnh chất lượng cao
+      if (!result || result.type !== 'success' || result.response.results.length === 0) {
+        return null;
       }
 
-      return null;
+      // Lấy ảnh random từ top 10
+      const randomIndex = Math.floor(Math.random() * result.response.results.length);
+      const photo = result.response.results[randomIndex];
+
+      return photo.urls.regular; // URL ảnh chất lượng cao
     } catch (error) {
       this.logger.error(`Failed to search photo for "${query}":`, error);
       return null;

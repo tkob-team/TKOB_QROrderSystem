@@ -23,10 +23,7 @@ export class PromotionService {
   /**
    * Create a new promotion
    */
-  async createPromotion(
-    tenantId: string,
-    dto: CreatePromotionDto,
-  ): Promise<PromotionResponseDto> {
+  async createPromotion(tenantId: string, dto: CreatePromotionDto): Promise<PromotionResponseDto> {
     // Validate percentage value
     if (dto.type === PromotionType.PERCENTAGE && dto.value > 100) {
       throw new BadRequestException('Percentage value cannot exceed 100');
@@ -124,10 +121,7 @@ export class PromotionService {
   /**
    * Get a single promotion by ID
    */
-  async getPromotion(
-    tenantId: string,
-    promotionId: string,
-  ): Promise<PromotionResponseDto> {
+  async getPromotion(tenantId: string, promotionId: string): Promise<PromotionResponseDto> {
     const promotion = await this.prisma.promotion.findFirst({
       where: {
         id: promotionId,
@@ -259,9 +253,7 @@ export class PromotionService {
     }
 
     // Check minimum order value
-    const minOrderValue = promotion.minOrderValue
-      ? Number(promotion.minOrderValue)
-      : 0;
+    const minOrderValue = promotion.minOrderValue ? Number(promotion.minOrderValue) : 0;
     if (dto.orderSubtotal < minOrderValue) {
       return {
         valid: false,
@@ -321,7 +313,8 @@ export class PromotionService {
     let discount: number;
 
     if (type === PromotionType.PERCENTAGE) {
-      discount = Math.round((orderSubtotal * value) / 100);
+      // Calculate percentage discount with 2 decimal precision
+      discount = Math.round(((orderSubtotal * value) / 100) * 100) / 100;
       // Apply max discount cap if set
       if (maxDiscount && discount > maxDiscount) {
         discount = maxDiscount;
@@ -353,12 +346,8 @@ export class PromotionService {
       description: promotion.description || undefined,
       type: promotion.type,
       value: Number(promotion.value),
-      minOrderValue: promotion.minOrderValue
-        ? Number(promotion.minOrderValue)
-        : undefined,
-      maxDiscount: promotion.maxDiscount
-        ? Number(promotion.maxDiscount)
-        : undefined,
+      minOrderValue: promotion.minOrderValue ? Number(promotion.minOrderValue) : undefined,
+      maxDiscount: promotion.maxDiscount ? Number(promotion.maxDiscount) : undefined,
       usageLimit: promotion.usageLimit || undefined,
       usageCount: promotion.usageCount,
       startsAt: promotion.startsAt,

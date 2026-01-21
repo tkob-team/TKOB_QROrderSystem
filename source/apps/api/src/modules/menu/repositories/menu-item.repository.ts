@@ -290,7 +290,8 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
   }
 
   async findPublishedMenu(tenantId: string): Promise<MenuItemWithRelations[]> {
-    return this.prisma.x.menuItem.findMany({
+    // Use base prisma (not prisma.x) to avoid tenant context override from customer token
+    return this.prisma.menuItem.findMany({
       where: {
         tenantId,
         status: 'PUBLISHED',
@@ -395,9 +396,9 @@ export class MenuItemsRepository extends BaseRepository<MenuItem, Prisma.MenuIte
     // Calculate pagination
     const skip = (page - 1) * limit;
 
-    // Execute queries in parallel
+    // Use base prisma (not prisma.x) to avoid tenant context override from customer token
     const [items, total] = await Promise.all([
-      this.prisma.x.menuItem.findMany({
+      this.prisma.menuItem.findMany({
         where,
         include: {
           category: {

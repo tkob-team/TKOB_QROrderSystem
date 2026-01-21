@@ -24,7 +24,6 @@
     "db:generate": "prisma generate --config=./prisma/prisma.config.ts",
     "db:studio": "prisma studio --config=./prisma/prisma.config.ts",
     "db:reset": "ts-node scripts/reset-db.ts",
-    "create-test-user": "ts-node scripts/create-test-user.ts",
     "prisma:generate": "prisma generate --config=./prisma/prisma.config.ts",
     "prisma:migrate:deploy": "prisma migrate deploy --config=./prisma/prisma.config.ts",
     "build:prod": "pnpm build && pnpm prisma:generate"

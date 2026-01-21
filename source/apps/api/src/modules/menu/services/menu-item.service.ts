@@ -336,9 +336,16 @@ export class MenuItemsService {
     };
 
     // 3. Store in cache for next request (Cache-Aside pattern - write on miss)
-    if (canCache) {
+    // SAFEGUARD: Only cache if we have categories OR there truly are no items (total === 0)
+    // This prevents caching empty results due to race conditions or transient errors
+    const shouldCache = canCache && (categories.length > 0 || result.total === 0);
+    if (shouldCache) {
       await this.menuCache.setMenu(tenantId, response);
       this.logger.debug(`Cached menu for tenant: ${tenantId}`);
+    } else if (canCache && categories.length === 0 && result.total > 0) {
+      this.logger.warn(
+        `Skipped caching empty categories for tenant ${tenantId} (total items: ${result.total}) - possible data inconsistency`,
+      );
     }
 
     return response;

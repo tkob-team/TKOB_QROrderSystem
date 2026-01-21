@@ -196,9 +196,7 @@ export class TableSessionService {
       currentSessionId: null,
     });
 
-    this.logger.log(
-      `Table ${tableId} session ${sessionId} cleared by staff ${staffId}`,
-    );
+    this.logger.log(`Table ${tableId} session ${sessionId} cleared by staff ${staffId}`);
   }
 
   /**
@@ -228,5 +226,59 @@ export class TableSessionService {
    */
   async getSessionInfo(sessionId: string): Promise<SessionData> {
     return this.validateSession(sessionId);
+  }
+
+  /**
+   * Get pending bill requests with table info
+   * Used by waiter dashboard to populate bill request notifications on page load
+   */
+  async getPendingBillRequests(tenantId: string): Promise<
+    {
+      sessionId: string;
+      tableId: string;
+      tableNumber: string;
+      billRequestedAt: Date;
+      totalAmount: number;
+      orderCount: number;
+    }[]
+  > {
+    const sessions = await this.sessionRepo.findSessionsWithBillRequests(tenantId);
+
+    const results: {
+      sessionId: string;
+      tableId: string;
+      tableNumber: string;
+      billRequestedAt: Date;
+      totalAmount: number;
+      orderCount: number;
+    }[] = [];
+
+    for (const session of sessions) {
+      // Get table info
+      const table = await this.tableRepo.findById(session.tableId);
+      if (!table) continue;
+
+      // Get order totals for this session
+      const orders = await this.prisma.order.findMany({
+        where: {
+          sessionId: session.id,
+          paymentStatus: { not: 'COMPLETED' },
+        },
+        select: { total: true },
+      });
+
+      const totalAmount = orders.reduce((sum, o) => sum + Number(o.total), 0);
+
+      results.push({
+        sessionId: session.id,
+        tableId: session.tableId,
+        tableNumber: table.tableNumber,
+        billRequestedAt: session.billRequestedAt!,
+        totalAmount,
+        orderCount: orders.length,
+      });
+    }
+
+    return results;
   }
 }

@@ -79,7 +79,6 @@ export class SeedService {
       { name: 'Pasta & Noodles', description: 'Italian pasta and Asian noodles', order: 2 },
       { name: 'Desserts', description: 'Sweet endings to your meal', order: 3 },
       { name: 'Beverages', description: 'Refreshing drinks', order: 4 },
-      { name: 'Special Menu', description: 'Chef recommendations', order: 5 },
     ];
 
     const created = [] as any[];
@@ -105,6 +104,7 @@ export class SeedService {
   private async seedModifiers(tenantId: string) {
     this.logger.debug(`Seeding modifiers for ${tenantId}...`);
 
+    // Reduced to 3 modifier groups for faster seeding
     const modifierGroups = [
       {
         name: 'Size',
@@ -116,7 +116,7 @@ export class SeedService {
         options: [
           { name: 'Small', priceDelta: 0, order: 0 },
           { name: 'Medium', priceDelta: 0.5, order: 1 },
-          { name: 'Large', priceDelta: 1.0, order: 2 }, // $1.00
+          { name: 'Large', priceDelta: 1.0, order: 2 },
         ],
       },
       {
@@ -130,7 +130,6 @@ export class SeedService {
           { name: 'Mild', priceDelta: 0, order: 0 },
           { name: 'Medium', priceDelta: 0, order: 1 },
           { name: 'Hot', priceDelta: 0, order: 2 },
-          { name: 'Extra Hot', priceDelta: 0, order: 3 },
         ],
       },
       {
@@ -141,24 +140,9 @@ export class SeedService {
         minChoices: 0,
         maxChoices: 5,
         options: [
-          { name: 'Extra Cheese', priceDelta: 0.6, order: 0 }, // $0.60
-          { name: 'Bacon', priceDelta: 0.8, order: 1 }, // $0.80
-          { name: 'Mushrooms', priceDelta: 0.4, order: 2 }, // $0.40
-          { name: 'Olives', priceDelta: 0.4, order: 3 }, // $0.40
-          { name: 'Jalapeños', priceDelta: 0.5, order: 4 }, // $0.50
-        ],
-      },
-      {
-        name: 'Side Dishes',
-        description: 'Add a side dish',
-        type: 'MULTI_CHOICE' as const,
-        required: false,
-        minChoices: 0,
-        maxChoices: 3,
-        options: [
-          { name: 'French Fries', priceDelta: 1.0, order: 0 }, // $1.00
-          { name: 'Salad', priceDelta: 0.8, order: 1 }, // $0.80
-          { name: 'Soup', priceDelta: 1.2, order: 2 }, // $1.20
+          { name: 'Extra Cheese', priceDelta: 0.6, order: 0 },
+          { name: 'Bacon', priceDelta: 0.8, order: 1 },
+          { name: 'Mushrooms', priceDelta: 0.4, order: 2 },
         ],
       },
     ];
@@ -194,22 +178,21 @@ export class SeedService {
   private async seedMenuItems(tenantId: string, categories: any[], modifiers: any[]) {
     this.logger.debug(`Seeding menu items for ${tenantId}...`);
 
-    // Lấy categories theo tên
+    // Lấy categories theo tên (reduced to 5 categories)
     const appetizers = categories.find((c) => c.name === 'Appetizers');
     const mains = categories.find((c) => c.name === 'Main Courses');
     const pasta = categories.find((c) => c.name === 'Pasta & Noodles');
     const desserts = categories.find((c) => c.name === 'Desserts');
     const beverages = categories.find((c) => c.name === 'Beverages');
-    const special = categories.find((c) => c.name === 'Special Menu');
 
-    // Lấy modifiers theo tên
+    // Lấy modifiers theo tên (reduced to 3 groups)
     const sizeModifier = modifiers.find((m) => m.name === 'Size');
     const spiceModifier = modifiers.find((m) => m.name === 'Spice Level');
     const toppingsModifier = modifiers.find((m) => m.name === 'Extra Toppings');
-    const sidesModifier = modifiers.find((m) => m.name === 'Side Dishes');
 
+    // Reduced to 10 menu items for faster seeding
     const menuItems = [
-      // Appetizers
+      // Appetizers (2 items)
       {
         categoryId: appetizers.id,
         name: 'Spring Rolls',
@@ -219,7 +202,7 @@ export class SeedService {
         tags: ['vegetarian', 'popular'],
         allergens: ['gluten'],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'vietnamese spring rolls', // Từ khóa tìm ảnh
+        photoQuery: 'spring rolls food',
       },
       {
         categoryId: appetizers.id,
@@ -230,21 +213,10 @@ export class SeedService {
         tags: ['spicy', 'popular'],
         allergens: ['dairy'],
         modifierIds: [sizeModifier.id, spiceModifier.id],
-        photoQuery: 'buffalo chicken wings',
-      },
-      {
-        categoryId: appetizers.id,
-        name: 'Calamari Rings',
-        description: 'Deep fried squid rings with tartar sauce',
-        price: 7.5,
-        preparationTime: 12,
-        tags: ['seafood'],
-        allergens: ['seafood', 'gluten'],
-        modifierIds: [sizeModifier.id],
-        photoQuery: 'fried calamari',
+        photoQuery: 'chicken wings food',
       },
 
-      // Main Courses
+      // Main Courses (3 items)
       {
         categoryId: mains.id,
         name: 'Grilled Beef Steak',
@@ -254,8 +226,8 @@ export class SeedService {
         tags: ['signature', 'popular'],
         allergens: [],
         chefRecommended: true,
-        modifierIds: [sizeModifier.id, sidesModifier.id],
-        photoQuery: 'grilled beef steak mushroom sauce',
+        modifierIds: [sizeModifier.id, toppingsModifier.id],
+        photoQuery: 'beef steak food',
       },
       {
         categoryId: mains.id,
@@ -266,8 +238,8 @@ export class SeedService {
         tags: ['healthy', 'seafood'],
         allergens: ['fish'],
         chefRecommended: true,
-        modifierIds: [sizeModifier.id, sidesModifier.id],
-        photoQuery: 'grilled salmon lemon',
+        modifierIds: [sizeModifier.id, toppingsModifier.id],
+        photoQuery: 'salmon food',
       },
       {
         categoryId: mains.id,
@@ -277,11 +249,11 @@ export class SeedService {
         preparationTime: 18,
         tags: ['japanese', 'popular'],
         allergens: ['soy'],
-        modifierIds: [sizeModifier.id, sidesModifier.id],
-        photoQuery: 'chicken teriyaki',
+        modifierIds: [sizeModifier.id],
+        photoQuery: 'teriyaki chicken food',
       },
 
-      // Pasta & Noodles
+      // Pasta & Noodles (2 items)
       {
         categoryId: pasta.id,
         name: 'Spaghetti Carbonara',
@@ -291,7 +263,7 @@ export class SeedService {
         tags: ['italian', 'popular'],
         allergens: ['dairy', 'gluten', 'eggs'],
         modifierIds: [sizeModifier.id, toppingsModifier.id],
-        photoQuery: 'spaghetti carbonara',
+        photoQuery: 'carbonara pasta food',
       },
       {
         categoryId: pasta.id,
@@ -302,21 +274,10 @@ export class SeedService {
         tags: ['thai', 'seafood'],
         allergens: ['seafood', 'peanuts'],
         modifierIds: [sizeModifier.id, spiceModifier.id],
-        photoQuery: 'pad thai shrimp',
-      },
-      {
-        categoryId: pasta.id,
-        name: 'Pho Bo',
-        description: 'Vietnamese beef noodle soup',
-        price: 7.5,
-        preparationTime: 20,
-        tags: ['vietnamese', 'popular'],
-        allergens: [],
-        modifierIds: [sizeModifier.id],
-        photoQuery: 'pho bo vietnamese',
+        photoQuery: 'pad thai food',
       },
 
-      // Desserts
+      // Desserts (1 item)
       {
         categoryId: desserts.id,
         name: 'Tiramisu',
@@ -328,19 +289,8 @@ export class SeedService {
         modifierIds: [],
         photoQuery: 'tiramisu dessert',
       },
-      {
-        categoryId: desserts.id,
-        name: 'Chocolate Lava Cake',
-        description: 'Warm chocolate cake with molten center',
-        price: 6.5,
-        preparationTime: 15,
-        tags: ['chocolate', 'popular'],
-        allergens: ['dairy', 'eggs', 'gluten'],
-        modifierIds: [],
-        photoQuery: 'chocolate lava cake',
-      },
 
-      // Beverages
+      // Beverages (2 items)
       {
         categoryId: beverages.id,
         name: 'Fresh Orange Juice',
@@ -350,7 +300,7 @@ export class SeedService {
         tags: ['fresh', 'healthy'],
         allergens: [],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'fresh orange juice',
+        photoQuery: 'orange juice drink',
       },
       {
         categoryId: beverages.id,
@@ -361,21 +311,7 @@ export class SeedService {
         tags: ['vietnamese', 'coffee', 'popular'],
         allergens: ['dairy'],
         modifierIds: [sizeModifier.id],
-        photoQuery: 'vietnamese iced coffee',
-      },
-
-      // Special Menu
-      {
-        categoryId: special.id,
-        name: "Chef's Special Pizza",
-        description: 'Our signature pizza with premium toppings',
-        price: 18.0,
-        preparationTime: 30,
-        tags: ['signature', 'popular'],
-        allergens: ['dairy', 'gluten'],
-        chefRecommended: true,
-        modifierIds: [sizeModifier.id, toppingsModifier.id],
-        photoQuery: 'gourmet pizza',
+        photoQuery: 'vietnamese coffee drink',
       },
     ];
 
@@ -481,22 +417,13 @@ export class SeedService {
   private async seedTables(tenantId: string) {
     this.logger.debug(`Seeding tables for ${tenantId}...`);
 
+    // Reduced to 5 tables for faster seeding
     const tables = [
-      // Main Hall
       { tableNumber: '1', capacity: 2, location: 'Main Hall', order: 0 },
       { tableNumber: '2', capacity: 2, location: 'Main Hall', order: 1 },
       { tableNumber: '3', capacity: 4, location: 'Main Hall', order: 2 },
       { tableNumber: '4', capacity: 4, location: 'Main Hall', order: 3 },
       { tableNumber: '5', capacity: 6, location: 'Main Hall', order: 4 },
-
-      // Terrace
-      { tableNumber: '6', capacity: 2, location: 'Terrace', order: 5 },
-      { tableNumber: '7', capacity: 4, location: 'Terrace', order: 6 },
-      { tableNumber: '8', capacity: 4, location: 'Terrace', order: 7 },
-
-      // VIP Room
-      { tableNumber: '9', capacity: 8, location: 'VIP Room', order: 8 },
-      { tableNumber: '10', capacity: 10, location: 'VIP Room', order: 9 },
     ];
 
     const created = [] as any[];

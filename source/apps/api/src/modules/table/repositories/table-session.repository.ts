@@ -93,4 +93,21 @@ export class TableSessionRepository extends BaseRepository<
       take: limit,
     });
   }
+
+  /**
+   * Get active sessions with pending bill requests
+   * Used by waiter dashboard to show bill request notifications
+   */
+  async findSessionsWithBillRequests(tenantId: string): Promise<TableSession[]> {
+    return this.prisma.tableSession.findMany({
+      where: {
+        tenantId,
+        active: true,
+        billRequestedAt: { not: null },
+      },
+      orderBy: {
+        billRequestedAt: 'asc', // Oldest requests first
+      },
+    });
+  }
 }

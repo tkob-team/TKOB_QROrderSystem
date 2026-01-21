@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 export function GoogleCallbackContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  // Prevent double execution in React StrictMode
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+
     const accessToken = searchParams.get('accessToken');
     const refreshToken = searchParams.get('refreshToken');
     const error = searchParams.get('error');
@@ -17,12 +22,12 @@ export function GoogleCallbackContent() {
 
     if (error) {
       toast.error('Google login failed. Please try again.');
-      router.push('/auth/login');
+      window.location.href = '/auth/login';
       return;
     }
 
     if (accessToken && refreshToken) {
-      // Store tokens in localStorage
+      // Store tokens in localStorage BEFORE redirecting
       // IMPORTANT: Use 'authToken' key to match tokenStorage.ts
       localStorage.setItem('authToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
@@ -31,20 +36,23 @@ export function GoogleCallbackContent() {
       // Cookie expires in 1 hour (matches JWT access token expiry)
       document.cookie = `authToken=${accessToken}; path=/; max-age=3600; SameSite=Lax`;
 
-      if (isNewUser) {
-        toast.success('Account created! Let\'s set up your restaurant.');
-        // New users go to onboarding wizard
-        router.push('/auth/onboarding-wizard');
-      } else {
-        toast.success('Login successful!');
-        // Existing users go to dashboard
-        router.push('/admin/dashboard');
-      }
+      // Small delay to ensure localStorage is persisted
+      setTimeout(() => {
+        if (isNewUser) {
+          toast.success('Account created! Let\'s set up your restaurant.');
+          // Use hard redirect to ensure AuthProvider re-initializes with tokens
+          window.location.href = '/auth/onboarding-wizard';
+        } else {
+          toast.success('Login successful!');
+          // Use hard redirect to ensure AuthProvider re-initializes with tokens
+          window.location.href = '/admin/dashboard';
+        }
+      }, 100);
     } else {
       toast.error('Authentication failed');
-      router.push('/auth/login');
+      window.location.href = '/auth/login';
     }
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-neutral-50 to-emerald-100/30">

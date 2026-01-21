@@ -1,15 +1,10 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { PaymentService } from '../payment/services/payment.service';
 import { SubscriptionService } from './subscription.service';
-import { 
-  CreateSubscriptionPaymentDto, 
+import {
+  CreateSubscriptionPaymentDto,
   SubscriptionPaymentResponseDto,
   SubscriptionPaymentStatusDto,
 } from './dto/subscription-payment.dto';
@@ -18,24 +13,24 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 // Bank code to bank name mapping for SePay QR
 const BANK_CODE_MAP: Record<string, string> = {
-  'VCB': 'Vietcombank',
-  'TCB': 'Techcombank',
-  'MB': 'MBBank',
-  'ACB': 'ACB',
-  'BIDV': 'BIDV',
-  'VTB': 'VietinBank',
-  'TPB': 'TPBank',
-  'VPB': 'VPBank',
-  'SHB': 'SHB',
-  'MSB': 'MSB',
-  'CTG': 'VietinBank', // CTG is VietinBank code
+  VCB: 'Vietcombank',
+  TCB: 'Techcombank',
+  MB: 'MBBank',
+  ACB: 'ACB',
+  BIDV: 'BIDV',
+  VTB: 'VietinBank',
+  TPB: 'TPBank',
+  VPB: 'VPBank',
+  SHB: 'SHB',
+  MSB: 'MSB',
+  CTG: 'VietinBank', // CTG is VietinBank code
 };
 
 /**
  * SubscriptionPaymentService
- * 
+ *
  * Handles payment flow for subscription upgrades using platform SePay config.
- * 
+ *
  * Flow:
  * 1. Tenant initiates upgrade
  * 2. Create payment intent using platform SePay (not tenant's SePay)
@@ -58,7 +53,7 @@ export class SubscriptionPaymentService {
 
   /**
    * Create subscription payment intent for upgrade
-   * 
+   *
    * @param tenantId - Tenant initiating upgrade
    * @param dto - Upgrade request data
    * @returns Payment intent with QR code
@@ -67,21 +62,43 @@ export class SubscriptionPaymentService {
     tenantId: string,
     dto: CreateSubscriptionPaymentDto,
   ): Promise<SubscriptionPaymentResponseDto> {
-    this.logger.log(`Creating subscription upgrade payment for tenant ${tenantId} to ${dto.targetTier}`);
+    this.logger.log(
+      `Creating subscription upgrade payment for tenant ${tenantId} to ${dto.targetTier}`,
+    );
 
     // 1. Get target plan
     const plans = await this.subscriptionService.getPlans();
-    const targetPlan = plans.find(p => p.tier === dto.targetTier);
+    const targetPlan = plans.find((p) => p.tier === dto.targetTier);
 
     if (!targetPlan) {
       throw new NotFoundException(`Plan ${dto.targetTier} not found`);
     }
 
-    // 2. Get current subscription
-    const currentSub = await this.subscriptionService.getTenantSubscription(tenantId);
-    
+    // 2. Get current subscription (auto-create FREE if missing)
+    let currentSub = await this.subscriptionService.getTenantSubscription(tenantId);
+
     if (!currentSub) {
-      throw new BadRequestException('No current subscription found. Please contact support.');
+      this.logger.warn(`Tenant ${tenantId} has no subscription. Auto-creating FREE plan.`);
+
+      // Get FREE plan
+      const freePlan = plans.find((p) => p.tier === 'FREE');
+      if (!freePlan) {
+        throw new BadRequestException('FREE plan not found in system. Please contact support.');
+      }
+
+      // Create FREE subscription for tenant
+      await this.subscriptionService.createFreeSubscription(tenantId);
+
+      // Re-fetch subscription
+      currentSub = await this.subscriptionService.getTenantSubscription(tenantId);
+
+      if (!currentSub) {
+        throw new BadRequestException(
+          'Failed to create initial subscription. Please contact support.',
+        );
+      }
+
+      this.logger.log(`Auto-created FREE subscription for tenant ${tenantId}`);
     }
 
     // 3. Validate upgrade (can't upgrade to same or lower tier)
@@ -94,17 +111,19 @@ export class SubscriptionPaymentService {
     // 4. Check for existing pending upgrade (now includes targetTier to prevent cache collision)
     const existingUpgradeKey = `${this.PENDING_UPGRADE_PREFIX}${tenantId}:${dto.targetTier}`;
     const existingUpgrade = await this.redis.get(existingUpgradeKey);
-    
+
     if (existingUpgrade) {
       const parsed = JSON.parse(existingUpgrade);
       // Check if the existing payment is still valid
       if (new Date(parsed.expiresAt) > new Date()) {
-        this.logger.warn(`Tenant ${tenantId} already has pending upgrade payment for ${dto.targetTier}: ${parsed.paymentId}`);
-        
+        this.logger.warn(
+          `Tenant ${tenantId} already has pending upgrade payment for ${dto.targetTier}: ${parsed.paymentId}`,
+        );
+
         // Regenerate QR URL with correct format (in case cached data has old format)
         const bankName = BANK_CODE_MAP[parsed.bankCode] || parsed.bankCode;
         parsed.qrCodeUrl = `https://qr.sepay.vn/img?acc=${parsed.accountNumber}&bank=${encodeURIComponent(bankName)}&amount=${parsed.amountVND}&des=${encodeURIComponent(parsed.transferContent)}&template=compact`;
-        
+
         // Return the existing payment info with updated QR URL
         return parsed;
       }
@@ -205,7 +224,7 @@ export class SubscriptionPaymentService {
 
   /**
    * Check subscription payment status and upgrade if paid
-   * 
+   *
    * @param tenantId - Tenant ID
    * @param paymentId - Payment ID to check
    * @returns Payment status and upgrade result
@@ -229,7 +248,7 @@ export class SubscriptionPaymentService {
     }
 
     const providerData = payment.providerData as any;
-    
+
     // Verify this is a subscription payment
     if (providerData?.type !== 'subscription_upgrade') {
       throw new BadRequestException('This is not a subscription payment');
@@ -291,11 +310,7 @@ export class SubscriptionPaymentService {
   /**
    * Process successful subscription upgrade (called by webhook or polling)
    */
-  async processSuccessfulUpgrade(
-    tenantId: string,
-    payment: any,
-    transaction?: any,
-  ): Promise<void> {
+  async processSuccessfulUpgrade(tenantId: string, payment: any, transaction?: any): Promise<void> {
     const providerData = payment.providerData as any;
     const targetTier = providerData?.targetTier as SubscriptionTier;
 
@@ -335,7 +350,7 @@ export class SubscriptionPaymentService {
 
   /**
    * Handle subscription payment webhook
-   * 
+   *
    * Called when SePay webhook is received for a subscription payment.
    */
   async handleSubscriptionWebhook(
@@ -347,7 +362,7 @@ export class SubscriptionPaymentService {
 
     // Find pending upgrade by transfer content
     const cached = await this.redis.get(`subscription:transfer:${transferContent}`);
-    
+
     if (!cached) {
       this.logger.debug(`No pending subscription upgrade found for: ${transferContent}`);
       return { success: false, upgraded: false };

@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/shared/context/AuthContext';
 import { logger } from '@/shared/utils/logger';
@@ -13,34 +13,65 @@ interface RoleGuardProps {
 /**
  * RoleGuard - Protects routes by checking user authentication and role
  * 
- * Optimizations:
- * - Removed isMounted state (unnecessary with Next.js 13+ client components)
- * - Consolidated redirect logic into single useEffect
- * - Improved loading state rendering
- * - Better error state handling
- * - Reduced flash of loading content
+ * Uses a stabilization delay to prevent race conditions where the RoleGuard
+ * might redirect before the AuthProvider has finished syncing user state.
  */
 export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [countdown, setCountdown] = useState(3);
+  // Add stabilization state - wait for auth to settle before deciding to redirect
+  const [authStable, setAuthStable] = useState(false);
+  const stabilizeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Single useEffect to handle all redirect logic
+  // Wait for auth state to stabilize before making redirect decisions
   useEffect(() => {
-    // Skip if still loading - CRITICAL: must wait for auth state to be determined
+    // Reset stability when loading starts
     if (isLoading) {
+      setAuthStable(false);
+      if (stabilizeTimerRef.current) {
+        clearTimeout(stabilizeTimerRef.current);
+        stabilizeTimerRef.current = null;
+      }
       return;
     }
 
-    // Not authenticated - redirect to login
-    // ONLY redirect if we're sure loading is complete
-    if (!isLoading && !isAuthenticated && !user) {
-      logger.log('[RoleGuard] User not authenticated, redirecting to login', {
+    // When loading completes, wait a bit for state to sync
+    stabilizeTimerRef.current = setTimeout(() => {
+      setAuthStable(true);
+      logger.log('[RoleGuard] Auth state stabilized', {
         isAuthenticated,
         hasUser: !!user,
         isLoading,
       });
-      router.push('/auth/login');
+    }, 500); // 500ms delay to allow sync effect to run
+
+    return () => {
+      if (stabilizeTimerRef.current) {
+        clearTimeout(stabilizeTimerRef.current);
+      }
+    };
+  }, [isLoading, isAuthenticated, user]);
+
+  // Handle redirect after auth is stable
+  useEffect(() => {
+    // Skip if still loading or not stable yet
+    if (isLoading || !authStable) {
+      return;
+    }
+
+    // Not authenticated - redirect to login
+    if (!isAuthenticated && !user) {
+      logger.log('[RoleGuard] User not authenticated, redirecting to login', {
+        isAuthenticated,
+        hasUser: !!user,
+        isLoading,
+        authStable,
+      });
+      // Use hard redirect to ensure it works
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
+        window.location.href = '/auth/login';
+      }
       return;
     }
 
@@ -55,7 +86,7 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
     }
 
     // Role check happens in render below
-  }, [isLoading, isAuthenticated, user, router]);
+  }, [isLoading, authStable, isAuthenticated, user]);
 
   // Countdown effect for role mismatch redirect
   useEffect(() => {
@@ -75,8 +106,8 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
     }
   }, [countdown, user, allowedRoles, router]);
 
-  // Show loading state while auth is being determined
-  if (isLoading) {
+  // Show loading state while auth is being determined or stabilizing
+  if (isLoading || !authStable) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
@@ -87,13 +118,13 @@ export function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
     );
   }
 
-  // Not authenticated - show nothing while redirecting
+  // Not authenticated - show message while redirect happens (triggered by useEffect above)
   if (!isAuthenticated || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-          <p className="text-gray-600 font-medium">Redirecting...</p>
+          <p className="text-gray-600 font-medium">Redirecting to login...</p>
         </div>
       </div>
     );

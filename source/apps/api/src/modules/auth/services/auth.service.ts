@@ -113,13 +113,11 @@ export class AuthService {
     const tokens = await this.session.createSessionWithTokens(user.id, deviceInfo);
 
     // 6. [FIRST LOGIN SEED] Check if this is first login and should seed demo data
+    // Non-blocking: fire-and-forget to avoid blocking login response (prevents 408 timeout)
     if (user.tenantId) {
-      try {
-        await this.seedDemoDataOnFirstLogin(user.id, user.tenantId);
-      } catch (seedError) {
-        // Don't fail login if seed fails
-        this.logger.error(`Failed to seed demo data for tenant ${user.tenantId}:`, seedError);
-      }
+      this.seedDemoDataOnFirstLogin(user.id, user.tenantId)
+        .then(() => this.logger.log(`✅ Demo data seeded for tenant ${user.tenantId}`))
+        .catch((err) => this.logger.error(`Failed to seed demo for tenant ${user.tenantId}:`, err));
     }
 
     this.logger.log(`User logged in: ${user.email}`);
@@ -674,7 +672,10 @@ export class AuthService {
         // No existing user - this is a new tenant owner registration via Google
         // Create tenant and user together
         isNewUser = true;
-        const slug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        const slug = email
+          .split('@')[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '');
 
         const tenant = await this.prisma.tenant.create({
           data: {
@@ -709,11 +710,14 @@ export class AuthService {
     const tokens = await this.session.createSessionWithTokens(user.id);
 
     // 6. Seed demo data if new user
+    // BLOCKING: Wait for seeding to complete so data is ready when user reaches dashboard
     if (isNewUser && user.tenantId) {
       try {
         await this.seedDemoDataOnFirstLogin(user.id, user.tenantId);
-      } catch (seedError) {
-        this.logger.error(`Failed to seed demo data:`, seedError);
+        this.logger.log(`✅ Demo data seeded for new Google user tenant ${user.tenantId}`);
+      } catch (err) {
+        // Log error but don't fail the login - user can still use the app
+        this.logger.error(`Failed to seed demo data for tenant ${user.tenantId}:`, err);
       }
     }
 

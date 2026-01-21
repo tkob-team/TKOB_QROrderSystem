@@ -145,6 +145,51 @@ export function useWaiterController(): UseWaiterControllerReturn {
     }
   }, [fetchedOrders, orders]);
 
+  // Fetch pending bill requests from API on page load (for persistence across refreshes)
+  useEffect(() => {
+    const fetchPendingBillRequests = async () => {
+      try {
+        const response = await axiosInstance.get('/api/v1/admin/tables/sessions/bill-requests');
+        const pendingRequests = response.data?.data || response.data || [];
+        
+        if (Array.isArray(pendingRequests) && pendingRequests.length > 0) {
+          const mappedRequests: BillRequest[] = pendingRequests.map((req: {
+            sessionId: string;
+            tableId: string;
+            tableNumber: string;
+            billRequestedAt: string;
+            totalAmount: number;
+            orderCount: number;
+          }) => ({
+            id: req.sessionId,
+            tableId: req.tableId,
+            tableNumber: req.tableNumber,
+            totalAmount: req.totalAmount,
+            orderCount: req.orderCount,
+            requestedAt: new Date(req.billRequestedAt),
+          }));
+          
+          setBillRequests(prev => {
+            // Merge with existing, avoiding duplicates
+            const existingIds = new Set(prev.map(r => r.id));
+            const newRequests = mappedRequests.filter(r => !existingIds.has(r.id));
+            return [...prev, ...newRequests];
+          });
+          
+          logger.info('[waiter] LOADED_PENDING_BILL_REQUESTS', {
+            count: mappedRequests.length,
+          });
+        }
+      } catch (error) {
+        logger.error('[waiter] FAILED_TO_LOAD_BILL_REQUESTS', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    };
+    
+    fetchPendingBillRequests();
+  }, []); // Only run once on mount
+
 
 
   // Derived values
@@ -543,6 +588,9 @@ export function useWaiterController(): UseWaiterControllerReturn {
           ordersCount: bill.orders?.length || 0,
         });
         
+        // Remove bill requests for this table (since table is now closed)
+        setBillRequests(prev => prev.filter(r => r.tableId !== tableId));
+        
         // Refetch orders to sync with backend
         refetch();
         
@@ -587,7 +635,10 @@ export function useWaiterController(): UseWaiterControllerReturn {
     }, [resetBillRequestCount]),
     
     handleBillRequestHandled: useCallback((requestId: string) => {
-      setBillRequests(prev => prev.filter(r => r.id !== requestId));
+      // Mark as handled instead of removing - bill stays visible until table is closed
+      setBillRequests(prev => prev.map(r => 
+        r.id === requestId ? { ...r, handled: true } : r
+      ));
     }, []),
     
     refresh: useCallback(() => {

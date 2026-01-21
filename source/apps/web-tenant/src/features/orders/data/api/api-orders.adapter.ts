@@ -47,6 +47,16 @@ class OrdersApiAdapter implements IOrdersAdapter {
                      Array.isArray(paginatedData) ? paginatedData : [];
       const meta = paginatedData?.meta || {};
       
+      if (process.env.NEXT_PUBLIC_USE_LOGGING === 'true') {
+        // eslint-disable-next-line no-console
+        console.log('[OrdersApiAdapter] Fetched orders:', {
+          rawOrders: orders.length,
+          filters,
+          meta,
+          firstOrder: orders[0] || null,
+        });
+      }
+      
       return {
         data: orders.map(mapOrderFromApi),
         total: meta.totalItems || orders.length,
@@ -55,14 +65,16 @@ class OrdersApiAdapter implements IOrdersAdapter {
         totalPages: meta.totalPages || Math.ceil(orders.length / 20),
       }
     } catch (error: any) {
-      // Return empty result instead of throwing to prevent UI crash
-      return {
-        data: [],
-        total: 0,
-        page: 1,
-        limit: 20,
-        totalPages: 0,
-      };
+      // eslint-disable-next-line no-console
+      console.error('[OrdersApiAdapter] Failed to fetch orders:', {
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        filters,
+      });
+      
+      // Re-throw to let UI show error state instead of empty list
+      throw new Error(error.response?.data?.message || 'Failed to load orders. Please try again.');
     }
   }
 

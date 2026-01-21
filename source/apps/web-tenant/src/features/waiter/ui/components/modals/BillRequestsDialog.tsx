@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X, Receipt, Printer, Check, Clock, DollarSign, Users } from 'lucide-react'
 import { printBill, type BillData } from '../../../utils/billPdf'
 import { api } from '@/services/axios'
@@ -17,6 +17,7 @@ export interface BillRequest {
   totalAmount: number
   orderCount: number
   requestedAt: Date
+  handled?: boolean // true if waiter has processed but table not closed yet
 }
 
 interface BillRequestsDialogProps {
@@ -203,7 +204,7 @@ export function BillRequestsDialog({
                 Bill Requests
               </h2>
               <p style={{ color: 'var(--gray-500)', fontSize: '12px' }}>
-                {billRequests.length} pending request{billRequests.length !== 1 ? 's' : ''}
+                {billRequests.filter(r => !r.handled).length} pending, {billRequests.filter(r => r.handled).length} handled
               </p>
             </div>
           </div>
@@ -228,17 +229,21 @@ export function BillRequestsDialog({
             <div className="space-y-3">
               {billRequests.map((request) => {
                 const isLoading = loadingIds.has(request.id)
+                const isHandled = request.handled === true
                 
                 return (
                   <div
                     key={request.id}
                     className="border rounded-xl overflow-hidden"
-                    style={{ borderColor: 'var(--gray-200)' }}
+                    style={{ 
+                      borderColor: isHandled ? 'var(--emerald-200)' : 'var(--gray-200)',
+                      opacity: isHandled ? 0.9 : 1 
+                    }}
                   >
                     {/* Request Info */}
                     <div 
                       className="p-4"
-                      style={{ backgroundColor: 'var(--orange-50)' }}
+                      style={{ backgroundColor: isHandled ? 'var(--emerald-50)' : 'var(--orange-50)' }}
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -267,7 +272,7 @@ export function BillRequestsDialog({
                             </span>
                             <span 
                               className="flex items-center gap-1"
-                              style={{ color: 'var(--orange-600)', fontSize: '13px', fontWeight: 500 }}
+                              style={{ color: isHandled ? 'var(--gray-500)' : 'var(--orange-600)', fontSize: '13px', fontWeight: 500 }}
                             >
                               <Clock className="w-3.5 h-3.5" />
                               {formatTimeSince(request.requestedAt)}
@@ -275,13 +280,13 @@ export function BillRequestsDialog({
                           </div>
                         </div>
                         <span 
-                          className="px-2 py-1 rounded-full text-xs font-semibold animate-pulse"
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${!isHandled ? 'animate-pulse' : ''}`}
                           style={{ 
-                            backgroundColor: 'var(--orange-100)', 
-                            color: 'var(--orange-600)' 
+                            backgroundColor: isHandled ? 'var(--emerald-100)' : 'var(--orange-100)', 
+                            color: isHandled ? 'var(--emerald-600)' : 'var(--orange-600)' 
                           }}
                         >
-                          Pending
+                          {isHandled ? 'Handled' : 'Pending'}
                         </span>
                       </div>
                     </div>
@@ -289,29 +294,31 @@ export function BillRequestsDialog({
                     {/* Actions */}
                     <div 
                       className="flex border-t"
-                      style={{ borderColor: 'var(--gray-200)' }}
+                      style={{ borderColor: isHandled ? 'var(--emerald-200)' : 'var(--gray-200)' }}
                     >
                       <button
                         onClick={() => handlePrintBill(request)}
                         disabled={isLoading}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 hover:bg-[var(--gray-50)] transition-colors disabled:opacity-50"
-                        style={{ borderRight: '1px solid var(--gray-200)' }}
+                        className={`${isHandled ? 'flex-1' : 'flex-1'} flex items-center justify-center gap-2 py-3 hover:bg-gray-50 transition-colors disabled:opacity-50`}
+                        style={{ borderRight: !isHandled ? '1px solid var(--gray-200)' : undefined }}
                       >
                         <Printer className="w-4 h-4" style={{ color: 'var(--gray-600)' }} />
                         <span style={{ color: 'var(--gray-700)', fontSize: '13px', fontWeight: 500 }}>
-                          Print Bill
+                          {isHandled ? 'Reprint Bill' : 'Print Bill'}
                         </span>
                       </button>
-                      <button
-                        onClick={() => handleMarkHandled(request)}
-                        disabled={isLoading}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 hover:bg-[var(--emerald-50)] transition-colors disabled:opacity-50"
-                      >
-                        <Check className="w-4 h-4" style={{ color: 'var(--emerald-600)' }} />
-                        <span style={{ color: 'var(--emerald-700)', fontSize: '13px', fontWeight: 500 }}>
-                          Handled
-                        </span>
-                      </button>
+                      {!isHandled && (
+                        <button
+                          onClick={() => handleMarkHandled(request)}
+                          disabled={isLoading}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                        >
+                          <Check className="w-4 h-4" style={{ color: 'var(--emerald-600)' }} />
+                          <span style={{ color: 'var(--emerald-700)', fontSize: '13px', fontWeight: 500 }}>
+                            Mark Handled
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
