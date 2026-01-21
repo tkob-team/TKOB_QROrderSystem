@@ -463,6 +463,31 @@ export class SeedService {
         },
       });
 
+      // Create MenuItemPhoto record if imageUrl exists
+      if (imageUrl) {
+        const filename = `${itemData.name.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+        
+        const photo = await this.prisma.menuItemPhoto.create({
+          data: {
+            menuItemId: menuItem.id,
+            url: imageUrl,
+            filename: filename,
+            mimeType: 'image/jpeg',
+            size: 0, // External URL, size unknown
+            width: 800, // Default width
+            height: 600, // Default height
+            displayOrder: 0,
+            isPrimary: true,
+          },
+        });
+
+        // Update menu item with primaryPhotoId
+        await this.prisma.menuItem.update({
+          where: { id: menuItem.id },
+          data: { primaryPhotoId: photo.id },
+        });
+      }
+
       // Link modifiers
       if (modifierIds && modifierIds.length > 0) {
         await this.prisma.menuItemModifier.createMany({
