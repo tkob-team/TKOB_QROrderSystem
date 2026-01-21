@@ -138,6 +138,7 @@ export function LoginFormSection(props: LoginFormSectionProps) {
                   onClick={onTogglePassword}
                   className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -155,6 +156,7 @@ export function LoginFormSection(props: LoginFormSectionProps) {
                   checked={rememberMe}
                   onChange={(e) => onToggleRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500 focus:ring-offset-0 cursor-pointer"
+                  tabIndex={-1}
                 />
                 <span className="text-sm text-neutral-600">
                   Remember me
@@ -164,6 +166,7 @@ export function LoginFormSection(props: LoginFormSectionProps) {
                 type="button"
                 className="text-sm text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline"
                 onClick={onForgotPassword}
+                tabIndex={-1}
               >
                 Forgot password?
               </button>

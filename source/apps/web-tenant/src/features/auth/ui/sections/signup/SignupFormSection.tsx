@@ -108,6 +108,7 @@ export function SignupFormSection(props: SignupFormSectionProps) {
                   onClick={onCheckSlug}
                   disabled={isCheckingSlug}
                   className="shrink-0"
+                  tabIndex={-1}
                 >
                   {isCheckingSlug ? 'Checking...' : 'Check'}
                 </Button>
@@ -180,6 +181,7 @@ export function SignupFormSection(props: SignupFormSectionProps) {
                     type="button"
                     onClick={onTogglePassword}
                     className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -202,6 +204,7 @@ export function SignupFormSection(props: SignupFormSectionProps) {
                     type="button"
                     onClick={onToggleConfirmPassword}
                     className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    tabIndex={-1}
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -217,7 +220,7 @@ export function SignupFormSection(props: SignupFormSectionProps) {
               />
               <span className="text-sm text-neutral-600">
                 I agree to the{' '}
-                <button type="button" className="text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline">
+                <button type="button" className="text-primary-500 hover:text-primary-600 transition-colors font-medium underline-offset-2 hover:underline" tabIndex={-1}>
                   Terms and Conditions
                 </button>
               </span>
