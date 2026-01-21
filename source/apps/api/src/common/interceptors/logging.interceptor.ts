@@ -43,8 +43,9 @@ export class LoggingInterceptor implements NestInterceptor {
             `Outgoing Response: ${method} ${url} | Status: ${statusCode} | Duration: ${duration}ms`,
           );
 
-          // Log response in development (for debugging)
-          if (process.env.NODE_ENV === 'development') {
+          // Only log response body when LOG_LEVEL is explicitly set to debug
+          const logLevel = (process.env.LOG_LEVEL || 'info').toLowerCase();
+          if (logLevel === 'debug') {
             this.logger.debug(`Response: ${JSON.stringify(data)}`);
           }
         },

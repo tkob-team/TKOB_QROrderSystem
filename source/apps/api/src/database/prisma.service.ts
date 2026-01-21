@@ -35,10 +35,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     await this.$connect();
 
-    // Logging setup (giữ nguyên logic của bạn)
+    // Logging setup - only log queries when LOG_LEVEL is 'debug'
     // @ts-expect-error Prisma type bug workaround
     this.$on('query', (e: any) => {
-      if (process.env.NODE_ENV === 'development') {
+      const logLevel = (process.env.LOG_LEVEL || 'info').toLowerCase();
+      if (logLevel === 'debug') {
         this.logger.debug(`Duration: ${e.duration}ms | Query: ${e.query}`);
       }
     });
